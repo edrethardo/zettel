@@ -162,6 +162,136 @@ def test_limit_wird_eingehalten(con):
     assert len(search.search(con, "milch", limit=3)) == 3
 
 
+# --------------------------------------------------------------------------
+# Die Begriffskette einer Zutat (WB-340)
+
+def _kette_katalog(con):
+    """Der gemessene Fall aus WB-340, in klein.
+
+    „Auberginen" (Plural) findet nur das Fertiggericht — der Plural steckt in
+    dessen Namen. Die echten Auberginen heissen im Katalog Einzahl und tragen
+    einen höheren Preis als Rang: sie kommen erst über den zweiten Begriff,
+    und mit schlechterem bm25.
+    """
+    _insert(con, "aub1", "Gemüse-Auberginen-Masala mit Jasminreis", None,
+            "Fertiggerichte", "Indisch", "Masala")
+    _insert(con, "aub2", "Aubergine, 1 Stk.", None,
+            "Obst & Gemüse", "Gemüse", "Fruchtgemüse")
+    _insert(con, "aub3", "BIO Aubergine, 1 Stk.", None,
+            "Obst & Gemüse", "Gemüse", "Fruchtgemüse")
+
+
+def test_kette_vereinigt_statt_beim_ersten_treffer_aufzuhoeren(con):
+    """Der Kern von WB-340: „erster Begriff, der etwas findet" ist schlechter.
+
+    Der erste Begriff findet etwas — und zwar das Falsche. Die Vereinigung
+    legt beides vor.
+    """
+    _kette_katalog(con)
+    allein = [t["name"] for t in search.search(con, "Auberginen")]
+    assert allein == ["Gemüse-Auberginen-Masala mit Jasminreis"]
+
+    treffer = search.suche_kette(con, ["Auberginen", "Aubergine"])
+    assert sorted(t["name"] for t in treffer) == [
+        "Aubergine, 1 Stk.", "BIO Aubergine, 1 Stk.",
+        "Gemüse-Auberginen-Masala mit Jasminreis"]
+
+
+def test_kette_entdoppelt_nach_produkt_id_und_merkt_sich_die_herkunft(con):
+    """Beide Begriffe finden dasselbe Produkt. Es steht einmal da — mit dem
+    genaueren Begriff als Herkunft."""
+    _kette_katalog(con)
+    treffer = search.suche_kette(con, ["Aubergine", "Auberginen"])
+    ids = [t["id"] for t in treffer]
+    assert len(ids) == len(set(ids)) == 3
+    via = {t["name"]: t["via"] for t in treffer}
+    assert set(via.values()) == {"Aubergine"}, (
+        "Der Plural findet nur, was der Singular schon hatte.")
+
+    andersrum = {t["name"]: t["via"] for t in
+                 search.suche_kette(con, ["Auberginen", "Aubergine"])}
+    assert andersrum["Gemüse-Auberginen-Masala mit Jasminreis"] == "Auberginen"
+    assert andersrum["Aubergine, 1 Stk."] == "Aubergine"
+
+
+def test_die_kette_bestimmt_die_reihenfolge_und_nicht_der_rang(con):
+    """Global nach `rang` zu sortieren wäre falsch — und zwar gemessen.
+
+    bm25 ist über Abfragen hinweg nicht geeicht: ein seltenes Wort bekommt
+    strukturell einen höheren Rang als ein häufiges. In der Kette
+    [Mais, Körnig] steht der „Körnige Frischkäse" mit 14,01 über der
+    „Maishähnchenkeule" mit 9,70 — nicht weil er besser passt, sondern weil
+    „Körnig" seltener ist. Nach Rang sortiert bekäme Stufe 3 den Frischkäse
+    zuerst vorgelegt.
+
+    Die Kettenreihenfolge ist die einzige Rangfolge, die hier etwas bedeutet:
+    sie kommt vom Modell und ist nach Genauigkeit geordnet.
+    """
+    # „Mais" steckt in vielem und ist deshalb ein häufiges Wort; „Körnig"
+    # kommt einmal vor. Genau daraus baut bm25 seinen Rang — und genau
+    # deshalb sind Ränge aus zwei Abfragen nicht vergleichbar.
+    for i, name in enumerate(["Prignitzer Maishähnchenkeule",
+                              "Fackelmann Maiskolbenhalter",
+                              "Seeberger Popcorn Mais",
+                              "Maiskörner in der Dose",
+                              "Maisstärke"]):
+        _insert(con, f"mais{i}", name, None, "Diverses", "Mais", None)
+    _insert(con, "kf1", "MIIL Körniger Frischkäse", None,
+            "Milch, Molkerei & Butter", "Frischkäse", None)
+
+    treffer = search.suche_kette(con, ["Mais", "Körnig"])
+    assert [t["via"] for t in treffer][-1] == "Körnig"
+    assert treffer[-1]["name"] == "MIIL Körniger Frischkäse"
+    # Der spätere Begriff hat den HÖHEREN Rang und steht trotzdem hinten.
+    assert treffer[-1]["rang"] > treffer[0]["rang"]
+
+
+def test_innerhalb_eines_begriffs_gilt_der_rang(con):
+    _kette_katalog(con)
+    raenge = [t["rang"] for t in search.suche_kette(con, ["Aubergine"])]
+    assert raenge == sorted(raenge, reverse=True)
+
+
+def test_die_obergrenze_kuerzt_am_allgemeinen_ende_der_kette(con):
+    """Das Budget wird vom genauen Ende der Kette her ausgegeben.
+
+    Der letzte Begriff ist der, bei dem das Modell entgleist („Körnig",
+    „Papikra"). Was er findet, soll als Letztes stehen und als Erstes
+    wegfallen — und der genaueste Begriff darf nie darunter leiden.
+    """
+    _kette_katalog(con)
+    treffer = search.suche_kette(con, ["Aubergine", "milch"], limit=5,
+                                 obergrenze=4)
+    assert len(treffer) == 4
+    assert [t["via"] for t in treffer] == ["Aubergine"] * 3 + ["milch"]
+
+
+def test_die_obergrenze_laesst_den_ersten_beiden_begriffen_alles(con):
+    """Die Vorgabe nimmt nie weg, was der Agent vor WB-340 gesehen hätte:
+    2 × `KANDIDATEN` fasst die vollen Treffer der ersten beiden Begriffe."""
+    from picknick.assistant import plan
+
+    _kette_katalog(con)
+    treffer = search.suche_kette(con, ["milch", "Aubergine", "Gemüse"],
+                                 limit=plan.KANDIDATEN,
+                                 obergrenze=plan.MAX_KANDIDATEN)
+    via = [t["via"] for t in treffer]
+    assert via.count("milch") == plan.KANDIDATEN
+    assert via.count("Aubergine") == 3
+    assert len(treffer) <= plan.MAX_KANDIDATEN
+
+
+def test_ohne_obergrenze_kommt_alles_mit(con):
+    _kette_katalog(con)
+    treffer = search.suche_kette(con, ["milch", "Aubergine"], limit=5)
+    assert len(treffer) == 5 + 3
+
+
+def test_kette_ohne_treffer_ist_leer_und_nicht_kaputt(con):
+    assert search.suche_kette(con, ["Zahnstocher", "Zahnstocherchen"]) == []
+    assert search.suche_kette(con, []) == []
+
+
 def test_alte_datenbank_wird_nachgezogen(tmp_path):
     """Eine vor WB-322 angelegte Datei muss nach `migrate()` umlautfest sein."""
     pfad = tmp_path / "alt.db"

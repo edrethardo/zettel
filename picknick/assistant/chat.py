@@ -35,9 +35,9 @@ hinterlässt keine halbe Unterhaltung in der Datenbank.
 
 ```
 CHAIN       chat.turn        input: der Satz der Nutzerin
- ├ LLM      plan.extract     output: [{begriff, menge}, …]
- ├ RETRIEVER catalog.search  input: begriff -> n Kandidaten mit Score
- ├ RETRIEVER catalog.search  (ein Span je Suchbegriff)
+ ├ LLM      plan.extract     output: [{suchbegriffe, menge}, …]
+ ├ RETRIEVER catalog.search  input: die Begriffskette einer Zutat
+ ├ RETRIEVER catalog.search  (ein Span je ZUTAT) -> n Kandidaten mit Score
  ├ LLM      plan.choose      Kandidaten -> gewählte product_ids
  └ output: die Vorschlagsliste
 ```
@@ -118,13 +118,19 @@ class Chat:
     """
 
     def __init__(self, zugang=None, *, wecker=None,
-                 kandidaten: int = plan.KANDIDATEN, guided: bool = True,
+                 kandidaten: int = plan.KANDIDATEN,
+                 obergrenze: int = plan.MAX_KANDIDATEN, guided: bool = True,
                  denken: bool = plan.DENKEN,
                  system_extract: str = plan.SYSTEM_EXTRACT,
                  system_choose: str = plan.SYSTEM_CHOOSE):
         self._zugang = zugang
         self._wecker = wecker
+        # `kandidaten` gilt je BEGRIFF, `obergrenze` je ZUTAT: die Vereinigung
+        # über eine Begriffskette (WB-340) wäre sonst so lang, dass drei
+        # Begriffe mal fünf Treffer mal acht Zutaten den Prompt von Stufe 3
+        # füllen. Die Begründung der Zahl steht an `plan.MAX_KANDIDATEN`.
         self.kandidaten = kandidaten
+        self.obergrenze = obergrenze
         self.guided = guided
         self.denken = denken
         self.system_extract = system_extract
@@ -297,19 +303,26 @@ class Chat:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
 
-        # Ein RETRIEVER-Span je Begriff (Spec 7.1) — nicht einer für alle
-        # Suchen zusammen. Die Frage lautet „hat die Suche für DIESEN Begriff
-        # etwas Brauchbares vorgelegt", und an einem Sammel-Span ist sie nicht
-        # mehr zu stellen.
+        # Ein RETRIEVER-Span je ZUTAT (Spec 7.1, WB-340) — nicht einer für alle
+        # Suchen zusammen und auch nicht einer je Begriff. Die Frage lautet
+        # „hat die Suche für DIESE Zutat etwas Brauchbares vorgelegt", und die
+        # vorgelegte Liste ist die VEREINIGUNG über die ganze Begriffskette;
+        # an einem Sammel-Span wäre die Frage nicht mehr zu stellen, an einem
+        # Span je Begriff die Vorlage nicht mehr zu sehen.
         aufgaben = []
         for b in begriffe:
-            with obs.retriever("catalog.search",
-                               begriff=b["begriff"]) as such:
-                kandidaten = search.search(con, b["begriff"],
-                                           limit=self.kandidaten)
+            kette = b["suchbegriffe"]
+            with obs.retriever("catalog.search", suchbegriffe=kette) as such:
+                kandidaten = search.suche_kette(
+                    con, kette, limit=self.kandidaten,
+                    obergrenze=self.obergrenze)
                 obs.dokumente(such, kandidaten)
                 obs.setze(such, {"picknick.qty": b["menge"]})
-            aufgaben.append({**b, "kandidaten": kandidaten})
+            # `begriff` ist der genaueste Begriff der Kette und steht für die
+            # Zutat: unter ihm wählt Stufe 3, und als Freitext steht er da,
+            # wenn nichts gefunden wurde.
+            aufgaben.append({**b, "begriff": kette[0],
+                             "kandidaten": kandidaten})
 
         try:
             with obs.stufe("plan.choose"):
@@ -333,7 +346,15 @@ class Chat:
             if wahl is not None:
                 zeilen.append({"product_id": wahl["produkt"]["id"],
                                "free_text": None, "qty": wahl["menge"],
-                               "search_term": b["begriff"],
+                               # NICHT die Zutat, sondern der Begriff der
+                               # Kette, der DIESEN Kandidaten gebracht hat
+                               # (WB-340). „Möhren" und „Karotten" führen zu
+                               # verschiedenen Produkten; welcher der beiden
+                               # es war, ist die Erklärung an der
+                               # Eval-Annotation (WB-329) und wäre sonst
+                               # geraten.
+                               "search_term": (wahl["produkt"].get("via")
+                                               or b["begriff"]),
                                "rang": wahl["produkt"].get("rang")})
                 continue
             # Kein Treffer, keine Wahl oder eine verworfene ID — in allen drei

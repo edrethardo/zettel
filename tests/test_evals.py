@@ -609,13 +609,15 @@ def test_als_ausgabe_traegt_die_kategorie_mit():
         vorschlaege=[{"product_id": 808, "name": "Hemme Milch 1,8 %",
                       "qty": 1, "search_term": "Milch", "rang": 3.0,
                       "ist_freitext": 0}],
-        begriffe=[{"begriff": "Milch", "menge": 1}], verworfen=[],
+        begriffe=[{"suchbegriffe": ["Milch"], "menge": 1}], verworfen=[],
         meldung="1 Begriff")
     raus = experiment.als_ausgabe(
         ergebnis, {808: "Milch, Molkerei & Butter > Milch > Frischmilch"})
     assert raus["vorschlaege"][0]["kategorie"] == \
         "Milch, Molkerei & Butter > Milch > Frischmilch"
     assert raus["verworfen"] == 0
+    # Die ganze Kette wandert mit (WB-340), nicht nur ein Begriff.
+    assert raus["begriffe"] == [{"suchbegriffe": ["Milch"], "menge": 1}]
 
 
 def test_evals_brauchen_kein_phoenix_beim_import():

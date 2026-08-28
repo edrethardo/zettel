@@ -94,3 +94,64 @@ def search(con: sqlite3.Connection, begriff: str,
         " LIMIT ?",
         (query, limit)).fetchall()
     return [dict(r) for r in rows]
+
+
+def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
+                obergrenze: int | None = None) -> list[dict]:
+    """Sucht eine ganze Begriffskette und VEREINIGT die Treffer (WB-340).
+
+    Stufe 1 liefert je Zutat mehrere Begriffe, vom genauesten zum
+    allgemeinsten („Auberginen", „Aubergine"). Hier wird jeder davon gesucht;
+    die Treffer werden **nach Produkt-ID entdoppelt** und als eine
+    Kandidatenliste zurückgegeben. Jeder Treffer trägt zusätzlich `via`: den
+    Begriff, der ihn gebracht hat. Ohne dieses Feld wäre nach der Vereinigung
+    nicht mehr zu sagen, warum ein Produkt vorlag — und genau das will der
+    Span-Vertrag (Spec 7.1) beantworten können.
+
+    **Nicht „der erste Begriff, der etwas findet, gewinnt".** Das ist gemessen
+    und schlechter: „Auberginen" findet das Fertiggericht
+    „Gemüse-Auberginen-Masala" mit Rang 16,55, die echte Aubergine kommt erst
+    über den Singular und mit niedrigerem Rang (13,08). Wer nach dem ersten
+    Fund abbricht, zurrt das Fertiggericht fest. Die Vereinigung legt beides
+    vor und lässt Stufe 3 entscheiden.
+
+    **Die Reihenfolge ist die der KETTE, nicht die des Rangs.** Der genaueste
+    Begriff zuerst, innerhalb eines Begriffs nach dessen Rang. Global nach
+    `rang` zu sortieren wäre falsch, und zwar gemessen: bm25 ist über Abfragen
+    hinweg nicht geeicht (siehe `obs.spans.schwaechste_suche`), ein seltenes
+    Wort bekommt strukturell einen höheren Rang als ein häufiges. Für die Kette
+    [Mais, Süßmais, Körnig] steht dann der „MIIL Körniger Frischkäse" mit 14,01
+    ÜBER der Maishähnchenkeule mit 9,70 — nicht weil er besser passt, sondern
+    weil „Körnig" seltener ist als „Mais". Nach Rang sortiert bekäme Stufe 3
+    drei Frischkäse zuerst vorgelegt. Die Kettenreihenfolge ist die einzige
+    Rangfolge, die hier etwas bedeutet: sie kommt vom Modell und ist nach
+    Genauigkeit geordnet.
+
+    `obergrenze` begrenzt die Zahl der Kandidaten je Zutat, und das Budget wird
+    **vom genauen Ende der Kette her ausgegeben**: der erste Begriff bekommt
+    seine Treffer ganz, dann der zweite, und der letzte bekommt, was übrig ist.
+    Mit der Vorgabe (`plan.MAX_KANDIDATEN` = 2 × `plan.KANDIDATEN`) passen die
+    ersten beiden Begriffe immer vollständig hinein; gekürzt wird nur am
+    allgemeinen Ende. Das ist auch das Ende, an dem das Modell entgleist —
+    gemessen wurden als letzte Begriffe „Körnig", „Papikra", „Konzenzrat". Ein
+    solcher Begriff findet irgendetwas, und was er findet, soll als Letztes
+    stehen und als Erstes wegfallen.
+
+    Gesucht wird trotzdem jeder Begriff: was die Kette gebracht hat, steht
+    dadurch vollständig im RETRIEVER-Span, auch wenn die Obergrenze das Ende
+    abschneidet.
+    """
+    gewaehlt: list[dict] = []
+    gesehen: set[int] = set()
+    for begriff in suchbegriffe:
+        for p in search(con, begriff, limit=limit):
+            pid = int(p["id"])
+            if pid in gesehen:
+                # Schon über einen genaueren Begriff vorgelegt. Die Herkunft
+                # bleibt beim ersten — er beschreibt die Zutat besser.
+                continue
+            gesehen.add(pid)
+            if obergrenze is not None and len(gewaehlt) >= obergrenze:
+                continue
+            gewaehlt.append({**p, "via": begriff})
+    return gewaehlt

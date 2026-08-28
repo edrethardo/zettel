@@ -138,8 +138,10 @@ class Box:
 
 
 def _extract(*paare):
-    return json.dumps({"begriffe": [{"begriff": b, "menge": m}
-                                    for b, m in paare]}, ensure_ascii=False)
+    """Stufe 1 wie seit WB-340: je Zutat eine Kette. Ein Tupel = eine Kette."""
+    return json.dumps(
+        {"begriffe": [{"suchbegriffe": list(b) if isinstance(b, tuple) else [b],
+                       "menge": m} for b, m in paare]}, ensure_ascii=False)
 
 
 def _choose(*tripel):
@@ -158,6 +160,20 @@ def _agent(*antworten, **weitere):
 
 def _nach_namen(exporter):
     return [s.name for s in exporter.get_finished_spans()]
+
+
+def _suche(exporter, begriff):
+    """Der `catalog.search`-Span dieser Zutat.
+
+    Gefunden über `picknick.term` — den genauesten Begriff der Kette.
+    `input.value` ist seit WB-340 die ganze Kette als JSON und taugt nicht
+    mehr als Schlüssel.
+    """
+    treffer = [s for s in exporter.get_finished_spans()
+               if s.name == "catalog.search"
+               and s.attributes.get("picknick.term") == begriff]
+    assert len(treffer) == 1, f"{begriff}: {len(treffer)} Spans, erwartet 1"
+    return treffer[0]
 
 
 def _einer(exporter, name):
@@ -288,9 +304,7 @@ def test_plan_extract_zeigt_die_begriffe_und_choose_die_kandidaten(con, spans):
 def test_kandidaten_stehen_als_dokumente_mit_id_inhalt_und_score(con, spans):
     _butter_und_zwiebeln(con).turn(con, "Butter und Zwiebeln")
 
-    butter = [s for s in spans.get_finished_spans()
-              if s.name == "catalog.search"
-              and s.attributes[SpanAttributes.INPUT_VALUE] == "Butter"][0]
+    butter = _suche(spans, "Butter")
     a = butter.attributes
     assert a["picknick.candidates"] == 3
 
@@ -314,13 +328,46 @@ def test_kandidaten_stehen_als_dokumente_mit_id_inhalt_und_score(con, spans):
     assert a[f"{DOKS}.0." + DocumentAttributes.DOCUMENT_CONTENT].endswith("€")
 
 
-def test_ein_span_je_suchbegriff(con, spans):
-    _butter_und_zwiebeln(con).turn(con, "Butter und Zwiebeln")
+def test_ein_span_je_zutat_mit_ihrer_ganzen_begriffskette(con, spans):
+    """Ein Span je ZUTAT (WB-340), und er nennt die ganze Kette.
+
+    Nicht einer je Begriff: die Kandidaten mehrerer Begriffe werden zu EINER
+    Liste vereinigt, und die ist an keinem Begriffs-Span mehr zu sehen. Was
+    ein Kandidat gekostet hat — über welchen Begriff er kam —, steht deshalb
+    an ihm selbst.
+    """
+    agent = _agent(_extract((("Salzbutter", "Butter"), 1), ("Zwiebeln", 1)),
+                   _choose(("Salzbutter", _pid(con, "ButterBoyz Kräuterbutter"),
+                            1)))
+    agent.turn(con, "Butter und Zwiebeln")
 
     suchen = [s for s in spans.get_finished_spans()
               if s.name == "catalog.search"]
-    assert [s.attributes[SpanAttributes.INPUT_VALUE] for s in suchen] == [
-        "Butter", "Zwiebeln"]
+    assert [s.attributes["picknick.term"] for s in suchen] == [
+        "Salzbutter", "Zwiebeln"]
+    a = suchen[0].attributes
+    assert json.loads(a[SpanAttributes.INPUT_VALUE]) == ["Salzbutter", "Butter"]
+    assert a["picknick.search_terms"] == "Salzbutter, Butter"
+
+
+def test_der_span_nennt_je_kandidat_den_begriff_der_ihn_brachte(con, spans):
+    """Ohne die Herkunft ist an einer vereinigten Liste nicht mehr zu sehen,
+    WARUM ein Produkt vorlag — und genau das ist der Zweck des Span-Vertrags.
+    """
+    agent = _agent(_extract((("Salzbutter", "Butter"), 1)),
+                   _choose(("Salzbutter", _pid(con, "ButterBoyz Kräuterbutter"),
+                            1)))
+    agent.turn(con, "Butter")
+
+    a = _einer(spans, "catalog.search").attributes
+    n = a["picknick.candidates"]
+    assert n == 3, "Die drei Butter-Produkte, nach Produkt-ID entdoppelt."
+    via = [json.loads(a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_METADATA]
+                      )["via"] for i in range(n)]
+    assert sorted(via) == ["Butter", "Butter", "Salzbutter"]
+    ausgabe = json.loads(a[SpanAttributes.OUTPUT_VALUE])
+    assert {v["name"]: v["via"] for v in ausgabe}[
+        "ButterBoyz Handgemachte BIO-Salzbutter"] == "Salzbutter"
 
 
 def test_suche_ohne_treffer_ist_ein_span_ohne_dokumente(con, spans):
@@ -364,7 +411,7 @@ def test_der_butterfall_ist_am_trace_als_retrieval_fehler_zu_erkennen(
     # Die Suche hat bei „Butter" am schwächsten vorgelegt.
     assert wurzel["picknick.weakest_term"] == "Butter"
 
-    raenge = {s.attributes[SpanAttributes.INPUT_VALUE]:
+    raenge = {s.attributes["picknick.term"]:
               s.attributes["picknick.rank_top"]
               for s in spans.get_finished_spans()
               if s.name == "catalog.search"}
@@ -372,9 +419,7 @@ def test_der_butterfall_ist_am_trace_als_retrieval_fehler_zu_erkennen(
     assert wurzel["picknick.weakest_rank"] == raenge["Butter"]
 
     # Und die Vorlage selbst: keine normale Butter darunter.
-    butter = [s for s in spans.get_finished_spans()
-              if s.name == "catalog.search"
-              and s.attributes[SpanAttributes.INPUT_VALUE] == "Butter"][0]
+    butter = _suche(spans, "Butter")
     inhalte = [butter.attributes[f"{DOKS}.{i}."
                                  + DocumentAttributes.DOCUMENT_CONTENT]
                for i in range(butter.attributes["picknick.candidates"])]

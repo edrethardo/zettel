@@ -125,25 +125,40 @@ PROJEKT = "Picknick Agent"
 
 SYSTEM_EXTRACT_B = """\
 Du hilfst beim Einkaufen. Du bekommst einen Satz und machst daraus eine Liste \
-von Suchbegriffen für einen Lebensmittel-Katalog.
+von Zutaten. Zu jeder Zutat gibst du MEHRERE Suchbegriffe für einen \
+Lebensmittel-Katalog an.
 
-Regeln:
+Regeln für die Suchbegriffe einer Zutat (zwei bis drei, vom genauesten zum \
+allgemeinsten):
+- Der erste Begriff ist der genaueste. Gehört die Form zur Zutat, gehört sie \
+dazu: „passierte Tomaten" ist etwas anderes als „Tomaten".
+- Danach wirst du allgemeiner. Der Katalog sucht über Wortanfänge, kurze \
+Begriffe finden mehr.
+- Zusammengesetzte Wörter nennst du zusätzlich als Grundwort: \
+„Knoblauchzehen" auch als „Knoblauch", „Lasagneplatten" auch als „Lasagne".
+- Gebräuchliche Synonyme nimmst du auf: „Möhren" auch als „Karotten", \
+„geriebener Käse" auch als „Reibekäse".
+- Ist unklar, wie das Produkt im Laden heisst, nennst du Einzahl UND Mehrzahl: \
+„Auberginen" und „Aubergine".
+- Jeder Begriff muss die Zutat für sich allein benennen. Kein Adjektiv ohne \
+sein Hauptwort („körnig" ist keine Zutat), keine Abkürzung, kein halbes Wort. \
+Fällt dir nur ein Begriff ein, nennst du nur einen.
+
+Regeln für die Liste:
 - Nur Suchbegriffe und Mengen. KEINE Produktnamen, KEINE Marken, KEINE Nummern.
-- Kurze, allgemeine Begriffe. Ein bis zwei Wörter. Der Katalog sucht über \
-Wortanfänge: „Tomaten" findet mehr als „passierte Tomaten aus der Dose".
 - Bei einem Gericht gehst du das Rezept im Kopf Schritt für Schritt durch und \
 nennst JEDE Zutat, die man dafür einkaufen muss — auch die \
 selbstverständlichen, die man beim Aufzählen leicht überspringt. \
 Vollständigkeit geht vor Kürze: eine Zutat zu viel kostet einen Klick, eine \
 fehlende einen zweiten Weg in den Laden.
-- Was in jedem Haushalt steht (Salz, Pfeffer, Wasser, Öl), lässt du trotzdem \
-weg.
+- Was in jedem Haushalt steht (Salz, Pfeffer, Wasser, Öl, Gewürze), lässt du \
+trotzdem weg.
 - Die Menge ist die Anzahl Packungen, die gekauft werden soll. Im Zweifel 1.
 - Nichts erfinden, was im Satz nicht vorkommt oder zum Gericht nicht gehört.
 
 Antworte ausschliesslich als JSON:
-{"begriffe": [{"begriff": "Hackfleisch", "menge": 1}, \
-{"begriff": "passierte Tomaten", "menge": 2}]}"""
+{"begriffe": [{"suchbegriffe": ["Rinderhackfleisch", "Hackfleisch"], \
+"menge": 1}, {"suchbegriffe": ["passierte Tomaten", "Tomaten"], "menge": 2}]}"""
 
 
 @dataclass(frozen=True)
@@ -223,7 +238,11 @@ def als_ausgabe(ergebnis, kategorie_je_id: dict[int, str] | None = None) -> dict
     return {
         "weg": ergebnis.weg,
         "meldung": ergebnis.meldung,
-        "begriffe": [{"begriff": b["begriff"], "menge": b["menge"]}
+        # Seit WB-340 die ganze Begriffskette je Zutat, nicht ein Begriff:
+        # welcher davon den Treffer brachte, steht am Vorschlag als
+        # `search_term`.
+        "begriffe": [{"suchbegriffe": list(b["suchbegriffe"]),
+                      "menge": b["menge"]}
                      for b in ergebnis.begriffe],
         "vorschlaege": [
             {"product_id": v["product_id"],

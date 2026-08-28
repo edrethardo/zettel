@@ -147,8 +147,14 @@ def con():
 
 
 def _extract(*paare):
-    return json.dumps({"begriffe": [{"begriff": b, "menge": m}
-                                    for b, m in paare]}, ensure_ascii=False)
+    """Eine Stufe-1-Antwort. Ein Begriff oder ein Tupel als ganze Kette.
+
+    Seit WB-340 liefert das Modell je Zutat mehrere Suchbegriffe; `("a", "b")`
+    schreibt die Kette, `"a"` die Kette der Länge eins.
+    """
+    return json.dumps(
+        {"begriffe": [{"suchbegriffe": list(b) if isinstance(b, tuple) else [b],
+                       "menge": m} for b, m in paare]}, ensure_ascii=False)
 
 
 def _choose(*tripel):
@@ -604,3 +610,217 @@ def test_span_id_laesst_sich_nachtragen(con):
     vorschlaege.span_setzen(con, ergebnis.chat_message_id, "spaeter")
     assert con.execute("SELECT span_id FROM chat_message WHERE id = ?",
                        (ergebnis.chat_message_id,)).fetchone()["span_id"] == "spaeter"
+
+
+# --------------------------------------------------------------------------
+# Mehrere Suchbegriffe je Zutat, vereinigt statt „erster gewinnt" (WB-340)
+
+#: Der gemessene Fall aus WB-340, in klein: „Auberginen" findet NUR das
+#: Fertiggericht (der Plural steckt in dessen Namen), „Aubergine" findet die
+#: echte Aubergine — und über die Präfixsuche auch das Fertiggericht wieder.
+#: Wer nach dem ersten Begriff aufhört, der etwas findet, legt Stufe 3 genau
+#: ein Produkt vor: das Fertiggericht.
+AUBERGINEN = [
+    ("aub1", "Gemüse-Auberginen-Masala mit Jasminreis", "Fertiggerichte",
+     "Indisch", "Masala"),
+    ("aub2", "Aubergine, 1 Stk.", "Obst & Gemüse", "Gemüse", "Fruchtgemüse"),
+    ("aub3", "BIO Aubergine, 1 Stk.", "Obst & Gemüse", "Gemüse",
+     "Fruchtgemüse"),
+]
+
+
+def _auberginen(con):
+    for external_id, name, l1, l2, l3 in AUBERGINEN:
+        con.execute(
+            "INSERT INTO product (source, external_id, name, price_cents,"
+            " unit_text, category_l1, category_l2, category_l3)"
+            " VALUES ('knuspr', ?, ?, 249, '1 Stk', ?, ?, ?)",
+            (external_id, name, l1, l2, l3))
+    con.commit()
+    return {name: _pid(con, name) for _, name, *_ in AUBERGINEN}
+
+
+def _vorgelegte_namen(llm):
+    """Die Kandidaten, die Stufe 3 tatsächlich zu sehen bekam."""
+    prompt = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    vorgelegt = json.loads(prompt[prompt.index("["):])
+    return [[k["name"] for k in a["kandidaten"]] for a in vorgelegt]
+
+
+def test_alle_begriffe_der_kette_werden_gesucht(con):
+    """Nicht nur der erste — auch dann nicht, wenn er schon etwas findet."""
+    ids = _auberginen(con)
+    agent, llm = _chat(con, _extract((("Auberginen", "Aubergine"), 1)),
+                       _choose())
+    agent.turn(con, "Auberginen")
+
+    namen = _vorgelegte_namen(llm)[0]
+    assert "Gemüse-Auberginen-Masala mit Jasminreis" in namen
+    assert "Aubergine, 1 Stk." in namen
+    assert len(namen) == len(ids)
+
+
+def test_der_zweite_begriff_bringt_das_produkt_das_gemeint_ist(con):
+    """**Der Kern des Tickets** — der Aubergine-Fall.
+
+    „Auberginen" findet zuerst ein Fertiggericht, und zwar mit dem HÖHEREN
+    bm25-Rang. Wer dort aufhört, zurrt es fest. Die Vereinigung legt beides
+    vor, und Stufe 3 kann die echte Aubergine wählen — die ohne den zweiten
+    Begriff nie zur Wahl gestanden hätte.
+    """
+    ids = _auberginen(con)
+    agent, llm = _chat(
+        con, _extract((("Auberginen", "Aubergine"), 1)),
+        _choose(("Auberginen", ids["Aubergine, 1 Stk."], 1)))
+    ergebnis = agent.turn(con, "Auberginen")
+
+    # Nur der zweite Begriff findet sie …
+    from picknick.catalog import search
+    assert [t["name"] for t in search.search(con, "Auberginen")] == [
+        "Gemüse-Auberginen-Masala mit Jasminreis"]
+    # … und trotzdem steht sie in der Vorschlagsliste.
+    zeile = ergebnis.vorschlaege[0]
+    assert zeile["product_id"] == ids["Aubergine, 1 Stk."]
+    assert not zeile["ist_freitext"]
+
+
+def test_search_term_nennt_den_begriff_der_den_treffer_brachte(con):
+    """Die Erklärung an der Eval-Annotation (WB-329) darf nicht raten.
+
+    Gewählt wurde ein Produkt, das der ZWEITE Begriff gebracht hat. An der
+    Zeile steht deshalb „Aubergine" und nicht die Zutat „Auberginen".
+    """
+    ids = _auberginen(con)
+    agent, _ = _chat(con, _extract((("Auberginen", "Aubergine"), 1)),
+                     _choose(("Auberginen", ids["Aubergine, 1 Stk."], 1)))
+    ergebnis = agent.turn(con, "Auberginen")
+
+    assert ergebnis.vorschlaege[0]["search_term"] == "Aubergine"
+    assert con.execute("SELECT search_term FROM chat_suggestion"
+                       ).fetchone()["search_term"] == "Aubergine"
+
+
+def test_die_kandidaten_sind_nach_produkt_id_entdoppelt(con):
+    """Beide Begriffe finden dasselbe Fertiggericht. Es steht einmal da.
+
+    Und zwar mit der Herkunft des GENAUESTEN Begriffs, der es gefunden hat —
+    er beschreibt die Zutat besser als der allgemeinere danach.
+    """
+    _auberginen(con)
+    agent, llm = _chat(con, _extract((("Aubergine", "Auberginen"), 1)),
+                       _choose())
+    agent.turn(con, "Auberginen")
+
+    namen = _vorgelegte_namen(llm)[0]
+    assert len(namen) == len(set(namen)) == 3
+
+
+def test_ohne_treffer_in_der_ganzen_kette_bleibt_freitext(con):
+    """Eine Katalog-Lücke verschwindet nicht dadurch, dass man anders sucht.
+
+    „Sellerie" bleibt auch mit drei Begriffen ohne Treffer — dann wird die
+    Zutat wie bisher zum Freitext-Vorschlag, unter ihrem genauesten Begriff.
+    """
+    agent, llm = _chat(
+        con, _extract((("Staudensellerie", "Sellerie", "Knollensellerie"), 2)))
+    ergebnis = agent.turn(con, "Staudensellerie")
+
+    zeile = ergebnis.vorschlaege[0]
+    assert zeile["ist_freitext"] and zeile["free_text"] == "Staudensellerie"
+    assert zeile["search_term"] == "Staudensellerie" and zeile["qty"] == 2
+    # Ohne einen einzigen Kandidaten wird Stufe 3 gar nicht erst gefragt.
+    assert len(llm.aufrufe) == 1
+
+
+def test_die_obergrenze_je_zutat_greift(con):
+    """Drei Begriffe à fünf Treffer wären 15 Kandidaten für EINE Zutat.
+
+    Bei acht Zutaten sprengt das den Prompt von Stufe 3. Gekürzt wird am
+    allgemeinen Ende der Kette: der genaueste Begriff behält seine Treffer,
+    der letzte bekommt, was übrig ist — und der letzte ist der, bei dem das
+    Modell entgleist.
+    """
+    _auberginen(con)
+    agent, llm = _chat(con, _extract((("Aubergine", "Milch"), 1)), _choose(),
+                       kandidaten=5, obergrenze=4)
+    agent.turn(con, "Auberginen und Milch")
+
+    namen = _vorgelegte_namen(llm)[0]
+    assert len(namen) == 4
+    # Die drei Auberginen zuerst, dann eine Milch — nicht umgekehrt.
+    assert sum(1 for n in namen[:3] if "ubergine" in n) == 3
+
+
+def test_die_obergrenze_nimmt_den_ersten_beiden_begriffen_nichts_weg(con):
+    """Die Vorgabe ist so gewählt, dass die Treffer der beiden genauesten
+    Begriffe immer vollständig hineinpassen: die Obergrenze kürzt nur den
+    Zugewinn, und zwar am allgemeinen Ende."""
+    assert plan.MAX_KANDIDATEN >= plan.KANDIDATEN * 2
+
+
+# --------------------------------------------------------------------------
+# Was `plan.extract` aus der Antwort des Modells macht (WB-340)
+
+def test_extract_liefert_die_kette_in_der_reihenfolge_des_modells():
+    llm = FakeLLM(json.dumps({"begriffe": [
+        {"suchbegriffe": ["Knoblauchzehen", "Knoblauch"], "menge": 1}]}))
+    assert plan.extract(llm, "Knoblauch")[0]["suchbegriffe"] == [
+        "Knoblauchzehen", "Knoblauch"]
+
+
+def test_extract_nimmt_auch_einen_einzelnen_begriff_an():
+    """Nachsichtig gegenüber der Verpackung: ein Begriff ist eine Kette der
+    Länge eins und kein Fehlerfall."""
+    llm = FakeLLM(json.dumps({"begriffe": [{"begriff": "Milch", "menge": 1}]}))
+    assert plan.extract(llm, "Milch") == [
+        {"suchbegriffe": ["Milch"], "menge": 1}]
+
+
+def test_extract_entdoppelt_die_kette_und_deckelt_sie():
+    """Derselbe Begriff zweimal wäre dieselbe Abfrage zweimal — und in der
+    Vereinigung keine einzige zusätzliche Zeile."""
+    llm = FakeLLM(json.dumps({"begriffe": [
+        {"suchbegriffe": ["Möhren", "möhren", "Karotten", "Wurzeln",
+                          "Rüben", "Gelbe Rüben"], "menge": 1}]}))
+    kette = plan.extract(llm, "Möhren")[0]["suchbegriffe"]
+    assert kette[:3] == ["Möhren", "Karotten", "Wurzeln"]
+    assert len(kette) == plan.MAX_KETTE
+
+
+def test_extract_wirft_leere_ketten_weg():
+    llm = FakeLLM(json.dumps({"begriffe": [
+        {"suchbegriffe": [], "menge": 1},
+        {"suchbegriffe": ["  ", None, "Milch"], "menge": 1}]}))
+    assert plan.extract(llm, "Milch") == [
+        {"suchbegriffe": ["Milch"], "menge": 1}]
+
+
+def test_das_guided_schema_verlangt_die_kette(con):
+    schema = plan.SCHEMA_EXTRACT["properties"]["begriffe"]["items"]
+    assert schema["required"] == ["suchbegriffe", "menge"]
+    assert schema["properties"]["suchbegriffe"]["type"] == "array"
+    assert schema["properties"]["suchbegriffe"]["maxItems"] == plan.MAX_KETTE
+
+
+def test_extract_wirft_bruchstuecke_weg():
+    """Ein zweibuchstabiger „Begriff" ist keiner.
+
+    Die Suche sucht über Wortanfänge: „Ka" fände einen guten Teil des
+    Katalogs, und in einer Vereinigung wäre nicht mehr zu erkennen, woher der
+    Unsinn kam.
+    """
+    llm = FakeLLM(json.dumps({"begriffe": [
+        {"suchbegriffe": ["Karotten", "Ka"], "menge": 1}]}))
+    assert plan.extract(llm, "Karotten")[0]["suchbegriffe"] == ["Karotten"]
+
+
+def test_die_kette_bleibt_kurz(con):
+    """Der letzte Begriff einer langen Kette entgleist — gemessen.
+
+    „Körnig", „Papikra", „Konzenzrat": Begriffe, die irgendetwas finden und
+    die Vereinigung vergiften. Drei ist die Grenze, und die Reihenfolge sorgt
+    dafür, dass der letzte hinten steht und zuerst wegfällt.
+    """
+    assert plan.MAX_KETTE == 3
+    assert plan.SCHEMA_EXTRACT["properties"]["begriffe"]["items"][
+        "properties"]["suchbegriffe"]["maxItems"] == 3

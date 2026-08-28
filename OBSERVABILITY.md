@@ -74,16 +74,24 @@ Ein Chat-Zug ist genau ein Trace:
 
 ```
 CHAIN        chat.turn         input: der Satz der Nutzerin
- ├ LLM       plan.extract      output: [{begriff, menge}, …]
- ├ RETRIEVER catalog.search     „Butter“    -> 5 Kandidaten mit Score
- ├ RETRIEVER catalog.search     „Zahnpasta“ -> 0 Kandidaten
+ ├ LLM       plan.extract      output: [{suchbegriffe, menge}, …]
+ ├ RETRIEVER catalog.search     [„Auberginen“, „Aubergine“] -> 6 Kandidaten
+ ├ RETRIEVER catalog.search     [„Zahnpasta“]               -> 0 Kandidaten
  ├ LLM       plan.choose       Kandidaten -> gewählte product_ids
  └ output: die Vorschlagsliste
 ```
 
-Ein `catalog.search`-Span **je Begriff**, nicht einer für alle Suchen. Die
-Frage lautet „hat die Suche für DIESEN Begriff etwas Brauchbares vorgelegt",
+Ein `catalog.search`-Span **je Zutat**, nicht einer für alle Suchen. Die
+Frage lautet „hat die Suche für DIESE Zutat etwas Brauchbares vorgelegt",
 und an einem Sammel-Span ist sie nicht mehr zu stellen.
+
+Seit WB-340 liefert Stufe 1 je Zutat **mehrere** Suchbegriffe, vom genauesten
+zum allgemeinsten, und der Shop sucht sie alle; die Treffer werden nach
+Produkt-ID entdoppelt und als EINE Kandidatenliste vorgelegt. Der Span gehört
+deshalb der Zutat und nicht dem einzelnen Begriff — sonst gäbe es die Vorlage,
+aus der Stufe 3 wirklich gewählt hat, an keinem Span mehr zu sehen. Über
+welchen Begriff ein einzelner Kandidat kam, steht an seinem Dokument
+(`document.metadata.via`).
 
 Der **Rezeptweg** erzeugt nur den `CHAIN`-Span, mit
 `picknick.path = "recipe"`: keine Modellstufe, keine Suche. Das ist auch der
@@ -137,15 +145,31 @@ zuerst, ohne einen einzigen Ast zu öffnen. Im Butter-Fall stünde dort
 
 | Attribut | Bedeutung |
 |---|---|
-| `input.value` | der Suchbegriff |
-| `output.value` | `[{id, name, rang}, …]` |
+| `input.value` | die ganze Begriffskette der Zutat als JSON, vom genauesten zum allgemeinsten: `["Auberginen", "Aubergine"]` |
+| `picknick.term` | der genaueste Begriff — er steht für die Zutat, und `weakest_term` meint ihn |
+| `picknick.search_terms` | dieselbe Kette lesbar: `Auberginen, Aubergine` |
+| `output.value` | `[{id, name, rang, via}, …]` |
 | `retrieval.documents.N.document.id` | die Produkt-ID |
 | `retrieval.documents.N.document.content` | **was das Modell sah**: Name · Gebinde · Preis |
 | `retrieval.documents.N.document.score` | der Rang (siehe unten) |
-| `retrieval.documents.N.document.metadata` | Marke, Kategoriepfad, Preis in Cent, vorrätig — was das Modell NICHT sah, der Mensch beim Nachsehen aber braucht |
+| `retrieval.documents.N.document.metadata` | `via` (der Begriff der Kette, der diesen Kandidaten brachte), Marke, Kategoriepfad, Preis in Cent, vorrätig — was das Modell NICHT sah, der Mensch beim Nachsehen aber braucht |
 | `picknick.candidates` | Zahl der vorgelegten Kandidaten |
 | `picknick.rank_top` | bester Rang dieser Suche; **fehlt**, wenn es keinen Treffer gab |
-| `picknick.qty` | die Menge, die Stufe 1 zu diesem Begriff nannte |
+| `picknick.qty` | die Menge, die Stufe 1 zu dieser Zutat nannte |
+
+Die Dokumente stehen in der Reihenfolge, in der sie dem Modell vorlagen: erst
+die Treffer des genauesten Begriffs (unter sich nach Rang), dann die des
+nächsten. **Nicht global nach Score sortiert** — bm25 ist über Abfragen hinweg
+nicht geeicht, und ein seltener Begriff („Körnig") schöbe seine Treffer vor die
+des eigentlich gemeinten („Mais"). Der Score bleibt trotzdem an jedem Dokument:
+er sagt etwas INNERHALB eines Begriffs.
+
+`via` ist die Auskunft, ohne die eine vereinigte Kandidatenliste nicht mehr zu
+lesen wäre: „Gemüse-Auberginen-Masala" kam über „Auberginen", „Aubergine,
+1 Stk." über „Aubergine". Ohne das Feld stünden beide nebeneinander, und warum
+das eine vorlag, wäre nicht mehr zu sagen. Dasselbe Feld steht als
+`search_term` an der Vorschlagszeile — dort allerdings nur für den GEWÄHLTEN
+Kandidaten (Spec 8.1, WB-329).
 
 `document.content` ist bewusst die Zeile, die dem Modell vorlag, und nicht die
 ganze Produktzeile. Sonst zeigte der Trace eine Vorlage, die es nie gab, und

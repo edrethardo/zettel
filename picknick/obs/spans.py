@@ -4,9 +4,9 @@ Ein Chat-Zug ergibt genau diesen Baum:
 
 ```
 CHAIN       chat.turn        input: der Satz der Nutzerin
- ├ LLM      plan.extract     output: [{begriff, menge}, …]
- ├ RETRIEVER catalog.search  input: begriff -> n Kandidaten mit Score
- ├ RETRIEVER catalog.search  (ein Span je Suchbegriff)
+ ├ LLM      plan.extract     output: [{suchbegriffe, menge}, …]
+ ├ RETRIEVER catalog.search  input: die Begriffskette einer Zutat
+ ├ RETRIEVER catalog.search  (ein Span je ZUTAT, WB-340) -> n Kandidaten
  ├ LLM      plan.choose      Kandidaten -> gewählte product_ids
  └ output: die Vorschlagsliste
 ```
@@ -97,16 +97,32 @@ def chain(name: str, *, eingabe: str | None = None):
 
 
 @contextmanager
-def retriever(name: str, *, begriff: str):
-    """Ein `RETRIEVER`-Span je Suchbegriff (Spec 7.1).
+def retriever(name: str, *, suchbegriffe: list[str]):
+    """Ein `RETRIEVER`-Span je ZUTAT, mit ihrer ganzen Begriffskette (WB-340).
 
-    Ein Span je Begriff und nicht einer für alle Suchen: die Frage lautet
-    „hat die Suche für DIESEN Begriff etwas Brauchbares vorgelegt", und die
-    ist an einem Sammel-Span nicht mehr zu stellen.
+    Ein Span je Zutat und nicht einer für alle Suchen: die Frage lautet „hat
+    die Suche für DIESE Zutat etwas Brauchbares vorgelegt", und die ist an
+    einem Sammel-Span nicht mehr zu stellen. Aber auch nicht einer je BEGRIFF:
+    seit die Kandidaten mehrerer Begriffe zu einer Liste vereinigt werden, gäbe
+    es die vorgelegte Liste an keinem einzelnen Begriffs-Span mehr zu sehen —
+    der Baum zerfaserte, und die Vorlage, aus der Stufe 3 wirklich gewählt hat,
+    stünde nirgends.
+
+    Die Kette steht deshalb als `input.value` (JSON, in der Reihenfolge vom
+    genauesten zum allgemeinsten) und zusätzlich als `picknick.search_terms`
+    lesbar am Span; welcher Begriff einen einzelnen Kandidaten gebracht hat,
+    steht an dessen Dokument (`dokumente`).
     """
+    kette = list(suchbegriffe)
     with tracer().start_as_current_span(name) as span:
         span.set_attribute(KIND, RETRIEVER)
-        setze_eingabe(span, begriff)
+        setze_eingabe(span, kette)
+        setze(span, {
+            # Der genaueste Begriff steht für die Zutat. `weakest_term` und
+            # jede Ablesung „welche Zutat lief schlecht" hängen daran.
+            "picknick.term": kette[0] if kette else None,
+            "picknick.search_terms": ", ".join(kette) or None,
+        })
         yield span
 
 
@@ -159,12 +175,20 @@ def dokumente(span, treffer: list[dict]) -> None:
     besser" — als Score übergeben wäre das genau rückwärts lesbar, und ein
     Score, den man rückwärts lesen muss, wird irgendwann rückwärts gelesen.
 
+    Die Dokumente stehen in der Reihenfolge, in der sie dem Modell vorlagen —
+    seit WB-340 also nach der Begriffskette und nicht global nach Score. Der
+    Score gilt innerhalb eines Begriffs; über Begriffe hinweg sind bm25-Ränge
+    nicht vergleichbar (siehe `schwaechste_suche`).
+
     `document.content` ist das, was das Modell tatsächlich zu sehen bekam
     (vgl. `plan.kandidat_kurz`: Name, Gebinde, Preis) — nicht die ganze
     Produktzeile. Sonst zeigte der Trace eine Vorlage, die es nie gab, und
     ein Fehlgriff sähe unerklärlicher aus, als er ist. Was das Modell NICHT
     sah, aber der Mensch beim Nachsehen braucht, steht in
-    `document.metadata`.
+    `document.metadata` — seit WB-340 auch `via`: der Begriff der Kette, der
+    diesen Kandidaten gebracht hat. Ohne ihn ist an einer vereinigten Liste
+    nicht mehr abzulesen, WARUM ein Produkt vorlag, und genau das soll der
+    Span beantworten.
     """
     for i, p in enumerate(treffer):
         praefix = f"{DOKUMENTE}.{i}."
@@ -175,6 +199,7 @@ def dokumente(span, treffer: list[dict]) -> None:
             praefix + DocumentAttributes.DOCUMENT_SCORE:
                 None if rang is None else float(rang),
             praefix + DocumentAttributes.DOCUMENT_METADATA: _json({
+                "via": p.get("via"),
                 "marke": p.get("brand"),
                 "kategorie": kategorie(p),
                 "preis_cent": p.get("price_cents"),
@@ -188,7 +213,8 @@ def dokumente(span, treffer: list[dict]) -> None:
         "picknick.rank_top": rang_top(treffer),
     })
     setze_ausgabe(span, [{"id": p.get("id"), "name": p.get("name"),
-                          "rang": p.get("rang")} for p in treffer])
+                          "rang": p.get("rang"), "via": p.get("via")}
+                         for p in treffer])
 
 
 def inhalt(p: dict) -> str:

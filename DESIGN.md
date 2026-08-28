@@ -37,9 +37,13 @@ idempotentes SQL, das Web, Crawler und Evals sich teilen.
 Der Agent hat drei Stufen, und die mittlere ist kein Modellaufruf:
 
 1. `plan.extract` — das Modell macht aus dem Satz **nur Suchbegriffe mit
-   Mengen**. Es sieht keinen einzigen Katalogeintrag.
-2. `catalog.search` — **der Shop** sucht, je Begriff einmal, und legt die
-   Kandidaten vor.
+   Mengen**, je Zutat mehrere, vom genauesten zum allgemeinsten
+   („Auberginen", „Aubergine"). Es sieht keinen einzigen Katalogeintrag.
+2. `catalog.search` — **der Shop** sucht, jeden Begriff einmal, vereinigt die
+   Treffer nach Produkt-ID und legt die Kandidaten vor. Nicht „der erste
+   Begriff, der etwas findet, gewinnt": das ist gemessen schlechter, weil das
+   Fertiggericht „Gemüse-Auberginen-Masala" den höheren bm25-Rang hat als die
+   echte Aubergine. Vorgelegt wird beides; die Wahl gehört in Stufe 3.
 3. `plan.choose` — das Modell wählt **aus dieser Liste**. Nennt es eine ID,
    die nicht vorgelegt wurde, wird der Vorschlag verworfen und nicht
    repariert.

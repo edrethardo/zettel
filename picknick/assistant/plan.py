@@ -8,7 +8,8 @@ echte, bis jemand im Laden vor einem Regal steht.
 Deshalb sind die zwei Aufrufe hier streng getrennt:
 
 * `extract()` bekommt den Satz und darf **nur Suchbegriffe mit Mengen**
-  zurückgeben. Es sieht keinen einzigen Katalogeintrag, kann also keinen
+  zurückgeben — seit WB-340 mehrere je Zutat, vom genauesten zum
+  allgemeinsten. Es sieht keinen einzigen Katalogeintrag, kann also keinen
   nennen.
 * `choose()` bekommt die Kandidaten, die der Shop selbst gesucht hat, und darf
   **nur aus dieser Liste** wählen. Nennt es eine ID, die nicht vorgelegt
@@ -47,6 +48,43 @@ MAX_MENGE = 99
 #: Zahl später als Stellschraube gegen 20 vergleichen — sie steht deshalb hier
 #: als Vorgabe und nicht als Literal im Code.
 KANDIDATEN = 5
+
+#: Wie viele Suchbegriffe eine Zutat haben darf (WB-340). Drei, und das ist
+#: gemessen: der Prompt bittet um zwei bis drei, und **der letzte Begriff einer
+#: langen Kette entgleist**. Beobachtet wurden als dritter oder vierter Begriff
+#: „Körnig" (ein Adjektiv, das den „MIIL Körnigen Frischkäse" zu einer
+#: Mais-Zutat holt), „Papikra" und „Konzenzrat" (Tippfehler des Modells). Ein
+#: solcher Begriff findet immer irgendetwas und vergiftet die Vereinigung.
+#: Dagegen hilft dreierlei, und keines davon allein: eine kurze Kette, die
+#: Reihenfolge (die Treffer des letzten Begriffs stehen hinten,
+#: `catalog.search.suche_kette`) und die Obergrenze, die genau dort kürzt.
+MAX_KETTE = 3
+
+#: Kürzer als das ist kein Suchbegriff, sondern ein Bruchstück. Die Suche
+#: sucht über Wortanfänge: „Ka" fände einen guten Teil des Katalogs, und in
+#: einer Vereinigung wäre das nicht mehr zu erkennen. Ein echtes deutsches
+#: Lebensmittel mit zwei Buchstaben gibt es nicht — „Ei" ist der Grenzfall und
+#: würde hier wegfallen; er steht in jedem Rezept ohnehin als „Eier".
+MIN_BEGRIFF = 3
+
+#: Obergrenze der VEREINIGTEN Kandidaten je Zutat (WB-340).
+#:
+#: Drei Begriffe à `KANDIDATEN` Treffer sind 15 Kandidaten für eine Zutat; neun
+#: Zutaten wären 135. Gemessen an der Handprobe „alles für Gemüselasagne"
+#: (2026-08-28, echter Katalog): 9 Zutaten, 63 Kandidaten, 8.115 Zeichen
+#: Vorlage für Stufe 3 — rund 130 Zeichen je Kandidat, also gut 40 Token. In
+#: diesem Lauf hat die Grenze nicht gegriffen (die längste Kette kam auf genau
+#: 10); ohne sie wüchse dieselbe Anfrage bei drei ergiebigen Begriffen je Zutat
+#: auf gut das Anderthalbfache, und das für eine Wahl, bei der das Modell je
+#: Zutat ohnehin nur eine Zeile ausgibt.
+#:
+#: 10 = 2 × `KANDIDATEN` ist bewusst so gewählt: die Vereinigung darf doppelt
+#: so lang werden wie die alte Einzelsuche, und die Treffer der ERSTEN BEIDEN
+#: (genauesten) Begriffe passen immer vollständig hinein. Damit kann die
+#: Obergrenze nie etwas wegnehmen, was der Agent vor WB-340 gesehen hätte —
+#: sie kürzt nur den Zugewinn, und zwar am allgemeinen Ende der Kette, wo das
+#: Modell entgleist (siehe `MAX_KETTE`).
+MAX_KANDIDATEN = 2 * KANDIDATEN
 
 #: Temperatur 0: derselbe Satz soll dieselben Begriffe ergeben. Ein Agent, der
 #: bei jedem Aufruf etwas anderes tut, ist in Experiments (Spec 8.3) nicht
@@ -98,20 +136,35 @@ class PlanFehler(RuntimeError):
 
 SYSTEM_EXTRACT = """\
 Du hilfst beim Einkaufen. Du bekommst einen Satz und machst daraus eine Liste \
-von Suchbegriffen für einen Lebensmittel-Katalog.
+von Zutaten. Zu jeder Zutat gibst du MEHRERE Suchbegriffe für einen \
+Lebensmittel-Katalog an.
 
-Regeln:
+Regeln für die Suchbegriffe einer Zutat (zwei bis drei, vom genauesten zum \
+allgemeinsten):
+- Der erste Begriff ist der genaueste. Gehört die Form zur Zutat, gehört sie \
+dazu: „passierte Tomaten" ist etwas anderes als „Tomaten".
+- Danach wirst du allgemeiner. Der Katalog sucht über Wortanfänge, kurze \
+Begriffe finden mehr.
+- Zusammengesetzte Wörter nennst du zusätzlich als Grundwort: \
+„Knoblauchzehen" auch als „Knoblauch", „Lasagneplatten" auch als „Lasagne".
+- Gebräuchliche Synonyme nimmst du auf: „Möhren" auch als „Karotten", \
+„geriebener Käse" auch als „Reibekäse".
+- Ist unklar, wie das Produkt im Laden heisst, nennst du Einzahl UND Mehrzahl: \
+„Auberginen" und „Aubergine".
+- Jeder Begriff muss die Zutat für sich allein benennen. Kein Adjektiv ohne \
+sein Hauptwort („körnig" ist keine Zutat), keine Abkürzung, kein halbes Wort. \
+Fällt dir nur ein Begriff ein, nennst du nur einen.
+
+Regeln für die Liste:
 - Nur Suchbegriffe und Mengen. KEINE Produktnamen, KEINE Marken, KEINE Nummern.
-- Kurze, allgemeine Begriffe. Ein bis zwei Wörter. Der Katalog sucht über \
-Wortanfänge: „Tomaten" findet mehr als „passierte Tomaten aus der Dose".
 - Bei einem Gericht: die Zutaten, die man dafür kaufen muss. Was in jedem \
-Haushalt steht (Salz, Pfeffer, Wasser, Öl), lässt du weg.
+Haushalt steht (Salz, Pfeffer, Wasser, Öl, Gewürze), lässt du weg.
 - Die Menge ist die Anzahl Packungen, die gekauft werden soll. Im Zweifel 1.
 - Nichts erfinden, was im Satz nicht vorkommt oder zum Gericht nicht gehört.
 
 Antworte ausschliesslich als JSON:
-{"begriffe": [{"begriff": "Hackfleisch", "menge": 1}, \
-{"begriff": "passierte Tomaten", "menge": 2}]}"""
+{"begriffe": [{"suchbegriffe": ["Rinderhackfleisch", "Hackfleisch"], \
+"menge": 1}, {"suchbegriffe": ["passierte Tomaten", "Tomaten"], "menge": 2}]}"""
 
 SCHEMA_EXTRACT = {
     "type": "object",
@@ -122,11 +175,19 @@ SCHEMA_EXTRACT = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "begriff": {"type": "string"},
+                    # Die Kette, nicht ein Begriff (WB-340). `minItems: 1`,
+                    # weil eine Zutat ohne Begriff keine halbe Zutat ist,
+                    # sondern nichts.
+                    "suchbegriffe": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": MAX_KETTE,
+                        "items": {"type": "string"},
+                    },
                     "menge": {"type": "integer", "minimum": 1,
                               "maximum": MAX_MENGE},
                 },
-                "required": ["begriff", "menge"],
+                "required": ["suchbegriffe", "menge"],
                 "additionalProperties": False,
             },
         },
@@ -141,7 +202,15 @@ def extract(zugang, satz: str, *, guided: bool = True,
             temperatur: float = TEMPERATUR,
             max_tokens: int = MAX_TOKENS,
             denken: bool = DENKEN) -> list[dict]:
-    """Satz -> `[{"begriff": …, "menge": …}, …]`. Nie Produkt-IDs.
+    """Satz -> `[{"suchbegriffe": […], "menge": …}, …]`. Nie Produkt-IDs.
+
+    Je Zutat eine ganze KETTE von Suchbegriffen, vom genauesten zum
+    allgemeinsten (WB-340). Der Shop sucht anschliessend über alle und
+    vereinigt die Treffer (`catalog.search.suche_kette`) — ein einzelner
+    Begriff ist gleichzeitig zu streng („Lasagneplatten" findet nichts) und zu
+    grosszügig („Zwiebel" findet Zwiebelbrot), und keine Zeichenkettenregel
+    fängt das auf. Ein Sprachmodell ist hier der bessere Zerleger: es bietet
+    „Reibekäse" und „Karotten" ungefragt an.
 
     Wirft `PlanFehler`, wenn nichts Brauchbares zurückkam — kein JSON, ein
     leeres Array, ein falscher Typ. Der Aufrufer macht daraus eine Meldung im
@@ -152,30 +221,67 @@ def extract(zugang, satz: str, *, guided: bool = True,
         raise PlanFehler("Leere Anfrage — dazu gibt es nichts zu suchen.")
     antwort = _frage(zugang, system, text, SCHEMA_EXTRACT, "begriffe",
                      guided, temperatur, max_tokens, denken)
-    roh = _eintraege(antwort, ("begriffe", "suchbegriffe", "items", "liste"))
-    begriffe: list[dict] = []
+    roh = _eintraege(antwort, ("begriffe", "zutaten", "items", "liste"))
+    zutaten: list[dict] = []
     gesehen: set[str] = set()
     for eintrag in roh:
-        begriff = _text(eintrag, ("begriff", "suchbegriff", "term", "name",
-                                  "query"))
-        if not begriff:
+        kette = _kette(eintrag)
+        if not kette:
             # Eine Zeile ohne Begriff ist keine halbe Zutat, sondern Rauschen.
             continue
-        schluessel = begriff.casefold()
+        schluessel = kette[0].casefold()
         if schluessel in gesehen:
-            # Zweimal derselbe Begriff hiesse zweimal dieselbe Suche und zwei
+            # Zweimal dieselbe Zutat hiesse zweimal dieselbe Suche und zwei
             # gleiche Vorschlagszeilen. Die Menge steht in der ersten.
             continue
         gesehen.add(schluessel)
-        begriffe.append({"begriff": begriff,
-                         "menge": _menge(eintrag, ("menge", "anzahl", "qty",
-                                                   "quantity"))})
-        if len(begriffe) >= MAX_BEGRIFFE:
+        zutaten.append({"suchbegriffe": kette,
+                        "menge": _menge(eintrag, ("menge", "anzahl", "qty",
+                                                  "quantity"))})
+        if len(zutaten) >= MAX_BEGRIFFE:
             break
-    if not begriffe:
+    if not zutaten:
         raise PlanFehler(
             "Das Modell hat aus dem Satz keine Suchbegriffe gemacht.")
-    return begriffe
+    return zutaten
+
+
+def _kette(eintrag: dict) -> list[str]:
+    """Die Suchbegriffe einer Zutat, geordnet und entdoppelt.
+
+    Nachsichtig gegenüber der Verpackung wie der Rest dieses Moduls: eine
+    Liste unter `suchbegriffe`, eine unter `begriffe`, oder ein einzelner
+    `begriff` als Zeichenkette — alles wird zur Kette. Ein Modell, das nur
+    einen Begriff nennt, ist damit kein Fehlerfall, sondern eine Kette der
+    Länge eins.
+    """
+    roh = None
+    for name in ("suchbegriffe", "begriffe", "terms", "queries"):
+        wert = eintrag.get(name)
+        if isinstance(wert, (list, tuple)):
+            roh = wert
+            break
+    if roh is None:
+        einer = _text(eintrag, ("begriff", "suchbegriff", "term", "name",
+                                "query"))
+        roh = [einer] if einer else []
+    kette: list[str] = []
+    gesehen: set[str] = set()
+    for wert in roh:
+        if not isinstance(wert, str):
+            continue
+        begriff = " ".join(wert.split())
+        if len(begriff) < MIN_BEGRIFF or begriff.casefold() in gesehen:
+            # Derselbe Begriff zweimal wäre dieselbe Abfrage zweimal — und in
+            # der Vereinigung keine einzige zusätzliche Zeile. Ein Bruchstück
+            # („Ka") wäre schlimmer: es findet über die Präfixsuche halb so
+            # viel wie der Katalog hergibt (siehe MIN_BEGRIFF).
+            continue
+        gesehen.add(begriff.casefold())
+        kette.append(begriff)
+        if len(kette) >= MAX_KETTE:
+            break
+    return kette
 
 
 # --------------------------------------------------------------------------
@@ -239,6 +345,11 @@ def kandidat_kurz(p: dict) -> dict:
     Wahl selten entscheidend und blähen den Prompt so weit auf, dass bei
     zwanzig Kandidaten je Begriff (Spec 8.3) das Kontextfenster zum Thema
     wird.
+
+    Auch `via` — der Begriff, über den der Kandidat kam (WB-340) — bleibt
+    draussen. Es ist eine Auskunft für den Trace und für die Vorschlagszeile,
+    keine Entscheidungshilfe: das Modell soll das Produkt wählen, das gemeint
+    ist, und nicht das, dessen Suchbegriff am genauesten klang.
     """
     return {"id": int(p["id"]), "name": p.get("name") or "",
             "gebinde": p.get("unit_text") or "",
@@ -251,7 +362,10 @@ def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
     """Wählt je Begriff höchstens ein vorgelegtes Produkt.
 
     `aufgaben` ist `[{"begriff", "menge", "kandidaten": [Produkt, …]}, …]` —
-    genau das, was `catalog.search` zurückgegeben hat.
+    genau das, was `catalog.search` zurückgegeben hat. `begriff` ist seit
+    WB-340 der genaueste Begriff der Kette und steht für die ganze Zutat; die
+    Kandidaten sind die VEREINIGUNG über alle Begriffe der Kette und tragen
+    ihre Herkunft in `via`.
 
     Die Prüfung dahinter ist der Kern des Tickets: gewählt werden kann nur,
     was in `kandidaten` steht. Ein Treffer wird dem Begriff zugeordnet, unter

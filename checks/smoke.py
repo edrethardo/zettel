@@ -507,8 +507,10 @@ class _Box:
 
 
 def _extract(*paare) -> str:
-    return json.dumps({"begriffe": [{"begriff": b, "menge": m}
-                                    for b, m in paare]}, ensure_ascii=False)
+    """Stufe 1 wie seit WB-340: je Zutat eine KETTE von Suchbegriffen."""
+    return json.dumps(
+        {"begriffe": [{"suchbegriffe": list(b) if isinstance(b, tuple) else [b],
+                       "menge": m} for b, m in paare]}, ensure_ascii=False)
 
 
 def _choose(*tripel) -> str:
@@ -566,6 +568,27 @@ def checks_spans(b: Bericht, db_datei: Path) -> None:
         b.pruefe("die Span-ID des Zugs steht an der Chatzeile "
                  "(der Haken für die Annotation)",
                  lambda: _span_id_verankert(con, ergebnis, spans))
+
+        # WB-340: eine Zutat mit zwei Begriffen. „Salzbutter" findet genau ein
+        # Produkt, „Butter" die übrigen vier — gewählt wird eines, das NUR der
+        # zweite Begriff gebracht hat.
+        exporter.clear()
+        kette_agent = chatmodul.Chat(
+            _mock_zugang(_extract((("Salzbutter", "Butter"), 1)),
+                         _choose(("Salzbutter",
+                                  pid(con, "Kräuterbutter"), 1))),
+            wecker=_Box())
+        kette_ergebnis = kette_agent.turn(con, "Butter")
+        kette_spans = exporter.get_finished_spans()
+
+        b.pruefe("die Begriffskette wird ganz gesucht, die Treffer werden "
+                 "nach Produkt-ID vereinigt",
+                 lambda: _vereinigung(kette_spans))
+        b.pruefe("je Kandidat steht im Span, über welchen Begriff er kam",
+                 lambda: _herkunft(kette_spans))
+        b.pruefe("search_term nennt den Begriff, der den GEWÄHLTEN "
+                 "Kandidaten brachte",
+                 lambda: _herkunft_am_vorschlag(kette_ergebnis))
     finally:
         con.close()
         OpenAIInstrumentor().uninstrument()
@@ -607,8 +630,10 @@ def _tokenzahlen(spans) -> str:
 
 
 def _suche(spans, begriff: str):
+    # Gefunden wird über `picknick.term` — die Zutat. `input.value` ist seit
+    # WB-340 die ganze Begriffskette als JSON.
     treffer = [s for s in spans if s.name == "catalog.search"
-               and s.attributes[SpanAttributes.INPUT_VALUE] == begriff]
+               and s.attributes.get("picknick.term") == begriff]
     gleich(len(treffer), 1, f"catalog.search({begriff})")
     return treffer[0]
 
@@ -659,6 +684,41 @@ def _zusammenfassung(spans, ergebnis) -> str:
     gleich([v["name"] for v in ausgabe],
            [v["name"] for v in ergebnis.vorschlaege], "Vorschlagsliste")
     return "rejected=0, weakest_term='Zahnpasta'"
+
+
+def _vereinigung(spans) -> str:
+    """Ein Span je Zutat, mit der ganzen Kette — und entdoppelten Treffern."""
+    namen = [s.name for s in spans]
+    gleich(namen, ["plan.extract", "catalog.search", "plan.choose",
+                   "chat.turn"], "Spans (ein RETRIEVER je ZUTAT)")
+    a = _suche(spans, "Salzbutter").attributes
+    gleich(json.loads(a[SpanAttributes.INPUT_VALUE]), ["Salzbutter", "Butter"],
+           "input.value")
+    gleich(a["picknick.search_terms"], "Salzbutter, Butter", "search_terms")
+    n = a["picknick.candidates"]
+    ids = [a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_ID]
+           for i in range(n)]
+    gleich(n, 5, "Kandidaten der Vereinigung")
+    gleich(len(set(ids)), n, "verschiedene Produkt-IDs")
+    return f"{n} Kandidaten aus zwei Begriffen, keine Dopplung"
+
+
+def _herkunft(spans) -> str:
+    a = _suche(spans, "Salzbutter").attributes
+    n = a["picknick.candidates"]
+    via = [json.loads(a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_METADATA]
+                      )["via"] for i in range(n)]
+    gleich(sorted(via), ["Butter"] * 4 + ["Salzbutter"], "Herkunft je Dokument")
+    return "1 × via „Salzbutter“, 4 × via „Butter“"
+
+
+def _herkunft_am_vorschlag(ergebnis) -> str:
+    zeile = ergebnis.vorschlaege[0]
+    wahr("Kräuterbutter" in zeile["name"], f"Gewählt wurde {zeile['name']!r}.")
+    # Die Kräuterbutter kam über „Butter", nicht über die Zutat „Salzbutter" —
+    # daran hängt die Eval-Erklärung aus WB-329.
+    gleich(zeile["search_term"], "Butter", "search_term")
+    return "„Butter“ statt der Zutat „Salzbutter“"
 
 
 def _span_id_verankert(con, ergebnis, spans) -> str:

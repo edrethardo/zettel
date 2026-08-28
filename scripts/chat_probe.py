@@ -82,11 +82,13 @@ def euro(cents) -> str:
     return "—" if cents is None else f"{cents // 100},{cents % 100:02d} €"
 
 
-def zeige_stufen(zugang, con, satz: str, kandidaten: int, guided: bool) -> None:
+def zeige_stufen(zugang, con, satz: str, kandidaten: int, guided: bool,
+                 obergrenze: int) -> None:
     """Die drei Stufen einzeln — mit Zwischenergebnissen und Zeiten."""
     print("=" * 72)
     print(f"Satz: {satz!r}   (guided_json: {'an' if guided else 'aus'}, "
-          f"{kandidaten} Kandidaten je Begriff)")
+          f"{kandidaten} Kandidaten je Begriff, höchstens {obergrenze} "
+          f"je Zutat)")
     print("=" * 72)
 
     t0 = time.monotonic()
@@ -94,20 +96,42 @@ def zeige_stufen(zugang, con, satz: str, kandidaten: int, guided: bool) -> None:
     t1 = time.monotonic()
     print(f"\n[1] plan.extract — {t1 - t0:.1f} s")
     for b in begriffe:
-        print(f"    {b['menge']} × {b['begriff']}")
+        print(f"    {b['menge']} × " + " -> ".join(b["suchbegriffe"]))
 
     print("\n[2] catalog.search — der SHOP sucht, nicht das Modell")
+    print(f"    (jeder Begriff der Kette, Treffer vereinigt und nach "
+          f"Produkt-ID entdoppelt, höchstens {obergrenze} je Zutat)")
     aufgaben = []
     for b in begriffe:
-        treffer = search.search(con, b["begriff"], limit=kandidaten)
-        aufgaben.append({**b, "kandidaten": treffer})
+        kette = b["suchbegriffe"]
+        treffer = search.suche_kette(con, kette, limit=kandidaten,
+                                     obergrenze=obergrenze)
+        aufgaben.append({**b, "begriff": kette[0], "kandidaten": treffer})
+        einzeln = {k: len(search.search(con, k, limit=kandidaten))
+                   for k in kette}
+        gefunden = ", ".join(f"„{k}“ {n}" for k, n in einzeln.items())
         if not treffer:
-            print(f"    „{b['begriff']}“: KEIN TREFFER")
+            print(f"    {' -> '.join(kette)}: KEIN TREFFER ({gefunden})")
             continue
-        print(f"    „{b['begriff']}“:")
+        print(f"    {' -> '.join(kette)}: {len(treffer)} Kandidaten "
+              f"({gefunden}):")
+        # Was der Agent VOR WB-340 gesehen hätte: nur den ersten Begriff, und
+        # davon den besten Treffer. Nicht ganz dasselbe wie der alte Stand —
+        # der alte Prompt hätte auch andere Begriffe geliefert —, aber es
+        # zeigt, was die Vereinigung an dieser Zutat hinzufügt.
+        erster = search.search(con, kette[0], limit=kandidaten)
+        print(f"        [alt: nur „{kette[0]}“ -> "
+              + (erster[0]["name"] if erster else "KEIN TREFFER") + "]")
         for t in treffer:
-            print(f"        {t['id']:>7}  Rang {t['rang']:6.2f}  {t['name']} "
+            print(f"        {t['id']:>7}  Rang {t['rang']:6.2f}  "
+                  f"via „{t['via']}“  {t['name']} "
                   f"({t['unit_text'] or '?'}, {euro(t['price_cents'])})")
+
+    prompt = plan._choose_prompt(satz, [a for a in aufgaben
+                                        if a["kandidaten"]])
+    print(f"\n    Vorlage für Stufe 3: {len(prompt)} Zeichen, "
+          f"{sum(len(a['kandidaten']) for a in aufgaben)} Kandidaten "
+          f"(die Obergrenze je Zutat hält genau das klein).")
 
     t2 = time.monotonic()
     auswahl = plan.choose(zugang, satz, aufgaben, guided=guided)
@@ -116,7 +140,8 @@ def zeige_stufen(zugang, con, satz: str, kandidaten: int, guided: bool) -> None:
     for w in auswahl.gewaehlt:
         p = w["produkt"]
         print(f"    „{w['begriff']}“ -> {p['id']} {p['name']} "
-              f"({w['menge']} ×, {euro(p['price_cents'])})")
+              f"(via „{p.get('via')}“, {w['menge']} ×, "
+              f"{euro(p['price_cents'])})")
     for v in auswahl.verworfen:
         print(f"    VERWORFEN: {v}")
     ohne = [a["begriff"] for a in aufgaben
@@ -152,7 +177,10 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--db", default=db.DEFAULT_DB)
     p.add_argument("--satz", default=SATZ)
-    p.add_argument("--kandidaten", type=int, default=plan.KANDIDATEN)
+    p.add_argument("--kandidaten", type=int, default=plan.KANDIDATEN,
+                   help="Treffer je Suchbegriff")
+    p.add_argument("--obergrenze", type=int, default=plan.MAX_KANDIDATEN,
+                   help="Kandidaten je Zutat nach der Vereinigung (WB-340)")
     p.add_argument("--crawl", action="store_true",
                    help="vorher einen kleinen Katalog von knuspr.de holen")
     p.add_argument("--kein-guided", dest="guided", action="store_false",
@@ -174,9 +202,10 @@ def main() -> int:
 
     zugang = Modellzugang()
     print(f"Modell: {zugang.modell()}\n")
-    zeige_stufen(zugang, con, args.satz, args.kandidaten, args.guided)
+    zeige_stufen(zugang, con, args.satz, args.kandidaten, args.guided,
+                 args.obergrenze)
     agent = chatmodul.Chat(zugang, kandidaten=args.kandidaten,
-                           guided=args.guided)
+                           obergrenze=args.obergrenze, guided=args.guided)
     zeige_zug(agent, con, args.satz)
     con.close()
     return 0
