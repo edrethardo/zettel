@@ -1,0 +1,606 @@
+"""Tests für den Chat-Agenten (WB-327).
+
+**Kein Test geht ins Netz und keiner weckt die Box.** Das Modell ist hier ein
+`FakeLLM` mit fest vorgegebener Antwort; der Weckzustand wird untergeschoben.
+Der Katalog kommt wie in den anderen Tests aus der aufgezeichneten
+Knuspr-Antwort, ergänzt um die Handvoll Produkte, die eine Bolognese braucht.
+
+Der wichtigste Test des Tickets steht unter „Das Modell erfindet niemals
+Produkte": nennt Stufe 3 eine ID, die ihr nicht vorgelegt wurde, wird der
+Vorschlag verworfen — nicht repariert, nicht auf das nächstbeste Produkt
+gebogen. Es gibt ihn zweimal, denn es sind zwei verschiedene Fehler: eine ID,
+die es gar nicht gibt, und eine ID, die es gibt, die aber zu dieser Suche nie
+vorgelegt wurde. Die zweite ist die gefährlichere, weil sie in der Datenbank
+gültig aussieht.
+"""
+import json
+from pathlib import Path
+
+import pytest
+
+from picknick import db, orders, recipes
+from picknick.assistant import chat as chatmodul
+from picknick.assistant import plan, rezeptweg, vorschlaege
+from picknick.llm import wake
+from picknick.llm.client import Antwort, ModellNichtErreichbar
+from picknick.scrapers import knuspr
+
+FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
+MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
+
+
+# --------------------------------------------------------------------------
+# Doppelgänger
+
+class FakeLLM:
+    """Ein Modell mit fest vorgegebenen Antworten.
+
+    Kein Socket, kein Wecken — und es merkt sich, was es gefragt wurde. Beides
+    wird gebraucht: der Rezeptweg wird daran geprüft, dass hier NICHTS ankommt.
+    """
+
+    def __init__(self, *antworten):
+        self.antworten = list(antworten)
+        self.aufrufe = []
+
+    def modell(self, **_):
+        return "fake"
+
+    def chat(self, nachrichten, **weitere):
+        self.aufrufe.append({"nachrichten": list(nachrichten), **weitere})
+        if not self.antworten:
+            raise AssertionError(
+                f"Das Modell wurde {len(self.aufrufe)}-mal gefragt, es liegen "
+                "aber nicht so viele Antworten bereit.")
+        naechste = self.antworten.pop(0)
+        if isinstance(naechste, Exception):
+            raise naechste
+        return Antwort(content=naechste, reasoning_content=None,
+                       modell="fake", finish_reason="stop")
+
+
+class NieGefragt:
+    """Ein Modell, das jeden Aufruf als Testfehler meldet."""
+
+    def modell(self, **_):
+        raise AssertionError("Das Modell wurde nach dem Kürzel gefragt.")
+
+    def chat(self, *_, **__):
+        raise AssertionError(
+            "Das Modell wurde gefragt, obwohl kein Modell nötig war.")
+
+
+class Box:
+    """Der Weckzustand, ohne die echte Box anzufassen."""
+
+    def __init__(self, bedient=True, grund="Die Box bedient gerade nicht."):
+        self._bedient = bedient
+        self._grund = grund
+        self.gefragt = 0
+
+    def zustand(self):
+        self.gefragt += 1
+        if self._bedient:
+            return wake.Zustand(wake.BEDIENT, modell="fake")
+        return wake.Zustand(wake.NICHT_ERREICHBAR, grund=self._grund)
+
+
+class FakeHTTP:
+    def __init__(self, seiten):
+        self.seiten = list(seiten)
+
+    def get(self, url):
+        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
+
+
+class _Antwort:
+    def __init__(self, payload):
+        self._payload = payload
+        self.content = b""
+
+    def json(self):
+        return self._payload
+
+
+# --------------------------------------------------------------------------
+# Katalog
+
+ZUSATZ = [
+    ("hack1", "Rinderhackfleisch 500 g", "Fleisch", "Rind", "Hackfleisch"),
+    ("toma1", "Passierte Tomaten 500 g", "Konserven", "Tomaten", "Passata"),
+    ("nude1", "Spaghetti No. 5 500 g", "Nudeln", "Pasta", "Spaghetti"),
+    ("klo1", "Toilettenpapier 10 Rollen", "Haushalt", "Papier", "Toilettenpapier"),
+]
+
+
+def _pid(con, name):
+    return con.execute("SELECT id FROM product WHERE name = ?",
+                       (name,)).fetchone()["id"]
+
+
+def _vorgelegt(con, begriff, limit=plan.KANDIDATEN):
+    """Was die Suche zu diesem Begriff tatsächlich vorlegt.
+
+    Die Tests nehmen ihre ids daher und nicht aus einem festen Namen: welches
+    Produkt bei „Milch" oben steht, entscheidet bm25 — und wer das in einem
+    Test festschreibt, prüft irgendwann die Rangfolge statt der Zweistufigkeit.
+    """
+    from picknick.catalog import search
+    return search.search(con, begriff, limit=limit)
+
+
+@pytest.fixture
+def con():
+    c = db.connect(":memory:")
+    db.migrate(c)
+    knuspr.crawl(c, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
+                 ["milch"], pause_s=0)
+    for external_id, name, l1, l2, l3 in ZUSATZ:
+        c.execute(
+            "INSERT INTO product (source, external_id, name, price_cents,"
+            " unit_text, category_l1, category_l2, category_l3)"
+            " VALUES ('knuspr', ?, ?, 199, '1 Stk', ?, ?, ?)",
+            (external_id, name, l1, l2, l3))
+    c.commit()
+    yield c
+    c.close()
+
+
+def _extract(*paare):
+    return json.dumps({"begriffe": [{"begriff": b, "menge": m}
+                                    for b, m in paare]}, ensure_ascii=False)
+
+
+def _choose(*tripel):
+    return json.dumps({"auswahl": [{"begriff": b, "produkt_id": p, "menge": m}
+                                   for b, p, m in tripel]}, ensure_ascii=False)
+
+
+def _chat(con, *antworten, bedient=True, **weitere):
+    llm = FakeLLM(*antworten)
+    return chatmodul.Chat(llm, wecker=Box(bedient), **weitere), llm
+
+
+# --------------------------------------------------------------------------
+# Das Modell erfindet niemals Produkte — der Kern des Tickets
+
+def test_erfundene_produkt_id_wird_verworfen(con):
+    """Stufe 3 nennt eine ID, die es nicht gibt. Sie wird NICHT eingesetzt."""
+    agent, _ = _chat(con, _extract(("Milch", 1)),
+                     _choose(("Milch", 999999, 1)))
+    ergebnis = agent.turn(con, "Milch")
+
+    assert [v["product_id"] for v in ergebnis.vorschlaege] == [None]
+    assert ergebnis.verworfen and ergebnis.verworfen[0]["produkt_id"] == 999999
+    # Nicht repariert: es steht kein Produkt an der Zeile, obwohl die Suche
+    # welche vorgelegt hatte.
+    assert con.execute(
+        "SELECT count(*) AS n FROM chat_suggestion"
+        " WHERE product_id IS NOT NULL").fetchone()["n"] == 0
+
+
+def test_nicht_vorgelegte_aber_echte_id_wird_verworfen(con):
+    """Die gefährlichere Sorte: die ID existiert, war aber nicht im Angebot.
+
+    Sie würde durch jeden Fremdschlüssel kommen und in der Datenbank völlig
+    unauffällig aussehen. Verworfen wird sie trotzdem — vorgelegt war sie
+    nicht.
+    """
+    klopapier = _pid(con, "Toilettenpapier 10 Rollen")
+    agent, _ = _chat(con, _extract(("Milch", 1)),
+                     _choose(("Milch", klopapier, 1)))
+    ergebnis = agent.turn(con, "Milch")
+
+    assert [v["free_text"] for v in ergebnis.vorschlaege] == ["Milch"]
+    assert ergebnis.verworfen[0]["produkt_id"] == klopapier
+    assert ergebnis.verworfen[0]["grund"] == "nicht vorgelegt"
+
+
+def test_der_verworfene_begriff_geht_nicht_verloren(con):
+    """Nach dem Verwerfen bleibt der Begriff als Freitext stehen.
+
+    Sonst wäre die Halluzination doppelt teuer: falsches Produkt weg UND die
+    Zutat weg, ohne dass es jemand merkt.
+    """
+    agent, _ = _chat(con, _extract(("Milch", 2)), _choose(("Milch", 4242, 2)))
+    ergebnis = agent.turn(con, "Milch")
+    zeile = ergebnis.vorschlaege[0]
+    assert zeile["ist_freitext"] and zeile["name"] == "Milch"
+    assert zeile["qty"] == 2
+    assert zeile["search_term"] == "Milch"
+
+
+def test_stufe_eins_sieht_keinen_katalog(con):
+    """`plan.extract` bekommt den Satz und sonst nichts.
+
+    Diese Zusicherung ist der Grund, warum Stufe 1 keine ID nennen KANN. Sie
+    wird hier am tatsächlich verschickten Prompt geprüft und nicht an der
+    Absicht.
+    """
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose())
+    agent.turn(con, "Milch")
+    erster = " ".join(n["content"] for n in llm.aufrufe[0]["nachrichten"])
+    assert MILCH not in erster
+    assert str(_pid(con, MILCH)) not in erster
+
+
+def test_stufe_drei_bekommt_nur_die_kandidaten_der_suche(con):
+    """Und zwar so viele, wie `kandidaten` sagt (Spec 8.3: 5 gegen 20)."""
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose(), kandidaten=3)
+    agent.turn(con, "Milch")
+    zweiter = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    vorgelegt = json.loads(zweiter[zweiter.index("["):])
+    assert len(vorgelegt[0]["kandidaten"]) == 3
+
+
+# --------------------------------------------------------------------------
+# Rezepte kürzen Stufe 1 ab (Spec 6)
+
+def test_rezept_kuerzt_ab_und_fragt_kein_modell(con):
+    rid = recipes.anlegen(con, "Spaghetti Bolognese", zutaten=[
+        {"product_id": _pid(con, "Rinderhackfleisch 500 g")},
+        {"product_id": _pid(con, "Passierte Tomaten 500 g"), "qty": 2}])
+    agent = chatmodul.Chat(NieGefragt(), wecker=Box(bedient=True))
+    ergebnis = agent.turn(con, "mach mir Spaghetti Bolognese")
+
+    assert ergebnis.weg == chatmodul.WEG_REZEPT
+    assert [v["qty"] for v in ergebnis.vorschlaege] == [1, 2]
+    assert all(not v["ist_freitext"] for v in ergebnis.vorschlaege)
+    assert ergebnis.rezepte == ["Spaghetti Bolognese"]
+    assert recipes.rezept(con, rid)["n_zutaten"] == 2
+
+
+def test_rezept_geht_auch_wenn_die_box_schlaeft(con):
+    """Der Rezeptweg braucht kein Modell — also auch keine wache Box."""
+    recipes.anlegen(con, "Bolognese", zutaten=[
+        {"product_id": _pid(con, "Rinderhackfleisch 500 g")}])
+    box = Box(bedient=False)
+    agent = chatmodul.Chat(NieGefragt(), wecker=box)
+    ergebnis = agent.turn(con, "Bolognese bitte")
+    assert ergebnis.weg == chatmodul.WEG_REZEPT
+    assert box.gefragt == 0, "Der Rezeptweg hat die Box angefasst."
+
+
+def test_was_neben_dem_rezept_steht_wird_freitext(con):
+    """„… und Klopapier" darf nicht mit dem Rezepttreffer verschwinden."""
+    recipes.anlegen(con, "Spaghetti Bolognese", zutaten=[
+        {"product_id": _pid(con, "Rinderhackfleisch 500 g")}])
+    agent = chatmodul.Chat(NieGefragt(), wecker=Box())
+    ergebnis = agent.turn(con, "alles für Spaghetti Bolognese, und Klopapier")
+    freitexte = [v["name"] for v in ergebnis.vorschlaege if v["ist_freitext"]]
+    assert freitexte == ["Klopapier"]
+
+
+def test_rezept_ohne_zutaten_nimmt_den_modellweg(con):
+    """Ein leeres Rezept darf den Modellweg nicht abschneiden."""
+    recipes.anlegen(con, "Bolognese")
+    agent, llm = _chat(con, _extract(("Hackfleisch", 1)), _choose())
+    ergebnis = agent.turn(con, "Bolognese")
+    assert ergebnis.weg == chatmodul.WEG_LLM
+    assert llm.aufrufe
+
+
+def test_rezeptname_trifft_nicht_mitten_im_wort(con):
+    recipes.anlegen(con, "Ei", zutaten=[{"free_text": "Eier"}])
+    assert not rezeptweg.erkenne(con, "Eiscreme und Einkaufsliste")
+    assert rezeptweg.erkenne(con, "ein Ei bitte")
+
+
+# --------------------------------------------------------------------------
+# Kein Begriff verschwindet still
+
+def test_begriff_ohne_katalogtreffer_wird_freitext(con):
+    """Die Suche kennt nur Wortanfänge (WB-322) — sie wird Lücken haben.
+
+    Ein Begriff, zu dem nichts gefunden wird, muss als Freitext sichtbar
+    bleiben. Sonst fehlt im Laden etwas, ohne dass es jemand gemerkt hat.
+    """
+    agent, _ = _chat(con, _extract(("Zahnstocher", 1), ("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Zahnstocher und Landmilch")
+
+    nach_begriff = {v["search_term"]: v for v in ergebnis.vorschlaege}
+    assert nach_begriff["Zahnstocher"]["ist_freitext"]
+    assert nach_begriff["Zahnstocher"]["free_text"] == "Zahnstocher"
+    assert nach_begriff["Landmilch"]["product_id"] == _pid(con, MILCH)
+
+
+def test_begriff_ohne_wahl_wird_freitext(con):
+    """Das Modell lässt einen Begriff aus, obwohl es Kandidaten gab."""
+    agent, _ = _chat(con, _extract(("Milch", 1)), _choose())
+    ergebnis = agent.turn(con, "Milch")
+    assert ergebnis.vorschlaege[0]["ist_freitext"]
+
+
+def test_search_term_und_rang_stehen_an_der_zeile(con):
+    """Beides gehört an die Zeile, nicht nur in den Trace (Spec 8.1)."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Landmilch")
+    row = con.execute("SELECT search_term, rank, decision FROM chat_suggestion"
+                      ).fetchone()
+    assert row["search_term"] == "Landmilch"
+    assert row["rank"] is not None and row["rank"] > 0
+    assert row["decision"] == "offen"
+    assert ergebnis.vorschlaege[0]["rang"] == pytest.approx(row["rank"])
+
+
+def test_rang_kommt_aus_der_suche_und_nicht_vom_modell(con):
+    erwartet = {t["id"]: t["rang"] for t in _vorgelegt(con, "Landmilch")}
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    zeile = agent.turn(con, "Landmilch").vorschlaege[0]
+    assert zeile["rang"] == pytest.approx(erwartet[zeile["product_id"]])
+
+
+# --------------------------------------------------------------------------
+# Kaputte Modellantworten brechen den Request nicht
+
+@pytest.mark.parametrize("antwort", [
+    "das ist gar kein JSON",
+    "",
+    json.dumps({"begriffe": []}),
+    json.dumps({"begriffe": "Milch"}),
+    json.dumps([1, 2, 3]),
+    "```json\n{\"begriffe\": [{\"begriff\": null}]}\n```",
+])
+def test_kaputte_stufe_eins_bricht_nichts(con, antwort):
+    agent, _ = _chat(con, antwort)
+    ergebnis = agent.turn(con, "irgendwas")
+    assert ergebnis.vorschlaege == []
+    assert "Suchbegriffe" in ergebnis.meldung
+    # Der Zug ist trotzdem im Verlauf: die Nutzerin sieht ihre Frage und die
+    # Begründung, statt auf eine Fehlerseite zu schauen.
+    assert len(vorschlaege.verlauf(con, ergebnis.order_id)) == 2
+
+
+@pytest.mark.parametrize("antwort", [
+    "kein JSON weit und breit",
+    json.dumps({"auswahl": {"produkt_id": 1}}),
+])
+def test_kaputte_stufe_drei_macht_alles_zu_freitext(con, antwort):
+    agent, _ = _chat(con, _extract(("Milch", 1), ("Zahnstocher", 1)), antwort)
+    ergebnis = agent.turn(con, "Milch und Zahnstocher")
+    assert [v["ist_freitext"] for v in ergebnis.vorschlaege] == [True, True]
+    assert "Freitext" in ergebnis.meldung
+
+
+def test_leere_auswahl_ist_kein_fehler(con):
+    """`{"auswahl": []}` heisst „nichts davon passt" und ist eine Aussage."""
+    agent, _ = _chat(con, _extract(("Milch", 1)), json.dumps({"auswahl": []}))
+    ergebnis = agent.turn(con, "Milch")
+    assert ergebnis.vorschlaege[0]["ist_freitext"]
+
+
+def test_codefence_und_vorrede_werden_ausgepackt(con):
+    agent, _ = _chat(
+        con,
+        "Hier ist die Liste:\n```json\n" + _extract(("Landmilch", 1)) + "\n```",
+        "```\n" + _choose(("Landmilch", _pid(con, MILCH), 1)) + "\n```")
+    ergebnis = agent.turn(con, "Landmilch")
+    assert ergebnis.vorschlaege[0]["product_id"] == _pid(con, MILCH)
+
+
+def test_leerer_satz_wird_abgelehnt(con):
+    agent, _ = _chat(con)
+    with pytest.raises(chatmodul.ChatFehler):
+        agent.turn(con, "   ")
+
+
+# --------------------------------------------------------------------------
+# Fällt das Modell aus, ist nur der Chat betroffen (Spec 11)
+
+def test_schlafende_box_wirft_und_schreibt_nichts(con):
+    agent, _ = _chat(con, bedient=False)
+    with pytest.raises(chatmodul.ChatNichtVerfuegbar) as e:
+        agent.turn(con, "Milch")
+    assert e.value.zustand.zustand == wake.NICHT_ERREICHBAR
+    # Kein halber Zug in der Datenbank.
+    assert con.execute("SELECT count(*) AS n FROM chat_message"
+                       ).fetchone()["n"] == 0
+
+
+def test_abbruch_mitten_im_zug_wird_zu_chatfehler(con):
+    """Bricht die Verbindung zwischen Stufe 1 und 3 weg, ist das kein 500er."""
+    agent, _ = _chat(con, _extract(("Milch", 1)),
+                     ModellNichtErreichbar("weg"))
+    with pytest.raises(chatmodul.ChatNichtVerfuegbar):
+        agent.turn(con, "Milch")
+
+
+# --------------------------------------------------------------------------
+# Nichts landet ungefragt im Warenkorb — und `decision` ist das Label
+
+def test_vorschlag_liegt_nicht_im_korb(con):
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    agent.turn(con, "Landmilch")
+    assert orders.inhalt(con) == []
+
+
+def test_bestaetigen_setzt_kept_und_legt_ein(con):
+    agent, _ = _chat(con, _extract(("Landmilch", 2)),
+                     _choose(("Landmilch", _pid(con, MILCH), 2)))
+    ergebnis = agent.turn(con, "Landmilch")
+    v = vorschlaege.entscheiden(con, ergebnis.vorschlaege[0]["id"], "kept")
+
+    assert v["decision"] == "kept" and v["decided_at"]
+    zeilen = orders.inhalt(con)
+    assert [(z["product_id"], z["qty"]) for z in zeilen] == [(_pid(con, MILCH), 2)]
+
+
+def test_verwerfen_setzt_removed_und_legt_nichts_ein(con):
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Landmilch")
+    v = vorschlaege.entscheiden(con, ergebnis.vorschlaege[0]["id"], "removed")
+    assert v["decision"] == "removed" and v["decided_at"]
+    assert orders.inhalt(con) == []
+
+
+def test_zweimal_ja_legt_nur_einmal_ein(con):
+    """Ein doppelter Tipp auf dem Handy darf die Menge nicht verdoppeln."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    sid = agent.turn(con, "Landmilch").vorschlaege[0]["id"]
+    vorschlaege.entscheiden(con, sid, "kept")
+    vorschlaege.entscheiden(con, sid, "kept")
+    assert [z["qty"] for z in orders.inhalt(con)] == [1]
+
+
+def test_freitext_vorschlag_wird_zum_freitext_posten(con):
+    agent, _ = _chat(con, _extract(("Zahnstocher", 1)), _choose())
+    sid = agent.turn(con, "Zahnstocher").vorschlaege[0]["id"]
+    vorschlaege.entscheiden(con, sid, "kept")
+    zeile = orders.inhalt(con)[0]
+    assert zeile["ist_freitext"] and zeile["name"] == "Zahnstocher"
+
+
+def test_alle_entscheiden_laesst_bereits_entschiedene_stehen(con):
+    agent, _ = _chat(con, _extract(("Landmilch", 1), ("Zahnstocher", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Landmilch und Zahnstocher")
+    vorschlaege.entscheiden(con, ergebnis.vorschlaege[0]["id"], "removed")
+    danach = vorschlaege.alle_entscheiden(con, ergebnis.chat_message_id, "kept")
+    assert [v["decision"] for v in danach] == ["removed", "kept"]
+
+
+def test_quote_zaehlt_offene_nicht_mit(con):
+    """Spec 8.1: was nie entschieden wurde, ist kein Fehler des Modells."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1), ("Zahnstocher", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Landmilch und Zahnstocher")
+    assert vorschlaege.quote(con, ergebnis.chat_message_id)["quote"] is None
+    vorschlaege.entscheiden(con, ergebnis.vorschlaege[0]["id"], "kept")
+    q = vorschlaege.quote(con, ergebnis.chat_message_id)
+    assert (q["quote"], q["offen"]) == (1.0, 1)
+
+
+def test_unbekannte_entscheidung_wird_abgelehnt(con):
+    agent, _ = _chat(con, _extract(("Milch", 1)), _choose())
+    sid = agent.turn(con, "Milch").vorschlaege[0]["id"]
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.entscheiden(con, sid, "vielleicht")
+
+
+def test_chat_haengt_am_warenkorb(con):
+    """Der Chat gehört zur Bestellung und wandert beim Abschicken mit."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    ergebnis = agent.turn(con, "Landmilch")
+    vorschlaege.entscheiden(con, ergebnis.vorschlaege[0]["id"], "kept")
+    bestellung = orders.abschicken(con)
+    assert bestellung["id"] == ergebnis.order_id
+    assert len(vorschlaege.verlauf(con, bestellung["id"])) == 2
+
+
+# --------------------------------------------------------------------------
+# Kleinigkeiten in `plan`, die stillschweigend schiefgehen könnten
+
+def test_doppelte_begriffe_werden_einmal_gesucht(con):
+    agent, _ = _chat(con, _extract(("Milch", 1), ("milch", 3)), _choose())
+    ergebnis = agent.turn(con, "Milch und milch")
+    assert len(ergebnis.begriffe) == 1
+
+
+def test_menge_wird_gedeckelt_und_nie_null(con):
+    llm = FakeLLM(json.dumps({"begriffe": [
+        {"begriff": "Milch", "menge": 0},
+        {"begriff": "Tomaten", "menge": 10 ** 6},
+        {"begriff": "Nudeln", "menge": "zwei"}]}))
+    assert [b["menge"] for b in plan.extract(llm, "egal")] == [
+        1, plan.MAX_MENGE, 1]
+
+
+def test_boolesches_true_ist_keine_produkt_id():
+    """`int(True)` ist 1 — und 1 ist irgendwo eine gültige Produkt-id."""
+    assert plan._id({"produkt_id": True}, ("produkt_id",)) is None
+
+
+def test_zweites_produkt_fuer_denselben_begriff_faellt_weg(con):
+    erste, zweite = [t["id"] for t in _vorgelegt(con, "Milch")][:2]
+    agent, _ = _chat(con, _extract(("Milch", 1)),
+                     _choose(("Milch", erste, 1), ("Milch", zweite, 1)))
+    ergebnis = agent.turn(con, "Milch")
+    assert len(ergebnis.vorschlaege) == 1
+    assert ergebnis.verworfen[0]["grund"].startswith("zweites Produkt")
+
+
+def test_ohne_kandidaten_wird_stufe_drei_gar_nicht_gefragt(con):
+    """Ein Modell, dem nichts vorgelegt wird, kann nur erfinden."""
+    llm = FakeLLM(_extract(("Zahnstocher", 1)))
+    agent = chatmodul.Chat(llm, wecker=Box())
+    agent.turn(con, "Zahnstocher")
+    assert len(llm.aufrufe) == 1
+
+
+def test_guided_json_geht_als_extra_body_mit(con):
+    """Guided Decoding erzwingt die FORM. Die Prüfung bleibt trotzdem im Code."""
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose())
+    agent.turn(con, "Milch")
+    assert llm.aufrufe[0]["extra_body"]["guided_json"] == plan.SCHEMA_EXTRACT
+    assert llm.aufrufe[1]["extra_body"]["guided_json"] == plan.SCHEMA_CHOOSE
+
+
+def test_ohne_guided_geht_kein_guided_json_mit(con):
+    """Ein anderer Server kennt `guided_json` womöglich nicht (Spec 8.3)."""
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose(), guided=False)
+    agent.turn(con, "Milch")
+    assert "guided_json" not in llm.aufrufe[0].get("extra_body", {})
+
+
+def test_denken_ist_aus_und_zwar_je_anfrage(con):
+    """Denk-Token zählen gegen `max_tokens` und schneiden das JSON ab.
+
+    Gemessen am 2026-08-28 gegen die echte Box: mit Denken kam
+    `'{"begriffe": [{"begriff": "Spaghetti", "menge": 1'` zurück — gültiges
+    Format, halbe Antwort. Abgeschaltet wird es je ANFRAGE; der Server bleibt
+    unverändert, alles andere auf der Box denkt weiter.
+    """
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose())
+    agent.turn(con, "Milch")
+    for aufruf in llm.aufrufe:
+        assert aufruf["extra_body"]["chat_template_kwargs"] == {
+            "enable_thinking": False}
+
+
+def test_denken_laesst_sich_wieder_einschalten(con):
+    agent, llm = _chat(con, _extract(("Milch", 1)), _choose(), denken=True)
+    agent.turn(con, "Milch")
+    assert "chat_template_kwargs" not in llm.aufrufe[0]["extra_body"]
+
+
+def test_abgeschnittene_antwort_wird_als_solche_gemeldet(con):
+    """`finish_reason=length` ist kein Formatfehler, sondern ein Budgetfehler."""
+    class Abgeschnitten:
+        def modell(self, **_):
+            return "fake"
+
+        def chat(self, nachrichten, **weitere):
+            return Antwort(content='{"begriffe": [{"begriff": "Spa',
+                           reasoning_content="ich denke nach …",
+                           modell="fake", finish_reason="length")
+
+    with pytest.raises(plan.PlanFehler) as e:
+        plan.extract(Abgeschnitten(), "Spaghetti")
+    assert "abgeschnitten" in str(e.value)
+
+
+# --------------------------------------------------------------------------
+# Der Haken für WB-328: die Span-ID am Zug
+
+def test_span_id_landet_an_beiden_zeilen(con):
+    """Beide Zeilen des Zuges tragen denselben Span (Spec 7.1)."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)), _choose())
+    ergebnis = agent.turn(con, "Landmilch", span_id="abc123")
+    spans = [m["span_id"] for m in vorschlaege.verlauf(con, ergebnis.order_id)]
+    assert spans == ["abc123", "abc123"]
+
+
+def test_span_id_laesst_sich_nachtragen(con):
+    """Der Span endet erst, wenn der Zug fertig ist — also wird er nachgetragen."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)), _choose())
+    ergebnis = agent.turn(con, "Landmilch")
+    vorschlaege.span_setzen(con, ergebnis.chat_message_id, "spaeter")
+    assert con.execute("SELECT span_id FROM chat_message WHERE id = ?",
+                       (ergebnis.chat_message_id,)).fetchone()["span_id"] == "spaeter"

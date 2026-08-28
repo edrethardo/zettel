@@ -27,6 +27,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from picknick import db, orders, recipes
+from picknick.assistant import chat as chatmodul
+from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
 
 HIER = Path(__file__).parent
@@ -349,12 +351,20 @@ async def _lifespan(app: FastAPI):
 
 
 def create_app(db_path: str | Path | None = None,
-               image_dir: str | Path | None = None) -> FastAPI:
-    """Baut die Anwendung. Pfade als Argument, damit Tests sie umlenken können."""
+               image_dir: str | Path | None = None,
+               chat=None) -> FastAPI:
+    """Baut die Anwendung. Pfade als Argument, damit Tests sie umlenken können.
+
+    `chat` ist der Agent aus Spec 6. Er wird hier nur GEBAUT und nicht
+    benutzt: `Chat()` legt weder eine Verbindung an noch fragt es die Box.
+    Tests schieben einen mit Fake-LLM unter — kein Test darf ins Netz oder die
+    Box wecken (Spec 13).
+    """
     app = FastAPI(title="Picknick", lifespan=_lifespan)
     app.state.db_path = str(db_path or os.environ.get(ENV_DB) or db.DEFAULT_DB)
     app.state.image_dir = Path(image_dir or os.environ.get(ENV_IMAGE_DIR)
                                or DEFAULT_IMAGE_DIR)
+    app.state.chat = chat if chat is not None else chatmodul.Chat()
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR))
@@ -432,7 +442,8 @@ def create_app(db_path: str | Path | None = None,
             # Nutzerin sähe nur, dass nichts passiert ist.
             return vorlagen.TemplateResponse(
                 request, "warenkorb.html",
-                {**_rahmen(request, c), **_korb_kontext(c, fehler)})
+                {**_rahmen(request, c), **_korb_kontext(c, fehler),
+                 **_chat_kontext(c)})
         return RedirectResponse("/warenkorb", status_code=303)
 
     @app.get("/katalog")
@@ -500,7 +511,7 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "warenkorb.html", {
-                **_rahmen(request, c), **_korb_kontext(c)})
+                **_rahmen(request, c), **_korb_kontext(c), **_chat_kontext(c)})
         finally:
             c.close()
 
@@ -579,6 +590,104 @@ def create_app(db_path: str | Path | None = None,
                 # HX-Redirect lässt den Browser richtig navigieren.
                 return Response(status_code=204, headers={"HX-Redirect": ziel})
             return RedirectResponse(ziel, status_code=303)
+        finally:
+            c.close()
+
+    # ----------------------------------------------------------------------
+    # Chat (Spec 6 und 9)
+    #
+    # Der Chat gehört in den Warenkorb und bekommt keinen eigenen Ort. Zwei
+    # Dinge sind an dieser Stelle wichtiger als sie aussehen:
+    #
+    # * **Das Rendern der Seite fragt die vLLM-Box NICHT.** Der Zustand wird
+    #   nachgeladen (`/warenkorb/chat/zustand`). Sonst hinge jeder Blick in
+    #   den Warenkorb bis zu drei Sekunden am health-Timeout — und jeder
+    #   Testlauf ginge ins Netz.
+    # * **Ein Vorschlag ist noch kein Posten.** Erst „Ja" legt ein. Deshalb
+    #   antwortet die Entscheidung mit Chat UND Korb (`_chat_antwort`), sonst
+    #   sähe die Nutzerin ihre Zeile im Korb erst nach dem nächsten Laden.
+
+    def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
+                      zustand=None, satz: str = "") -> dict:
+        """Alles, was `_chat.html` braucht — für Vollseite und Bruchstück."""
+        # Nur nachsehen, nicht anlegen: ein Blick in den Warenkorb darf keine
+        # Bestellung erzeugen. Angelegt wird er erst im Chat-Zug selbst.
+        korb_id = orders.warenkorb_id(c)
+        verlauf = vorschlagsliste.verlauf(c, korb_id) if korb_id else []
+        for zeile in verlauf:
+            _posten_mit_bild(zeile["vorschlaege"], app.state.image_dir)
+        return {"verlauf": verlauf, "chat_fehler": fehler,
+                "chat_zustand": zustand, "satz": satz}
+
+    def _chat_antwort(request: Request, c: sqlite3.Connection,
+                      fehler: str | None = None, zustand=None,
+                      satz: str = ""):
+        """HTMX bekommt Chat + Korb, ein Formular ohne JavaScript die Seite."""
+        kontext = {**_chat_kontext(c, fehler, zustand, satz),
+                   **_korb_kontext(c)}
+        if ist_htmx(request):
+            return vorlagen.TemplateResponse(request, "_chat_antwort.html",
+                                             kontext)
+        return vorlagen.TemplateResponse(
+            request, "warenkorb.html", {**_rahmen(request, c), **kontext})
+
+    @app.get("/warenkorb/chat/zustand")
+    def chat_zustand(request: Request):
+        """Bedient die Box? Nachgeladen, damit der Korb sofort da ist.
+
+        Dieser Aufruf ist es, der `wake-vllm` anstösst (Spec 6) — nicht
+        blockierend, und die Antwort trägt den Zähler „noch ~N s".
+        """
+        return vorlagen.TemplateResponse(request, "_chatzustand.html",
+                                         {"chat_zustand": app.state.chat.zustand()})
+
+    @app.post("/warenkorb/chat")
+    async def chat_senden(request: Request):
+        """Ein Chat-Zug. Legt NICHTS in den Korb — nur Vorschläge (Spec 6)."""
+        werte = await eingaben(request)
+        satz = werte.get("satz", "")
+        c = con()
+        try:
+            try:
+                app.state.chat.turn(c, satz)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                # Nur der Chat ist betroffen (Spec 11). Der Satz bleibt im
+                # Feld stehen, damit er nicht noch einmal getippt werden muss.
+                return _chat_antwort(request, c, zustand=e.zustand, satz=satz)
+            except chatmodul.ChatFehler as e:
+                return _chat_antwort(request, c, fehler=str(e), satz=satz)
+            return _chat_antwort(request, c)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/vorschlag/{sid}/entscheiden")
+    async def vorschlag_entscheiden(request: Request, sid: int):
+        """„Ja" oder „Nein" zu einer Zeile — das Eval-Label (Spec 8.1)."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                vorschlagsliste.entscheiden(c, sid, werte.get("decision", ""))
+            except vorschlagsliste.VorschlagFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/chat/{mid}/alle")
+    async def vorschlaege_alle(request: Request, mid: int):
+        """Sammelknopf. Rührt nur an, was noch offen ist."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                vorschlagsliste.alle_entscheiden(c, mid,
+                                                 werte.get("decision", ""))
+            except vorschlagsliste.VorschlagFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
         finally:
             c.close()
 

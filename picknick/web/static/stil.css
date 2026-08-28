@@ -227,3 +227,49 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
   flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 10px;
   font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
 }
+
+/* Chat (WB-327) ------------------------------------------------------------
+   Er steht im Warenkorb und nicht auf einer eigenen Seite (Spec 9). Eine
+   Vorschlagszeile sieht bewusst aus wie eine Korbzeile — es ist dieselbe
+   Sache, nur noch nicht bestätigt. Der Unterschied steckt in den beiden
+   Knöpfen rechts und in der Herkunftszeile darunter. */
+
+.chat { margin: 24px 0 0; border-top: 1px solid var(--linie);
+        padding-top: var(--rand); }
+.chat h2 { font-size: 19px; margin: 0 0 8px; }
+.chatband { border: 1px solid #e6cf8a; border-radius: 8px;
+            margin-bottom: var(--rand); }
+.chatband .fussnote { display: block; }
+
+.chatzeile { margin: 8px 0; padding: 8px 10px; border-radius: 10px; }
+.chatzeile.ich { background: #eef4ff; }
+.chatzeile.agent { background: #f4f4f4; color: #333; font-size: 15px; }
+
+.vorschlaege { list-style: none; margin: 0 0 8px; padding: 0; }
+/* Woraus die Zeile entstanden ist: Suchbegriff und Rang der Suche. Das steht
+   sichtbar an der Zeile und nicht nur im Trace — es ist die Erklärung zur
+   Entscheidung, und die Entscheidung ist das Eval-Label (Spec 8.1). */
+.vorschlag .woher { font-size: 13px; color: var(--gedaempft); }
+.vorschlag.entschieden { opacity: 0.65; }
+.vorschlag .stellen { align-items: center; }
+.mini.ja { font-weight: 700; }
+.mini.nein { color: #8c1414; }
+.marke { font-size: 13px; color: var(--gedaempft); white-space: nowrap; }
+
+.sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
+
+.chatform { display: flex; gap: 8px; margin-top: var(--rand); }
+.chatform input {
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}
+.chatform button {
+  min-height: var(--tap); padding: 0 var(--rand); font-size: 17px;
+  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+}
+
+/* Ein 27B-Modell antwortet in Sekunden, nicht in Millisekunden. Ohne
+   sichtbares Warten drückt man ein zweites Mal — htmx blendet dieses Stück
+   für die Dauer der Anfrage ein. */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }

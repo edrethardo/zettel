@@ -6,4 +6,11 @@
    „seinem" Korb sucht und ihn nicht findet. #}
 <p class="fussnote">Ein gemeinsamer Korb — was hier steht, sieht auch der andere.</p>
 <div id="korb">{% include "_korb.html" %}</div>
+
+{# Der Chat gehört hierher und nicht auf eine eigene Seite (Spec 9). Der
+   Zustand der Box wird nachgeladen: das Rendern dieser Seite fragt die vLLM-Box
+   nicht an — sonst wartete jeder Blick in den Korb am health-Timeout. #}
+<div id="chat-zustand" hx-get="/warenkorb/chat/zustand" hx-trigger="load"
+     hx-swap="outerHTML"></div>
+{% include "_chat.html" %}
 {% endblock %}

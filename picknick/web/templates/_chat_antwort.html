@@ -1,0 +1,11 @@
+{# Die Antwort auf einen Chat-Zug oder eine Entscheidung.
+
+   Sie trägt drei Dinge auf einmal, weil ein „Ja" beides ändert: den Chat
+   (die Zeile ist entschieden) und den Warenkorb (die Zeile liegt drin).
+   Ohne den Nachtrag des Korbs sähe die Nutzerin ihren Posten erst nach dem
+   nächsten Laden — und hielte den Knopf für kaputt. #}
+{% set oob = true %}
+{% include "_chat.html" %}
+<div id="korb" hx-swap-oob="true">{% include "_korb.html" %}</div>
+<span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
+{% if chat_zustand %}{% include "_chatzustand.html" %}{% endif %}

@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 *.db
 data/images/
+*.db-wal
+*.db-shm

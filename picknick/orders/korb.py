@@ -62,6 +62,16 @@ def warenkorb(con: sqlite3.Connection) -> int:
         return vorhanden
 
 
+def warenkorb_id(con: sqlite3.Connection) -> int | None:
+    """Die id des Warenkorbs, ohne einen anzulegen — `None`, wenn keiner steht.
+
+    Das Gegenstück zu `warenkorb()`, aus demselben Grund wie `korb_anzahl()`:
+    wer nur nachsieht (der Chatverlauf im Warenkorb, WB-327), soll keine
+    Bestellung in die Datenbank schreiben.
+    """
+    return _draft_id(con)
+
+
 def korb_anzahl(con: sqlite3.Connection) -> int:
     """Wie viele Zeilen im Warenkorb liegen — ohne einen anzulegen.
 

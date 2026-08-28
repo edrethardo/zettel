@@ -1,0 +1,31 @@
+{# Der Zustand der vLLM-Box (Spec 6 und 11).
+
+   Dieses Stück wird NACHGELADEN und nicht mit der Seite gerendert: `health()`
+   darf bis zu drei Sekunden brauchen, und solange soll niemand auf seinen
+   Warenkorb warten. Der Aufruf, der es holt, ist zugleich der, der `wake-vllm`
+   anstösst — deshalb steht er nicht in jeder Ansicht, sondern nur dort, wo
+   jemand den Chat vor sich hat.
+
+   Ist die Box am Aufwachen, holt sich dieses Stück alle fünf Sekunden selbst
+   neu; der Zähler läuft dabei herunter. Bedient sie, hört das Nachfragen auf. #}
+<div id="chat-zustand" {% if oob %}hx-swap-oob="true"{% endif %}
+     {% if chat_zustand and chat_zustand.zustand == "wacht_auf" %}
+     hx-get="/warenkorb/chat/zustand" hx-trigger="load delay:5s"
+     hx-swap="outerHTML"
+     {% endif %}>
+{% if chat_zustand and not chat_zustand.bedient %}
+  <p class="band chatband" role="status">
+    {% if chat_zustand.zustand == "wacht_auf" %}
+      Modell wacht auf …
+      {%- if chat_zustand.rest_s is not none %} noch ~{{ chat_zustand.rest_s | round | int }} s{% endif %}
+    {% else %}
+      Das Modell antwortet gerade nicht.
+    {% endif %}
+    {% if chat_zustand.grund %}<span class="fussnote">{{ chat_zustand.grund }}</span>{% endif %}
+    {# Der Rezeptweg braucht kein Modell (Spec 6). Das gehört hierhin, sonst
+       hält die Nutzerin den ganzen Chat für tot. #}
+    <span class="fussnote">Ein gespeichertes Rezept beim Namen zu nennen,
+      funktioniert auch ohne Modell.</span>
+  </p>
+{% endif %}
+</div>

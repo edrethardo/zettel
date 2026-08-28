@@ -1,0 +1,109 @@
+{# Der Chat — er gehört in den Warenkorb und bekommt keinen eigenen Ort
+   (Spec 9). Vorschläge stehen als vorgemerkte Zeilen da und wandern erst mit
+   „Ja" in den Korb: **nichts landet ungefragt im Warenkorb** (Spec 6).
+
+   Jede Entscheidung ist zugleich das Eval-Label (Spec 8.1). Deshalb steht an
+   jeder Zeile, WORAUS sie entstanden ist — der Suchbegriff und der Rang der
+   Suche. Ohne das lässt sich später nicht unterscheiden, ob ein Fehlgriff am
+   Modell lag oder daran, dass die Suche das richtige Produkt nie vorgelegt
+   hat. #}
+<section class="chat" id="chat">
+  <h2>Chat</h2>
+
+  {% if chat_fehler %}
+  <p class="fehler" role="status">{{ chat_fehler }}</p>
+  {% endif %}
+
+  {% for m in verlauf %}
+    {% if m.role == "user" %}
+      <p class="chatzeile ich">{{ m.content }}</p>
+    {% else %}
+      <p class="chatzeile agent">{{ m.content }}</p>
+      {% if m.vorschlaege %}
+      <ul class="vorschlaege">
+        {% for v in m.vorschlaege %}
+        <li class="zeile vorschlag {{ 'entschieden' if not v.offen }}
+                   {{ 'fehlt-im-katalog' if v.nicht_im_katalog }}">
+          {% if v.bild_url %}
+            <img class="bild" src="{{ v.bild_url }}" alt="" loading="lazy"
+                 width="56" height="56">
+          {% else %}
+            <span class="bild bild-fehlt" aria-hidden="true"></span>
+          {% endif %}
+          <span class="text">
+            <span class="name">{{ v.qty }} × {{ v.name }}</span>
+            <span class="menge">
+              {% if v.ist_freitext %}
+                Freitext — im Katalog nicht gefunden
+              {% else %}
+                {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
+              {% endif %}
+            </span>
+            <span class="woher">
+              {{ v.search_term or "—" }}
+              {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}
+            </span>
+            {% if v.nicht_im_katalog %}
+            <span class="ausgemustert">Nicht mehr im Katalog.</span>
+            {% endif %}
+          </span>
+          <span class="stellen">
+            {% if v.offen %}
+              <form method="post"
+                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+                    hx-target="#chat" hx-swap="outerHTML">
+                <button class="mini ja" type="submit"
+                        aria-label="{{ v.name }} in den Korb">Ja</button>
+              </form>
+              <form method="post"
+                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+                    hx-target="#chat" hx-swap="outerHTML">
+                <button class="mini nein" type="submit"
+                        aria-label="{{ v.name }} verwerfen">Nein</button>
+              </form>
+            {% elif v.behalten %}
+              {# Der Korb hat einen Löschknopf; von hier aus wird er nicht
+                 angerührt (siehe vorschlaege.entscheiden). #}
+              <span class="marke ja">im Korb</span>
+            {% else %}
+              <span class="marke nein">verworfen</span>
+            {% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if m.vorschlaege | selectattr("offen") | list %}
+      <div class="sammel">
+        <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
+              hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
+              hx-target="#chat" hx-swap="outerHTML">
+          <button class="mini" type="submit">Alles übernehmen</button>
+        </form>
+        <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
+              hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
+              hx-target="#chat" hx-swap="outerHTML">
+          <button class="mini" type="submit">Alles verwerfen</button>
+        </form>
+      </div>
+      {% endif %}
+    {% endif %}
+  {% else %}
+  <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti
+    Bolognese, und Klopapier". Vorgeschlagen wird nur; in den Korb kommt
+    nichts, was du nicht bestätigst.</p>
+  {% endfor %}
+
+  <form class="chatform" method="post" action="/warenkorb/chat"
+        hx-post="/warenkorb/chat" hx-target="#chat" hx-swap="outerHTML"
+        hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+    <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
+           aria-label="Was brauchst du?" placeholder="Was brauchst du?">
+    <button type="submit">Fragen</button>
+  </form>
+  {# Ein 27B-Modell schreibt Sekunden lang. Ohne sichtbares Warten tippt man
+     ein zweites Mal. #}
+  <p id="chat-laeuft" class="htmx-indicator fussnote">Das Modell überlegt …</p>
+</section>
