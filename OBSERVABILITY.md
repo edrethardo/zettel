@@ -36,6 +36,17 @@ der vorgelegten Liste gewählt — und in der Liste stand keine normale Butter.
 Die Wahl war unter den fünf Angeboten sogar vertretbar. Der Fehlgriff gehört
 dem Retrieval.
 
+> **Stand der Aufzeichnung: 2026-08-28, Katalog mit 2.498 Produkten, vor
+> WB-339 und WB-340.** Wer den Fall heute nachfährt, sieht etwas anderes —
+> und das ist der Punkt. Nach dem Vollcrawl (10.361 Produkte) und der
+> Wortgrenzen-Sortierung aus WB-339 liegt „Weihenstephan Butter" auf Platz 3
+> der Kandidaten, neben Landliebe und Lindner. Das Retrieval legt jetzt vor,
+> was damals fehlte; dieselbe Frage bekäme heute vermutlich eine andere
+> Antwort. Der Fall bleibt hier stehen, weil er zeigt, WOFÜR der
+> RETRIEVER-Span da ist — nicht als Aussage über den heutigen Katalog. Eine
+> Trace-Aufzeichnung ohne Katalog- und Codestand danebenzustellen wäre genau
+> der Fehler, den dieses Dokument vermeiden soll.
+
 Das ist kein Gedächtnisprotokoll: der Fall ist am 2026-08-28 gegen die echte
 Box und das laufende Phoenix noch einmal gefahren worden. Der Trace
 `099d1fdd…`, `chat.turn`-Span `6734d91d3569c413`, trägt
