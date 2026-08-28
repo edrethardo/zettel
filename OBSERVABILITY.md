@@ -113,11 +113,19 @@ wie der Modellweg — nur bekommt `plan.extract` dort nicht den Satz zu lesen,
 sondern die Zutatenliste eines geholten Rezepts. Der Unterschied ist mit
 Absicht ein eigener `path`-Wert und kein Nebensatz: **die Frage, ob die
 Quelle wirklich besser ist als das Raten, wird an genau diesem Attribut
-gemessen.** Ein Gericht taucht in der Regel zweimal auf — einmal als
-`llm`-Zug mit gesetztem `picknick.dish` (da wurde noch geraten und der Abruf
-angestossen) und danach als `chefkoch`-Zug mit demselben `dish`. Die beiden
-nebeneinander, dazu `picknick.products` und `picknick.free_text`, sind der
-ganze Vergleich. Für „alles für Pho" sah er am 2026-08-28 so aus:
+gemessen.**
+
+**Seit WB-367 ist ein `llm`-Zug MIT gesetztem `picknick.dish` ein Befund und
+kein Normalfall.** Vorher war er die Regel: der erste Satz zu einem neuen
+Gericht riet, der Abruf lief daneben, und dasselbe Gericht tauchte zweimal
+auf — einmal `llm`, danach `chefkoch`. Heute wird im Zug selbst geholt, also
+heisst diese Kombination: der Abruf hat nicht getragen. `picknick.dish_fetch`
+sagt, warum (`leer`, `fehler`, oder leer für „gar nicht abgerufen").
+
+Die Zeilen daneben zu legen — `picknick.products`, `picknick.free_text` und
+`dish` — bleibt der ganze Vergleich. Für „alles für Pho" sah er am 2026-08-28
+so aus (damals noch als die zwei Züge nacheinander, heute wäre die untere
+Zeile der erste Satz):
 
 | `path` | `dish` | `terms` | `products` | `free_text` | was dastand |
 |---|---|---|---|---|---|
@@ -163,7 +171,8 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.dish` | Text | das erkannte Gericht — **auf jedem Weg**, auch wenn die Zutaten noch geraten wurden (WB-338) |
 | `picknick.dish_recipe` | Text | der Rezeptname der Quelle, nur auf `chefkoch` |
 | `picknick.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
-| `picknick.dish_requested` | bool | dieser Zug hat einen Abruf angestossen; der nächste mit demselben Gericht nimmt die Quelle |
+| `picknick.dish_requested` | bool | dieser Zug hat das Gericht selbst bei Chefkoch geholt, statt es im Speicher zu finden (WB-367) |
+| `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
 
 `picknick.rejected` ist die härteste Zusicherung des Projekts, als Zahl. Das
 Modell sieht in Stufe 1 keinen Katalog und darf in Stufe 3 nur nennen, was ihm

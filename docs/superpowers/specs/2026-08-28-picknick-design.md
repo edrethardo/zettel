@@ -60,9 +60,37 @@ evals/
 
 Zwei Regeln tragen den Entwurf:
 
-1. **Der Web-Prozess ruft nie eine fremde Seite auf.** Der Shop liest
-   ausschließlich aus der DB. Der Crawler ist ein eigener Prozess mit eigenem
-   Timer. Fällt er aus, wird der Katalog alt — der Shop funktioniert weiter.
+1. **Der Katalog kommt nie aus dem Netz, sondern immer aus der DB.** Suchen,
+   Blättern, Einlegen, Abhaken, Bestellen, die Pick-Liste — nichts davon fasst
+   je eine fremde Seite an. Der Crawler ist ein eigener Prozess mit eigenem
+   Timer. Fällt er aus, wird der Katalog alt — eingekauft wird weiter.
+
+   **Genau eine Ausnahme, und sie ist gemessen**: nennt ein Chat-Satz
+   ein Gericht, das der Zwischenspeicher nicht kennt, holt der Web-Prozess das
+   Rezept selbst bei Chefkoch, mit 2 s Frist je Anfrage und Rückfall auf den
+   Modellweg.
+
+   Die Regel hiess bis dahin pauschal *„der Web-Prozess ruft nie eine fremde
+   Seite auf"*, und der Rezeptabruf lief deshalb als eigener Prozess: der
+   Shop trug einen Wunsch ein und antwortete solange mit dem Modell — also
+   mit dem Raten, das die Quelle gerade abschaffen sollte. Was die Regel
+   dabei einsparte, ist am 2026-08-28 nachgemessen:
+
+   | Gericht | Suche | Detail | zusammen |
+   |---|---|---|---|
+   | Chili con Carne | 131 ms | 16 ms | **147 ms** |
+   | Kartoffelsalat | 92 ms | 17 ms | **109 ms** |
+   | Sushi | 70 ms | 20 ms | **90 ms** |
+   | Ratatouille | 93 ms | 20 ms | **114 ms** |
+   | *der Weg, der stattdessen genommen wurde: das Modell* | | | **35.600 ms** |
+
+   Der Abruf ist rund 250-mal schneller als das Ausweichen, und der Chat
+   wartet in derselben Sekunde ohnehin 20 bis 35 s auf die vLLM-Box — also
+   auf eine andere Maschine im Netz. Ein Request, der auf ein Modell warten
+   darf, aber nicht 100 ms auf ein Rezept, ist nicht vorsichtig, sondern
+   inkonsequent. Der Katalog bleibt aussen vor: dort ist der Abruf teuer
+   (36 min für einen Vollcrawl), das Ergebnis darf altern, und ein Ausfall
+   von knuspr.de darf das Einkaufen nicht verhindern.
 2. **Ohne Modell bleibt alles außer dem Chat benutzbar.** Suchen, Einlegen,
    Bestellen, Abhaken laufen ohne LLM.
 

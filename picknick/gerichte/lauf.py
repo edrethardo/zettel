@@ -1,18 +1,29 @@
-"""Der Abruf als eigener Prozess — das Einzige, was Chefkoch anfasst (WB-338).
+"""Der Abruf bei Chefkoch — im Request (WB-367) und von Hand (WB-338).
 
     .venv/bin/python -m picknick.gerichte.lauf --gericht "pho"
     .venv/bin/python -m picknick.gerichte.lauf --alle
 
-Genau das startet `picknick.gerichte.quelle.Quelle.anfordern()`, und genau
-das ruft man von Hand auf, wenn man wissen will, ob es noch geht. Damit gilt
-Spec 3 wörtlich: **der Web-Prozess ruft nie eine fremde Seite auf** — dieser
-hier tut es, wie der Katalog-Crawler, in einem eigenen Prozess mit eigenem
-Ausgang.
+Zwei Eingänge in dieselbe Bahn, und der Unterschied ist nur die Frist:
 
-`--alle` arbeitet die offenen Wünsche ab. Das ist der Weg für einen Timer
-oder für „hol nach, was gestern liegen geblieben ist"; zwischen zwei
-Gerichten wird gewartet (`chefkoch.PAUSE_S`), weil Höflichkeit gegenüber
-einer fremden Seite nicht davon abhängt, ob gerade jemand zuschaut.
+* `hole_jetzt()` — **der Normalfall seit WB-367.** Der Chat ruft ihn im
+  Request auf, wenn der Zwischenspeicher das Gericht nicht kennt. Kurze
+  Frist (`chefkoch.TIMEOUT_SYNC_S`), keine Pause zwischen den zwei Anfragen:
+  hier wartet jemand zu.
+* `main()`/`lauf()` — **das Kommando von Hand.** Zum Vorwärmen („hol mir die
+  zehn Gerichte, die wir dauernd kochen"), zum Nachholen dessen, was eine
+  Störung liegen gelassen hat (`--alle`), und um zu sehen, ob die Quelle
+  überhaupt noch antwortet. Lange Frist, `chefkoch.PAUSE_S` zwischen zwei
+  Gerichten — dort schaut niemand zu, und Höflichkeit gegenüber einer fremden
+  Seite hängt nicht davon ab, ob es gerade auffällt.
+
+**Was WB-338 hier begründete, gilt nicht mehr wörtlich.** Damals startete der
+Shop diesen Lauf als eigenen Prozess, weil Spec 3 sagte, der Web-Prozess rufe
+nie eine fremde Seite auf. Der Preis war, dass der erste Satz zu einem neuen
+Gericht noch geraten wurde. Gemessen kostet der Abruf 90 bis 147 ms und der
+Modellweg daneben 35.600 ms; die Regel bleibt für den KATALOG (er wird nie
+live abgefragt) und ist für den Chat zurückgenommen. Der Prozessstart aus dem
+Shop heraus ist damit weg — dieses Kommando nicht, es trägt die beiden Fälle
+oben.
 
 **Ein Fehlschlag wird VERMERKT, nicht verschwiegen.** Eine Störung landet als
 `status = 'fehler'` mit ihrem Text in `dish`, ein „kennt Chefkoch nicht" als
@@ -60,6 +71,37 @@ def hole_eines(con, http, gericht: str, *, pause_s: float = chefkoch.PAUSE_S,
             f"{len(rezept['zutaten'])} Zutaten, "
             f"{len(rezept['schritte'])} Schritte) -> recipe {recipe_id}")
     return speicher.OK
+
+
+def hole_jetzt(con, gericht: str, *,
+               frist_s: float = chefkoch.TIMEOUT_SYNC_S, http=None,
+               schreib=lambda _: None) -> str:
+    """Holt EIN Gericht SOFORT, in dem Prozess, der gerade fragt (WB-367).
+
+    Gibt denselben Zustand zurück wie `hole_eines` (`ok`, `leer`, `fehler`)
+    und wirft aus demselben Grund nicht: ein Ausfall der Quelle wird eine
+    Zeile in der Datenbank und danach der Modellweg, kein Traceback in einem
+    Request.
+
+    **Keine Pause zwischen Suche und Detail** (`pause_s=0`). Die 1,5 s aus
+    `chefkoch.PAUSE_S` sind Höflichkeit für einen LAUF über viele Gerichte;
+    hier fallen genau zwei Anfragen an, einmal im Leben dieses Gerichts, und
+    ein Mensch wartet darauf. Vier Sekunden Frist gegen 100 ms Messung sind
+    reichlich, anderthalb Sekunden Schlafen daneben wären es nicht.
+
+    `schreib` ist hier still: der Request hat kein Terminal, und der Zustand
+    steht in `dish`.
+    """
+    eigener_client = http is None
+    if eigener_client:
+        import httpx
+        http = httpx.Client(timeout=frist_s,
+                            headers={"User-Agent": chefkoch.USER_AGENT})
+    try:
+        return hole_eines(con, http, gericht, pause_s=0.0, schreib=schreib)
+    finally:
+        if eigener_client:
+            http.close()
 
 
 def lauf(db_path: str, gerichte, *, http=None, pause_s: float = chefkoch.PAUSE_S,

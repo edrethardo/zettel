@@ -22,10 +22,13 @@ KEINER im Katalog steht. Chefkoch kennt 85 Pho-Rezepte; das bestbewertete
 liefert 23 Zutaten, davon 15 im Katalog. Bei einem Gericht ausserhalb seines
 Wissens liefert das Modell nichts Brauchbares und merkt es nicht.
 
-**Dieses Modul geht ins Netz und läuft deshalb nie im Request-Pfad des Shops**
-(Spec 3, wie `picknick.scrapers.knuspr`). Aufgerufen wird es aus
-`picknick.gerichte.lauf` — einem eigenen Prozess. Der Web-Prozess liest
-ausschliesslich den Zwischenspeicher (`picknick.gerichte.speicher`).
+**Dieses Modul geht ins Netz — und seit WB-367 auch aus dem Request-Pfad
+heraus.** Bis dahin galt Spec 3 wörtlich (wie für `picknick.scrapers.knuspr`):
+der Web-Prozess trug nur einen Wunsch ein und liess einen eigenen Prozess
+holen. Gemessen am 2026-08-28 kostet ein Gericht 90 bis 147 ms (Suche plus
+Detail), der Modellweg daneben 35.600 ms — die Regel schützte einen Request,
+der ohnehin eine halbe Minute auf die vLLM-Box wartet, vor einem Zehntel
+Sekunde. Der Katalog bleibt davon unberührt: der wird nie live abgefragt.
 
 **robots.txt erlaubt genau diese zwei Endpunkte** (gesperrt sind nur
 `/v2/search/suggestions/` und die Kommentare zweier einzelner Rezepte). Das
@@ -51,7 +54,23 @@ LIMIT = 12
 #: und danach nie wieder eine, weil das Ergebnis zwischengespeichert wird.
 PAUSE_S = 1.5
 
+#: Die Frist für den Lauf im Hintergrund (`--gericht`, `--alle`). Grosszügig:
+#: dort wartet niemand, und ein langsamer Abruf ist besser als keiner.
 TIMEOUT_S = 30.0
+
+#: Die Frist für den Abruf IM REQUEST (WB-367). Zwei Sekunden je Anfrage, und
+#: das ist gemessen reichlich — am 2026-08-28 gegen api.chefkoch.de:
+#:
+#:     Chili con Carne   Suche 131 ms + Detail 16 ms =  147 ms
+#:     Kartoffelsalat    Suche  92 ms + Detail 17 ms =  109 ms
+#:     Sushi             Suche  70 ms + Detail 20 ms =   90 ms
+#:     Ratatouille       Suche  93 ms + Detail 20 ms =  114 ms
+#:
+#: Also rund das Vierzehnfache des langsamsten gemessenen Abrufs. Sie ist die
+#: Frist JE ANFRAGE; ein Gericht kostet zwei, im schlimmsten Fall wartet der
+#: Chat also vier Sekunden, bevor er auf den Modellweg zurückfällt — neben
+#: einem Modelllauf von 20 bis 35 s fällt auch das nicht auf.
+TIMEOUT_SYNC_S = 2.0
 
 #: Ein ehrlicher User-Agent, wie beim Katalog-Crawler und aus demselben Grund:
 #: wir holen ein paar öffentliche Rezepte in einem privaten Tempo, und wenn

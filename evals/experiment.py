@@ -310,15 +310,17 @@ class Lauf:
                 kandidaten=self.variante.kandidaten,
                 guided=self.variante.guided,
                 system_extract=self.variante.system_extract,
-                # **Der Lauf holt keine Gerichte nach** (WB-338): der
-                # Zwischenspeicher der Kopie wird gelesen, aber nicht
+                # **Der Lauf holt keine Gerichte nach** (WB-338, WB-367):
+                # der Zwischenspeicher der Kopie wird gelesen, aber nicht
                 # gefüllt. Sonst holte der erste Satz eines Datasets ein
                 # Rezept, und der zweite Lauf derselben Variante liefe gegen
                 # eine andere Grundlage als der erste — zwei Varianten wären
-                # dann nicht mehr vergleichbar. Wer die Quelle messen will,
-                # füllt den Speicher VOR dem Lauf
-                # (`python -m picknick.gerichte.lauf --gericht …`).
-                quelle=gerichte.Quelle(starter=gerichte.nicht_holen))
+                # dann nicht mehr vergleichbar. Seit WB-367 wiegt das
+                # schwerer: der Abruf läuft im Zug selbst, ein Lauf über
+                # dreissig Sätze fasste also dreissigmal eine fremde Seite
+                # an. Wer die Quelle messen will, füllt den Speicher VOR dem
+                # Lauf (`python -m picknick.gerichte.lauf --gericht …`).
+                quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
         return self._chat
 
     def einmal(self, satz: str) -> dict:

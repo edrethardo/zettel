@@ -106,6 +106,32 @@ def _rest(satz: str, spannen: list[tuple[int, int]]) -> str | None:
     return rest if len(rest) >= MIN_REST else None
 
 
+def rest_ohne(satz: str, name: str) -> str | None:
+    """Der Rest des Satzes, wenn der Name NICHT wörtlich darin steht (WB-367).
+
+    `erkenne_in` schneidet den Namen als Spanne heraus und ist damit genau;
+    das geht aber nur, solange er als Zeichenkette im Satz vorkommt. Seit
+    WB-367 wird ein Gericht auch dann geholt, wenn Stufe 1 es aus dem Satz
+    HERAUSGELESEN hat — „was brauche ich für eine Bolo" kann als Gericht
+    „Bolognese" zurückkommen. Dann bleibt nur der Wortvergleich: was kein
+    Wort des Gerichtsnamens und kein Füllwort ist, ist der Rest.
+
+    Ungenauer als `erkenne_in` und deshalb nur der zweite Griff. Aber besser
+    als der erste Ausgang wäre: „und Klopapier" stillschweigend fallen zu
+    lassen, weil das Gericht anders geschrieben war als gesagt.
+    """
+    name_gefaltet, _ = falte(name or "")
+    aus_dem_namen = set(re.findall(r"[\w\-]+", name_gefaltet, re.UNICODE))
+    woerter = []
+    for wort in re.findall(r"[\w\-]+", satz or "", re.UNICODE):
+        vergleich, _ = falte(wort)
+        if vergleich in aus_dem_namen or wort.casefold() in FUELLWOERTER:
+            continue
+        woerter.append(wort)
+    rest = " ".join(woerter).strip()
+    return rest if len(rest) >= MIN_REST else None
+
+
 def erkenne(con: sqlite3.Connection, satz: str) -> Rezeptweg:
     """Sucht gespeicherte Rezepte im Satz. Fragt kein Modell und keine Suche.
 

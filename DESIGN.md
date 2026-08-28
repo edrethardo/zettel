@@ -225,13 +225,41 @@ nicht ab (es hätte nichts vorzuschlagen) und die Quelle übernimmt. Ordnet
 jemand von Hand Produkte zu, greift wieder der Rezeptweg — und das ist
 richtig, denn dann stehen dort die Produkte, die ein Mensch ausgesucht hat.
 
-**Der Abruf bei Chefkoch läuft in einem eigenen Prozess, nicht in einem
-Thread** (WB-338). Für die Bons genügt ein Hintergrund-Thread, weil sie
-lokale Programme starten und die Box im LAN fragen. Eine FREMDE Seite darf
-der Web-Prozess gar nicht erst anfassen (Spec 3) — deshalb trägt er nur einen
-Wunsch in `dish` ein und startet `python -m picknick.gerichte.lauf`. Der
-Preis ist sichtbar und wird benannt: der erste Satz zu einem neuen Gericht
-geht noch übers Modell, erst der zweite nimmt das Rezept.
+**Der Abruf bei Chefkoch läuft im Request — und lief es zwei Tickets lang
+nicht** (WB-338, revidiert in WB-367). Die erste Fassung trug einen Wunsch in
+`dish` ein und startete `python -m picknick.gerichte.lauf` als eigenen
+Prozess, weil Spec 3 sagte, der Web-Prozess rufe nie eine fremde Seite auf.
+Der Preis stand hier benannt: der erste Satz zu einem neuen Gericht ging noch
+übers Modell, erst der zweite nahm das Rezept.
+
+**Die Begründung trug nicht, und das ist gemessen** (2026-08-28, gegen
+api.chefkoch.de):
+
+| Gericht | Suche | Detail | zusammen |
+|---|---|---|---|
+| Chili con Carne | 131 ms | 16 ms | **147 ms** |
+| Kartoffelsalat | 92 ms | 17 ms | **109 ms** |
+| Sushi | 70 ms | 20 ms | **90 ms** |
+| Ratatouille | 93 ms | 20 ms | **114 ms** |
+| *der Weg, der stattdessen genommen wurde: das Modell (Pho)* | | | **35.600 ms** |
+
+Rund 250-mal schneller als das Ausweichen — und der Chat blockiert in
+derselben Sekunde 20 bis 35 s auf der vLLM-Box, also auf einer anderen
+Maschine im LAN. Ein Chat, der auf ein Modell warten darf, aber nicht 100 ms
+auf ein Rezept, ist inkonsequent. Spec 3 wurde deshalb nicht gestrichen,
+sondern verengt auf den Teil, der das Produkt trägt: **der KATALOG wird nie
+live abgefragt.** Dort ist der Abruf teuer (36 min Vollcrawl), das Ergebnis
+darf altern, und ein Ausfall von knuspr.de darf das Einkaufen nicht
+verhindern.
+
+**Vom Hintergrundlauf bleibt das Kommando, nicht der Prozessstart aus dem
+Shop.** `python -m picknick.gerichte.lauf --gericht/--alle` trägt weiterhin
+das Vorwärmen („hol die zehn Gerichte, die wir dauernd kochen"), das
+Nachholen dessen, was eine Störung liegen liess, und die Frage, ob die Quelle
+überhaupt noch antwortet. Was verschwunden ist, ist der `subprocess.Popen`
+aus dem Web-Prozess: ein Lauf, auf dessen Ergebnis niemand wartete, war nur
+die Umgehung von Spec 3 und hatte einen eigenen stillen Fehlerfall (ein
+Prozessstart, der schiefging, ohne dass es jemand sah).
 
 **Denken ist für die zwei Agentenstufen abgeschaltet** (`enable_thinking:
 false`, je Anfrage, der Server bleibt unverändert). Nicht aus Geschmack: der
@@ -252,12 +280,22 @@ verlängert.
   Wer in einer grossen Warengruppe stöbert, sieht die ersten sechzig
   alphabetisch und danach nichts. Auf dem Handy ist das erträglich, richtig
   ist es nicht.
-* **Die Quelle hilft erst beim zweiten Satz.** Ein Gericht, das noch niemand
-  geholt hat, wird angefordert und nicht abgewartet — der laufende Zug rät
-  weiter. Das ist der Preis dafür, dass kein Request an einer fremden Seite
-  hängt, und er ist echt: wer einmal fragt und die Antwort für bare Münze
-  nimmt, bekommt bei einem unbekannten Gericht dieselbe Liste wie vorher.
-  Die Meldung sagt es, aber sie zwingt niemanden zum zweiten Satz.
+* **Ein noch unbekanntes Gericht kostet ZWEI Modellläufe** (WB-367). Der
+  Gerichtsname steht nirgends im Satz markiert; er kommt aus Stufe 1, und die
+  ist ein Modelllauf von 20 bis 35 s. Erst danach lässt sich das Rezept
+  holen — und dessen Zutatenliste braucht wieder das Modell, um Suchbegriffe
+  daraus zu machen. Der erste Satz zu einem neuen Gericht dauert also grob
+  doppelt so lange wie jeder weitere, und die geratene Zutatenliste aus
+  Stufe 1 wird dabei weggeworfen. Der Handel ist bewusst: lieber einmal
+  länger warten als eine geratene Liste bekommen und es nicht merken. Billiger
+  würde es nur mit einer Gerichtserkennung ohne Modell — und die wäre wieder
+  Raten, diesmal an einer Stelle, an der es niemand sieht.
+* **Die Frist ist eine je Anfrage, keine für den ganzen Abruf.** 2 s für die
+  Suche und 2 s für das Detail; im schlimmsten Fall wartet der Chat also vier
+  Sekunden, bevor er auf das Modell zurückfällt. Gemessen sind es 90 bis
+  147 ms, und neben 35 s Modelllauf fällt auch der schlimmste Fall nicht auf
+  — aber „zwei Sekunden Frist" heisst eben nicht „nach zwei Sekunden ist
+  Schluss".
 * **Ein Rezept je Gericht, und die Wahl ist eine Formel.** Chefkoch kennt 85
   Pho-Rezepte; genommen wird das mit der höchsten gewichteten Note. Ob es das
   passendste ist, weiss niemand — „Gemüselasagne" liefert eine

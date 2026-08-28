@@ -98,6 +98,35 @@ def echtes_chefkoch():
     return FakeHTTP({"/v2/recipes?": SUCHE, f"/v2/recipes/{PHO_BO}": REZEPT})
 
 
+class FakeHoler:
+    """Der Abruf, wie `Quelle` ihn aufruft — gegen die Fixture (WB-367).
+
+    Seit WB-367 holt der Web-Prozess selbst, und zwar SYNCHRON. Der Holer
+    ist deshalb der Einspritzpunkt, an dem die Tests hängen: er zählt seine
+    Aufrufe (daran hängt „ein zweiter Satz geht nicht ins Netz") und kann
+    eine Zeitüberschreitung oder ein „kennt Chefkoch nicht" spielen, ohne
+    dass irgendwo ein Socket entsteht.
+    """
+
+    def __init__(self, http=None, wirft=None):
+        self.http = http if http is not None else echtes_chefkoch()
+        self.wirft = wirft
+        self.gerichte: list[str] = []
+        self.fristen: list[float] = []
+
+    def __call__(self, con, gericht, *, frist_s=None):
+        self.gerichte.append(gericht)
+        self.fristen.append(frist_s)
+        if self.wirft is not None:
+            raise self.wirft
+        return lauf.hole_jetzt(con, gericht, http=self.http)
+
+
+def leeres_chefkoch():
+    """Chefkoch antwortet — und kennt das Gericht nicht."""
+    return FakeHTTP({"/v2/recipes?": {"count": 0, "results": []}})
+
+
 ZUSATZ = [
     ("rifi", "Rinderfilet 400 g", "Fleisch", "Rind", "Filet"),
     ("ingw", "Ingwer frisch", "Obst & Gemüse", "Gemüse", "Ingwer"),
@@ -272,16 +301,16 @@ def test_der_zweite_abruf_desselben_gerichts_geht_nicht_ins_netz(con):
     assert speicher.gericht(con, "Pho")["rezept"]["source_id"] == PHO_BO
 
     # Ab hier ist das Netz verboten. Der Speicher muss allein tragen.
-    q = quelle.Quelle(starter=quelle.nicht_holen)
+    q = quelle.Quelle(holer=quelle.nicht_holen)
     gefunden = q.gericht(con, "pho")
     assert gefunden is not None
     assert len(gefunden["zutaten"]) == 23
     assert [g["query"] for g in q.bereit(con)] == ["Pho"]
-    # `anfordern` sieht den frischen Eintrag und startet gar nichts.
-    gestartet = []
-    q2 = quelle.Quelle(starter=gestartet.append)
-    assert q2.anfordern(con, "Pho") is False
-    assert gestartet == []
+    # `holen` sieht den frischen Eintrag und ruft gar nicht ab.
+    holer = FakeHoler()
+    q2 = quelle.Quelle(holer=holer)
+    assert q2.holen(con, "Pho") is None
+    assert holer.gerichte == []
 
 
 def test_grossschreibung_und_umlaute_treffen_denselben_eintrag(con):
@@ -325,10 +354,10 @@ def test_ein_gericht_ohne_treffer_wird_als_leer_vermerkt(con):
     assert speicher.gericht(con, "Kartoffelraumschiff") is None
     assert speicher.bereit(con) == []
 
-    gestartet = []
-    q = quelle.Quelle(starter=gestartet.append)
-    assert q.anfordern(con, "Kartoffelraumschiff") is False
-    assert gestartet == []
+    holer = FakeHoler()
+    q = quelle.Quelle(holer=holer)
+    assert q.holen(con, "Kartoffelraumschiff") is None
+    assert holer.gerichte == []
 
 
 def test_chefkoch_nicht_erreichbar_wird_vermerkt_und_wirft_nicht(con):
@@ -372,7 +401,7 @@ def test_der_zug_nimmt_die_zutaten_aus_der_quelle(con):
                 ("Ingwer", _pid(con, "Ingwer"), 1),
                 ("Mie Nudeln", _pid(con, "Mie Nudeln"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
-                           quelle=quelle.Quelle(starter=quelle.nicht_holen))
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE == "chefkoch"
@@ -395,7 +424,7 @@ def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
                   _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
                           ("Toilettenpapier", _pid(con, "Toilettenpapier"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
-                           quelle=quelle.Quelle(starter=quelle.nicht_holen))
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho und Klopapier")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
@@ -404,58 +433,230 @@ def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
     assert any("Toilettenpapier" in v["name"] for v in ergebnis.vorschlaege)
 
 
-def test_der_erste_zug_fordert_an_und_geht_solange_den_modellweg(con):
-    """Ein Gericht, das noch niemand geholt hat, bricht den Chat nicht.
+def _erster_zug(con, holer, satz="alles für Pho", *, gericht="Pho",
+                zusatz=()):
+    """Ein Chat-Zug zu einem Gericht, das noch in keinem Speicher steht.
 
-    Der Zug läuft mit den geratenen Begriffen zu Ende und stösst den Abruf in
-    einem EIGENEN PROZESS an — der Request wartet nie auf eine fremde Seite
-    (Spec 3).
+    Drei Modellantworten, weil der Zug seit WB-367 drei Stufen hat, wenn er
+    unterwegs auf den Quellenweg wechselt: Stufe 1 nennt das GERICHT (und
+    rät nebenbei Zutaten, die weggeworfen werden), dann wird geholt, dann
+    übersetzt Stufe 1b die echte Zutatenliste, dann wählt Stufe 3.
     """
-    gestartet = []
+    llm = FakeLLM(
+        _extract((("Rinderhack",), 1), gericht=gericht),
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1),
+                 *zusatz),
+        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
+                ("Ingwer", _pid(con, "Ingwer"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=holer))
+    return llm, agent.turn(con, satz)
+
+
+def test_der_erste_zug_holt_das_rezept_und_raet_nicht(con):
+    """**Der Kerntest von WB-367.** Kein Eintrag im Speicher — trotzdem
+    `weg = chefkoch` beim ERSTEN Satz.
+
+    Bis WB-367 stand hier `llm`: der Shop trug einen Wunsch ein, startete
+    einen eigenen Prozess und antwortete mit den geratenen Zutaten. Erst der
+    zweite Satz bekam das Rezept.
+    """
+    assert speicher.zeile(con, "Pho") is None
+
+    holer = FakeHoler()
+    llm, ergebnis = _erster_zug(con, holer)
+
+    assert ergebnis.weg == chatmodul.WEG_QUELLE == "chefkoch"
+    assert ergebnis.abruf == speicher.OK
+    assert ergebnis.quelle_name.startswith("Pho Bo")
+    assert ergebnis.quelle_url.startswith("https://www.chefkoch.de/rezepte/")
+    assert ergebnis.n_produkte == 2
+    # Genau EIN Abruf, und mit der kurzen Frist aus WB-367.
+    assert holer.gerichte == ["Pho"]
+    assert holer.fristen == [chefkoch.TIMEOUT_SYNC_S]
+    # Stufe 1b hat die ZUTATEN DES REZEPTS gelesen, nicht den Satz.
+    zweiter_prompt = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    assert "Markknochen" in zweiter_prompt and "Sternanis" in zweiter_prompt
+    # Und das Rezept steht danach im Speicher, für jeden weiteren Satz.
+    assert speicher.gericht(con, "Pho") is not None
+
+
+def test_der_zweite_satz_zum_selben_gericht_geht_nicht_ins_netz(con):
+    """Der Zwischenspeicher bleibt, was er war (WB-338).
+
+    Der zweite Satz kommt ohne Stufe 1 aus — das Gericht wird am Namen
+    erkannt — und ohne jeden Abruf.
+    """
+    holer = FakeHoler()
+    _erster_zug(con, holer)
+    assert holer.gerichte == ["Pho"]
+
+    llm = FakeLLM(_extract((("Rinderfilet",), 1)),
+                  _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=holer))
+    ergebnis = agent.turn(con, "nochmal alles für Pho")
+
+    assert ergebnis.weg == chatmodul.WEG_QUELLE
+    assert ergebnis.abruf is None            # nicht abgerufen
+    assert holer.gerichte == ["Pho"]         # immer noch nur der eine Abruf
+
+
+def test_eine_zeitueberschreitung_faellt_auf_das_modell_zurueck(con):
+    """Chefkoch antwortet nicht -> der Chat funktioniert trotzdem.
+
+    Der Zug läuft mit den geratenen Begriffen zu Ende, sagt aber, dass sie
+    geraten sind — und die Störung wird eine Stunde gemerkt, damit nicht
+    jeder Satz erneut in eine Zeitüberschreitung läuft.
+    """
+    import httpx
+
+    langsam = FakeHTTP(fehler=httpx.ReadTimeout("timed out"))
+    holer = FakeHoler(http=langsam)
     agent = chatmodul.Chat(
         FakeLLM(_extract((("Rinderfilet",), 1), gericht="Pho"),
                 _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1))),
-        wecker=Box(), quelle=quelle.Quelle(starter=gestartet.append))
+        wecker=Box(), quelle=quelle.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Pho")
 
     assert ergebnis.weg == chatmodul.WEG_LLM
     assert ergebnis.gericht == "Pho"
-    assert ergebnis.angefordert is True
+    assert ergebnis.abruf == speicher.FEHLER
     assert ergebnis.n_produkte == 1          # der Zug lief zu Ende
-    assert "Chefkoch" in ergebnis.meldung
-    # Genau ein eigener Prozess, mit dem Gericht als Argument.
-    assert len(gestartet) == 1
-    assert gestartet[0][1:3] == ["-m", "picknick.gerichte.lauf"]
-    assert gestartet[0][-2:] == ["--gericht", "Pho"]
-    # Und der Wunsch steht in der Datenbank, damit ein Lauf ohne Argument ihn
-    # nachholen kann.
-    assert [w["query"] for w in speicher.offene(con)] == ["Pho"]
+    assert "nicht zu erreichen" in ergebnis.meldung
+    assert "Gedächtnis" in ergebnis.meldung
+    zeile = speicher.zeile(con, "Pho")
+    assert zeile["status"] == speicher.FEHLER
+    assert "ReadTimeout" in zeile["error"]
 
 
-def test_ein_kaputter_prozessstart_bricht_den_chat_nicht(con):
-    def explodiert(argv):
-        raise OSError("kein Python gefunden")
+def test_ein_kaputter_holer_bricht_den_chat_nicht(con):
+    """Nicht der Abruf scheitert, sondern der Abrufer selbst.
 
+    Auch das darf nur die Abkürzung kosten. Vermerkt wird es trotzdem: eine
+    Zeile, die auf `offen` stehen bliebe, erklärte niemandem etwas.
+    """
+    holer = FakeHoler(wirft=OSError("kein httpx installiert"))
     agent = chatmodul.Chat(
         FakeLLM(_extract((("Rinderfilet",), 1), gericht="Pho"),
                 _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1))),
-        wecker=Box(), quelle=quelle.Quelle(starter=explodiert))
+        wecker=Box(), quelle=quelle.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Pho")
+
     assert ergebnis.weg == chatmodul.WEG_LLM
-    assert ergebnis.angefordert is False
+    assert ergebnis.abruf == speicher.FEHLER
     assert ergebnis.n_produkte == 1
+    assert speicher.zeile(con, "Pho")["status"] == speicher.FEHLER
 
 
-def test_ohne_gericht_im_satz_wird_nichts_angefordert(con):
-    gestartet = []
+def test_chefkoch_kennt_das_gericht_nicht_und_die_frist_merkt_es_sich(con):
+    """„Kennt Chefkoch nicht" ist kein Fehler — aber es hält eine Woche.
+
+    Der zweite Satz zu demselben Unwort darf keine zweite Anfrage kosten.
+    """
+    holer = FakeHoler(http=leeres_chefkoch())
+    agent = chatmodul.Chat(
+        FakeLLM(_extract((("Ingwer",), 1), gericht="Kartoffelraumschiff"),
+                _choose(("Ingwer", _pid(con, "Ingwer"), 1))),
+        wecker=Box(), quelle=quelle.Quelle(holer=holer))
+    ergebnis = agent.turn(con, "alles für Kartoffelraumschiff")
+
+    assert ergebnis.weg == chatmodul.WEG_LLM
+    assert ergebnis.abruf == speicher.LEER
+    assert "kennt" in ergebnis.meldung and "nicht" in ergebnis.meldung
+    assert speicher.zeile(con, "Kartoffelraumschiff")["status"] == speicher.LEER
+
+    # Sechs Tage später gilt der Eintrag noch, nach acht nicht mehr.
+    import time
+    q = quelle.Quelle(holer=holer)
+    tag = 24 * 3600
+    assert q.holen(con, "Kartoffelraumschiff") is None
+    spaet = quelle.Quelle(holer=holer, uhr=lambda: time.time() + 8 * tag)
+    assert spaet.holen(con, "Kartoffelraumschiff") == speicher.LEER
+    assert holer.gerichte == ["Kartoffelraumschiff", "Kartoffelraumschiff"]
+
+
+def test_zwei_gleichzeitige_anfragen_loesen_einen_abruf_aus(con):
+    """Die Sperre gegen doppelte Abrufe ist die Zeile in `dish` (WB-338).
+
+    Nachgestellt wird der Wettlauf von innen: mitten im Abruf fragt ein
+    zweiter Zug dasselbe Gericht. Er sieht den frischen `offen`-Eintrag und
+    ruft nicht noch einmal ab — was ein Merker im Speicher eines
+    Web-Prozesses nicht leisten könnte, wohl aber die gemeinsame Datenbank.
+    """
+    zweiter = quelle.Quelle(
+        holer=lambda *a, **k: pytest.fail("Ein zweiter Abruf ging los."))
+    dazwischen = []
+
+    echt = FakeHoler()
+
+    def holer(c, gericht, *, frist_s=None):
+        dazwischen.append(zweiter.holen(c, gericht))
+        return echt(c, gericht, frist_s=frist_s)
+
+    erster = quelle.Quelle(holer=holer)
+    assert erster.holen(con, "Pho") == speicher.OK
+    assert dazwischen == [None]               # der zweite Zug rief nicht ab
+    assert echt.gerichte == ["Pho"]
+    assert speicher.gericht(con, "Pho") is not None
+
+
+def test_ein_gespeichertes_gericht_wird_auch_ohne_woertlichen_namen_genommen(con):
+    """Der Speicher kennt „Pho", der Satz sagt „Phosuppe".
+
+    Der Namensvergleich am Anfang des Zugs findet nichts (er verlangt
+    Wortgrenzen, und das mit gutem Grund). Stufe 1 liest das Gericht aber
+    heraus — und dann liegt das Rezept vor. Ohne diesen Zweig würde daneben
+    geraten, obwohl es dasteht, und ohne einen einzigen Abruf.
+    """
+    holer = FakeHoler()
+    _erster_zug(con, holer)                  # „Pho" liegt jetzt im Speicher
+
+    llm = FakeLLM(
+        _extract((("Rinderhack",), 1), gericht="Pho"),
+        _extract((("Rinderfilet",), 1)),
+        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=holer))
+    ergebnis = agent.turn(con, "ich hätte gern Phosuppe")
+
+    assert ergebnis.weg == chatmodul.WEG_QUELLE
+    assert ergebnis.abruf is None            # nichts abgerufen, nichts geraten
+    assert holer.gerichte == ["Pho"]         # der eine Abruf von vorhin
+
+
+def test_ohne_gericht_im_satz_wird_nichts_geholt(con):
+    holer = FakeHoler()
     agent = chatmodul.Chat(
         FakeLLM(_extract((("Ingwer",), 1)),
                 _choose(("Ingwer", _pid(con, "Ingwer"), 1))),
-        wecker=Box(), quelle=quelle.Quelle(starter=gestartet.append))
+        wecker=Box(), quelle=quelle.Quelle(holer=holer))
     ergebnis = agent.turn(con, "Ingwer bitte")
     assert ergebnis.weg == chatmodul.WEG_LLM
     assert ergebnis.gericht is None
-    assert gestartet == []
+    assert ergebnis.abruf is None
+    assert holer.gerichte == []
+
+
+def test_was_neben_dem_gericht_stand_ueberlebt_den_wechsel(con):
+    """Der Zug wechselt unterwegs den Weg — „Klopapier" darf das überleben.
+
+    Und zwar auch dann, wenn Stufe 1 das Gericht in einer Form nennt, die
+    nicht wörtlich im Satz steht: dann greift `rezeptweg.rest_ohne`.
+    """
+    holer = FakeHoler()
+    llm = FakeLLM(
+        _extract((("Rinderhack",), 1), gericht="Pho Suppe"),
+        _extract((("Rinderfilet",), 1), (("Toilettenpapier",), 1)),
+        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
+                ("Toilettenpapier", _pid(con, "Toilettenpapier"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=holer))
+    ergebnis = agent.turn(con, "alles für Pho und Klopapier")
+
+    assert ergebnis.weg == chatmodul.WEG_QUELLE
+    assert "Klopapier" in llm.aufrufe[1]["nachrichten"][-1]["content"]
+    assert any("Toilettenpapier" in v["name"] for v in ergebnis.vorschlaege)
 
 
 def test_ein_gescheitertes_stufe_1_faellt_auf_die_rohe_zutatenliste_zurueck(con):
@@ -470,7 +671,7 @@ def test_ein_gescheitertes_stufe_1_faellt_auf_die_rohe_zutatenliste_zurueck(con)
     llm = FakeLLM("kein JSON, sondern Prosa",
                   _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
-                           quelle=quelle.Quelle(starter=quelle.nicht_holen))
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
@@ -498,7 +699,7 @@ def test_ein_gespeichertes_rezept_mit_produkten_schlaegt_die_quelle(con):
                               product_id=_pid(con, "Rinderfilet"))
 
     agent = chatmodul.Chat(FakeLLM(), wecker=Box(),
-                           quelle=quelle.Quelle(starter=quelle.nicht_holen))
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
     # Der Rezeptname ist der Titel von Chefkoch — der steht im Satz.
     ergebnis = agent.turn(con, "alles für Pho Bo - Vietnamesische "
                                "Rindfleischsuppe")
@@ -621,13 +822,45 @@ def test_extract_bleibt_die_kurzform_und_gibt_weiter_eine_liste():
 
 
 # --------------------------------------------------------------------------
-# Der Web-Prozess ruft nie eine fremde Seite auf (Spec 3)
+# Der KATALOG fasst nie das Netz an (Spec 3, umgeschrieben in WB-367)
 
-def test_die_quelle_kennt_keine_url_und_kein_httpx():
-    """Strukturell und nicht als Vorsatz: `quelle` importiert kein httpx.
+#: Die Pakete, die der Shop beim Suchen, Blättern, Einlegen, Abhaken und
+#: beim Bauen der Pick-Liste benutzt. Sie lesen die Datenbank und sonst
+#: nichts — das ist der Teil von Spec 3, der das Produkt trägt, und er
+#: bleibt unangetastet: fällt knuspr.de aus, wird der Katalog alt und
+#: eingekauft wird weiter.
+KATALOGPAKETE = ("catalog", "orders", "recipes")
 
-    Was der Web-Prozess anfasst, kann gar nicht ins Netz — der Abruf steckt
-    in `lauf`/`chefkoch`, und die laufen in einem eigenen Prozess.
+
+@pytest.mark.parametrize("paket", KATALOGPAKETE)
+def test_der_katalogweg_kennt_keine_url_und_kein_httpx(paket):
+    """Strukturell und nicht als Vorsatz: kein Netz im Katalogweg.
+
+    WB-367 hat den Rezeptabruf in den Request geholt — für den KATALOG gilt
+    die Regel unverändert weiter, und sie steht hier als Test und nicht als
+    Absichtserklärung. Was hier nach `httpx` oder einer URL greift, fällt
+    auf.
+    """
+    wurzel = Path(quelle.__file__).resolve().parents[1] / paket
+    dateien = sorted(wurzel.rglob("*.py"))
+    assert dateien, f"{paket} hat keine Python-Dateien — Pfad falsch?"
+    for datei in dateien:
+        text = datei.read_text(encoding="utf-8")
+        # Ohne den Modul-Docstring: dort stehen Erklärungen, und eine
+        # Erklärung darf eine URL nennen.
+        quelltext = text.split('"""', 2)[-1]
+        assert "import httpx" not in quelltext, datei
+        assert "from httpx" not in quelltext, datei
+        assert "://" not in quelltext, datei
+
+
+def test_die_quelle_selbst_oeffnet_keine_verbindung():
+    """`quelle` kennt weiterhin keine URL — sie ruft `lauf` (WB-367).
+
+    Das ist kein Riegel mehr (der Abruf läuft jetzt im selben Prozess),
+    sondern Arbeitsteilung: was eine Adresse kennt, steht in `chefkoch`, und
+    was ein Socket öffnet, in `lauf`. Ein Test, der etwas anderes
+    behauptete, wäre nach WB-367 eine Lüge.
     """
     text = Path(quelle.__file__).read_text(encoding="utf-8")
     quelltext = text.split('"""', 2)[2]
@@ -635,20 +868,21 @@ def test_die_quelle_kennt_keine_url_und_kein_httpx():
     assert "://" not in quelltext
 
 
-def test_ohne_dateipfad_wird_nichts_gestartet():
-    """Eine Datenbank im Speicher kann ein eigener Prozess nicht lesen.
+def test_auch_eine_datenbank_im_speicher_bekommt_ihr_rezept():
+    """Was der eigene Prozess nicht konnte, kann der synchrone Abruf.
 
-    Dann bleibt es beim Modellweg — und es wird auch kein Wunsch
-    eingetragen, den niemand je einlösen könnte.
+    Bis WB-367 war `:memory:` ein Sonderfall: der Lauf war ein EIGENER
+    Prozess und hätte eine leere Datenbank gesehen, also wurde gar nicht
+    erst geholt. Jetzt holt derselbe Prozess, der auch schreibt.
     """
     c = db.connect(":memory:")
     db.migrate(c)
     try:
-        gestartet = []
-        q = quelle.Quelle(starter=gestartet.append)
-        assert q.anfordern(c, "Pho") is False
-        assert gestartet == []
-        assert speicher.offene(c) == []
+        holer = FakeHoler()
+        q = quelle.Quelle(holer=holer)
+        assert q.holen(c, "Pho") == speicher.OK
+        assert speicher.gericht(c, "Pho") is not None
+        assert holer.gerichte == ["Pho"]
     finally:
         c.close()
 

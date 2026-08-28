@@ -789,7 +789,8 @@ class _NieGefragt:
 
 
 def checks_gerichte(b: Bericht, db_datei: Path) -> None:
-    b.abschnitt("Gerichte aus der Quelle statt aus dem Gedächtnis (WB-338)")
+    b.abschnitt("Gerichte aus der Quelle statt aus dem Gedächtnis "
+                "(WB-338, WB-367)")
 
     quelle = _Chefkoch()
     con = db.connect(db_datei)
@@ -803,8 +804,9 @@ def checks_gerichte(b: Bericht, db_datei: Path) -> None:
                  lambda: _aus_dem_speicher(con))
         b.pruefe("der Chat-Zug nimmt die Zutaten aus dem Rezept "
                  "(picknick.path = chefkoch)", lambda: _zug_aus_quelle(con))
-        b.pruefe("ein unbekanntes Gericht bricht den Zug nicht",
-                 lambda: _zug_ohne_quelle(con))
+        b.pruefe("ein unbekanntes Gericht wird SOFORT geholt, und ein "
+                 "Ausfall fällt sauber auf das Modell zurück",
+                 lambda: _zug_ohne_speicher(con))
     finally:
         con.close()
 
@@ -854,13 +856,13 @@ def _abruf(con, quelle) -> str:
 
 
 def _aus_dem_speicher(con) -> str:
-    q = gerichte.Quelle(starter=gerichte.nicht_holen)
+    q = gerichte.Quelle(holer=gerichte.nicht_holen)
     # Kein http-Doppelgänger im Spiel: was hier noch ins Netz wollte, hätte
     # keine Adresse — und die Netzsperre aus Punkt 1 fienge es ohnehin.
     gefunden = q.gericht(con, "pho")
     wahr(gefunden is not None, "Der Speicher trägt nicht.")
-    wahr(q.anfordern(con, "Pho") is False,
-         "Ein frischer Eintrag hat trotzdem einen Abruf angestossen.")
+    wahr(q.holen(con, "Pho") is None,
+         "Ein frischer Eintrag hat trotzdem einen Abruf ausgelöst.")
     return f"{len(gefunden['zutaten'])} Zutaten, 0 Anfragen"
 
 
@@ -870,7 +872,7 @@ def _zug_aus_quelle(con) -> str:
         _choose(("Passierte Tomaten", pid(con, "Passierte Tomaten"), 1),
                 ("Zwiebeln", pid(con, "Zwiebeln"), 1)))
     agent = chatmodul.Chat(zugang, wecker=_Box(),
-                           quelle=gerichte.Quelle(starter=gerichte.nicht_holen))
+                           quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho")
     gleich(ergebnis.weg, "chefkoch", "picknick.path")
     wahr(ergebnis.quelle_url and ergebnis.quelle_name,
@@ -879,27 +881,57 @@ def _zug_aus_quelle(con) -> str:
             f"{ergebnis.quelle_name[:26]!r}")
 
 
-def _zug_ohne_quelle(con) -> str:
-    gestartet = []
-    # Stufe 1 nennt hier ein Gericht, das noch niemand geholt hat. Der Zug
-    # muss trotzdem zu Ende laufen — mit den geratenen Begriffen — und den
-    # Abruf in einem EIGENEN PROZESS anstossen, statt auf ihn zu warten.
-    erst = json.loads(_extract((("Spaghetti",), 1)))
-    erst["gericht"] = "Spaghetti Carbonara"
-    zugang = _mock_zugang(
-        json.dumps(erst, ensure_ascii=False),
-        _choose(("Spaghetti", pid(con, "Spaghetti"), 1)))
+def _zug_ohne_speicher(con) -> str:
+    """Der Kern von WB-367, in beide Richtungen.
+
+    Stufe 1 nennt ein Gericht, zu dem nichts im Speicher steht. Der Zug muss
+    es SOFORT holen und mit dem Rezept antworten — bis WB-367 stiess er
+    einen eigenen Prozess an und riet solange weiter. Und wenn die Quelle
+    ausfällt, muss derselbe Zug sauber auf das Modell zurückfallen.
+    """
+    def zugang_fuer(gericht: str, *antworten):
+        erst = json.loads(_extract((("Spaghetti",), 1)))
+        erst["gericht"] = gericht
+        return _mock_zugang(json.dumps(erst, ensure_ascii=False), *antworten)
+
+    # 1. Der Normalfall: geholt, und die Zutaten kommen aus dem Rezept.
+    #    Der Holer bekommt den aufgezeichneten Doppelgänger; ein Socket
+    #    entsteht nirgends (und dürfte es hier auch gar nicht, Punkt 1).
+    geholt = []
+
+    def holer(c, name, *, frist_s=None):
+        geholt.append((name, frist_s))
+        return gerichtelauf.hole_jetzt(c, name, http=_Chefkoch())
+
+    zugang = zugang_fuer(
+        "Spaghetti Carbonara",
+        _extract((("Zwiebeln",), 1)),
+        _choose(("Zwiebeln", pid(con, "Zwiebeln"), 1)))
     agent = chatmodul.Chat(zugang, wecker=_Box(),
-                           quelle=gerichte.Quelle(starter=gestartet.append))
+                           quelle=gerichte.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Spaghetti Carbonara")
+    gleich(ergebnis.weg, "chefkoch", "picknick.path")
+    gleich(ergebnis.abruf, "ok", "picknick.dish_fetch")
+    wahr(geholt == [("Spaghetti Carbonara", chefkoch.TIMEOUT_SYNC_S)],
+         f"Nicht genau ein Abruf mit kurzer Frist: {geholt!r}")
+
+    # 2. Der Ausfall: Chefkoch antwortet nicht. Derselbe Zug läuft mit den
+    #    geratenen Begriffen zu Ende und sagt, dass sie geraten sind.
+    def kaputt(c, name, *, frist_s=None):
+        return gerichtelauf.hole_jetzt(c, name, http=_NieGefragt())
+
+    zugang = zugang_fuer("Lasagne",
+                         _choose(("Spaghetti", pid(con, "Spaghetti"), 1)))
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(holer=kaputt))
+    ergebnis = agent.turn(con, "alles für Lasagne")
     gleich(ergebnis.weg, "llm", "picknick.path")
+    gleich(ergebnis.abruf, "fehler", "picknick.dish_fetch")
     wahr(ergebnis.n_produkte == 1, "Der Zug ist nicht zu Ende gelaufen.")
-    wahr(len(gestartet) == 1 and gestartet[0][1:3] == ["-m", gerichte.quelle.MODUL],
-         "Es wurde kein eigener Prozess angestossen.")
     wahr("Chefkoch" in ergebnis.meldung,
          "Die Meldung verschweigt, dass die Zutaten geraten sind.")
-    return (f"Modellweg, {len(gestartet)} eigener Prozess angestossen, "
-            f"0 s gewartet")
+    return ("erster Satz: Rezept statt Raten; "
+            "Ausfall: Modellweg mit ehrlicher Meldung")
 
 
 # --------------------------------------------------------------------------
