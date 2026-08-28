@@ -30,6 +30,9 @@ Das Ergebnis vom 2026-08-28 (Qwen3.8-27B, 35 Chefkoch-Gerichte) steht in
     der Rest kam als Begriff zurück               3 von 35
     der Rest kam ÜBERSETZT zurück                 0 von 35
     der Rest ging dadurch still verloren         10 von 35 (29 %)
+
+Nach WB-371 (2026-08-29, dieselben 35 Gerichte) sind es 8 von 335 Begriffen
+ohne Herkunftszutat und 6 von 35 Läufen — „Ei(er)" wird jetzt gefunden.
 """
 from __future__ import annotations
 

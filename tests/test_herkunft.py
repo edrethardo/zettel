@@ -155,3 +155,90 @@ def test_zwei_unvereinbare_mengen_derselben_zutat_ergeben_keine():
 
 def test_ohne_begriffe_gibt_es_nichts_zuzuordnen():
     assert herkunft.zuordnen([_zutat("Salz", 1.0, "TL")], []) == []
+
+
+# --------------------------------------------------------------------------
+# Klammern und Akzente (WB-371)
+#
+# Chefkoch schreibt die Mehrzahl in Klammern — „Ei(er)", „Limette(n)",
+# „Zwiebel(n)". Bis WB-371 stand das als EIN Wort „ei(er)" im Vergleich und
+# traf den Begriff „Eier" nicht: die Zeile verlor ihre Menge, fiel aus dem
+# Zusammenzählen und fehlte im Rezeptentwurf. Gemessen an 35 Chefkoch-Zügen
+# gingen 6 der 13 Begriffe ohne Herkunftszutat allein auf „Eier" zurück.
+
+def test_die_klammermehrzahl_trifft_die_mehrzahl_des_modells():
+    """Der Fall, der das Ticket ausgelöst hat: „Eier" gegen „Ei(er)"."""
+    zeilen = _zuordnen([_zutat("Ei(er)", 4.0, None)], "Eier")
+    assert zeilen[0]["bedarf"] == 4.0
+    assert zeilen[0]["einheit"] == "Stk"
+    assert zeilen[0]["zutat"] == "Ei(er)"
+
+
+def test_zwei_klammerzeilen_derselben_zutat_zaehlen_zusammen():
+    """Quiche Lorraine nennt 1 Ei und 3 Eier — auf dem Zettel stehen 4.
+
+    Der gemessene Fall vom 2026-08-29. Ohne die Klammerfaltung bekam die
+    Zeile gar keine Menge und der Korb eine geratene Packungszahl.
+    """
+    zeilen = _zuordnen([_zutat("Ei(er)", 1.0, None),
+                        _zutat("Ei(er)", 3.0, None)], "Eier")
+    assert (zeilen[0]["bedarf"], zeilen[0]["einheit"]) == (4.0, "Stk")
+
+
+def test_die_klammermehrzahl_trifft_auch_bei_limetten():
+    """Hier hing die Zuordnung schon vorher am zweiten Namen der Zutat.
+
+    `chefkoch.zutat_kette` legt „Limette" ohne Klammerteil daneben, und
+    „Limetten" traf das über den Wortanfang. Die Rohform traf es nicht — und
+    ein Begriff, der nur über den Umweg ankommt, ist eine Zuordnung weniger,
+    sobald ein anderer Name danebensteht.
+    """
+    assert herkunft.punkte("Limetten", "Limette(n)") == 1.0
+    zeilen = _zuordnen([_zutat("Limette(n)", 2.0, None)], "Limetten")
+    assert zeilen[0]["bedarf"] == 2.0
+
+
+def test_der_akzent_des_rezepts_faellt_wie_der_umlaut():
+    """„Porrée" gegen „Porree" — Borschtsch schreibt es mit Akzent."""
+    zeilen = _zuordnen([_zutat("Porrée", 200.0, "g")], "Porree")
+    assert zeilen[0]["bedarf"] == 200.0
+    assert herkunft.punkte("Porree", "Porrée") == 1.0
+
+
+def test_das_komma_klebt_nicht_mehr_am_wort():
+    """„Hackfleisch, gemischt" war ein Wort „hackfleisch," und traf nur zu 0.6."""
+    assert herkunft.punkte("Hackfleisch", "Hackfleisch, gemischt") == 1.0
+
+
+# --------------------------------------------------------------------------
+# ... und was dabei NICHT passieren darf
+
+def test_eier_holen_nicht_das_eigelb():
+    """Der Kaiserschmarrn nennt Eigelb und Eiweiß, aber keine Eier.
+
+    Mehr Treffer heisst auch mehr Gelegenheit, das Falsche zu treffen — und
+    die halbe Menge Eigelb an der Zeile „Eier" sähe aus wie gerechnet.
+    """
+    zeilen = _zuordnen([_zutat("Eigelb", 4.0, None),
+                        _zutat("Eiweiß", 4.0, None)], "Eier")
+    assert zeilen[0]["bedarf"] is None
+    assert zeilen[0]["zutat"] is None
+
+
+def test_klopapier_findet_auch_neben_klammerzutaten_nichts():
+    zeilen = _zuordnen([_zutat("Ei(er)", 4.0, None),
+                        _zutat("Zwiebel(n)", 2.0, None)],
+                       "Eier", "Klopapier")
+    assert zeilen[0]["bedarf"] == 4.0
+    assert zeilen[1]["bedarf"] is None
+    assert zeilen[1]["zutat"] is None
+
+
+def test_die_klammer_macht_aus_der_fruehlingszwiebel_keine_zwiebel():
+    """Die Zusicherung aus WB-369 hält auch nach der Faltung.
+
+    „Frühlingszwiebel(n)" wird zu „fruehlingszwiebeln" — der Wortanfang-
+    Vergleich greift weiterhin nur von vorn.
+    """
+    zeilen = _zuordnen([_zutat("Frühlingszwiebel(n)", 1.0, "Bund")], "Zwiebeln")
+    assert zeilen[0]["bedarf"] is None
