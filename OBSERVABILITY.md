@@ -158,7 +158,8 @@ zuerst, ohne einen einzigen Ast zu öffnen. Im Butter-Fall stünde dort
 | `picknick.qty` | die Menge, die Stufe 1 zu dieser Zutat nannte |
 
 Die Dokumente stehen in der Reihenfolge, in der sie dem Modell vorlagen: erst
-die Treffer des genauesten Begriffs (unter sich nach Rang), dann die des
+die Treffer des genauesten Begriffs (unter sich nach Wortstufe, dann nach
+Rang — WB-339), dann die des
 nächsten. **Nicht global nach Score sortiert** — bm25 ist über Abfragen hinweg
 nicht geeicht, und ein seltener Begriff („Körnig") schöbe seine Treffer vor die
 des eigentlich gemeinten („Mais"). Der Score bleibt trotzdem an jedem Dokument:

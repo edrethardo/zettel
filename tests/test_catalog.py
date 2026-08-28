@@ -111,12 +111,26 @@ def test_inaktives_produkt_taucht_nicht_auf(con):
         == ["Spülmittel Zitrone"]
 
 
-def test_rang_ist_dabei_und_faellt_monoton(con):
+def test_rang_ist_dabei_und_faellt_innerhalb_einer_stufe(con):
+    """Der Rang ist da, ist positiv und sortiert — aber INNERHALB einer Stufe.
+
+    Bis WB-339 fiel er über die ganze Liste monoton. Seither steht die
+    `wortstufe` davor (ein ganzes Wort schlägt einen blossen Präfix), und
+    zwischen zwei Stufen darf der Rang darum springen. Seine Bedeutung ist
+    unverändert: negiertes bm25, grösser ist besser — nur gilt sie jetzt
+    innerhalb einer Stufe.
+    """
     treffer = search.search(con, "milch", limit=50)
     assert len(treffer) > 1
     raenge = [t["rang"] for t in treffer]
-    assert all(isinstance(r, float) for r in raenge)
-    assert raenge == sorted(raenge, reverse=True), "nicht nach Relevanz sortiert"
+    assert all(isinstance(r, float) and r > 0 for r in raenge)
+
+    stufen = [t["wortstufe"] for t in treffer]
+    assert stufen == sorted(stufen, reverse=True), "nicht nach Stufe sortiert"
+    for stufe in set(stufen):
+        innen = [t["rang"] for t in treffer if t["wortstufe"] == stufe]
+        assert innen == sorted(innen, reverse=True), \
+            f"Stufe {stufe} nicht nach Relevanz sortiert"
 
 
 def test_namenstreffer_schlaegt_kategorietreffer(con):
@@ -160,6 +174,235 @@ def test_mehrere_woerter_werden_und_verknuepft(con):
 
 def test_limit_wird_eingehalten(con):
     assert len(search.search(con, "milch", limit=3)) == 3
+
+
+# --------------------------------------------------------------------------
+# Wortgrenze statt blossem Präfix (WB-339)
+
+#: Der gemessene Katalog in klein. Namen, Marken und Kategorien sind aus
+#: `data/picknick.db` abgeschrieben (10.361 Produkte, 28.08.2026) — die echte
+#: Datei ist gitignored und ändert sich mit jedem Crawl, ein Test darf also
+#: nicht an ihr hängen. Was hier steht, ist genau das, was bm25 nicht
+#: auseinanderhalten konnte: der Abstand zwischen dem Richtigen und dem
+#: Kompositum lag bei 0,01 bis 0,17.
+WB339_KATALOG = [
+    # (external_id, name, brand, l1, l2, l3)
+    ("z1", "Zwiebeln Gelb, Netz", None,
+     "Obst & Gemüse", "Gemüse", "Zwiebeln & Knoblauch"),
+    ("z2", "Exner Zwiebelbrot", "Exner", "Brot & Backwaren", "Brot", None),
+    ("z3", "Wiltmann Zwiebelstreichwurst", "Wiltmann",
+     "Fleisch & Wurst", "Wurstwaren", "Streichwurst"),
+
+    # Die Marke steckt im Namen: OHNE sie abzuziehen trüge jedes
+    # Hemme-Produkt das Wort „Milch" und der Wortreffer unterschiede nichts.
+    ("m1", "Hemme Milch Milch 1,8 %", "Hemme Milch Uckermark",
+     "Milch, Molkerei & Butter", "Milch", "Frischmilch"),
+    ("m2", "Hemme Milch Schoko-Milch", "Hemme Milch Uckermark",
+     "Milch, Molkerei & Butter", "Milch", "Milchgetränke"),
+    ("m3", "Hemme Milch Vanille-Milch", "Hemme Milch Uckermark",
+     "Milch, Molkerei & Butter", "Milch", "Milchgetränke"),
+
+    ("me1", "Caputo Mehl \"00\" Classica", "Caputo",
+     "Backen & Kochen", "Mehl", None),
+    ("me2", "Kartoffeln mehligkochend, Netz", None,
+     "Obst & Gemüse", "Kartoffeln", None),
+
+    ("ma1", "Kitchin Mais", "Kitchin", "Konserven", "Gemüsekonserven", "Mais"),
+    ("ma2", "Baby Mais, Schale", None, "Obst & Gemüse", "Gemüse", None),
+    ("ma3", "Prignitzer Maishähnchenkeule, ohne Haut, ohne Knochen 4 Stück",
+     "Prignitzer", "Fleisch & Wurst", "Geflügel", None),
+    ("ma4", "Fackelmann Maiskolbenhalter", "Fackelmann",
+     "Haushalt", "Küchenhelfer", None),
+    ("ma5", "Maison Les Alexandrins Crozes-Hermitage 2023 0,75l",
+     "Maison Les Alexandrins", "Wein & Spirituosen", "Rotwein", None),
+
+    ("s1", "Marks & Spencer Spaghetti", "Marks & Spencer",
+     "Reis, Pasta & Getreide", "Pasta", "Spaghetti"),
+    ("s2", "Fackelmann Spaghettilöffel 30cm", "Fackelmann",
+     "Haushalt", "Küchenhelfer", None),
+    ("s3", "Lindt Spaghetti-Eis Pralinés", "Lindt",
+     "Süßwaren", "Pralinen", None),
+
+    # Begriffe, die heute schon das Richtige liefern. Sie sind der eigentliche
+    # Prüfstein: die Wortgrenze darf sie nicht anfassen.
+    ("r1", "Kitchin Tomatenmark", "Kitchin", "Konserven", "Tomaten", None),
+    ("r2", "BIOZENTRALE BIO Tomatenmark", "BIOZENTRALE",
+     "Konserven", "Tomaten", None),
+    ("r3", "Andechser BIO Schmand 24%", "Andechser",
+     "Milch, Molkerei & Butter", "Sahne & Schmand", None),
+    ("r4", "Jeden Tag H-Schmand", "Jeden Tag",
+     "Milch, Molkerei & Butter", "Sahne & Schmand", None),
+    ("r5", "Knoblauch, Netz", None,
+     "Obst & Gemüse", "Gemüse", "Zwiebeln & Knoblauch"),
+    ("r6", "BIO Knoblauch schwarz", None,
+     "Obst & Gemüse", "Gemüse", "Zwiebeln & Knoblauch"),
+    ("r7", "Reinheimer`s Zucchini", "Reinheimer`s",
+     "Obst & Gemüse", "Gemüse", None),
+    ("r8", "STRAYZ BIO Katze Nassfutter Huhn & Zucchini", "STRAYZ",
+     "Tierbedarf", "Katze", "Nassfutter"),
+    ("r9", "Andechser BIO Reibekäse 45%", "Andechser",
+     "Milch, Molkerei & Butter", "Käse", "Reibekäse"),
+    ("r10", "Kerrygold Irischer Cheddar Reibekäse", "Kerrygold",
+     "Milch, Molkerei & Butter", "Käse", "Reibekäse"),
+]
+
+
+@pytest.fixture
+def wb339(con):
+    """Der WB-339-Katalog, in dieselbe Datenbank gelegt wie die Fixture."""
+    for external_id, name, brand, l1, l2, l3 in WB339_KATALOG:
+        _insert(con, external_id, name, brand, l1, l2, l3)
+    return con
+
+
+def _namen(con, begriff, limit=20):
+    return [t["name"] for t in search.search(con, begriff, limit=limit)]
+
+
+def _vor(namen, frueher, spaeter):
+    """`frueher` steht in `namen` vor `spaeter` — beide müssen dabei sein."""
+    assert frueher in namen, f"{frueher!r} fehlt ganz: {namen}"
+    assert spaeter in namen, f"{spaeter!r} fehlt ganz: {namen}"
+    assert namen.index(frueher) < namen.index(spaeter), \
+        f"{frueher!r} steht hinter {spaeter!r}: {namen}"
+
+
+def test_zwiebeln_stehen_vor_dem_zwiebelbrot(wb339):
+    """Der Fall, der das Ticket ausgelöst hat.
+
+    Gemessen im echten Katalog: Zwiebelbrot 10,79, Zwiebelstreichwurst 10,79,
+    echte Zwiebeln 10,78 — der Rang trennt die drei nicht, die Wortgrenze
+    schon.
+    """
+    namen = _namen(wb339, "Zwiebel")
+    assert namen[0] == "Zwiebeln Gelb, Netz"
+    _vor(namen, "Zwiebeln Gelb, Netz", "Exner Zwiebelbrot")
+    _vor(namen, "Zwiebeln Gelb, Netz", "Wiltmann Zwiebelstreichwurst")
+
+
+def test_mehrzahl_zaehlt_als_wortreffer(wb339):
+    """„Zwiebel" muss „Zwiebeln" als ganzes Wort zählen dürfen.
+
+    Ohne die Endungen hülfe die Wortgrenze bei genau dem Fall nicht, der sie
+    ausgelöst hat: der Katalog führt den Plural, gesucht wird der Singular.
+    """
+    zwiebeln = {"name": "Zwiebeln Gelb, Netz", "brand": None,
+                "category_l1": "Obst & Gemüse"}
+    assert search.wortstufe(["zwiebel"], zwiebeln) >= search.STUFE_WORT
+    assert search.wortstufe(["zwiebeln"], zwiebeln) >= search.STUFE_WORT
+    # Das Kompositum bleibt ein Präfixtreffer, auch mit Endung.
+    brot = {"name": "Exner Zwiebelbrot", "brand": "Exner"}
+    assert search.wortstufe(["zwiebel"], brot) == search.STUFE_PRAEFIX
+
+
+def test_trinkmilch_steht_vor_schoko_und_vanille_milch(wb339):
+    """Zwei Fallen auf einmal: der Bindestrich und die Marke im Namen.
+
+    „Schoko-Milch" ist ein Kompositum wie „Zwiebelbrot" — es darf nicht als
+    zwei Wörter gelesen werden. Und weil die Marke „Hemme Milch" vorne im
+    Namen steht, trägt jedes dieser Produkte das Wort „Milch"; erst der Abzug
+    der Marke macht den Unterschied sichtbar.
+    """
+    namen = _namen(wb339, "Milch")
+    assert namen[0] == "Hemme Milch Milch 1,8 %"
+    _vor(namen, "Hemme Milch Milch 1,8 %", "Hemme Milch Schoko-Milch")
+    _vor(namen, "Hemme Milch Milch 1,8 %", "Hemme Milch Vanille-Milch")
+
+
+def test_mehl_steht_vor_mehligkochenden_kartoffeln(wb339):
+    namen = _namen(wb339, "mehl")
+    assert namen[0] == 'Caputo Mehl "00" Classica'
+    _vor(namen, 'Caputo Mehl "00" Classica', "Kartoffeln mehligkochend, Netz")
+
+
+def test_echter_mais_steht_vor_hähnchenkeule_und_franzoesischem_wein(wb339):
+    """„Maison" fängt mit „mais" an — für die Präfixsuche ist das ein Treffer.
+
+    Gemessen stand der Crozes-Hermitage auf Platz 3, vor jedem echten Mais.
+    """
+    namen = _namen(wb339, "Mais")
+    for kompositum in ("Prignitzer Maishähnchenkeule, ohne Haut, "
+                       "ohne Knochen 4 Stück",
+                       "Fackelmann Maiskolbenhalter",
+                       "Maison Les Alexandrins Crozes-Hermitage 2023 0,75l"):
+        _vor(namen, "Kitchin Mais", kompositum)
+        _vor(namen, "Baby Mais, Schale", kompositum)
+
+
+def test_spaghetti_stehen_vor_dem_spaghettiloeffel(wb339):
+    """Auch das Spaghetti-Eis ist ein Kompositum, trotz Bindestrich."""
+    namen = _namen(wb339, "Spaghetti")
+    assert namen[0] == "Marks & Spencer Spaghetti"
+    _vor(namen, "Marks & Spencer Spaghetti", "Fackelmann Spaghettilöffel 30cm")
+    _vor(namen, "Marks & Spencer Spaghetti", "Lindt Spaghetti-Eis Pralinés")
+
+
+def test_die_wortstufe_steht_am_treffer_und_der_rang_bleibt_der_rang(wb339):
+    """`rang` behält seine Bedeutung — die neue Kennzahl steht daneben.
+
+    Der Rang geht als Score in den RETRIEVER-Span (OBSERVABILITY.md). Würde
+    die Wortstufe hineingerechnet, hiesse dort dasselbe Feld plötzlich etwas
+    anderes, und die aufgezeichneten Läufe wären nicht mehr vergleichbar.
+    """
+    treffer = search.search(wb339, "Zwiebel")
+    assert all(isinstance(t["wortstufe"], int) for t in treffer)
+    assert all(t["rang"] > 0 for t in treffer)
+
+    zwiebeln = next(t for t in treffer if t["name"] == "Zwiebeln Gelb, Netz")
+    brot = next(t for t in treffer if t["name"] == "Exner Zwiebelbrot")
+    assert zwiebeln["wortstufe"] > brot["wortstufe"]
+    # Der Rang selbst hat sich NICHT gedreht — er trennt die beiden nach wie
+    # vor kaum, und genau deshalb braucht es die Stufe.
+    assert brot["rang"] > zwiebeln["rang"]
+
+
+def test_die_kategorie_sortiert_innerhalb_einer_stufe_und_nicht_darueber(wb339):
+    """Der Zuschlag für einen Kategorietreffer hebt nie über den Namen.
+
+    „Schwammtuch" liegt in der Kategorie „Spülmittel" und heisst nicht so —
+    es bleibt hinter dem Produkt, das den Begriff im Namen trägt.
+    """
+    _insert(wb339, "9106", "Frosch Spülmittel Zitrone", "Frosch",
+            "Haushalt", "Reinigen", "Spülmittel")
+    _insert(wb339, "9107", "Schwammtuch", "Vileda",
+            "Haushalt", "Reinigen", "Spülmittel")
+    assert _namen(wb339, "spuelmittel") == ["Frosch Spülmittel Zitrone",
+                                            "Schwammtuch"]
+
+
+@pytest.mark.parametrize("begriff, erwartet", [
+    ("Tomatenmark", "Kitchin Tomatenmark"),
+    ("Schmand", "Andechser BIO Schmand 24%"),
+    ("Knoblauch", "Knoblauch, Netz"),
+    ("Zucchini", "Reinheimer`s Zucchini"),
+    ("Reibekäse", "Andechser BIO Reibekäse 45%"),
+])
+def test_kein_heute_richtiger_begriff_wird_schlechter(wb339, begriff,
+                                                      erwartet):
+    """Der Regressionsschutz — die eigentliche Gefahr dieses Tickets.
+
+    Geprüft wird doppelt: gegen den erwarteten Namen UND gegen das, was die
+    Sortierung vor WB-339 geliefert hätte (bestes bm25). Der zweite Teil hält
+    auch dann, wenn sich der Testkatalog einmal ändert.
+    """
+    treffer = search.search(wb339, begriff)
+    vorher = sorted(treffer, key=lambda p: (-p["rang"], p["name"]))
+    assert treffer[0]["name"] == erwartet
+    assert vorher[0]["name"] == erwartet, "Der Begriff war vorher schon anders."
+
+
+def test_die_kette_schlaegt_die_wortstufe(wb339):
+    """WB-340 bleibt unangetastet: die Kettenreihenfolge steht über allem.
+
+    „Mais" bringt nur Komposita mit (Stufe Präfix), „Kitchin" bringt einen
+    vollen Wortreffer — und steht trotzdem hinten, weil die Kette es so sagt.
+    Die Wortstufe wirkt INNERHALB eines Begriffs, nicht über die Kette hinweg.
+    """
+    treffer = search.suche_kette(wb339, ["Maiskolbenhalter", "Mais"])
+    assert treffer[0]["name"] == "Fackelmann Maiskolbenhalter"
+    assert treffer[0]["wortstufe"] < treffer[1]["wortstufe"], \
+        "Der erste Begriff steht vorn, obwohl seine Stufe niedriger ist."
+    assert [t["via"] for t in treffer][0] == "Maiskolbenhalter"
 
 
 # --------------------------------------------------------------------------

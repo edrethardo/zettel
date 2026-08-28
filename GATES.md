@@ -53,8 +53,8 @@ greift auch der OTLP-Exporter nicht.
 
 **Die App startet und der Katalog antwortet** (6) — `GET /` weist auf den
 Katalog, `/katalog` rendert Produkte, `/produkte?q=…` liefert die
-HTMX-Trefferliste, `search()` gibt positive und absteigend sortierte Ränge
-zurück, ein Begriff ohne Treffer liefert eine leere Liste statt eines Fehlers,
+HTMX-Trefferliste, `search()` sortiert nach Wortstufe und darin nach positivem
+Rang (WB-339), ein Begriff ohne Treffer liefert eine leere Liste statt eines Fehlers,
 und der Kategoriebaum zählt den ganzen Teilbaum (nicht nur, was direkt an
 einem Knoten hängt).
 
@@ -73,8 +73,8 @@ denselben Weg geht wie im Betrieb:
 * die Span-Kinds stimmen — `catalog.search` ist `RETRIEVER`, nicht `TOOL`
 * alles hängt unter `chat.turn`: **ein** Trace, nicht fünf nebeneinander
 * die LLM-Spans tragen getrennte Token-Zahlen, vom Instrumentor
-* „Butter" legt fünf Dokumente mit ID, lesbarem Inhalt und positivem,
-  absteigend sortiertem Score vor
+* „Butter" legt fünf Dokumente mit ID, lesbarem Inhalt und positivem Score
+  vor, und `rank_top` ist der beste davon
 * „Zahnpasta" legt null vor — `candidates = 0`, und `rank_top` fehlt, statt
   eine erfundene 0 zu tragen
 * `chat.turn` fasst zusammen: `rejected = 0`, `weakest_term = "Zahnpasta"`

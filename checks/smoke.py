@@ -336,7 +336,7 @@ def checks_app(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
         con = db.connect(db_datei)
         try:
             b.pruefe(
-                "die Suche gibt einen Rang zurück, grösser ist besser",
+                "die Suche sortiert nach Wortstufe, dann nach Rang",
                 lambda: _rang_absteigend(search.search(con, "butter",
                                                        limit=5)))
             b.pruefe(
@@ -371,13 +371,25 @@ def checks_app(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
 
 
 def _rang_absteigend(treffer: list[dict]) -> str:
+    """Rang positiv, Stufen absteigend, und der Rang fällt INNERHALB der Stufe.
+
+    Seit WB-339 sortiert die Suche erst nach `wortstufe` (ein ganzes Wort im
+    Namen schlägt einen blossen Präfixtreffer), dann nach Rang. Über die ganze
+    Liste darf der Rang darum springen — geprüft wird deshalb beides getrennt.
+    Ohne die Stufenprüfung wäre der Check stillschweigend schwächer geworden.
+    """
     wahr(treffer, "Keine Treffer für „butter“.")
     raenge = [t["rang"] for t in treffer]
     wahr(all(r > 0 for r in raenge), f"Nicht alle Ränge positiv: {raenge}")
-    wahr(raenge == sorted(raenge, reverse=True),
-         f"Ränge nicht absteigend: {raenge}")
-    return (f"{len(treffer)} Treffer, Ränge absteigend "
-            f"{raenge[0]:.3g} … {raenge[-1]:.3g}")
+    stufen = [t["wortstufe"] for t in treffer]
+    wahr(stufen == sorted(stufen, reverse=True),
+         f"Wortstufen nicht absteigend: {stufen}")
+    for stufe in sorted(set(stufen), reverse=True):
+        innen = [t["rang"] for t in treffer if t["wortstufe"] == stufe]
+        wahr(innen == sorted(innen, reverse=True),
+             f"Ränge in Stufe {stufe} nicht absteigend: {innen}")
+    return (f"{len(treffer)} Treffer, Stufen {stufen}, Ränge je Stufe "
+            f"absteigend {raenge[0]:.3g} … {raenge[-1]:.3g}")
 
 
 def _baum(baum: list[dict]) -> str:
@@ -653,10 +665,13 @@ def _dokumente(spans, begriff: str) -> str:
              "Der Inhalt zeigt nicht, was das Modell sah (Name/Gebinde/Preis)")
         scores.append(a[p + DocumentAttributes.DOCUMENT_SCORE])
     wahr(all(s > 0 for s in scores), f"Score nicht positiv: {scores}")
-    wahr(scores == sorted(scores, reverse=True),
-         f"Dokumente nicht absteigend sortiert: {scores}")
-    gleich(a["picknick.rank_top"], scores[0], "rank_top")
-    return f"{n} Dokumente, bester Score {scores[0]:.4g}"
+    # NICHT „Scores absteigend": die Dokumente stehen in der Reihenfolge, in
+    # der sie dem Modell vorlagen — erst die Kette (WB-340), darin die
+    # Wortstufe vor dem Rang (WB-339). Das sagt OBSERVABILITY.md auch so. Der
+    # Score gilt innerhalb eines Begriffs; geprüft wird deshalb, dass er
+    # positiv ist und dass `rank_top` wirklich der beste ist.
+    gleich(a["picknick.rank_top"], max(scores), "rank_top")
+    return f"{n} Dokumente, bester Score {max(scores):.4g}"
 
 
 def _leere_suche(spans, begriff: str) -> str:
