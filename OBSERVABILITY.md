@@ -131,11 +131,14 @@ und `picknick.fanout_source` sagt, ob dafür überhaupt ein Modell nötig war
 in 0,0 s).
 
 **`korb.menge` steht NICHT unter `chat.turn`** (WB-362). Er entsteht, wenn
-eine Menge in den Korb gerechnet wird — meistens beim Tipp auf „Alles in den
-Warenkorb", also ohne jeden Chat-Zug. Ihn an den Baum oben zu hängen hiesse,
-eine Verwandtschaft zu behaupten, die es nicht gibt; er ist ein eigener Trace
-mit einer eigenen Frage („warum liegen hier zwei Packungen?"), und die
-Attribute stehen weiter unten.
+eine Menge in den Korb gerechnet wird — beim Tipp auf „Alles in den
+Warenkorb" und, seit WB-369, bei jedem „Ja" auf einen Vorschlag aus einem
+Rezept. Beides sind eigene Requests: der Chat-Zug ist längst beendet, wenn
+jemand entscheidet, und oft steht ein „Ja" zu einem Zug von gestern an. Ihn an
+den Baum oben zu hängen hiesse, eine Verwandtschaft zu behaupten, die es nicht
+gibt; er ist ein eigener Trace mit einer eigenen Frage („warum liegen hier
+zwei Packungen?"), und die Attribute stehen weiter unten. Verbunden sind die
+beiden über `picknick.search_term` und die Produkt-ID, nicht über den Baum.
 
 **Seit WB-367 ist ein `llm`-Zug MIT gesetztem `picknick.dish` ein Befund und
 kein Normalfall.** Vorher war er die Regel: der erste Satz zu einem neuen
@@ -267,6 +270,7 @@ Er beantwortet die eine Frage, die man später an einen Warenkorb stellt:
 | `output.value` | Text | der Satz, den die Nutzerin an der Zeile liest: „1000 ml gebraucht — 2 × Pomito 500 g." |
 | `picknick.item_id` | int | die Zeile in `order_item` |
 | `picknick.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird |
+| `picknick.search_term` | Text | der Suchbegriff, über den dieses Produkt in die Liste kam (WB-369); leer, wenn jemand am Regal auf „+" getippt hat |
 | `picknick.servings` | int | für wie viele Portionen dieses Einlegen gerechnet hat |
 | `picknick.need_added` | float | der Beitrag **dieses** Einlegens, schon skaliert |
 | `picknick.need_added_unit` | Text | dessen Einheit, wie das Rezept sie schreibt |
@@ -294,6 +298,27 @@ aus.
 Zahl im Korb aus einer Vorgabe und nicht aus einer Rechnung, und wenn sich
 solche Züge häufen, fehlt dem Katalog oder dem Zerleger etwas. Ein fehlendes
 Attribut lässt sich nicht filtern.
+
+**Seit WB-369 ist dieser Span auch der Weg vom CHAT in den Korb.** Vorher
+entstand er praktisch nur beim Tipp auf „Alles in den Warenkorb"; heute
+entsteht er bei jedem „Ja" auf einen Vorschlag, der aus einem Rezept stammt.
+Der ganze Weg steht dann in vier Attributen nebeneinander, und genau dafür
+ist `search_term` dazugekommen:
+
+    picknick.search_term  = "gemischtes Hackfleisch"   welche Zutat
+    picknick.need_added   = 200                        welche Menge
+    picknick.product_id   = 4711                       welches Produkt
+    picknick.packages     = 1                          welche Packungszahl
+
+Wer eine falsche Menge im Korb findet, sieht daran, in welchem Schritt sie
+entstanden ist: bei einem falschen `search_term` hat Stufe 3 danebengegriffen
+(das steht als Label ohnehin an der Zeile), bei einem falschen `need_added`
+die Zuordnung Begriff -> Zutat (`assistant.herkunft`), bei einer falschen
+`packages` die Packungsgrösse am Produkt (`pack_text` steht daneben).
+
+**Was der Span NICHT sagt: welche Portionszahl gemeint war.** `servings` ist
+auf dem Chat-Weg immer leer, weil dort nicht skaliert wird — siehe „Was hier
+schwächer ist, als es aussieht".
 
 **`assumption` ist die Ehrlichkeitsspalte.** Milliliter gegen Gramm werden 1:1
 gerechnet — für Wässriges stimmt das, für Mehl (1 l wiegt rund 550 g) und Öl
@@ -563,6 +588,23 @@ zeigte ins Leere.
   nichts. Das ist die Kehrseite davon, dass eine fehlende Zahl ehrlicher ist
   als eine erfundene; wer die Fehltipp-Häufigkeit wirklich messen will, muss
   sie in `chat_suggestion.zurueckgenommen` zählen und nicht in Phoenix.
+* **Die Portionszahl aus dem Chat gibt es nicht** (WB-369, Regel 5). „alles
+  für Lasagne für 6" nimmt Chefkochs eigene `servings` und skaliert nichts;
+  `picknick.servings` bleibt auf dem Chat-Weg leer. Das ist eine Entscheidung
+  und kein Versehen: welche Zahl in einem Satz die Portionszahl ist, liesse
+  sich nur raten, und eine falsche Portionszahl multipliziert jede Menge im
+  Korb. Die Zahlen dafür fehlen ausserdem — in den 35 echten Nutzersätzen der
+  Datenbank (2026-08-28) kommt **keine einzige Ziffer** vor. Wer skalieren
+  will, tippt am Rezept auf „Alles in den Warenkorb", dort steht das Feld
+  (WB-362).
+* **Die Zuordnung Begriff -> Zutat kann eine Menge verlieren** (WB-369). Sie
+  vergleicht Wörter (`assistant.herkunft`) und erkennt ein Synonym des
+  Modells nicht: nennt es „Möhren" als „Karotten", findet die Zeile ihre
+  Zutat nicht und trägt keine Menge — sie verhält sich dann wie vor WB-369.
+  Gemessen an den drei echten Chefkoch-Zügen der Datenbank fanden 37 von 38
+  Begriffen ihre Zutat, **keiner die falsche**. Die Richtung ist Absicht: ein
+  verlorener Bedarf kostet eine Packung zu viel, ein falsch zugeordneter
+  Bedarf eine falsche Menge, die aussieht wie eine gerechnete.
 * **`document.score` ist über Traces hinweg nicht vergleichbar**, weil er vom
   Katalogumfang abhängt. Zwei Züge vor und nach einem Crawl haben andere
   Zahlen bei gleichem Verhalten.

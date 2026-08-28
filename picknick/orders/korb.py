@@ -199,7 +199,7 @@ def _neu_rechnen(con: sqlite3.Connection, item_id: int) -> int:
 
 
 def _bedarf_span(con: sqlite3.Connection, item_id: int, *,
-                 menge, einheit, portionen=None) -> None:
+                 menge, einheit, portionen=None, begriff=None) -> None:
     """Schreibt die Rechnung dieses Postens in einen Span (Spec 7).
 
     **Was gerechnet wurde, gehört in den Trace** — sonst ist später nicht
@@ -225,6 +225,13 @@ def _bedarf_span(con: sqlite3.Connection, item_id: int, *,
             "picknick.item_id": item_id,
             "picknick.product_id": row["product_id"],
             "picknick.servings": portionen,
+            # Woher der Bedarf kommt (WB-369): der Suchbegriff, unter dem
+            # dieses Produkt gefunden wurde. Ohne ihn endet der Weg von der
+            # Zutat zum Korbposten im Trace an der Produkt-ID — und die Frage
+            # „welche Zutat hat diese Packung verlangt?" wäre nur noch zu
+            # raten. Auf dem Katalogweg bleibt er leer, weil es dort keinen
+            # gibt.
+            "picknick.search_term": str(begriff or "") or None,
             # Der EINZELNE Beitrag dieses Einlegens …
             "picknick.need_added": float(menge),
             "picknick.need_added_unit": str(einheit or "") or None,
@@ -252,7 +259,8 @@ def _bedarf_span(con: sqlite3.Connection, item_id: int, *,
 
 def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
              qty: int = 1, store: str | None = None,
-             menge=None, einheit=None, portionen=None) -> int:
+             menge=None, einheit=None, portionen=None,
+             begriff: str | None = None) -> int:
     """Legt ein Produkt oder einen Freitext in den gemeinsamen Warenkorb.
 
     Liegt dieselbe Sache schon drin, wird die Zeile ERGÄNZT statt eine zweite
@@ -279,6 +287,10 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
     behandelt, die Menge bleibt trotzdem stehen, und die Oberfläche kann
     sagen, warum. Das ist Regel 4 des Tickets, und es hält zugleich das
     Verhalten von vor diesem Ticket für alles, was keine Menge hat.
+
+    `begriff` steht nur im Trace (WB-369): der Suchbegriff, über den dieses
+    Produkt in die Liste kam. Er ändert an der Rechnung nichts und
+    beantwortet im Span die Frage, welche Zutat diese Packung verlangt hat.
 
     **Freitext bekommt keine Menge.** Ein Posten ohne Produkt hat keine
     Packungsgrösse, gegen die sich rechnen liesse — er bleibt eine Zeile mit
@@ -341,7 +353,7 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
     _neu_rechnen(con, item_id)
     con.commit()
     _bedarf_span(con, item_id, menge=menge, einheit=einheit,
-                 portionen=portionen)
+                 portionen=portionen, begriff=begriff)
     return item_id
 
 

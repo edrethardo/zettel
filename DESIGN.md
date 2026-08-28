@@ -279,6 +279,25 @@ nicht ab (es hätte nichts vorzuschlagen) und die Quelle übernimmt. Ordnet
 jemand von Hand Produkte zu, greift wieder der Rezeptweg — und das ist
 richtig, denn dann stehen dort die Produkte, die ein Mensch ausgesucht hat.
 
+**Die Zutat hinter einem Suchbegriff wird gerechnet, nicht erfragt** (WB-369).
+Der Chat-Weg trug lange keine Mengen: das Modell macht aus Chefkochs
+Zutatenliste Suchbegriffe, und `amount`/`unit` fielen dabei weg. Das sieht nach
+einer Modellaufgabe aus („sag mir zu jedem Begriff die Zutat") und ist keine —
+der Begriff ist ja AUS dem Zutatennamen gemacht, seine Wörter stehen also noch
+darin. `assistant.herkunft` vergleicht sie und braucht dafür weder einen
+zweiten Aufruf noch eine Prompt-Zeile. Gemessen an den drei echten
+Chefkoch-Zügen der Datenbank: **37 von 38 Begriffen fanden ihre Zutat, keiner
+die falsche.** Dieselbe Sorte Befund wie in WB-368, wo sich eine vermeintliche
+Modellaufgabe als `GROUP BY` herausstellte.
+
+Die Gegenrichtung wäre gewesen, das Modell die Zuordnung mitliefern zu lassen
+(eine Nummer je Zeile, gegen die Zutatenliste geprüft wie die Produkt-IDs in
+`plan.choose`). Sie kostet Token, Prompt-Fläche und eine neue
+Halluzinationsfläche — und der Code kann es messbar. **Wo die Zuordnung nicht
+eindeutig ist, gibt es keine Menge**, und die Zeile verhält sich wie vorher:
+eine fehlende Menge kostet eine Packung zu viel, eine falsche wäre eine Zahl im
+Korb, die aussieht wie eine gerechnete.
+
 **Der Abruf bei Chefkoch läuft im Request — und lief es zwei Tickets lang
 nicht** (WB-338, revidiert in WB-367). Die erste Fassung trug einen Wunsch in
 `dish` ein und startete `python -m picknick.gerichte.lauf` als eigenen

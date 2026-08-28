@@ -55,7 +55,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from picknick import db, orders
+from picknick import db, mengen, orders
 from picknick.orders.bestellung import jetzt
 
 ROLLE_NUTZERIN = "user"
@@ -104,6 +104,7 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
               search_term: str | None = None, rang: float | None = None,
               fallback_term: str | None = None,
               corrected_from: int | None = None,
+              menge=None, einheit: str | None = None,
               decision: str = OFFEN) -> int:
     """Legt eine Vorschlagszeile an. Entweder Produkt oder Freitext.
 
@@ -114,6 +115,12 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
     `rang` heisst in der Datenbank `rank` — die Spalte stammt aus Spec 4 und
     bleibt, wie sie dort steht; nach aussen heisst sie wie überall sonst im
     Projekt, wo der FTS-Rang vorkommt (`catalog.search`).
+
+    `menge` und `einheit` sind die BENÖTIGTE Menge aus dem Rezept (WB-369) —
+    dieselben zwei Namen wie in `korb.einlegen()`, an das sie beim „Ja"
+    weitergereicht werden. `qty` daneben bleibt die Packungszahl. Ohne Menge
+    ist alles wie vor WB-369, und das ist der Normalfall: „Klopapier" hat
+    keine.
     """
     pid, text = orders.genau_eines(product_id, free_text, was="Ein Vorschlag")
     if pid is not None and not con.execute(
@@ -125,17 +132,20 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
     cur = con.execute(
         "INSERT INTO chat_suggestion (chat_message_id, product_id, free_text,"
         "                             qty, search_term, rank, decision,"
-        "                             fallback_term, corrected_from)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "                             fallback_term, corrected_from,"
+        "                             need_amount, need_unit)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (chat_message_id, pid, text, max(1, int(qty)), search_term,
          None if rang is None else float(rang), decision, fallback_term,
-         corrected_from))
+         corrected_from, None if menge is None else float(menge),
+         (einheit or None)))
     con.commit()
     return int(cur.lastrowid)
 
 
 _VORSCHLAG_SQL = (
     "SELECT s.id, s.chat_message_id, s.product_id, s.free_text, s.qty,"
+    "       s.need_amount, s.need_unit,"
     "       s.search_term, s.rank AS rang, s.decision, s.decided_at,"
     "       s.eingelegt_at, s.zurueckgenommen,"
     "       s.corrected_from, s.fallback_term,"
@@ -171,6 +181,22 @@ def _auf(row: sqlite3.Row) -> dict:
     # `behalten`: nach einem zurückgenommenen „Ja" steht die Korbzeile
     # weiter da, und die Oberfläche muss es sagen können.
     v["im_korb"] = v["eingelegt_at"] is not None
+    # Was aus der benötigten Menge WÜRDE, wenn diese Zeile jetzt in den Korb
+    # ginge (WB-369). Gerechnet und nicht gespeichert: die Packungsgrösse
+    # steht am Produkt und kann sich beim nächsten Crawl ändern, und der Satz
+    # daneben soll dann auch anders lauten.
+    #
+    # Es ist eine VORSCHAU auf diese eine Zeile und nicht die Zahl, die
+    # hinterher im Korb steht: dort wird über alle Rezepte zusammengezählt,
+    # und das kann mehr ergeben. Genau deshalb steht am Korbposten derselbe
+    # Satz noch einmal, dann mit der Summe (`orders.korb.rechnung`).
+    v["rechnung"] = mengen.rechne(v["need_amount"], v["need_unit"],
+                                  v["unit_text"])
+    v["mengensatz"] = _mengensatz(v)
+    # Was die Zeile als Zahl zeigt: die ausgerechnete Packungszahl, wo es eine
+    # gibt, sonst die Zahl an der Zeile. Ein „2 ×" aus dem Modell neben einem
+    # ausgerechneten „1 ×" wäre zweimal dieselbe Behauptung mit zwei Zahlen.
+    v["packungen"] = v["rechnung"].packungen or v["qty"]
     # Wird in `liste()` gefüllt; hier gesetzt, damit eine einzeln geholte
     # Zeile dieselben Felder hat und keine Vorlage über ein fehlendes
     # stolpert.
@@ -179,6 +205,29 @@ def _auf(row: sqlite3.Row) -> dict:
     if v["name"] is None:
         v["name"] = f"Produkt {v['product_id']} — nicht mehr auffindbar"
     return v
+
+
+def _mengensatz(v: dict) -> str | None:
+    """Der Satz zur Menge an einer Vorschlagszeile — oder `None`.
+
+    Zwei Fälle, und der zweite ist der Grund für diese Funktion: bei einem
+    PRODUKT steht die Packungsgrösse daneben, und `mengen.satz` schreibt die
+    ganze Rechnung („500 g gebraucht — 1 × 500 g"). Bei einem FREITEXT gibt es
+    kein Produkt und damit keine Packung; der Satz von dort läse sich als
+    „die Packungsgrösse steht nicht lesbar am Produkt" und schöbe einer Zeile
+    einen Mangel unter, die gar kein Produkt hat.
+
+    Die Menge steht auch am Freitext, statt sie wegzulassen: im Laden ist
+    „500 g Rinderknochen" die Auskunft, auf die es ankommt, und sie stammt
+    aus dem Rezept.
+    """
+    if v.get("need_amount") is None:
+        return None
+    if v.get("product_id") is None:
+        return (f"{mengen.schreibe(v['need_amount'], v['need_unit'])} "
+                "gebraucht — im Katalog nicht gefunden.")
+    return mengen.satz(v["rechnung"], produkt=v.get("name"),
+                       unit_text=v.get("unit_text"))
 
 
 def liste(con: sqlite3.Connection, chat_message_id: int) -> list[dict]:
@@ -351,8 +400,14 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
     # Der eigentliche Schutz: eingelegt wird, wenn diese Zeile noch NIE im
     # Korb war. Alles andere ist ein Label-Wechsel.
     if entscheidung == BEHALTEN and not v["im_korb"]:
+        # **Hier springt die Rechnung aus WB-362 an** (WB-369): mit `menge`
+        # zählt `korb.einlegen` je Produkt zusammen und rundet erst danach
+        # auf die Packungsgrösse. Ohne Menge legt es wie vorher `qty`
+        # Packungen ein — der Weg für alles, was aus keinem Rezept stammt.
         orders.einlegen(con, product_id=v["product_id"],
-                        free_text=v["free_text"], qty=v["qty"])
+                        free_text=v["free_text"], qty=v["qty"],
+                        menge=v["need_amount"], einheit=v["need_unit"],
+                        begriff=v["search_term"])
         eingelegt = jetzt()
     else:
         eingelegt = v["eingelegt_at"]
@@ -453,7 +508,15 @@ def _statt(con: sqlite3.Connection, suggestion_id: int, *, product_id=None,
     neu_id = vorschlag(con, quelle["chat_message_id"], product_id=product_id,
                        free_text=free_text, qty=quelle["qty"],
                        search_term=search_term or quelle["search_term"],
-                       rang=rang, corrected_from=suggestion_id)
+                       rang=rang, corrected_from=suggestion_id,
+                       # Die benötigte Menge gehört der ZUTAT und nicht dem
+                       # Produkt (WB-369): wer „Nein" sagt und ein anderes
+                       # Hackfleisch wählt, braucht immer noch 500 g. Ohne
+                       # diese Zeile verlöre ausgerechnet die Korrektur die
+                       # Menge — und im Korb läge eine Packung nach
+                       # Bauchgefühl.
+                       menge=quelle["need_amount"],
+                       einheit=quelle["need_unit"])
     return entscheiden(con, neu_id, BEHALTEN)
 
 

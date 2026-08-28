@@ -3,8 +3,8 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 57 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 807 Tests, rund 24 s
+.venv/bin/python checks/smoke.py     # 59 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 830 Tests, rund 24 s
 ```
 
 Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
@@ -126,6 +126,14 @@ zwei Rezepte mit je 100 g ergeben zusammen 200 g und damit **eine** Packung à
 1-kg-Netz bleibt auch für 8 Portionen ein Netz — geprüft wird dabei
 ausdrücklich BEIDES, dass auf 2 Stück skaliert wurde und dass die Packungszahl
 trotzdem 1 ist, samt der Begründung „gegen ‚1 kg' nicht ausrechenbar".
+
+**Der Chat-Weg trägt Mengen** (2, WB-369) — am HTTP-Rand geklickt, weil die
+Kette genau dort riss: WB-362 rechnete am gespeicherten Rezept, der
+produktive Weg ist aber Chat -> Chefkoch -> Vorschlag -> Korb. Ein Chat-Zug
+zu „alles für Bolognese" legt beim „Ja" **200 g** in den Korb und nicht die
+vom Modell geratene Packungszahl (es antwortet hier mit `menge: 2`); ein
+zweiter Zug zu einem anderen Gericht mit 300 g Hackfleisch ergibt zusammen
+500 g und damit **eine** Packung à 500 g. Vor WB-369 lagen hier zwei.
 
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe
