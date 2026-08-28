@@ -129,7 +129,31 @@ SCHEMA = [
         order_id   INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
         product_id INTEGER REFERENCES product(id),
         free_text  TEXT,
+        -- Die PACKUNGSZAHL: was im Laden gegriffen wird. Sie ist seit WB-362
+        -- ein ERGEBNIS und keine Eingabe mehr — gerechnet aus `need_amount`
+        -- gegen die Packungsgrösse des Produkts, mindestens aber `hand_qty`.
         qty        INTEGER NOT NULL DEFAULT 1,
+        -- Die benötigte MENGE, zusammengezählt über alle Rezepte, die auf
+        -- dieses Produkt zeigen (WB-362). Der Grund, warum es diese Spalte
+        -- gibt: ohne sie ist die Information, aus der man zusammenzählen
+        -- müsste, beim Einlegen schon weggerundet. Zwei Rezepte mit je 40 g
+        -- Knoblauch hinterliessen zweimal „1 Packung", und aus 1 + 1 lässt
+        -- sich 80 g nicht mehr zurückgewinnen.
+        --
+        -- Nullable, und das ist kein Versäumnis: ein von Hand eingelegter
+        -- Posten HAT keine benötigte Menge. Er sagt „eine Packung", nicht
+        -- „80 Gramm", und eine 0 an dieser Stelle wäre die Behauptung, es
+        -- werde nichts davon gebraucht.
+        need_amount REAL,
+        -- Die Grundeinheit dazu (`g`, `ml`, `Stk`, oder eine eigene wie
+        -- `Bund`). Getrennt gespeichert, weil sich 200 g und 2 Bund nicht
+        -- zusammenzählen lassen und der Unterschied sichtbar bleiben muss.
+        need_unit  TEXT,
+        -- Wie viele Packungen ausdrücklich VERLANGT wurden — der Griff ins
+        -- Regal, das „+" an der Kachel, die von Hand gesetzte Menge. Sie ist
+        -- die Untergrenze für `qty`: ein Handposten darf nicht verschwinden,
+        -- nur weil ein Rezept rechnerisch mit weniger auskäme.
+        hand_qty   INTEGER,
         store      TEXT NOT NULL DEFAULT 'egal'
                         CHECK (store IN ('rewe', 'lidl', 'egal')),
         picked_at  TEXT,
@@ -235,6 +259,21 @@ SCHEMA = [
         product_id INTEGER REFERENCES product(id),
         free_text  TEXT,
         qty        INTEGER NOT NULL DEFAULT 1,
+        -- Wie viel von diesem Produkt das Rezept braucht — bei DER
+        -- Portionszahl, die in `recipe.servings` steht (WB-362). Das ist die
+        -- Grösse, die mit den Portionen wächst; `qty` ist es nicht.
+        --
+        -- Ausdrücklich HIER und nicht als Verweis auf `recipe_ingredient`:
+        -- die Zutatenliste der Quelle wird bei jedem Abruf gelöscht und neu
+        -- geschrieben (`gerichte.speicher.merken`), ein Fremdschlüssel darauf
+        -- risse die von Hand verknüpften Produkte mit. Genau deren Erhalt ist
+        -- dort ausdrücklich zugesagt.
+        --
+        -- Nullable: eine Zutat, die jemand als „1 Glas Pesto" verknüpft hat,
+        -- hat keine Menge in Gramm, und eine erfundene wäre schlimmer als
+        -- keine.
+        amount     REAL,
+        unit       TEXT,
         CHECK ((product_id IS NULL) <> (free_text IS NULL))
     )
     """,
@@ -625,6 +664,14 @@ NACHGETRAGENE_SPALTEN = (
     ("recipe", "source_rating", "REAL"),
     ("recipe", "source_votes", "INTEGER"),
     ("recipe", "fetched_at", "TEXT"),
+    # WB-362: die benötigte Menge neben der Packungszahl. Ohne diese drei
+    # Spalten liesse sich im Nachhinein nicht zusammenzählen — die
+    # Begründungen stehen am Schema oben.
+    ("order_item", "need_amount", "REAL"),
+    ("order_item", "need_unit", "TEXT"),
+    ("order_item", "hand_qty", "INTEGER"),
+    ("recipe_item", "amount", "REAL"),
+    ("recipe_item", "unit", "TEXT"),
 )
 
 
@@ -663,6 +710,22 @@ def _eingelegt_nachtragen(con: sqlite3.Connection) -> None:
                 " WHERE decision = 'kept' AND eingelegt_at IS NULL")
 
 
+def _hand_menge_nachtragen(con: sqlite3.Connection) -> None:
+    """Füllt `hand_qty` für Posten, die vor WB-362 im Korb lagen.
+
+    Vor diesem Ticket war `qty` eine EINGABE: jede Zahl im Korb stand dort,
+    weil jemand sie gesetzt oder ein Rezept sie mitgebracht hat — nichts davon
+    war aus einer Menge gerechnet. Genau das ist die Bedeutung von `hand_qty`,
+    also ist `qty` der richtige Anfangswert.
+
+    Bliebe die Spalte NULL, zählte der Altbestand als „keine Packung
+    verlangt": ein Korb mit zwei Päckchen Butter fiele beim nächsten Rezept,
+    das 50 g Butter braucht, auf eines zurück. Ein stillschweigend
+    verschwundener Posten ist der schlimmste Ausgang einer Migration.
+    """
+    con.execute("UPDATE order_item SET hand_qty = qty WHERE hand_qty IS NULL")
+
+
 def _fts_nachziehen(con: sqlite3.Connection) -> bool:
     """Wirft einen veralteten FTS-Index weg. Gibt zurück, ob neu gebaut wurde.
 
@@ -687,8 +750,11 @@ def migrate(con: sqlite3.Connection) -> None:
     for stmt in SCHEMA:
         con.execute(stmt)
     _norm_spalten_nachziehen(con)
-    if ("chat_suggestion", "eingelegt_at") in _spalten_nachziehen(con):
+    neue_spalten = _spalten_nachziehen(con)
+    if ("chat_suggestion", "eingelegt_at") in neue_spalten:
         _eingelegt_nachtragen(con)
+    if ("order_item", "hand_qty") in neue_spalten:
+        _hand_menge_nachtragen(con)
     neu_gebaut = _fts_nachziehen(con)
     for stmt in FTS_SCHEMA:
         con.execute(stmt)

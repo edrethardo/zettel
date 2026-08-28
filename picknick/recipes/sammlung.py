@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import sqlite3
 
+from picknick import mengen
 from picknick.orders import UngueltigerPosten
 from picknick.orders import korb
 from picknick.orders.bestellung import markiere_katalogstand
@@ -49,8 +50,16 @@ def _name(name) -> str:
 def _servings(wert):
     """`'4'` -> 4, leer -> None, Unsinn -> None.
 
-    Portionen sind eine Notiz für Menschen und keine Rechengrösse; ein
-    verrutschtes Zeichen darf deshalb nicht das Speichern verhindern.
+    **Seit WB-362 ist die Portionszahl eine Rechengrösse.** Bis WB-325 stand
+    hier das Gegenteil — „Portionen sind eine Notiz für Menschen" —, und das
+    war damals richtig: es gab keine Mengenangaben, aus denen sich hätte
+    rechnen lassen. WB-338 hat sie gebracht (Chefkoch liefert `servings` und
+    je Zutat `amount` und `unit`), und damit wurde aus der Notiz die Zahl, auf
+    die `mengen.faktor` die Zutatenmengen bezieht.
+
+    Was sich dadurch NICHT ändert: ein verrutschtes Zeichen darf weiterhin
+    nicht das Speichern verhindern. Unsinn wird zu `None`, und ein Rezept ohne
+    Portionszahl skaliert eben nicht — es bleibt ein Rezept.
     """
     if wert is None or str(wert).strip() == "":
         return None
@@ -86,7 +95,8 @@ def anlegen(con: sqlite3.Connection, name: str, servings=None,
     for z in (zutaten or []):
         pid, text = korb.genau_eines(z.get("product_id"), z.get("free_text"),
                                      was="Eine Zutat")
-        geprueft.append((pid, text, max(1, int(z.get("qty") or 1))))
+        geprueft.append((pid, text, max(1, int(z.get("qty") or 1)),
+                         z.get("amount"), z.get("unit")))
 
     cur = con.execute(
         "INSERT INTO recipe (name, servings, note) VALUES (?, ?, ?)",
@@ -94,9 +104,9 @@ def anlegen(con: sqlite3.Connection, name: str, servings=None,
     recipe_id = int(cur.lastrowid)
     con.commit()
     try:
-        for pid, text, menge in geprueft:
+        for pid, text, menge, bedarf, einheit in geprueft:
             zutat_hinzufuegen(con, recipe_id, product_id=pid, free_text=text,
-                              qty=menge)
+                              qty=menge, amount=bedarf, unit=einheit)
     except Exception:
         # Bleibt für den Fall, dass doch etwas durchrutscht — etwa eine
         # Produkt-id, die zwischen Prüfung und INSERT verschwindet.
@@ -174,6 +184,14 @@ def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
     behauptet das auch nicht.
     """
     z = markiere_katalogstand(dict(row))
+    # Die benötigte Menge als Satz — „3 Stange" und nicht „3 stange"
+    # (WB-362). Die Grundeinheit wird gefaltet gespeichert, damit „Zehe(n)"
+    # und „Zehen" dieselbe sind; zum Lesen taugt das nicht, und die Vorlage
+    # soll die Regel nicht ein zweites Mal kennen müssen.
+    z["mengentext"] = mengen.schreibe(z.get("amount"), z.get("unit"))
+    # Dieselbe Einheit ohne die Zahl — für das Feld, in dem die Menge
+    # geändert wird: dort steht die Zahl schon im Eingabefeld.
+    z["einheit_text"] = mengen.schreibe(1, z.get("unit")).split(" ", 1)[-1]
     if z["name"] is None:
         # Kann nur passieren, wenn eine Produktzeile trotz Fremdschlüssel
         # verschwunden ist. Dann ist der Name weg — aber die Zeile bleibt
@@ -185,6 +203,7 @@ def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
 
 _ZUTAT_SQL = (
     "SELECT ri.id, ri.recipe_id, ri.product_id, ri.free_text, ri.qty,"
+    "       ri.amount, ri.unit,"
     "       coalesce(p.name, ri.free_text) AS name,"
     "       p.unit_text, p.price_cents, p.image_path, p.active"
     "  FROM recipe_item ri LEFT JOIN product p ON p.id = ri.product_id"
@@ -254,14 +273,39 @@ def rezepte(con: sqlite3.Connection) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def _amount(wert):
+    """`'500'` -> 500.0, `'0,5'` -> 0.5, leer oder Unsinn -> None.
+
+    Komma und Punkt gelten beide: getippt wird auf einem deutschen Telefon
+    („0,5"), und ein aus dem Rezept übernommener Wert kommt als Zahl. Unsinn
+    wird `None` und nicht 0 — „null Gramm Butter" wäre eine Behauptung, die
+    niemand aufgestellt hat, und sie würde beim Zusammenzählen mitgerechnet.
+    """
+    if wert in (None, ""):
+        return None
+    try:
+        zahl = float(str(wert).strip().replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+    return zahl if zahl > 0 else None
+
+
 def zutat_hinzufuegen(con: sqlite3.Connection, recipe_id: int, product_id=None,
-                      free_text=None, qty: int = 1) -> int:
+                      free_text=None, qty: int = 1, amount=None,
+                      unit=None) -> int:
     """Legt eine Zutat an. Gibt es sie schon, wird die Menge erhöht.
 
     Dieselbe Regel wie im Warenkorb: zweimal dasselbe heisst „zwei davon" und
     nicht „zwei Zeilen". Die Prüfung „genau eines von beidem" kommt aus
     `orders.korb`, weil es buchstäblich dieselbe Regel ist wie beim
     Bestellposten — zwei Kopien davon liefen irgendwann auseinander.
+
+    `amount` und `unit` sind die BENÖTIGTE Menge bei der Portionszahl des
+    Rezepts (WB-362) — „500 ml", nicht „1 Packung". Sie sind das, was mit den
+    Portionen wächst; `qty` wächst nicht mit. Wird eine vorhandene Zutat ein
+    zweites Mal angelegt, addiert sich die Menge nach denselben Regeln wie im
+    Korb (`mengen.summiere`): passen die Einheiten nicht zusammen, bleibt die
+    ältere stehen, statt zwei Einheiten zu einer Zahl zu verrühren.
     """
     _muss_geben(con, recipe_id)
     pid, text = korb.genau_eines(product_id, free_text, was="Eine Zutat")
@@ -269,26 +313,58 @@ def zutat_hinzufuegen(con: sqlite3.Connection, recipe_id: int, product_id=None,
             "SELECT 1 FROM product WHERE id = ?", (pid,)).fetchone():
         raise UngueltigerPosten(f"Produkt {pid} gibt es nicht.")
     menge = max(1, int(qty))
+    bedarf = _amount(amount)
 
     vorhanden = con.execute(
-        "SELECT id, qty FROM recipe_item"
+        "SELECT id, qty, amount, unit FROM recipe_item"
         " WHERE recipe_id = ? AND product_id IS ? AND free_text IS ?",
         (recipe_id, pid, text)).fetchone()
     if vorhanden:
-        con.execute("UPDATE recipe_item SET qty = ? WHERE id = ?",
-                    (vorhanden["qty"] + menge, vorhanden["id"]))
+        summe = mengen.summiere(vorhanden["amount"], vorhanden["unit"],
+                                bedarf, unit)
+        con.execute(
+            "UPDATE recipe_item SET qty = ?, amount = ?, unit = ? WHERE id = ?",
+            (vorhanden["qty"] + menge,
+             summe[0] if summe else vorhanden["amount"],
+             summe[1] if summe else vorhanden["unit"], vorhanden["id"]))
         con.commit()
         return int(vorhanden["id"])
 
+    normiert = mengen.in_grundeinheit(bedarf, unit)
     cur = con.execute(
-        "INSERT INTO recipe_item (recipe_id, product_id, free_text, qty)"
-        " VALUES (?, ?, ?, ?)", (recipe_id, pid, text, menge))
+        "INSERT INTO recipe_item (recipe_id, product_id, free_text, qty,"
+        "                         amount, unit) VALUES (?, ?, ?, ?, ?, ?)",
+        (recipe_id, pid, text, menge,
+         normiert[0] if normiert else None,
+         normiert[1] if normiert else None))
     con.commit()
     return int(cur.lastrowid)
 
 
+def zutat_menge_setzen(con: sqlite3.Connection, item_id: int, amount=None,
+                       unit=None) -> dict:
+    """Setzt die benötigte MENGE einer Zutat (nicht die Packungszahl).
+
+    Getrennt von `zutat_menge()`, weil es zwei verschiedene Grössen sind und
+    ein gemeinsames „Menge setzen" die Verwechslung einbauen würde, um die es
+    in diesem Ticket geht. Eine leere Angabe LÖSCHT die Menge — dann skaliert
+    die Zutat nicht mehr und zählt wieder als Packung, und das muss
+    rücknehmbar sein.
+    """
+    zeile = _zutat(con, item_id)
+    normiert = mengen.in_grundeinheit(_amount(amount), unit)
+    con.execute("UPDATE recipe_item SET amount = ?, unit = ? WHERE id = ?",
+                (normiert[0] if normiert else None,
+                 normiert[1] if normiert else None, item_id))
+    con.commit()
+    return {"id": int(zeile["id"]),
+            "amount": normiert[0] if normiert else None,
+            "unit": normiert[1] if normiert else None}
+
+
 def _zutat(con: sqlite3.Connection, item_id: int) -> sqlite3.Row:
-    row = con.execute("SELECT id, recipe_id, qty FROM recipe_item WHERE id = ?",
+    row = con.execute("SELECT id, recipe_id, qty, amount, unit"
+                      "  FROM recipe_item WHERE id = ?",
                       (item_id,)).fetchone()
     if row is None:
         raise UngueltigerPosten(f"Zutat {item_id} gibt es nicht.")

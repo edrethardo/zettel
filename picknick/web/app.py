@@ -984,11 +984,20 @@ def create_app(db_path: str | Path | None = None,
 
     def _rezept_kontext(c: sqlite3.Connection, recipe_id: int,
                         q: str = "", meldung: str | None = None,
-                        fehler: str | None = None) -> dict:
-        """Alles, was `_rezept.html` braucht — für Vollseite und Bruchstück."""
+                        fehler: str | None = None,
+                        amount: str = "", unit: str = "") -> dict:
+        """Alles, was `_rezept.html` braucht — für Vollseite und Bruchstück.
+
+        `amount` und `unit` reisen durch die Suche hindurch (WB-362): wer an
+        einer Zutat des Rezepts auf „im Katalog suchen" tippt, nimmt deren
+        Menge mit — „500 ml" —, und das „+" am Treffer verknüpft das Produkt
+        samt Menge. Ohne diesen Durchreichweg müsste die Menge von Hand
+        nachgetragen werden, und sie bliebe in der Praxis leer.
+        """
         r = recipes.rezept(c, recipe_id)
         _posten_mit_bild(r["zutaten"], app.state.image_dir)
         return {"rezept": r, "q": q, "meldung": meldung, "fehler": fehler,
+                "amount": amount, "unit": unit,
                 "treffer": _mit_bild(search.search(c, q, limit=SEITE),
                                      app.state.image_dir) if q.strip() else []}
 
@@ -1030,11 +1039,13 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.get("/rezepte/{recipe_id}")
-    def rezept_ansicht(request: Request, recipe_id: int, q: str = ""):
+    def rezept_ansicht(request: Request, recipe_id: int, q: str = "",
+                       amount: str = "", unit: str = ""):
         c = con()
         try:
             try:
-                kontext = _rezept_kontext(c, recipe_id, q=q)
+                kontext = _rezept_kontext(c, recipe_id, q=q, amount=amount,
+                                          unit=unit)
             except recipes.RezeptFehler:
                 return Response(status_code=404)
             return vorlagen.TemplateResponse(request, "rezept.html", {
@@ -1043,12 +1054,14 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.get("/rezepte/{recipe_id}/suche")
-    def rezept_suche(request: Request, recipe_id: int, q: str = ""):
+    def rezept_suche(request: Request, recipe_id: int, q: str = "",
+                     amount: str = "", unit: str = ""):
         """Nur die Trefferliste — das Stück, das HTMX beim Tippen austauscht."""
         c = con()
         try:
             try:
-                kontext = _rezept_kontext(c, recipe_id, q=q)
+                kontext = _rezept_kontext(c, recipe_id, q=q, amount=amount,
+                                          unit=unit)
             except recipes.RezeptFehler:
                 return Response(status_code=404)
             return vorlagen.TemplateResponse(request, "_rezept_treffer.html",
@@ -1099,7 +1112,12 @@ def create_app(db_path: str | Path | None = None,
                 recipes.zutat_hinzufuegen(
                     c, recipe_id, product_id=werte.get("product_id"),
                     free_text=werte.get("free_text"),
-                    qty=zahl(werte.get("qty"), 1))
+                    qty=zahl(werte.get("qty"), 1),
+                    # Menge und Einheit kommen aus der Zutatenliste des
+                    # Rezepts, wenn dort gesucht wurde (WB-362). Sie sind die
+                    # Grösse, die mit den Portionen wächst — ohne sie ist eine
+                    # verknüpfte Zutat eine Packung und sonst nichts.
+                    amount=werte.get("amount"), unit=werte.get("unit"))
             except orders.UngueltigerPosten:
                 fehler = ("Schreib hin, was es sein soll — ein leeres Feld "
                           "ergibt keine Zutat.")
@@ -1123,6 +1141,35 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    @app.post("/rezepte/{recipe_id}/zutaten/{item_id}/bedarf")
+    async def rezept_zutat_bedarf(request: Request, recipe_id: int,
+                                  item_id: int):
+        """Die benötigte MENGE einer Zutat — nicht ihre Packungszahl (WB-362).
+
+        Eine eigene Route und nicht `…/menge`, weil es zwei verschiedene
+        Grössen sind: die Menge wächst mit den Portionen, die Packungszahl
+        nicht. Ein gemeinsames „Menge setzen" baute genau die Verwechslung
+        ein, um die es in diesem Ticket geht.
+
+        Ein leeres Feld löscht die Menge. Das muss gehen: wer sich vertippt
+        hat, soll die Zutat nicht löschen und neu verknüpfen müssen.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            fehler = None
+            try:
+                recipes.zutat_menge_setzen(c, item_id,
+                                           amount=werte.get("amount"),
+                                           unit=werte.get("unit"))
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _rezept_antwort(request, c, recipe_id, fehler=fehler)
+        finally:
+            c.close()
+
     @app.post("/rezepte/{recipe_id}/zutaten/{item_id}/loeschen")
     def rezept_zutat_loeschen(request: Request, recipe_id: int, item_id: int):
         c = con()
@@ -1139,20 +1186,26 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/rezepte/{recipe_id}/korb")
-    def rezept_in_den_korb(request: Request, recipe_id: int):
+    async def rezept_in_den_korb(request: Request, recipe_id: int):
         """„Alles in den Warenkorb“ — mit Bericht, nicht mit blossem „ok“.
 
         Der Bericht ist der Grund, warum diese Route eine Meldung zurückgibt
         und nicht einfach weiterleitet: liegt eine Zutat im Korb, die nicht
         mehr im Katalog steht, muss die Nutzerin das hier lesen — nicht erst
-        im Laden.
+        im Laden. Seit WB-362 steht darin auch, wofür gerechnet wurde: „für 8
+        statt 4 Portionen: 1000 ml, das sind 2 × Pomito 500 g".
+
+        `portionen` kommt aus dem Feld neben dem Knopf und ändert das Rezept
+        NICHT: „diesmal für acht" ist eine Aussage über diesen Einkauf.
         """
+        werte = await eingaben(request)
         c = con()
         try:
             if not _gibt_es(c, recipe_id):
                 return Response(status_code=404)
             try:
-                bericht = recipes.in_den_korb(c, recipe_id)
+                bericht = recipes.in_den_korb(c, recipe_id,
+                                              portionen=werte.get("portionen"))
             except recipes.LeeresRezept as e:
                 return _rezept_antwort(request, c, recipe_id, fehler=str(e))
             return _rezept_antwort(request, c, recipe_id,

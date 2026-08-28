@@ -240,3 +240,66 @@ def test_ein_altes_ja_gilt_als_eingelegt(tmp_path):
                            " WHERE id = 1").fetchone()[0] == "2026-08-01T10:00:00"
     finally:
         con.close()
+
+
+def test_ein_alter_korbposten_behaelt_seine_menge(tmp_path):
+    """WB-362: `qty` war eine Eingabe und wird ein Ergebnis.
+
+    Eine gewachsene Datenbank hat Posten, deren Menge jemand gesetzt oder ein
+    Rezept mitgebracht hat — nichts davon ist aus einer benötigten Menge
+    gerechnet. Genau das bedeutet `hand_qty`, also ist `qty` der richtige
+    Anfangswert. Bliebe die Spalte NULL, zählte der Altbestand als „keine
+    Packung verlangt", und der Korb fiele beim nächsten Rezept auf eine
+    Packung zurück: ein Posten, der bei einer Migration schrumpft, ist ein
+    verlorener Posten.
+    """
+    pfad = tmp_path / "alt.db"
+    alt = sqlite3.connect(pfad)
+    alt.executescript("""
+        CREATE TABLE orders (id INTEGER PRIMARY KEY, state TEXT, created_at TEXT);
+        CREATE TABLE order_item (
+            id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL,
+            product_id INTEGER, free_text TEXT,
+            qty INTEGER NOT NULL DEFAULT 1,
+            store TEXT NOT NULL DEFAULT 'egal', picked_at TEXT);
+        CREATE TABLE recipe (id INTEGER PRIMARY KEY, name TEXT NOT NULL,
+                             servings INTEGER, note TEXT);
+        CREATE TABLE recipe_item (
+            id INTEGER PRIMARY KEY, recipe_id INTEGER NOT NULL,
+            product_id INTEGER, free_text TEXT,
+            qty INTEGER NOT NULL DEFAULT 1);
+        INSERT INTO orders (id, state, created_at)
+             VALUES (1, 'draft', '2026-08-01 10:00:00');
+        INSERT INTO order_item (order_id, free_text, qty)
+             VALUES (1, 'Butter', 3), (1, 'Hefe', 1);
+        INSERT INTO recipe (id, name, servings) VALUES (1, 'Sugo', 4);
+        INSERT INTO recipe_item (recipe_id, free_text, qty)
+             VALUES (1, 'Tomaten', 2);
+    """)
+    alt.commit()
+    alt.close()
+
+    con = db.connect(pfad)
+    try:
+        db.migrate(con)
+        zeilen = con.execute("SELECT qty, hand_qty, need_amount, need_unit"
+                             "  FROM order_item ORDER BY id").fetchall()
+        assert [(r["qty"], r["hand_qty"]) for r in zeilen] == [(3, 3), (1, 1)]
+        # Erfunden wird dabei nichts: eine benötigte Menge stand nie da und
+        # steht auch danach nicht da.
+        assert [r["need_amount"] for r in zeilen] == [None, None]
+        assert [r["need_unit"] for r in zeilen] == [None, None]
+
+        zutat = con.execute("SELECT qty, amount, unit FROM recipe_item"
+                            ).fetchone()
+        assert (zutat["qty"], zutat["amount"], zutat["unit"]) == (2, None, None)
+
+        # Und die Nachtragung läuft genau einmal: wer die Menge danach von
+        # Hand herunternimmt, findet sie beim nächsten Start nicht wieder oben.
+        con.execute("UPDATE order_item SET qty = 1, hand_qty = 1 WHERE id = 1")
+        con.commit()
+        db.migrate(con)
+        assert con.execute("SELECT hand_qty FROM order_item WHERE id = 1"
+                           ).fetchone()[0] == 1
+    finally:
+        con.close()

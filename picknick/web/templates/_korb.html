@@ -33,6 +33,13 @@
         {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}
         · {{ i.price_cents | euro }}{% endif %}
       </span>
+      {# Was gerechnet wurde (WB-362, Regel 6). Eine stumme 2 im Mengenfeld
+         erklärt nicht, warum zwei Packungen im Korb liegen — und die Zeile
+         steht auch dann da, wenn sich nichts ausrechnen liess: gerade dann
+         ist die Zahl daneben eine Vorgabe und keine Rechnung. #}
+      {% if i.bedarf_satz %}
+      <span class="hinweis">{{ i.bedarf_satz }}</span>
+      {% endif %}
       {% if i.nicht_im_katalog %}
       <span class="ausgemustert">Nicht mehr im Katalog — bleibt im Korb, aber
         der Preis kann alt sein und im Laden musst du selbst schauen.</span>

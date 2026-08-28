@@ -1185,6 +1185,113 @@ def _kein_label(client, con, sid: int) -> str:
     return f"kein Label, aber withdrawn={n}"
 
 
+# --------------------------------------------------------------------------
+# Portionen und die Reihenfolge der Rechenschritte (WB-362)
+
+def checks_portionen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    """Skalieren, zusammenzählen, DANN aufrunden — am HTTP-Rand geklickt.
+
+    Über die Oberfläche und nicht über `mengen.rechne()`: die Reihenfolge der
+    Rechenschritte ist keine Eigenschaft einer Hilfsfunktion, sondern eine des
+    Weges. Ein Gate, das die Hilfsfunktion prüft, bliebe grün, während der
+    Shop je Rezept aufrundet und zwei Packungen Knoblauch in den Korb legt.
+    """
+    b.abschnitt("Portionen — skalieren, zusammenzählen, dann aufrunden "
+                "(WB-362)")
+
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir)
+    with TestClient(app) as client:
+        con = db.connect(db_datei)
+        try:
+            butter = pid(con, "Salzbutter")      # 250 g
+            zwiebel = pid(con, "Zwiebeln")       # 1 kg
+            b.pruefe("ein Rezept für 4 auf 8 Portionen: 250 g werden 500 g "
+                     "und damit 2 × 250 g",
+                     lambda: _verdoppelt(client, con, butter))
+            b.pruefe("zwei Rezepte à 100 g ergeben EINE Packung à 250 g — "
+                     "aufgerundet wird nach dem Zusammenzählen",
+                     lambda: _erst_zaehlen_dann_runden(client, con, butter))
+            b.pruefe("1 Zwiebel aus dem 1-kg-Netz bleibt 1 Netz, auch für 8",
+                     lambda: _zwiebeltest(client, con, zwiebel))
+        finally:
+            con.close()
+
+
+def _rezept(client, name: str, servings: int, product_id: int,
+            amount, unit) -> int:
+    """Ein Rezept mit einer Zutat, angelegt über die Oberfläche."""
+    antwort = client.post("/rezepte", data={"name": name},
+                          follow_redirects=False)
+    gleich(antwort.status_code, 303, "POST /rezepte")
+    rid = int(antwort.headers["location"].rsplit("/", 1)[1])
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": name, "servings": str(servings)},
+                follow_redirects=False)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={product_id}"
+                f"&amount={amount}&unit={unit}",
+                headers={"HX-Request": "true"})
+    return rid
+
+
+def _leeren(con) -> None:
+    con.execute("DELETE FROM order_item")
+    con.commit()
+
+
+def _in_den_korb(client, rid: int, portionen) -> str:
+    antwort = client.post(f"/rezepte/{rid}/korb",
+                          data={"portionen": str(portionen)},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, f"POST /rezepte/{rid}/korb")
+    return antwort.text
+
+
+def _menge(con, product_id: int) -> tuple:
+    zeile = next(z for z in orders.inhalt(con)
+                 if z["product_id"] == product_id)
+    return (zeile["qty"], zeile["need_amount"], zeile["need_unit"])
+
+
+def _verdoppelt(client, con, butter: int) -> str:
+    _leeren(con)
+    rid = _rezept(client, "Butterkuchen", 4, butter, 250, "g")
+    text = _in_den_korb(client, rid, 8)
+    wahr("für 8 statt 4 Portionen" in text,
+         "Die Meldung sagt nicht, wofür gerechnet wurde.")
+    gleich(_menge(con, butter), (2, 500.0, "g"), "Korbzeile")
+    return "500 g gebraucht, 2 × 250 g im Korb"
+
+
+def _erst_zaehlen_dann_runden(client, con, butter: int) -> str:
+    """Der Nachtrag des Tickets: 100 g + 100 g sind 200 g und EINE Packung.
+
+    Wer je Rezept aufrundet, kommt hier auf zwei — und kauft 250 g Butter,
+    die niemand braucht.
+    """
+    _leeren(con)
+    for name in ("Aioli", "Pesto"):
+        rid = _rezept(client, name, 4, butter, 100, "g")
+        _in_den_korb(client, rid, 4)
+    gleich(_menge(con, butter), (1, 200.0, "g"), "Korbzeile")
+    gleich(len(orders.inhalt(con)), 1, "Korbzeilen")
+    return "2 × 100 g -> 200 g -> 1 Packung à 250 g"
+
+
+def _zwiebeltest(client, con, zwiebel: int) -> str:
+    """Skaliert wird trotzdem — die Packungszahl bleibt nur bei 1.
+
+    Geprüft wird BEIDES. Ein Test, der nur die 1 sieht, bliebe auch dann grün,
+    wenn gar nichts skaliert würde, und bewiese nichts.
+    """
+    _leeren(con)
+    rid = _rezept(client, "Zwiebelsuppe", 4, zwiebel, 1, "Stk")
+    text = _in_den_korb(client, rid, 8)
+    gleich(_menge(con, zwiebel), (1, 2.0, "Stk"), "Korbzeile")
+    wahr("Nicht ausrechenbar" in text and "1 kg" in text,
+         "Die Oberfläche sagt nicht, warum die Menge unverändert blieb.")
+    return "2 Stk gebraucht, gegen „1 kg“ nicht ausrechenbar -> 1 Netz"
+
+
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
 
@@ -1269,6 +1376,12 @@ def main() -> int:
         zurueck_db = ordner / "zuruecknehmen.db"
         katalog_anlegen(zurueck_db)
         checks_zuruecknehmen(b, zurueck_db, bild_dir)
+        # Und noch eine: die Portionsrechnung legt Rezepte an und füllt den
+        # Korb mehrfach — beides hätte in den Warenkörben oben nichts
+        # verloren.
+        portionen_db = ordner / "portionen.db"
+        katalog_anlegen(portionen_db)
+        checks_portionen(b, portionen_db, bild_dir)
     checks_bindung(b)
     return b.ende()
 

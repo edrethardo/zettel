@@ -606,3 +606,70 @@ def test_nicht_blockierend_verliert_keinen_span():
     assert len(exporter.get_finished_spans()) == 2000
     assert prozessor.verworfen == 0
     prozessor.shutdown()
+
+
+# --------------------------------------------------------------------------
+# Was gerechnet wurde, steht im Span (WB-362)
+#
+# Ohne diesen Span ist später nicht nachvollziehbar, warum zwei Packungen im
+# Korb liegen und nicht eine — und ausgerechnet der Fall „nicht ausrechenbar"
+# wäre unsichtbar, obwohl dort die Zahl aus einer Vorgabe stammt und nicht aus
+# einer Rechnung.
+
+def test_die_packungsrechnung_steht_im_span(con, spans):
+    zwiebel = _pid(con, "Zwiebeln")          # unit_text: „1 kg"
+    rid = recipes.anlegen(con, "Sugo", servings=4, zutaten=[
+        {"product_id": zwiebel, "amount": 400, "unit": "g"}])
+    recipes.in_den_korb(con, rid, portionen=8)
+
+    span = _einer(spans, "korb.menge")
+    a = span.attributes
+    assert a["picknick.servings"] == 8
+    assert a["picknick.need_added"] == 800.0      # 400 g für 4 -> 800 g für 8
+    assert a["picknick.need_amount"] == 800.0     # die Summe an der Zeile
+    assert a["picknick.need_unit"] == "g"
+    assert a["picknick.pack_text"] == "1 kg"
+    assert a["picknick.pack_amount"] == 1000.0
+    assert a["picknick.computable"] is True
+    assert a["picknick.packages"] == 1
+    assert a["picknick.qty"] == 1
+    assert "800 g gebraucht" in a[SpanAttributes.OUTPUT_VALUE]
+
+
+def test_der_span_zeigt_das_zusammenzaehlen_ueber_zwei_rezepte(con, spans):
+    zwiebel = _pid(con, "Zwiebeln")
+    for name in ("Sugo", "Suppe"):
+        rid = recipes.anlegen(con, name, servings=4, zutaten=[
+            {"product_id": zwiebel, "amount": 600, "unit": "g"}])
+        recipes.in_den_korb(con, rid)
+
+    spans_ = [s for s in spans.get_finished_spans() if s.name == "korb.menge"]
+    assert len(spans_) == 2
+    # Der EINZELNE Beitrag bleibt gleich, die SUMME wächst — erst der
+    # Unterschied zwischen beiden macht das Zusammenzählen im Trace sichtbar.
+    assert [s.attributes["picknick.need_added"] for s in spans_] == [600.0, 600.0]
+    assert [s.attributes["picknick.need_amount"] for s in spans_] == [600.0, 1200.0]
+    assert [s.attributes["picknick.packages"] for s in spans_] == [1, 2]
+
+
+def test_nicht_ausrechenbar_steht_ausdruecklich_im_span(con, spans):
+    """Ein fehlendes `packages` allein wäre nicht filterbar — und genau diese
+    Fälle sind die, die man in Phoenix suchen will."""
+    zwiebel = _pid(con, "Zwiebeln")
+    rid = recipes.anlegen(con, "Suppe", servings=4, zutaten=[
+        {"product_id": zwiebel, "amount": 2, "unit": "Stange/n"}])
+    recipes.in_den_korb(con, rid)
+
+    a = _einer(spans, "korb.menge").attributes
+    assert a["picknick.computable"] is False
+    assert "picknick.packages" not in a
+    assert "1 kg" in a["picknick.reason"]
+
+
+def test_ein_griff_ins_regal_erzeugt_keinen_rechenspan(con, spans):
+    """Ein „+" an der Kachel rechnet nichts aus. Ein Span, der so aussähe, als
+    hätte er es getan, wäre ein leerer Span mit einer Behauptung."""
+    from picknick import orders
+
+    orders.einlegen(con, product_id=_pid(con, "Zwiebeln"), qty=2)
+    assert "korb.menge" not in _nach_namen(spans)

@@ -52,6 +52,29 @@
         {%- if z.nicht_im_katalog %}
         · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
       </span>
+      {# Die benötigte Menge — die Grösse, die mit den Portionen wächst
+         (WB-362). Die Zahl rechts daneben ist die PACKUNGSZAHL und wächst
+         nicht mit; ohne diese Zeile sähen beide gleich aus.
+
+         Änderbar, und zwar hier: wer sich beim Verknüpfen vertippt hat, soll
+         die Zutat nicht löschen und neu suchen müssen. Ein leeres Feld nimmt
+         die Menge wieder weg. Dieselbe Bauart wie die Ladenwahl im Korb —
+         `change` schickt ab, ohne JavaScript tut es der Knopf. #}
+      {% if not z.ist_freitext %}
+      <form class="bedarf" method="post"
+            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/bedarf"
+            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/bedarf"
+            hx-trigger="change, submit" hx-target="#rezept" hx-swap="innerHTML">
+        <input type="text" inputmode="decimal" name="amount"
+               value="{{ z.amount | menge }}"
+               aria-label="benötigte Menge {{ z.name }}">
+        <input type="hidden" name="unit" value="{{ z.unit or '' }}">
+        <span class="hinweis">{{ z.einheit_text }} für
+          {{ rezept.servings or "?" }} Portionen{% if not z.amount %} —
+          ohne Menge skaliert die Zutat nicht mit{% endif %}</span>
+        <noscript><button class="mini" type="submit">ok</button></noscript>
+      </form>
+      {% endif %}
     </span>
     <span class="stellen">
       <form method="post"
@@ -94,9 +117,23 @@
 </form>
 
 {% if rezept.zutaten %}
-<form class="abschicken" method="post" action="/rezepte/{{ rezept.id }}/korb"
+{# Die Portionszahl wird HIER gewählt und nicht in den Kopfdaten (WB-362):
+   „diesmal für acht“ ist eine Aussage über diesen Einkauf und keine über das
+   Rezept. Vorbelegt mit dem, was am Rezept steht — bei einem geholten Rezept
+   also mit Chefkochs Angabe. Wer das Rezept dauerhaft ändern will, tut es
+   unten unter „Kopfdaten“. #}
+<form class="abschicken portionen" method="post"
+      action="/rezepte/{{ rezept.id }}/korb"
       hx-post="/rezepte/{{ rezept.id }}/korb"
       hx-target="#rezept" hx-swap="innerHTML">
+  <label>Für wie viele Portionen?
+    <input type="text" inputmode="numeric" name="portionen"
+           value="{{ rezept.servings if rezept.servings is not none else '' }}"
+           aria-label="Portionen für diesen Einkauf"></label>
   <button class="gross" type="submit">Alles in den Warenkorb</button>
+  {% if not rezept.servings %}
+  <span class="hinweis">Am Rezept steht keine Portionszahl — dann bleiben die
+    Mengen, wie sie sind.</span>
+  {% endif %}
 </form>
 {% endif %}

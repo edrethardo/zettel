@@ -18,7 +18,8 @@ Modulname `rezept` die Funktion `rezept()`, je nach Importreihenfolge.
 from picknick.orders import UngueltigerPosten  # noqa: F401
 from picknick.recipes.sammlung import (  # noqa: F401
     LeeresRezept, RezeptFehler, aendern, anlegen, loeschen, rezept, rezepte,
-    zutat_entfernen, zutat_hinzufuegen, zutat_menge, zutaten)
+    zutat_entfernen, zutat_hinzufuegen, zutat_menge, zutat_menge_setzen,
+    zutaten)
 from picknick.recipes.uebernahme import (  # noqa: F401
     aus_bestellung, in_den_korb)
 
@@ -26,5 +27,5 @@ __all__ = [
     "LeeresRezept", "RezeptFehler", "UngueltigerPosten",
     "aendern", "anlegen", "aus_bestellung", "in_den_korb", "loeschen",
     "rezept", "rezepte", "zutat_entfernen", "zutat_hinzufuegen", "zutat_menge",
-    "zutaten",
+    "zutat_menge_setzen", "zutaten",
 ]

@@ -421,6 +421,45 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* Abgehakt schlägt Warnung: was im Wagen liegt, muss niemand mehr suchen. */
 .pickzeile.ab .ausgemustert { color: var(--gedaempft); font-weight: 400; }
 
+/* Was gerechnet wurde (WB-362): „1000 ml gebraucht — 2 × Pomito 500 g.“
+   Derselbe `.hinweis` wie am Chat-Vorschlag, nur an der Korb- und
+   Rezeptzeile — es ist dieselbe Sorte Nebensatz: leiser als der Name, aber
+   lesbar, und im Umbruch statt abgeschnitten. Kein eigener Ton und keine
+   eigene Grösse: das Gestaltungssystem aus WB-360 hat beides schon. */
+.zeile .hinweis, .kachel .hinweis {
+  font-size: 13px; color: var(--gedaempft); line-height: 1.35;
+  white-space: normal;
+}
+
+/* Die benötigte Menge an der Rezeptzutat (WB-362): ein schmales Feld und
+   ein Nebensatz, in derselben Zeile wie der Name — sie gehört zur Zutat und
+   nicht in ein eigenes Formular weiter unten. */
+.bedarf { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; }
+.bedarf input[type="text"] {
+  width: 5ch; min-height: var(--tap); text-align: right; font-size: 15px;
+  border: 1px solid var(--linie); border-radius: 10px; padding: 0 6px;
+  background: var(--karte); color: var(--tinte);
+}
+
+/* Die Portionszahl steht neben dem Korb-Knopf und nicht darüber: sie gehört
+   zu diesem Griff. Auf dem Telefon bricht sie darüber um. */
+.abschicken.portionen {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.abschicken.portionen label {
+  display: flex; align-items: center; gap: 8px; font-size: 15px;
+  color: var(--gedaempft);
+}
+.abschicken.portionen input {
+  width: 4.5ch; min-height: 44px; text-align: center; font-size: 17px;
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  background: var(--karte); color: var(--tinte); padding: 0 6px;
+}
+.abschicken.portionen .gross { flex: 1 1 12ch; }
+.abschicken.portionen .hinweis {
+  flex-basis: 100%; font-size: 13px; color: var(--gedaempft);
+}
+
 /* Kopfdaten des Rezepts. */
 .rezeptkopf { display: flex; flex-direction: column; gap: 10px;
               margin: var(--rand) 0; }
