@@ -278,14 +278,25 @@ def test_rezept_aus_bestellung_ohne_namen_bekommt_einen_vorschlag(con):
     assert recipes.rezept(con, r)["name"].startswith("Einkauf vom ")
 
 
-def test_aus_dem_warenkorb_wird_kein_rezept(con):
-    """Der Knopf steht an der erledigten Bestellung, nicht am `draft`."""
+def test_aus_dem_warenkorb_wird_seit_wb_337_auch_ein_rezept(con):
+    """Die umgedrehte Entscheidung (WB-337).
+
+    Bis dahin stand hier das Gegenteil, mit der Begründung, aus einer noch
+    nicht eingekauften Absicht ein Rezept zu machen hiesse eine Mahlzeit zu
+    behaupten, die es nicht gab. Ein Rezept ist aber keine Chronik, sondern
+    eine Einkaufsvorlage — die Begründung steht ersetzt (nicht gelöscht) im
+    Docstring von `aus_bestellung`.
+    """
     orders.einlegen(con, free_text="Klopapier")
     korb = orders.inhalt(con)[0]["order_id"]
-    with pytest.raises(recipes.RezeptFehler) as e:
-        recipes.aus_bestellung(con, korb)
-    assert "Warenkorb" in str(e.value)
-    assert recipes.rezepte(con) == []
+    assert orders.bestellung(con, korb)["state"] == "draft"
+
+    r = recipes.aus_bestellung(con, korb, name="Vorrat")
+    assert recipes.rezept(con, r)["name"] == "Vorrat"
+    assert [z["name"] for z in recipes.rezept(con, r)["zutaten"]] == \
+        ["Klopapier"]
+    # Der Korb bleibt der Korb: ein Rezept daraus zu machen schickt nichts ab.
+    assert orders.bestellung(con, korb)["state"] == "draft"
 
 
 def test_rezept_aus_einer_bestellung_die_es_nicht_gibt(con):

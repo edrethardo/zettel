@@ -28,6 +28,7 @@ from fastapi.templating import Jinja2Templates
 
 from picknick import betrieb, bons as bonmodul, db, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
+from picknick.assistant import entwurf as entwuerfe
 from picknick.assistant import oberbegriffe
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
@@ -707,6 +708,12 @@ def create_app(db_path: str | Path | None = None,
             # gewählt hat und zwei Sätze später doch noch Kochschinken will,
             # findet die Liste noch vor.
             zeile["faecher"] = oberbegriffe.zu_nachricht(c, zeile["id"])
+            # Der Rezeptentwurf (WB-337). Er bekommt die schon geholte
+            # Vorschlagsliste gereicht statt sie ein zweites Mal zu holen —
+            # sonst hätte er andere Wörterbücher als die Liste darüber, und
+            # an denen fehlten die Bilder.
+            zeile["entwurf"] = entwuerfe.zu_nachricht(c, zeile["id"],
+                                                      zeile["vorschlaege"])
         return {"verlauf": verlauf, "chat_fehler": fehler,
                 "chat_zustand": zustand, "satz": satz,
                 "aufklappen": aufklappen}
@@ -893,6 +900,100 @@ def create_app(db_path: str | Path | None = None,
                 vorschlagsliste.alle_entscheiden(c, mid,
                                                  werte.get("decision", ""))
             except vorschlagsliste.VorschlagFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    # ----------------------------------------------------------------------
+    # Der Rezeptentwurf (WB-337)
+    #
+    # Vier kleine Formulare, jedes an seiner eigenen Adresse — dieselbe
+    # Bauart wie die Entscheidungen darüber: `action` und `hx-post` zeigen auf
+    # dieselbe Stelle, ohne JavaScript lädt die Seite eben neu.
+    #
+    # **Gespeichert wird hier nichts.** Alle vier ändern nur den Entwurf; das
+    # Rezept entsteht beim Abschicken (`orders.abschicken`), aus demselben
+    # Grund wie die Eval-Annotationen aus WB-329 — bis dahin darf sie ihre
+    # Meinung ändern.
+
+    @app.post("/warenkorb/chat/{mid}/entwurf/name")
+    async def entwurf_benennen(request: Request, mid: int):
+        """Der Rezeptname — überschreibbar, und das ist keine Kosmetik.
+
+        `rezeptweg.erkenne` sucht den Namen im Satz. Heisst das Rezept
+        „Bolognese al Forno à la Mama", greift die Abkürzung beim nächsten
+        Mal nicht, und der Zug kostet wieder Modell und Wartezeit.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                entwuerfe.benennen(c, mid, werte.get("name", ""))
+            except entwuerfe.EntwurfFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/chat/{mid}/entwurf/verwerfen")
+    async def entwurf_verwerfen(request: Request, mid: int):
+        """„Daraus soll kein Rezept werden" — und mit `ja=0` zurück.
+
+        Der Knopf muss es geben: das Rezept entsteht beim Abschicken von
+        selbst, und was von selbst entsteht, braucht einen Weg, es zu lassen.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                entwuerfe.verwerfen(c, mid, werte.get("ja", "1") != "0")
+            except entwuerfe.EntwurfFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/vorschlag/{sid}/rezeptzeile")
+    async def entwurf_zeile(request: Request, sid: int):
+        """Eine Zutat aus dem Entwurf nehmen (`drin=0`) oder zurückholen.
+
+        **Nicht dasselbe wie „Nein".** „Nein" heisst „dieses Produkt ist
+        falsch" und ist das Eval-Label aus Spec 8.1; hier heisst es „das
+        kaufe ich, aber es gehört nicht ins Rezept". Ein gemeinsamer Knopf
+        würde genau die Zahl verfälschen, um die es im Projekt geht.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                entwuerfe.zeile_setzen(c, sid, werte.get("drin", "1") != "0")
+            except (entwuerfe.EntwurfFehler,
+                    vorschlagsliste.VorschlagFehler) as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/vorschlag/{sid}/bedarf")
+    async def entwurf_bedarf(request: Request, sid: int):
+        """Die benötigte Menge einer Zutat im Entwurf — „500 g", nicht „2 ×".
+
+        Was schon im Korb liegt, ändert sich davon nicht (siehe
+        `entwurf.bedarf_setzen`): dort steht ein eigenes Mengenfeld.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                entwuerfe.bedarf_setzen(c, sid, werte.get("menge"),
+                                        werte.get("einheit"))
+            except (entwuerfe.EntwurfFehler,
+                    vorschlagsliste.VorschlagFehler) as e:
                 fehler = str(e)
             return _chat_antwort(request, c, fehler=fehler)
         finally:

@@ -437,6 +437,46 @@ SCHEMA = [
         UNIQUE (chat_message_id, name)
     )
     """,
+    # Der Rezeptentwurf eines Zugs (WB-337).
+    #
+    # **Eine Zeile je Chatzeile und keine Spalten an `chat_message`.** Die
+    # Nachricht ist der SATZ; der Entwurf ist eine Absicht, die daneben
+    # entsteht, ihren eigenen Zustand hat (umbenannt, verworfen, gespeichert)
+    # und die es zu 99 % der Nachrichten gar nicht gibt. Vier nullable
+    # Spalten an `chat_message`, die nur an jeder zwanzigsten Zeile gefüllt
+    # sind, wären dieselbe Tabelle mit mehr Fussnoten — dieselbe Begründung
+    # wie bei `chat_sorte`.
+    #
+    # `dish` ist, wie die Nutzerin das Gericht genannt hat („Spaghetti
+    # Bolognese"), `name` der Rezeptname — **vorbelegt mit `dish`, weil ein
+    # Rezept nur dann wiedergefunden wird, wenn es heisst, wie man danach
+    # fragt** (`rezeptweg.erkenne` vergleicht den Namen im Satz). Ein
+    # geratener Name („Einkauf vom 28.08.") wäre hier wertlos.
+    """
+    CREATE TABLE IF NOT EXISTS chat_entwurf (
+        chat_message_id INTEGER PRIMARY KEY
+                            REFERENCES chat_message(id) ON DELETE CASCADE,
+        dish            TEXT NOT NULL,
+        name            TEXT NOT NULL,
+        -- Das Rezept, in das dieser Entwurf gehört: vor dem Abschicken das
+        -- von Chefkoch geholte (dort steht die Zubereitung), danach das,
+        -- in das die Zutaten gewandert sind. Meistens dasselbe.
+        --
+        -- `ON DELETE SET NULL` und nicht CASCADE: wer das geholte Rezept
+        -- wegwirft, soll nicht den halben Chatverlauf mitnehmen. Der
+        -- Entwurf legt dann beim Abschicken ein neues an.
+        recipe_id       INTEGER REFERENCES recipe(id) ON DELETE SET NULL,
+        -- „Daraus soll kein Rezept werden." Das Gegenstück zum Regelfall,
+        -- und es muss eines geben: das Rezept entsteht ungefragt beim
+        -- Abschicken, also braucht es einen Knopf, der das abstellt.
+        verworfen       INTEGER NOT NULL DEFAULT 0,
+        -- Wann gespeichert wurde. Zugleich die Sperre gegen ein zweites
+        -- Speichern desselben Entwurfs — dieselbe Rolle wie
+        -- `chat_suggestion.eingelegt_at` beim Doppeltipp.
+        saved_at        TEXT,
+        created_at      TEXT NOT NULL
+    )
+    """,
     # ----------------------------------------------------------------------
     # Kassenbons (WB-358). Eigene Tabellen, ausdrücklich NICHT `orders`:
     #
@@ -603,6 +643,7 @@ TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
     "recipe_ingredient", "dish",
     "chat_message", "chat_suggestion", "chat_kandidat", "chat_sorte",
+    "chat_entwurf",
     "receipt", "receipt_item",
     "scrape_run", "product_fts",
 )
@@ -700,6 +741,29 @@ NACHGETRAGENE_SPALTEN = (
     # zurückrechnen. NULL heisst hier „unbekannt" und nicht „null Gramm".
     ("chat_suggestion", "need_amount", "REAL"),
     ("chat_suggestion", "need_unit", "TEXT"),
+    # WB-337: gehört diese Zeile zum Gericht des Zugs?
+    #
+    # **Drei Zustände in einer Spalte, und alle drei werden gebraucht:**
+    #
+    #   NULL  die Zeile gehört zu keinem Gericht. „Klopapier" im Satz
+    #         „alles für Spaghetti Bolognese, und Klopapier" — und jede
+    #         Zeile jedes Zugs, der gar kein Gericht erkannt hat. Der
+    #         Normalfall, und darum die richtige Vorgabe für den Altbestand:
+    #         eine Zeile aus der Zeit vor diesem Ticket gehört zu keinem
+    #         Rezeptentwurf, denn es gab keinen.
+    #   1     die Zeile ist eine Zutat des Gerichts und geht ins Rezept.
+    #   0     sie war es, wurde aber von Hand aus dem Entwurf genommen.
+    #
+    # Die 0 ist nicht dasselbe wie NULL, und deshalb steht hier keine
+    # Ja/Nein-Spalte: der Weg zurück („doch wieder hinein") braucht das
+    # Wissen, dass die Zeile einmal dazugehörte. Dieselbe Überlegung wie beim
+    # Rückweg aus WB-361 — eine Entscheidung ist ein Tipp und kein Urteil.
+    #
+    # Ausdrücklich HIER und nicht am Entwurf: an dieser Zeile hängt seit
+    # Spec 8.1 auch das Eval-Label. Rezept und Label müssen dieselbe Zeile
+    # überleben, sonst ist nach einem „Nein" nicht mehr zu sagen, welche
+    # Zutat gemeint war.
+    ("chat_suggestion", "dish_item", "INTEGER"),
 )
 
 

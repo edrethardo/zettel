@@ -79,8 +79,8 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from picknick import gerichte, mengen, obs, orders
-from picknick.assistant import (herkunft, oberbegriffe, plan, rezeptweg,
-                                vorschlaege)
+from picknick.assistant import (entwurf, herkunft, oberbegriffe, plan,
+                                rezeptweg, vorschlaege)
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import ModellNichtErreichbar
@@ -162,6 +162,11 @@ class Ergebnis:
     sorten_verworfen: str | None = None
     #: Welche Sorten die Nutzerin angekreuzt hat. Nur auf dem Folgezug.
     gewaehlte_sorten: list[str] = field(default_factory=list)
+    #: Der Rezeptentwurf dieses Zugs (WB-337): der vorgeschlagene Name und
+    #: wie viele Vorschlagszeilen als Gerichtszutat markiert sind. Nur auf
+    #: dem Quellenweg gefüllt — die Begründung steht in `assistant.entwurf`.
+    entwurf: str | None = None
+    entwurf_zutaten: int = 0
 
     @property
     def n_produkte(self) -> int:
@@ -197,6 +202,12 @@ def _zusammengefasst(zeilen: list[dict]) -> list[dict]:
             nach_schluessel[schluessel] = kopie
             zusammen.append(kopie)
             continue
+        # Die Zugehörigkeit zum Gericht wandert mit (WB-337): trifft eine
+        # Gerichtszutat auf dasselbe Produkt wie ein Wunsch daneben, bleibt
+        # die Zeile eine Gerichtszutat. Andersherum verlöre das Rezept eine
+        # Zutat, weil im selben Satz zufällig noch etwas anderes stand.
+        if z.get("zum_gericht"):
+            erste["zum_gericht"] = True
         if z.get("bedarf") is None:
             continue
         summe = mengen.summiere(erste.get("bedarf"), erste.get("einheit"),
@@ -547,6 +558,14 @@ class Chat:
             "picknick.fanout_rejected": ergebnis.sorten_verworfen,
             "picknick.varieties_chosen":
                 ", ".join(ergebnis.gewaehlte_sorten) or None,
+            # Der Rezeptentwurf (WB-337). **Dasselbe Vokabular wie oben**:
+            # `dish` sagt, WELCHES Gericht erkannt wurde, `dish_draft` sagt,
+            # dass aus diesem Zug ein Rezept werden kann, und `dish_items`,
+            # aus wie vielen Zeilen. Ohne die beiden ist später nicht mehr zu
+            # sehen, warum dasselbe Gericht ab dem nächsten Satz plötzlich
+            # `path = recipe` nimmt und gar kein Modell mehr kostet.
+            "picknick.dish_draft": ergebnis.entwurf,
+            "picknick.dish_items": ergebnis.entwurf_zutaten or None,
         })
         obs.setze_ausgabe(span, [
             {"product_id": v["product_id"], "name": v["name"],
@@ -659,6 +678,14 @@ class Chat:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
 
+        # **Hier entsteht die Trennung, um die es in WB-337 geht** — ohne
+        # Modell und ohne ein Feld im Prompt. Sie steht vor der Suche, weil
+        # sie nur die Begriffe und die Zutatenliste braucht. Davor das
+        # Sicherheitsnetz für den Rest des Satzes, das dieselbe Zuordnung
+        # benutzt.
+        begriffe = self._rest_sichern(begriffe, gefunden.rest)
+        begriffe = self._zum_gericht(begriffe, gerichte_daten)
+
         aufgaben = self._suchen(con, begriffe)
         auswahl, choose_kaputt = self._waehlen(text, aufgaben)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
@@ -680,12 +707,103 @@ class Chat:
                          "Rezept.")
         teile.extend(self._meldung_auswahl(auswahl, choose_kaputt))
         teile.append("Die Zubereitung steht unter Rezepte.")
-        zusatz = {"gericht": gefunden.rezepte[0]["query"],
+        gericht = gefunden.rezepte[0]["query"]
+        n_zutaten = sum(1 for z in zeilen if z.get("zum_gericht"))
+        teile.append(self._meldung_entwurf(gericht, n_zutaten, namen))
+        zusatz = {"gericht": gericht,
                   "quelle_name": titel,
                   "quelle_url": erstes.get("source_url"),
-                  "quelle_recipe_id": int(erstes["id"])}
+                  "quelle_recipe_id": int(erstes["id"]),
+                  # Der Entwurf hängt am ERSTEN Gericht (WB-337) und an dessen
+                  # Rezept — dort steht die Zubereitung, dort kommen die
+                  # Produkte dazu.
+                  "entwurf_name": gericht if n_zutaten else None}
         return (zeilen, " ".join(teile), begriffe, auswahl.verworfen, aufgaben,
                 zusatz)
+
+    def _rest_sichern(self, begriffe: list[dict],
+                      rest: str | None) -> list[dict]:
+        """Der Rest des Satzes darf nicht am Modell hängenbleiben (Regel 2).
+
+        Was neben dem Gericht stand („… und Klopapier"), geht als eigene
+        Zeile in den Prompt von Stufe 1 — und das Modell darf sie übergehen.
+        **Gemessen am 2026-08-28** gegen die echte Box und den echten Katalog:
+        aus „alles für Spaghetti Bolognese, und Klopapier" kamen elf
+        Begriffe zurück, alle elf aus der Zutatenliste, keiner für das
+        Klopapier. Es verschwand still — genau der Ausgang, den Regel 2 des
+        Chats ausschliesst („kein Begriff verschwindet still"), und genau der
+        Fall, um den es in WB-337 geht: es soll im Korb liegen und nie im
+        Rezept.
+
+        Ob das Modell den Rest aufgegriffen hat, sagt dieselbe Zuordnung, die
+        auch die Zugehörigkeit entscheidet: ein Begriff OHNE Herkunftszutat
+        stammt aus keiner Zutatenliste, also aus dem Rest. Gibt es keinen
+        solchen, wird der Rest angehängt.
+
+        Das ist absichtlich zurückhaltend. Das Modell übersetzt den Rest oft
+        („Klopapier" -> „Toilettenpapier"), und diese Übersetzung ist WERTVOLL
+        — die Präfixsuche findet den Weg vom einen zum anderen nie. Sie darf
+        also nicht durch eine zweite, rohe Zeile verdoppelt werden. Der Preis
+        der Zurückhaltung: erfindet das Modell einen Begriff, der zu nichts
+        gehört, gilt der Rest als aufgegriffen. Eine Zeile zu viel wäre
+        schlimmer — sie stünde bei JEDEM Zug mit Rest da.
+        """
+        if not rest:
+            return begriffe
+        if any(not b.get("zutat") for b in begriffe):
+            return begriffe
+        return [*begriffe, {"suchbegriffe": [rest], "menge": 1}]
+
+    def _zum_gericht(self, begriffe: list[dict],
+                     gerichte_daten: list[dict]) -> list[dict]:
+        """Markiert die Begriffe, die eine Zutat des Gerichts benennen.
+
+        **Kein Modellfeld, keine zusätzliche Prompt-Zeile** (WB-337): die
+        Begriffe sind aus einer bekannten Zutatenliste gemacht, also stehen
+        deren Wörter noch darin, und `herkunft.zuordnen` findet sie ohne
+        Modell wieder. Was eine Zutat gefunden hat, gehört zum Gericht — was
+        keine gefunden hat, stand daneben im Satz. Das ist „Klopapier".
+
+        Bei MEHREREN Gerichten in einem Satz zählt nur das erste, und die
+        Zuordnung wird deshalb gegen dessen Zutatenliste allein noch einmal
+        gerechnet: sonst wanderten die Zwiebeln des zweiten Gerichts in das
+        Rezept des ersten. Mehrere Rezepte aus einem Satz sind ausdrücklich
+        nicht Teil des Tickets, und die Zeilen tragen dann die Menge über
+        BEIDE Gerichte — im Rezept steht also eine Menge, die für zwei
+        Essen reicht. Der Fall setzt zwei bereits geholte Gerichte in einem
+        Satz voraus; wo er auftritt, sagt es die Meldung.
+
+        Die Vorsicht dieser Zuordnung ist gewollt und geht in die richtige
+        Richtung: ein Begriff, der seiner Zutat nicht sicher zugeordnet
+        werden kann, gehört nicht ins Rezept. Gemessen wurde die Lücke in
+        WB-369 (eine von 38 Zuordnungen, „Brühwürfel" gegen
+        „Gemüsebrühwürfel"); die Zutat fehlt dann im Rezept und lässt sich
+        dort nachtragen — eine falsche Zutat liesse sich nicht mehr
+        erkennen.
+        """
+        if len(gerichte_daten) > 1:
+            erste = herkunft.zuordnen(gerichte_daten[0]["zutaten"], begriffe)
+            return [{**b, "zum_gericht": bool(e.get("zutat"))}
+                    for b, e in zip(begriffe, erste)]
+        return [{**b, "zum_gericht": bool(b.get("zutat"))} for b in begriffe]
+
+    def _meldung_entwurf(self, gericht: str, n_zutaten: int,
+                         namen: list[str]) -> str:
+        """Der Satz zum Rezeptentwurf. Sagt auch, wenn es keinen gibt.
+
+        Ein Rezept entsteht hier ungefragt (beim Abschicken), also muss der
+        Zug es sagen — sonst steht später etwas in der Sammlung, das niemand
+        angelegt zu haben meint.
+        """
+        if not n_zutaten:
+            return ("Ein Rezept wird daraus nicht: keine der Zeilen liess "
+                    "sich einer Zutat des Rezepts zuordnen.")
+        satz = (f"Daraus kann ein Rezept „{gericht}“ werden — {n_zutaten} "
+                "Zutaten, gespeichert erst beim Abschicken.")
+        if len(namen) > 1:
+            satz += (f" Der Satz nennt mehrere Gerichte; der Entwurf ist der "
+                     f"für „{gericht}“.")
+        return satz
 
     def _ketten_ohne_modell(self, zutaten, rest=None) -> list[dict]:
         """Begriffsketten direkt aus der Zutatenliste — der Notbehelf.
@@ -1073,7 +1191,12 @@ class Chat:
                                # geraten.
                                "search_term": (wahl["produkt"].get("via")
                                                or b["begriff"]),
-                               "rang": wahl["produkt"].get("rang")})
+                               "rang": wahl["produkt"].get("rang"),
+                               # Gehört diese Zeile zum Gericht (WB-337)?
+                               # Gesetzt hat das `_zum_gericht`; hier wird es
+                               # nur weitergereicht, damit die Vorschlagszeile
+                               # es trägt und nicht der Zug.
+                               "zum_gericht": b.get("zum_gericht")})
                 continue
             # Kein Treffer, keine Wahl oder eine verworfene ID — in allen drei
             # Fällen bleibt der Begriff stehen, als Freitext.
@@ -1083,6 +1206,7 @@ class Chat:
                            "einheit": b.get("einheit"),
                            "search_term": b["begriff"],
                            "rang": None,
+                           "zum_gericht": b.get("zum_gericht"),
                            # Auch an einer Freitextzeile: hat die Suche etwas
                            # vorgelegt und das Modell nur nichts gewählt, ist
                            # die Liste da und einen Blick wert. Fand die Suche
@@ -1177,7 +1301,8 @@ class Chat:
                    *, begriffe, verworfen, rezepte, gericht=None,
                    quelle_name=None, quelle_url=None, quelle_recipe_id=None,
                    abruf=None, faecher=None, kategorie=None,
-                   gewaehlte_sorten=None, sorten_verworfen=None) -> Ergebnis:
+                   gewaehlte_sorten=None, sorten_verworfen=None,
+                   entwurf_name=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -1212,7 +1337,13 @@ class Chat:
                     fallback_term=z.get("fallback"),
                     # Die benötigte Menge (WB-369) — von hier an trägt sie
                     # die Zeile, bis das „Ja" sie an `korb.einlegen` gibt.
-                    menge=z.get("bedarf"), einheit=z.get("einheit"))
+                    menge=z.get("bedarf"), einheit=z.get("einheit"),
+                    # Und die Zugehörigkeit zum Gericht (WB-337). Sie steht
+                    # an der Zeile und nicht am Zug, weil an dieser Zeile
+                    # auch das Eval-Label hängt: beide müssen dasselbe
+                    # „Nein" überleben.
+                    dish_item=(entwurf.ZUTAT if z.get("zum_gericht")
+                               else None))
                 # Und hier werden die Kandidaten aufgehoben statt weggeworfen
                 # (WB-359). Bis zu diesem Ticket endeten sie im Prompt von
                 # Stufe 3 und im RETRIEVER-Span — die Nutzerin bekam sie nie
@@ -1224,8 +1355,20 @@ class Chat:
                 # ist, oder ein leerer Begriff. Kostet eine Zeile, nicht den
                 # ganzen Zug.
                 continue
+        # Der Rezeptentwurf (WB-337) — nach den Zeilen, weil er ohne sie
+        # keiner wäre, und nur, wenn wirklich Gerichtszutaten dabei sind.
+        # Kein Gericht im Satz heisst kein Entwurf, und dann läuft alles wie
+        # vor diesem Ticket.
+        zutaten_im_entwurf = 0
+        if entwurf_name:
+            entwurf.merken(con, antwort_id, dish=entwurf_name,
+                           recipe_id=quelle_recipe_id)
+            zutaten_im_entwurf = sum(
+                1 for v in vorschlaege.liste(con, antwort_id)
+                if v["zum_gericht"])
         return Ergebnis(
             weg=weg, order_id=order_id, satz=text, chat_message_id=antwort_id,
+            entwurf=entwurf_name, entwurf_zutaten=zutaten_im_entwurf,
             vorschlaege=vorschlaege.liste(con, antwort_id), begriffe=begriffe,
             verworfen=verworfen, rezepte=rezepte, meldung=meldung,
             gericht=gericht, quelle_name=quelle_name, quelle_url=quelle_url,

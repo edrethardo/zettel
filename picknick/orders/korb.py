@@ -445,6 +445,12 @@ def abschicken(con: sqlite3.Connection, note: str | None = None) -> dict:
     `chat.turn`-Span. Erst jetzt und nicht beim Tippen — bis zum Abschicken
     kann sie ihre Meinung ändern. `obs.labels.schreiben()` wirft nie und
     wartet nicht auf Phoenix; siehe dort.
+
+    **Und hier entstehen die Rezepte aus den Chat-Zügen** (WB-337), aus
+    demselben Grund und mit derselben Zusicherung: bis zum Abschicken darf
+    sie ihre Meinung ändern, und `entwurf.speichern()` wirft nie. Ein Rezept
+    ist der Ertrag neben dem Einkauf; die Bestellung darf nicht daran
+    scheitern.
     """
     korb = _draft_id(con)
     if korb is None or not posten(con, korb):
@@ -458,5 +464,13 @@ def abschicken(con: sqlite3.Connection, note: str | None = None) -> dict:
     # Nach dem Zustandswechsel: was hier auch schiefgeht, die Bestellung ist
     # abgeschickt. Umgekehrt wäre eine Annotation über eine Bestellung
     # geschrieben, die es dann doch nicht gab.
+    #
+    # Der Import steht hier und nicht oben: `assistant.entwurf` führt über
+    # `assistant.vorschlaege` und `picknick.recipes` nach `picknick.orders`
+    # zurück. Auf Modulebene wäre das ein Ringschluss beim Import — hier ist
+    # es keiner, weil beide Pakete längst geladen sind, wenn jemand
+    # abschickt. Dieselbe Bauart wie bei `obs.labels`.
+    from picknick.assistant import entwurf
+    entwurf.speichern(con, korb)
     labels.schreiben(con, korb)
     return bestellung

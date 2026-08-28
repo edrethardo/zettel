@@ -124,10 +124,11 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor  # noqa: E402
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (  # noqa: E402
     InMemorySpanExporter)
 
-from picknick import db, gerichte, obs, orders  # noqa: E402
+from picknick import db, gerichte, obs, orders, recipes  # noqa: E402
 from picknick.gerichte import chefkoch  # noqa: E402
 from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
+from picknick.assistant import entwurf as entwuerfe  # noqa: E402
 from picknick.assistant import oberbegriffe  # noqa: E402
 from picknick.catalog import categories, search  # noqa: E402
 from picknick.assistant import vorschlaege  # noqa: E402
@@ -1391,6 +1392,199 @@ def _chat_menge(client, con, product_id: int, satz: str, erwartet) -> str:
     return f"{erwartet:.0f} g gebraucht, {zeile['qty']} × 500 g im Korb"
 
 
+# --------------------------------------------------------------------------
+# Der Rezeptentwurf aus einem Chat-Zug (WB-337)
+#
+# Der Satz des Tickets, am HTTP-Rand: „alles für Spaghetti Bolognese, und
+# Klopapier". Am Ende muss das Klopapier im Einkauf liegen und im Rezept
+# fehlen — und derselbe Satz danach ohne einen einzigen Modellaufruf
+# auskommen.
+
+#: Ein erfundenes Chefkoch-Rezept, dessen Zutaten es im Katalog oben gibt.
+BOLO = {
+    "id": "42", "title": "Spaghetti Bolognese al Forno", "servings": 4,
+    "siteUrl": "https://www.chefkoch.de/rezepte/42/",
+    "instructions": "Alles kochen.",
+    "ingredientGroups": [{"header": None, "ingredients": [
+        {"name": "Hackfleisch, gemischtes", "amount": 500.0, "unit": "g"},
+        {"name": "Tomaten, passierte", "amount": 500.0, "unit": "ml"},
+        {"name": "Spaghetti", "amount": 400.0, "unit": "g"}]}]}
+
+
+class _ChefkochBolo:
+    """Das Rezept oben, über dieselben URLs wie die echte API."""
+
+    def get(self, url):
+        if "?query=" in url:
+            return _JSON({"count": 1, "results": [
+                {"recipe": {"id": BOLO["id"], "title": BOLO["title"],
+                            "rating": {"rating": 4.7, "numVotes": 900},
+                            "siteUrl": BOLO["siteUrl"]}}]})
+        return _JSON(BOLO)
+
+
+class _Wirft:
+    """Ein Modellzugang, der bei jedem Aufruf auffliegt.
+
+    Der Beleg für „der Rezeptweg kostet kein Modell": ein Zug, der doch
+    fragt, macht den Check rot statt langsam.
+    """
+
+    def modell(self, **_):
+        raise AssertionError("Das Modell wurde nach dem Kürzel gefragt.")
+
+    def chat(self, *_, **__):
+        raise AssertionError("Das Modell wurde gefragt — der Rezeptweg nicht.")
+
+
+SATZ_337 = "alles für Spaghetti Bolognese, und Klopapier"
+
+
+def checks_rezeptentwurf(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    b.abschnitt("Aus einem Chat-Zug wird ein Rezept — ohne das Klopapier "
+                "(WB-337)")
+
+    con = db.connect(db_datei)
+    try:
+        gerichtelauf.hole_eines(con, _ChefkochBolo(), "Spaghetti Bolognese",
+                                pause_s=0, schreib=lambda _: None)
+        hack = pid(con, "Hackfleisch gemischt")
+        toma = pid(con, "Passierte Tomaten")
+        spag = pid(con, "Spaghetti No. 5")
+        klo = pid(con, "Toilettenpapier")
+    finally:
+        con.close()
+
+    zugang = _mock_zugang(
+        _extract((("gemischtes Hackfleisch", "Hackfleisch"), 1),
+                 (("passierte Tomaten", "Tomaten"), 1), (("Spaghetti",), 1),
+                 (("Klopapier", "Toilettenpapier"), 1)),
+        _choose(("gemischtes Hackfleisch", hack, 1),
+                ("passierte Tomaten", toma, 1), ("Spaghetti", spag, 1),
+                ("Klopapier", klo, 1)))
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        con = db.connect(db_datei)
+        try:
+            b.pruefe("der Zug trennt Gerichtszutaten vom Klopapier — ohne ein "
+                     "Feld im Prompt",
+                     lambda: _entwurf_entsteht(client, con, klo))
+            b.pruefe("vor dem Abschicken steht kein Rezept in der Sammlung",
+                     lambda: _noch_kein_rezept(con))
+            b.pruefe("der Name ist überschreibbar und die Zeilen sind es auch",
+                     lambda: _entwurf_bearbeiten(client, con, spag))
+            b.pruefe("beim Abschicken entsteht das Rezept — mit den "
+                     "behaltenen Zutaten und ohne das Klopapier",
+                     lambda: _abschicken_legt_an(client, con, klo))
+        finally:
+            con.close()
+
+    # Ein ZWEITER Shop mit einem Modell, das wirft: derselbe Satz nimmt jetzt
+    # den Rezeptweg. Genau dafür wurde das Rezept angelegt.
+    agent2 = chatmodul.Chat(_Wirft(), wecker=_Box(),
+                            quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
+    app2 = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent2)
+    with TestClient(app2) as client:
+        con = db.connect(db_datei)
+        try:
+            b.pruefe("derselbe Satz kostet danach keinen Modellaufruf mehr",
+                     lambda: _zweiter_satz(client, con))
+        finally:
+            con.close()
+
+
+def _entwurf_entsteht(client, con, klo: int) -> str:
+    antwort = client.post("/warenkorb/chat", data={"satz": SATZ_337},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+    wahr("Rezeptentwurf" in antwort.text, "Kein Entwurf in der Antwort.")
+    mid = _letzte_antwort(con)
+    e = entwuerfe.zu_nachricht(con, mid)
+    wahr(e is not None, "Zu dem Zug gibt es keinen Entwurf.")
+    gleich(e["name"], "Spaghetti Bolognese", "vorgeschlagener Rezeptname")
+    namen = [z["name"] for z in e["zeilen"]]
+    gleich(len(namen), 3, "Zutaten im Entwurf")
+    wahr(all("Toilettenpapier" not in n for n in namen),
+         f"Das Klopapier steht im Entwurf: {namen}")
+    zeile = con.execute("SELECT dish_item FROM chat_suggestion"
+                        " WHERE product_id = ?", (klo,)).fetchone()
+    wahr(zeile["dish_item"] is None,
+         "Das Klopapier trägt eine Zugehörigkeit zum Gericht.")
+    return f"3 Gerichtszutaten, Klopapier ohne Zugehörigkeit: {namen}"
+
+
+def _noch_kein_rezept(con) -> str:
+    n = con.execute("SELECT count(*) AS n FROM recipe_item").fetchone()["n"]
+    gleich(n, 0, "verknüpfte Produkte vor dem Abschicken")
+    # Die `recipe`-Zeile selbst gibt es: sie kam mit dem Chefkoch-Abruf und
+    # trägt die Zubereitung. Ohne Produkte fängt sie keinen Zug ab.
+    zutaten = [r["n_zutaten"] for r in recipes.rezepte(con)]
+    gleich(zutaten, [0], "Zutaten je Rezept")
+    return "das geholte Rezept steht da, verknüpft ist noch nichts"
+
+
+def _entwurf_bearbeiten(client, con, spag: int) -> str:
+    mid = _letzte_antwort(con)
+    antwort = client.post(f"/warenkorb/chat/{mid}/alle?decision=kept",
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST alle?decision=kept")
+    antwort = client.post(f"/warenkorb/chat/{mid}/entwurf/name",
+                          data={"name": "Bolo"},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST entwurf/name")
+    sid = con.execute("SELECT id FROM chat_suggestion WHERE product_id = ?",
+                      (spag,)).fetchone()["id"]
+    antwort = client.post(f"/warenkorb/vorschlag/{sid}/rezeptzeile?drin=0",
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST rezeptzeile?drin=0")
+    e = entwuerfe.zu_nachricht(con, mid)
+    gleich((e["name"], e["n_drin"]), ("Bolo", 2), "Entwurf nach dem Ändern")
+    # Aus dem Entwurf ist NICHT aus dem Korb: die Spaghetti liegen weiter da.
+    wahr(any(z["product_id"] == spag for z in orders.inhalt(con)),
+         "Die aus dem Entwurf genommene Zeile ist aus dem Korb verschwunden.")
+    return "\u201eBolo\u201c, 2 Zutaten im Entwurf, 3 Zeilen im Korb"
+
+
+def _abschicken_legt_an(client, con, klo: int) -> str:
+    antwort = client.post("/warenkorb/abschicken",
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 204, "POST /warenkorb/abschicken")
+    liste = recipes.rezepte(con)
+    gleich([r["name"] for r in liste], ["Bolo"], "Rezepte in der Sammlung")
+    rezept = recipes.rezept(con, liste[0]["id"])
+    namen = [z["name"] for z in rezept["zutaten"]]
+    gleich(len(namen), 2, "Zutaten im Rezept")
+    wahr(all("Toilettenpapier" not in n for n in namen),
+         f"Das Klopapier steht im Rezept: {namen}")
+    # Und im Einkauf liegt es sehr wohl.
+    bestellung = orders.bestellungen(con, "offen")[0]
+    wahr(any(z["product_id"] == klo
+             for z in orders.posten(con, bestellung["id"])),
+         "Das Klopapier fehlt in der Bestellung.")
+    # Die Zubereitung des geholten Rezepts ist dabeigeblieben.
+    wahr(rezept["instructions"], "Das Rezept hat seine Zubereitung verloren.")
+    return f"\u201eBolo\u201c mit {namen}, Klopapier in der Bestellung"
+
+
+def _zweiter_satz(client, con) -> str:
+    antwort = client.post("/warenkorb/chat", data={"satz": "heute Bolo"},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST /warenkorb/chat (Rezeptweg)")
+    mid = _letzte_antwort(con)
+    zeilen = vorschlaege.liste(con, mid)
+    gleich(len(zeilen), 2, "Vorschläge aus dem Rezept")
+    wahr(entwuerfe.zu_nachricht(con, mid) is None,
+         "Der Rezeptweg hat einen zweiten Entwurf angelegt.")
+    return "2 Vorschläge aus dem Rezept, kein Modellaufruf, kein Entwurf"
+
+
+def _letzte_antwort(con) -> int:
+    return int(con.execute("SELECT max(id) AS id FROM chat_message"
+                           " WHERE role = 'assistant'").fetchone()["id"])
+
+
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
 
@@ -1486,6 +1680,11 @@ def main() -> int:
         mengen_db = ordner / "mengen_im_chat.db"
         katalog_anlegen(mengen_db)
         checks_mengen_im_chat(b, mengen_db, bild_dir)
+        # Und noch eine: der Rezeptentwurf legt ein Rezept an und schickt den
+        # Korb ab — beides hätte in den Warenkörben oben nichts verloren.
+        entwurf_db = ordner / "entwurf.db"
+        katalog_anlegen(entwurf_db)
+        checks_rezeptentwurf(b, entwurf_db, bild_dir)
     checks_bindung(b)
     return b.ende()
 

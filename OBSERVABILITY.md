@@ -198,6 +198,8 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
 | `picknick.dish_requested` | bool | dieser Zug hat das Gericht selbst bei Chefkoch geholt, statt es im Speicher zu finden (WB-367) |
 | `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
+| `picknick.dish_draft` | Text | der Name des Rezeptentwurfs, den dieser Zug angeboten hat (WB-337) — gesetzt heisst „daraus KANN ein Rezept werden“, nicht „es ist eines geworden“ |
+| `picknick.dish_items` | int | wie viele Vorschlagszeilen als Zutat des Gerichts erkannt wurden. Die Zeilen daneben (das Klopapier) zählen hier nicht mit |
 | `picknick.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |
 | `picknick.fanout_varieties` | int | wie viele Sorten angeboten wurden |
 | `picknick.fanout_source` | Text | `catalog` (das getippte Wort IST eine Kategorie — kein Modellaufruf) oder `model` (Stufe 1 hat zugeordnet) |
@@ -373,6 +375,7 @@ Annotationen auf den `chat.turn`-Span dieses Zugs:
 |---|---|
 | `mapping_precision` | ein Score je Zug: behaltene / entschiedene Vorschläge. Kein Label — „0,75" ist die Aussage, eine Textmarke daneben wäre eine Schwelle, die niemand festgelegt hat. Metadaten mit `suggested`, `kept`, `removed`, `open` — und seit WB-361 `withdrawn`: wie oft in diesem Zug eine Entscheidung zurückgenommen wurde. |
 | `suggestion` | eine je Vorschlag. Label `kept`/`removed`, Score `1.0`/`0.0`, **Erklärung = der Suchbegriff**, Metadaten mit `search_term`, `product_id`, `rank`, `free_text` — seit WB-359 `fallback_term` sowie, wenn korrigiert wurde, `corrected_to`, und seit WB-361 `withdrawn`. |
+| `recipe` | eine je Zug, aus dem ein Rezept werden konnte (WB-337). Label `saved`, `dropped` (sie wollte keines) oder `empty` (es blieb keine bestätigte Zutat übrig), Metadaten mit `dish`, `recipe_name`, `recipe_id` und `items`. Kein Score: „ein Rezept ist entstanden“ ist keine Bewertung eines Vorschlags und hat in keinem Mittelwert etwas zu suchen. |
 | `correction` | eine je Korrektur (WB-359). Label `corrected` (aus der Vorlage gewählt) oder `free_text` (nichts passte, Katalog-Lücke), **Erklärung = „X statt Y“**, Metadaten mit beiden Produkten. Kein Score, und ein eigener Name: unter `suggestion` hübe die Korrektur den Mittelwert, den sie erklären soll. |
 
 An jeder steht `annotator_kind = "HUMAN"`. Das ist kein Formfeld, sondern der
@@ -399,6 +402,46 @@ Zusatzarbeit beantwortet.
 Der `rank` in den Metadaten schliesst den Kreis zum Butter-Fall: damit lässt
 sich fragen, ob verworfene Vorschläge **systematisch** aus schwachen Suchen
 kommen — dieselbe Frage wie oben, jetzt mit menschlichem Urteil daneben.
+
+### Warum ein Gericht plötzlich den schnellen Weg nimmt (WB-337)
+
+Ein Zug kann seit WB-337 ein Rezept hinterlassen: aus „alles für Spaghetti
+Bolognese, und Klopapier“ wird ein Entwurf mit den GERICHTSZUTATEN — das
+Klopapier gehört nicht dazu und steht nie darin. Beim Abschicken wird daraus
+ein Rezept, und ab dem nächsten passenden Satz nimmt das Gericht den
+Rezeptweg: `picknick.path = "recipe"`, kein `plan.extract`, kein
+`plan.choose`, keine Suche, null Token.
+
+Das ist im Trace der auffälligste Sprung, den dieses Projekt kennt — und
+ohne zwei Zeilen wäre er unerklärlich. Deshalb steht am Zug, der ihn
+angerichtet hat:
+
+```
+picknick.path        chefkoch
+picknick.dish        Spaghetti Bolognese
+picknick.dish_draft  Spaghetti Bolognese      <- daraus KANN ein Rezept werden
+picknick.dish_items  3                        <- so viele Zeilen gehören dazu
+```
+
+und beim Abschicken, auf demselben Span, die Annotation:
+
+```
+name    label   explanation
+recipe  saved   aus diesem Zug wurde das Rezept „Bolo“ mit 2 Zutaten —
+                ab jetzt nimmt „Spaghetti Bolognese“ den Rezeptweg
+```
+
+Die Trennung der beiden ist der Punkt: **`dish_draft` ist eine Möglichkeit,
+die Annotation ist die Tatsache.** Zwischen ihnen liegt alles, was die
+Nutzerin noch tun darf — Zeilen verwerfen, sie aus dem Entwurf nehmen, das
+Rezept umbenennen oder es ganz sein lassen. Ein Attribut, das schon am Zug
+„gespeichert“ behauptete, wäre in jedem dritten Fall gelogen.
+
+**Was diese Zahlen nicht sagen:** `dish_items` zählt, was `herkunft.zuordnen`
+einer Zutat des Rezepts zuordnen konnte. Ein Begriff, der seiner Zutat nicht
+sicher zuzuordnen ist, fehlt hier — gemessen in WB-369 eine von 38
+Zuordnungen. Die Zahl ist also eine Untergrenze und keine Zutatenzahl des
+Gerichts.
 
 ### Aus einem negativen Label wird ein positives (WB-359)
 
@@ -605,6 +648,18 @@ zeigte ins Leere.
   Begriffen ihre Zutat, **keiner die falsche**. Die Richtung ist Absicht: ein
   verlorener Bedarf kostet eine Packung zu viel, ein falsch zugeordneter
   Bedarf eine falsche Menge, die aussieht wie eine gerechnete.
+* **Ein Rezept entsteht nur aus dem Chefkoch-Weg** (WB-337). Ein `llm`-Zug
+  bekommt keinen Entwurf, auch wenn er ein Gericht erkannt hat: dort rät das
+  Modell die Zutaten, und es gibt keine Liste, gegen die sich prüfen liesse.
+  Wer in Phoenix zählt, wie oft ein Zug ein Rezept hinterlässt, misst also
+  auch, wie oft Chefkoch das Gericht kennt — und nicht nur, wie brauchbar der
+  Zug war. Die beiden Fragen trennt `picknick.path`.
+* **`dish_items` ist eine Untergrenze.** Die Zahl kommt aus derselben
+  Wortzuordnung wie die Mengen (`assistant.herkunft`) und hat dieselbe Lücke:
+  ein Begriff, der seiner Zutat nicht sicher zuzuordnen ist, fehlt im Entwurf
+  und damit im Rezept. Die Richtung ist Absicht — eine fehlende Zutat lässt
+  sich am Rezept nachtragen, eine falsche fällt niemandem mehr auf —, aber
+  „3 Zutaten“ heisst nicht „das Gericht hat 3 Zutaten“.
 * **`document.score` ist über Traces hinweg nicht vergleichbar**, weil er vom
   Katalogumfang abhängt. Zwei Züge vor und nach einem Crawl haben andere
   Zahlen bei gleichem Verhalten.

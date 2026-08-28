@@ -18,6 +18,12 @@ gefüllt in WB-328). Zwei Sorten:
   Zeile, welcher Begriff schlecht gemappt hat; zusammen mit dem
   `catalog.search`-Span desselben Begriffs (WB-328) ist die Frage „Modell
   oder Suche?" ohne Zusatzarbeit beantwortet.
+* `recipe` — eine Annotation je Zug, aus dem ein Rezept geworden ist
+  (WB-337). Sie beantwortet die Frage, die sonst niemand mehr beantworten
+  kann: **warum nimmt dieses Gericht ab jetzt den schnellen Weg?** Am Zug
+  steht `picknick.dish_draft` („daraus KANN ein Rezept werden"); ob es
+  wirklich eines wurde, entscheidet sich erst beim Abschicken, und genau da
+  fällt auch diese Annotation an.
 * `correction` — eine Annotation je Korrektur (WB-359): **welcher Kandidat
   statt welchem**. Das macht aus einem negativen Label ein positives — nicht
   nur „das war falsch", sondern „das wäre richtig gewesen", und zwar mit einer
@@ -117,6 +123,22 @@ NAME_KORREKTUR = "correction"
 LABEL_KORRIGIERT = "corrected"
 LABEL_FREITEXT = "free_text"
 
+#: Das Rezept, das aus einem Zug entstanden ist (WB-337). Ein eigener Name
+#: und kein Score: „ein Rezept ist entstanden" ist keine Bewertung des
+#: Vorschlags und hat in keinem Mittelwert etwas zu suchen. Sie steht
+#: trotzdem hier und nicht bloss am Span, weil sie zum selben Zeitpunkt
+#: entsteht wie die Labels — beim Abschicken — und weil sie erst dann wahr
+#: ist.
+NAME_REZEPT = "recipe"
+
+#: Die drei Ausgänge eines Entwurfs. `dropped` heisst „sie wollte kein
+#: Rezept", `empty` „es blieb keine bestätigte Zutat übrig" — der
+#: Unterschied ist die interessante Hälfte: das eine ist eine Entscheidung,
+#: das andere ein Zug, der nichts Brauchbares gefunden hat.
+LABEL_GESPEICHERT = "saved"
+LABEL_VERWORFEN = "dropped"
+LABEL_LEER = "empty"
+
 #: Kein LLM-Judge. Siehe Modul-Docstring.
 MENSCH = "HUMAN"
 
@@ -148,7 +170,7 @@ def annotationen(con, order_id: int) -> list[dict]:
     # Abschicken zu schreiben. Auf Modulebene wäre das ein Ringschluss beim
     # Import — hier ist es keiner, weil beide Pakete längst geladen sind, wenn
     # jemand annotiert.
-    from picknick.assistant import vorschlaege
+    from picknick.assistant import entwurf, vorschlaege
 
     raus: list[dict] = []
     zuege = con.execute(
@@ -182,6 +204,11 @@ def annotationen(con, order_id: int) -> list[dict]:
                           "suggested": q["vorgeschlagen"],
                           "kept": q["behalten"], "removed": q["verworfen"],
                           "open": q["offen"], "withdrawn": zurueck}))
+
+        rezept = _rezept_anno(entwurf.zu_nachricht(con, msg_id, zeilen),
+                              span_id, order_id, msg_id)
+        if rezept is not None:
+            raus.append(rezept)
 
         for v in zeilen:
             if v["ist_korrektur"]:
@@ -251,6 +278,39 @@ def annotationen(con, order_id: int) -> list[dict]:
                           "withdrawn": v["zurueckgenommen"],
                           "free_text": bool(v["ist_freitext"])}))
     return raus
+
+
+def _rezept_anno(e: dict | None, span_id: str, order_id: int,
+                 msg_id: int) -> dict | None:
+    """Was aus dem Rezeptentwurf dieses Zugs geworden ist (WB-337).
+
+    `None`, wenn es gar keinen gab — der Normalfall. Ein Entwurf, der beim
+    Abschicken noch offen wäre, kommt hier nicht vor: `speichern()` läuft
+    vorher, und danach ist jeder Entwurf entschieden.
+    """
+    if e is None:
+        return None
+    if e["saved_at"]:
+        label = LABEL_GESPEICHERT
+        satz = (f"aus diesem Zug wurde das Rezept „{e['name']}“ mit "
+                f"{e['n_drin']} Zutaten — ab jetzt nimmt „{e['dish']}“ den "
+                "Rezeptweg")
+    elif e["verworfen"]:
+        label = LABEL_VERWORFEN
+        satz = f"kein Rezept aus diesem Zug — „{e['name']}“ wurde verworfen"
+    else:
+        label = LABEL_LEER
+        satz = (f"kein Rezept aus diesem Zug — zu „{e['name']}“ blieb keine "
+                "bestätigte Zutat übrig")
+    return _anno(
+        span_id, NAME_REZEPT,
+        label=label,
+        explanation=satz,
+        identifier=f"picknick-recipe-{msg_id}",
+        metadata={"order_id": order_id, "chat_message_id": msg_id,
+                  "dish": e["dish"], "recipe_name": e["name"],
+                  "recipe_id": e["recipe_id"] if e["saved_at"] else None,
+                  "items": e["n_drin"]})
 
 
 def _korrektur_anno(v: dict, span_id: str, order_id: int,
