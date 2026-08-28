@@ -145,8 +145,19 @@ def loeschen(con: sqlite3.Connection, recipe_id: int) -> None:
     con.commit()
 
 
+#: Die Kopfdaten eines Rezepts. Seit WB-338 gehört die Zubereitung dazu —
+#: mit Zeiten, Schwierigkeit und Herkunft. Ein selbst angelegtes Rezept hat
+#: davon nichts, und das ist kein Sonderfall: alle diese Spalten sind NULL,
+#: die Ansicht lässt den Abschnitt dann weg, und `note` bleibt die Stelle für
+#: eigene Notizen.
+_KOPF_SPALTEN = (
+    "id, name, servings, note, instructions, prep_minutes, cook_minutes,"
+    " rest_minutes, difficulty, source, source_id, source_url, source_title,"
+    " source_rating, source_votes, fetched_at")
+
+
 def _muss_geben(con: sqlite3.Connection, recipe_id: int) -> sqlite3.Row:
-    row = con.execute("SELECT id, name, servings, note FROM recipe WHERE id = ?",
+    row = con.execute(f"SELECT {_KOPF_SPALTEN} FROM recipe WHERE id = ?",
                       (recipe_id,)).fetchone()
     if row is None:
         raise RezeptFehler(f"Rezept {recipe_id} gibt es nicht.")
@@ -190,12 +201,31 @@ def zutaten(con: sqlite3.Connection, recipe_id: int) -> list[dict]:
 
 
 def rezept(con: sqlite3.Connection, recipe_id: int) -> dict:
-    """Ein Rezept mit seinen Zutaten. Wirft, wenn es das Rezept nicht gibt."""
+    """Ein Rezept mit seinen Zutaten. Wirft, wenn es das Rezept nicht gibt.
+
+    Seit WB-338 kommt zweierlei dazu, das nichts mit dem Einkaufen zu tun hat
+    und alles mit dem Kochen:
+
+    * `zubereitung` — die Schritte, aus dem gespeicherten Text getrennt.
+      Ein Absatz mit 3.924 Zeichen als eine Wand ist auf einem Telefon am
+      Herd unbrauchbar; die Struktur steht bereits im Text und wird hier
+      nur nicht zusammengezogen.
+    * `rezeptzutaten` — die Zutatenliste, wie die Quelle sie schreibt („500
+      ml Tomaten, passierte"). Das ist NICHT `zutaten`: dort stehen die
+      Produkte, die dafür gekauft werden.
+
+    Beides ist leer, wenn niemand ein Rezept geholt hat — die Ansicht lässt
+    die Abschnitte dann weg, statt leere Überschriften zu zeigen.
+    """
+    from picknick.gerichte import chefkoch, speicher
+
     kopf = dict(_muss_geben(con, recipe_id))
     kopf["zutaten"] = zutaten(con, recipe_id)
     kopf["n_zutaten"] = len(kopf["zutaten"])
     kopf["n_ausgemustert"] = sum(1 for z in kopf["zutaten"]
                                  if z["nicht_im_katalog"])
+    kopf["zubereitung"] = chefkoch.schritte(kopf.get("instructions"))
+    kopf["rezeptzutaten"] = speicher.zutaten(con, recipe_id)
     return kopf
 
 
@@ -207,7 +237,9 @@ def rezepte(con: sqlite3.Connection) -> list[dict]:
     nicht mehr im Katalog ist — nicht erst im Laden.
     """
     rows = con.execute(
-        "SELECT r.id, r.name, r.servings, r.note,"
+        "SELECT r.id, r.name, r.servings, r.note, r.source, r.source_url,"
+        "       r.prep_minutes, r.cook_minutes,"
+        "       (r.instructions IS NOT NULL) AS hat_zubereitung,"
         "       count(ri.id) AS n_zutaten,"
         "       coalesce(sum(CASE WHEN ri.product_id IS NOT NULL"
         "                          AND coalesce(p.active, 0) <> 1"

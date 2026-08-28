@@ -64,8 +64,8 @@ auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
 ## Prüfen
 
 ```bash
-.venv/bin/python checks/smoke.py     # das Gate: 37 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 433 Tests
+.venv/bin/python checks/smoke.py     # das Gate: 45 Checks, exit 0 / 1
+.venv/bin/python -m pytest -q        # 657 Tests
 ```
 
 Beides ohne Netz, ohne Modell, ohne Phoenix — und im Fall des Gates ist das
@@ -103,4 +103,53 @@ Zwei weitere Dinge, die man kennen muss, bevor man dem Katalog etwas anlastet:
   und 59 Begriffe waren leer. Wer ältere Beispiele in diesem Projekt liest,
   sollte das wissen: „Zahnpasta liefert nichts" war eine **Crawl-Lücke, kein
   fehlendes Sortiment** — heute findet die Suche `meridol ZAHNPASTA`.
+
+## Rezepte von Chefkoch — was erlaubt ist und was ich nicht gelesen habe
+
+Nennt ein Chat-Satz ein **Gericht**, kommen die Zutaten aus einem
+echten Rezept statt aus dem Gedächtnis des Modells. Der Anlass ist gemessen:
+bei „alles für Pho" zählte das Modell zwanzig Rindfleischteile auf, von denen
+**keiner** im Katalog stand — es weiss nicht, was Pho ist, und merkt es nicht.
+Chefkoch kennt 85 Pho-Rezepte; das bestbewertete liefert 23 Zutaten.
+
+Benutzt werden genau zwei Endpunkte einer offenen JSON-API, ohne Schlüssel:
+
+```
+GET https://api.chefkoch.de/v2/recipes?query=<gericht>&limit=12   # Metadaten
+GET https://api.chefkoch.de/v2/recipes/<id>                       # Zutaten
+```
+
+**`robots.txt` erlaubt beide.** `api.chefkoch.de/robots.txt` sperrt
+ausschliesslich `/v2/search/suggestions/` und die Kommentare zweier einzelner
+Rezepte.
+
+**`robots.txt` ist nicht dasselbe wie eine Erlaubnis.** Wer dieses Projekt
+weitergibt oder öffentlich betreibt, muss die Nutzungsbedingungen selbst
+prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
+
+* **zwei Anfragen je Gericht, dann nie wieder** — das Ergebnis wird in `dish`
+  zwischengespeichert (90 Tage; „kennt Chefkoch nicht" sieben Tage, eine
+  Störung eine Stunde). Ein Gericht wird nicht bei jedem Chat-Zug neu geholt.
+* **1,5 s Pause** zwischen zwei Anfragen (`chefkoch.PAUSE_S`).
+* **ein ehrlicher User-Agent**, der das Projekt benennt.
+* **die Herkunft bleibt am Rezept**: Rezeptname und `siteUrl` stehen in der
+  Rezeptansicht, mit Link auf die Originalseite. Das ist fremde Arbeit.
+
+**Der Web-Prozess ruft nie eine fremde Seite auf** (Spec 3), und das ist keine
+Absicht, sondern eine Struktur: er trägt einen Wunsch in `dish` ein und
+startet einen eigenen Prozess.
+
+```bash
+.venv/bin/python -m picknick.gerichte.lauf --gericht "Pho"   # ein Gericht
+.venv/bin/python -m picknick.gerichte.lauf --alle            # offene Wünsche
+```
+
+Deshalb ist der ERSTE Satz zu einem neuen Gericht noch der Modellweg — er sagt
+das auch — und erst der zweite nimmt das Rezept. Ein Request wartet nie auf
+eine fremde Seite. Fällt Chefkoch aus, bleibt es beim Modellweg; der Chat
+bricht nicht.
+
+Zurücknehmen lässt sich das Ganze an einer Stelle: `Chat(quelle=Quelle(
+starter=gerichte.nicht_holen))` liest weiter den Speicher, holt aber nichts
+mehr nach.
 

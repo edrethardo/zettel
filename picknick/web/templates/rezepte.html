@@ -20,6 +20,8 @@
         <span class="menge">
           {{ r.n_zutaten }} {% if r.n_zutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
           {%- if r.servings %} · für {{ r.servings }}{% endif %}
+          {%- if r.hat_zubereitung %} · mit Zubereitung{% endif %}
+          {%- if r.source %} · von {{ r.source }}{% endif %}
           {%- if r.n_ausgemustert %}
           {# Der Hinweis steht schon in der Liste: wer ein Rezept in den Korb
              legen will, soll es vorher wissen und nicht erst im Laden. #}

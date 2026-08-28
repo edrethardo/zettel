@@ -108,6 +108,27 @@ Der **Rezeptweg** erzeugt nur den `CHAIN`-Span, mit
 `picknick.path = "recipe"`: keine Modellstufe, keine Suche. Das ist auch der
 Weg, der noch funktioniert, wenn die vLLM-Box schläft.
 
+Der **Quellenweg** (`picknick.path = "chefkoch"`, WB-338) hat denselben Baum
+wie der Modellweg — nur bekommt `plan.extract` dort nicht den Satz zu lesen,
+sondern die Zutatenliste eines geholten Rezepts. Der Unterschied ist mit
+Absicht ein eigener `path`-Wert und kein Nebensatz: **die Frage, ob die
+Quelle wirklich besser ist als das Raten, wird an genau diesem Attribut
+gemessen.** Ein Gericht taucht in der Regel zweimal auf — einmal als
+`llm`-Zug mit gesetztem `picknick.dish` (da wurde noch geraten und der Abruf
+angestossen) und danach als `chefkoch`-Zug mit demselben `dish`. Die beiden
+nebeneinander, dazu `picknick.products` und `picknick.free_text`, sind der
+ganze Vergleich. Für „alles für Pho" sah er am 2026-08-28 so aus:
+
+| `path` | `dish` | `terms` | `products` | `free_text` | was dastand |
+|---|---|---|---|---|---|
+| `llm` | Pho | 3 | 3 | 0 | Rinderhack, Rinderknochen, Rinderbrust — das Modell drehte sich 3.358 Zeichen lang im Kreis und wiederholte dieselben drei Begriffe; entdoppelt blieben drei. Alle drei fanden ein Produkt, **keines davon gehört in eine Pho**: „KIKOK Hähnchenbrust mit Knochen", „Mark&Fein BIO Rind Gulasch". |
+| `chefkoch` | Pho | 19 | 11 | 8 | Zwiebeln, Zimtstangen, Ingwer, Thai-Basilikum, Mie Nudeln, Rinderfilet, Zitronen, Chilisauce, Fleischknochen, Koriander, Kardamom — und acht ehrliche Freitexte für das, was der Katalog nicht hat (Markknochen, Nelken, Sternanis, Fischsauce, Koriandergrün, Sojasprossen, Frühlingszwiebel, Chilischote). |
+
+**`products` allein ist die falsche Zahl**, und diese Tabelle zeigt genau
+warum: der `llm`-Zug hat 3 von 3 „gefunden" und trotzdem nichts Brauchbares
+geliefert. Erst `dish` daneben macht die Zeilen vergleichbar, und die
+Entscheidungen der Nutzerin (Spec 8.1) machen sie beurteilbar.
+
 ### Woher die Spans kommen
 
 Die beiden `LLM`-Spans schreibt dieses Projekt **nicht selbst** — sie kommen
@@ -130,7 +151,7 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `output.value` | JSON | die Vorschlagsliste: `product_id`, `name`, `menge`, `begriff`, `rang`, `freitext` |
 | `session.id` | Text | `korb-<order_id>` — mehrere Sätze zu **einem** Einkauf liegen in Phoenix als eine Sitzung zusammen. Ohne das steht jeder Zug für sich und „sie hat nachgebessert" ist nicht mehr zu sehen. |
 | `picknick.order_id` | int | die Bestellung, an der der Zug hängt |
-| `picknick.path` | Text | `llm` oder `recipe` |
+| `picknick.path` | Text | `llm`, `recipe` oder `chefkoch` |
 | `picknick.chat_message_id` | int | die Antwortzeile in `chat_message` |
 | `picknick.terms` | int | Begriffe aus Stufe 1 |
 | `picknick.products` | int | Vorschläge mit echtem Produkt |
@@ -139,6 +160,10 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.recipes` | Text | die erkannten Rezepte, nur auf dem Rezeptweg |
 | `picknick.weakest_term` | Text | der Begriff mit dem schwächsten besten Treffer |
 | `picknick.weakest_rank` | float | dessen Rang; ein Begriff ganz ohne Treffer zählt als `0.0` |
+| `picknick.dish` | Text | das erkannte Gericht — **auf jedem Weg**, auch wenn die Zutaten noch geraten wurden (WB-338) |
+| `picknick.dish_recipe` | Text | der Rezeptname der Quelle, nur auf `chefkoch` |
+| `picknick.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
+| `picknick.dish_requested` | bool | dieser Zug hat einen Abruf angestossen; der nächste mit demselben Gericht nimmt die Quelle |
 
 `picknick.rejected` ist die härteste Zusicherung des Projekts, als Zahl. Das
 Modell sieht in Stufe 1 keinen Katalog und darf in Stufe 3 nur nennen, was ihm

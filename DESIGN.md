@@ -215,6 +215,24 @@ wäre gelegentlich hilfreich und gelegentlich falsch — und ein Vorschlag,
 dessen Zustandekommen niemand erklären kann, ist in einem Projekt, das sich
 über Nachvollziehbarkeit definiert, der falsche Handel.
 
+**Ein geholtes Rezept hat zwei Zutatenlisten, und das ist Absicht.**
+`recipe_ingredient` ist, was im Rezept steht („500 ml Tomaten, passierte");
+`recipe_item` ist, was dafür gekauft wird (Katalogprodukt oder Freitext).
+Beides in eine Tabelle zu legen hiesse, jeder Zeile eine Menge in Packungen
+UND eine in Litern zu geben. Der Nebeneffekt ist die Weiche zwischen zwei
+Wegen: solange `recipe_item` leer ist, fängt `rezeptweg.erkenne` den Chat-Zug
+nicht ab (es hätte nichts vorzuschlagen) und die Quelle übernimmt. Ordnet
+jemand von Hand Produkte zu, greift wieder der Rezeptweg — und das ist
+richtig, denn dann stehen dort die Produkte, die ein Mensch ausgesucht hat.
+
+**Der Abruf bei Chefkoch läuft in einem eigenen Prozess, nicht in einem
+Thread** (WB-338). Für die Bons genügt ein Hintergrund-Thread, weil sie
+lokale Programme starten und die Box im LAN fragen. Eine FREMDE Seite darf
+der Web-Prozess gar nicht erst anfassen (Spec 3) — deshalb trägt er nur einen
+Wunsch in `dish` ein und startet `python -m picknick.gerichte.lauf`. Der
+Preis ist sichtbar und wird benannt: der erste Satz zu einem neuen Gericht
+geht noch übers Modell, erst der zweite nimmt das Rezept.
+
 **Denken ist für die zwei Agentenstufen abgeschaltet** (`enable_thinking:
 false`, je Anfrage, der Server bleibt unverändert). Nicht aus Geschmack: der
 erste Lauf gegen die echte Box brach mit „kein JSON" ab, weil Qwens
@@ -234,6 +252,16 @@ verlängert.
   Wer in einer grossen Warengruppe stöbert, sieht die ersten sechzig
   alphabetisch und danach nichts. Auf dem Handy ist das erträglich, richtig
   ist es nicht.
+* **Die Quelle hilft erst beim zweiten Satz.** Ein Gericht, das noch niemand
+  geholt hat, wird angefordert und nicht abgewartet — der laufende Zug rät
+  weiter. Das ist der Preis dafür, dass kein Request an einer fremden Seite
+  hängt, und er ist echt: wer einmal fragt und die Antwort für bare Münze
+  nimmt, bekommt bei einem unbekannten Gericht dieselbe Liste wie vorher.
+  Die Meldung sagt es, aber sie zwingt niemanden zum zweiten Satz.
+* **Ein Rezept je Gericht, und die Wahl ist eine Formel.** Chefkoch kennt 85
+  Pho-Rezepte; genommen wird das mit der höchsten gewichteten Note. Ob es das
+  passendste ist, weiss niemand — „Gemüselasagne" liefert eine
+  Spinat-Gemüse-Lasagne, und das ist eine Auslegung, keine Übersetzung.
 * **HTMX setzt die URL nicht um** (kein `hx-push-url`). Suche und
   Kategoriewechsel tauschen nur die Liste; ein Reload landet wieder im
   unbeschränkten Katalog. Der Zurück-Knopf des Browsers führt aus der Ansicht

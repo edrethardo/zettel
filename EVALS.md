@@ -140,6 +140,19 @@ Experiment, sondern ein neuer Agent.
 | `kandidaten-20` | 20 statt 5 vorgelegte Kandidaten je Begriff |
 | `ohne-guided` | ohne `guided_json` — trägt der Prompt allein? |
 
+Seit WB-338 gibt es eine fünfte Stellschraube, die **noch nicht gefahren
+ist**: `quelle` gegen `gedaechtnis` — dieselbe Anfrage einmal mit gefülltem
+Gerichtespeicher (`picknick.path = chefkoch`) und einmal ohne
+(`picknick.path = llm`). Der Trace trägt dafür alles Nötige (`picknick.dish`
+steht auf beiden Wegen, siehe `OBSERVABILITY.md`), und die Handprobe
+(`scripts/gericht_probe.py`) zeigt den Unterschied schon von Hand: bei „alles
+für Pho" nannte das Modell drei Rindfleischteile, von denen keiner in eine
+Pho gehört, die Quelle 19 Begriffe mit 11 Katalogtreffern. **Eine Handprobe
+ist keine Evaluation** — was fehlt, ist das Dataset dazu und die Frage, ob
+`zutaten_vollstaendigkeit` an einem geholten Rezept überhaupt dasselbe misst
+(die erwarteten Zutaten stünden dann aus derselben Quelle wie die
+gemessenen).
+
 Spec 8.3 nennt als dritte Stellschraube „lokales Qwen gegen ein grösseres
 Modell". **Diese Variante ist nicht fahrbar**: auf der Box liegt genau ein
 Modell, und ein Zukauf über eine fremde API ist ausdrücklich abgelehnt. Ein

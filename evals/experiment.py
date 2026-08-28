@@ -302,11 +302,23 @@ class Lauf:
     def chat(self):
         from picknick.assistant.chat import Chat
 
+        from picknick import gerichte
+
         if not hasattr(self, "_chat"):
-            self._chat = Chat(self._zugang, wecker=self._wecker,
-                              kandidaten=self.variante.kandidaten,
-                              guided=self.variante.guided,
-                              system_extract=self.variante.system_extract)
+            self._chat = Chat(
+                self._zugang, wecker=self._wecker,
+                kandidaten=self.variante.kandidaten,
+                guided=self.variante.guided,
+                system_extract=self.variante.system_extract,
+                # **Der Lauf holt keine Gerichte nach** (WB-338): der
+                # Zwischenspeicher der Kopie wird gelesen, aber nicht
+                # gefüllt. Sonst holte der erste Satz eines Datasets ein
+                # Rezept, und der zweite Lauf derselben Variante liefe gegen
+                # eine andere Grundlage als der erste — zwei Varianten wären
+                # dann nicht mehr vergleichbar. Wer die Quelle messen will,
+                # füllt den Speicher VOR dem Lauf
+                # (`python -m picknick.gerichte.lauf --gericht …`).
+                quelle=gerichte.Quelle(starter=gerichte.nicht_holen))
         return self._chat
 
     def einmal(self, satz: str) -> dict:

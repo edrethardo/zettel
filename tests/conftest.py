@@ -25,6 +25,27 @@ from picknick import obs  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
+def _kein_abruf_startet_einen_prozess(monkeypatch):
+    """Kein Test startet den Chefkoch-Abruf (WB-338, Spec 13).
+
+    `Chat()` baut ohne Zutun eine `Quelle`, und die startet bei einem
+    unbekannten Gericht `python -m picknick.gerichte.lauf` — einen Prozess,
+    der ins Netz geht. In einem Test wäre das beides: langsam und ein Gang
+    ins Netz durch die Hintertür. Wer den Weg PRÜFEN will, reicht einen
+    eigenen `starter` herein (siehe `tests/test_gerichte.py`); wer es nicht
+    tut, bekommt hier einen Testfehler statt eines stillen Prozesses.
+    """
+    from picknick.gerichte import quelle
+
+    def _nein(argv):
+        raise AssertionError(
+            f"Ein Test wollte einen Abruf-Prozess starten: {argv!r}. "
+            "Reich einen eigenen `starter` an `Quelle` herein.")
+
+    monkeypatch.setattr(quelle, "_als_prozess", _nein)
+
+
+@pytest.fixture(autouse=True)
 def _kein_tracer_uebrig():
     """Räumt einen Provider weg, den ein Test gesetzt hat.
 

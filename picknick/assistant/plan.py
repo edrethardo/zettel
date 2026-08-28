@@ -218,13 +218,29 @@ Haushalt steht (Salz, Pfeffer, Wasser, Öl, Gewürze), lässt du weg.
 - Die Menge ist die Anzahl Packungen, die gekauft werden soll. Im Zweifel 1.
 - Nichts erfinden, was im Satz nicht vorkommt oder zum Gericht nicht gehört.
 
+Nennt der Satz ein GERICHT — einen Rezeptnamen wie „Spaghetti Bolognese", \
+„Gemüselasagne", „Pho" —, schreibst du dessen Namen zusätzlich in das Feld \
+"gericht". Nur den Namen des Gerichts, ohne „alles für" und ohne die anderen \
+Wünsche des Satzes. Nennt der Satz kein Gericht, sondern einzelne Waren, \
+setzt du "gericht" auf null.
+
 Antworte ausschliesslich als JSON:
-{"begriffe": [{"suchbegriffe": ["Rinderhackfleisch", "Hackfleisch"], \
-"menge": 1}, {"suchbegriffe": ["passierte Tomaten", "Tomaten"], "menge": 2}]}"""
+{"gericht": null, "begriffe": [{"suchbegriffe": ["Rinderhackfleisch", \
+"Hackfleisch"], "menge": 1}, {"suchbegriffe": ["passierte Tomaten", \
+"Tomaten"], "menge": 2}]}"""
 
 SCHEMA_EXTRACT = {
     "type": "object",
     "properties": {
+        # Der Gerichtsname, falls der Satz einen nennt (WB-338). NICHT
+        # `required`: ein Satz über Milch und Klopapier nennt kein Gericht,
+        # und ein Modell, das eines nennen MUSS, erfindet eines.
+        #
+        # `["string", "null"]` und nicht bloss `"string"`: mit Guided
+        # Decoding kann das Modell ein Feld, das im Schema steht, nur mit
+        # einem passenden Wert füllen — ohne `null` bliebe ihm nur, sich
+        # etwas auszudenken oder das Feld ganz wegzulassen.
+        "gericht": {"type": ["string", "null"]},
         "begriffe": {
             "type": "array",
             "maxItems": MAX_BEGRIFFE,
@@ -248,9 +264,79 @@ SCHEMA_EXTRACT = {
             },
         },
     },
-    "required": ["begriffe"],
+    # `gericht` steht MIT in `required`, und das ist gemessen und nicht
+    # Geschmack: ohne diesen Eintrag liess das Modell das Feld bei „alles für
+    # Pho" schlicht weg (2026-08-28, Qwen3.8-27B) — ausgerechnet bei dem
+    # Gericht, für das die Quelle gebaut wurde. Mit `required` erzwingt
+    # Guided Decoding das Feld; `null` bleibt eine gültige Antwort, also wird
+    # dadurch kein Gericht erfunden. Es steht ausserdem VOR `begriffe`: das
+    # Modell nennt es damit, bevor es sich in eine lange Zutatenliste
+    # verrennt (WB-363).
+    "required": ["gericht", "begriffe"],
     "additionalProperties": False,
 }
+
+
+@dataclass(frozen=True)
+class Plan:
+    """Was Stufe 1 aus dem Satz gemacht hat: Zutaten und — vielleicht — ein
+    Gericht.
+
+    Das Gericht ist seit WB-338 dabei und ändert an den Zutaten nichts: sie
+    bleiben die Antwort des Modells und damit der Weg, der immer funktioniert.
+    Der Gerichtsname ist die ZUSÄTZLICHE Auskunft, mit der der Chat-Zug bei
+    einer Quelle nachschlagen (und damit das Raten ersetzen) kann.
+    """
+    zutaten: list[dict] = field(default_factory=list)
+    gericht: str | None = None
+
+
+#: Grenzen für einen Gerichtsnamen aus dem Modell. Zwei Zeichen sind kein
+#: Gericht, achtzig sind ein Satz — und beides wäre eine sinnlose Anfrage an
+#: eine fremde Seite.
+MIN_GERICHT = 3
+MAX_GERICHT = 80
+
+
+def _gericht(text: str) -> str | None:
+    """Der Gerichtsname aus der Antwort von Stufe 1, oder `None`.
+
+    Nachsichtig wie der Rest des Moduls: fehlt das Feld, ist es `null`, steht
+    Unsinn darin oder war die Antwort abgeschnitten — dann eben kein Gericht.
+    Ein fehlender Gerichtsname kostet nur die Abkürzung über die Quelle; ein
+    falscher kostet eine Anfrage an eine fremde Seite und ein Rezept, das
+    niemand wollte.
+    """
+    def sauber(roh):
+        gekuerzt = " ".join(roh.split()).strip(" .,:;-–—\"'„“")
+        return gekuerzt if MIN_GERICHT <= len(gekuerzt) <= MAX_GERICHT else None
+
+    try:
+        wert = _json_wert(text)
+    except PlanFehler:
+        # Abgeschnitten (WB-363, und das trifft ausgerechnet Pho): der Anfang
+        # der Antwort steht trotzdem da, und `gericht` steht im Schema VOR
+        # `begriffe`. Es hier von Hand herauszuschneiden ist die einzige
+        # Stelle im Modul, an der ein regulärer Ausdruck auf Modellausgabe
+        # losgelassen wird — und sie ist es wert: ohne sie verliert genau der
+        # Fall den Gerichtsnamen, für den die Quelle gebaut wurde.
+        treffer = _GERICHT_ROH.search(text)
+        return sauber(treffer.group(1)) if treffer else None
+    if not isinstance(wert, dict):
+        return None
+    for name in ("gericht", "dish", "rezept", "gerichtsname"):
+        roh = wert.get(name)
+        if isinstance(roh, str):
+            gefunden = sauber(roh)
+            if gefunden:
+                return gefunden
+    return None
+
+
+#: `"gericht": "Pho"` aus einer angeschnittenen Antwort. Absichtlich streng:
+#: kein Escape, keine Verschachtelung — was komplizierter ist, soll der
+#: JSON-Weg oben holen.
+_GERICHT_ROH = re.compile(r'"gericht"\s*:\s*"([^"\\]{1,80})"')
 
 
 def extract(zugang, satz: str, *, guided: bool = True,
@@ -271,6 +357,26 @@ def extract(zugang, satz: str, *, guided: bool = True,
     Wirft `PlanFehler`, wenn nichts Brauchbares zurückkam — kein JSON, ein
     leeres Array, ein falscher Typ. Der Aufrufer macht daraus eine Meldung im
     Chat; er baut daraus NICHTS zusammen, was das Modell nicht gesagt hat.
+
+    Die Kurzform von `extract_plan()`, für alles, was den Gerichtsnamen
+    nicht braucht (Evals, Proben, die Tests dieses Moduls).
+    """
+    return extract_plan(zugang, satz, guided=guided, system=system,
+                        temperatur=temperatur, max_tokens=max_tokens,
+                        denken=denken).zutaten
+
+
+def extract_plan(zugang, satz: str, *, guided: bool = True,
+                 system: str = SYSTEM_EXTRACT,
+                 temperatur: float = TEMPERATUR,
+                 max_tokens: int = MAX_TOKENS,
+                 denken: bool = DENKEN) -> Plan:
+    """Wie `extract()`, gibt aber auch den Gerichtsnamen zurück (WB-338).
+
+    **Ein Aufruf, zwei Auskünfte.** Den Gerichtsnamen in einer eigenen Stufe
+    zu erfragen wäre ein zweiter Modellaufruf je Satz — und das Modell hat
+    den Satz ohnehin gerade gelesen. Kostet der Gerichtsname nichts extra,
+    darf er auch dann dastehen, wenn ihn niemand braucht.
     """
     text = (satz or "").strip()
     if not text:
@@ -278,6 +384,15 @@ def extract(zugang, satz: str, *, guided: bool = True,
     antwort = _frage(zugang, system, text, SCHEMA_EXTRACT, "begriffe",
                      guided, temperatur, max_tokens, denken)
     roh = _eintraege(antwort, ("begriffe", "zutaten", "items", "liste"))
+    zutaten = _zutaten_aus(roh)
+    if not zutaten:
+        raise PlanFehler(
+            "Das Modell hat aus dem Satz keine Suchbegriffe gemacht.")
+    return Plan(zutaten=zutaten, gericht=_gericht(antwort))
+
+
+def _zutaten_aus(roh: list[dict]) -> list[dict]:
+    """Die rohen Einträge des Modells -> geprüfte Zutaten mit Begriffskette."""
     zutaten: list[dict] = []
     gesehen: set[str] = set()
     for eintrag in roh:
@@ -296,9 +411,6 @@ def extract(zugang, satz: str, *, guided: bool = True,
                                                   "quantity"))})
         if len(zutaten) >= MAX_BEGRIFFE:
             break
-    if not zutaten:
-        raise PlanFehler(
-            "Das Modell hat aus dem Satz keine Suchbegriffe gemacht.")
     return zutaten
 
 
@@ -338,6 +450,122 @@ def _kette(eintrag: dict) -> list[str]:
         if len(kette) >= MAX_KETTE:
             break
     return kette
+
+
+# --------------------------------------------------------------------------
+# Stufe 1b — plan.zutatenbegriffe: aus einer fremden Zutatenliste Suchbegriffe
+#
+# Dieselbe Aufgabe wie `extract`, nur mit einer besseren Eingabe: nicht der
+# Satz der Nutzerin, sondern die Zutatenliste eines echten Rezepts (WB-338).
+# Das Modell RÄT hier nichts mehr — es übersetzt. Und Übersetzen kann es,
+# gemessen gegen den echten Katalog (10.361 Produkte):
+#
+#     Chefkochs Schreibweise roh                8 von 14 Zutaten gefunden
+#     trivial normalisiert                     10 von 14
+#     mit dem Modell und Begriffsketten        12 von 12
+#
+# Es liefert ungefragt Synonyme („Reibekäse", „Karotten") und kürzt Komposita
+# richtig („Knoblauchzehe" -> „Knoblauch"). Eine Heuristik kann das nicht: das
+# naive Präfix-Kürzen macht aus „Staudensellerie" ein „Staud" und findet
+# Staud's Apfelmus — ein falscher Treffer, der aussieht wie ein richtiger.
+
+SYSTEM_ZUTATEN = """\
+Du hilfst beim Einkaufen. Du bekommst die Zutatenliste eines Rezepts, so wie \
+sie auf einer Rezeptseite steht, und machst daraus Suchbegriffe für einen \
+Lebensmittel-Katalog.
+
+Regeln für die Suchbegriffe einer Zutat (zwei bis drei, vom genauesten zum \
+allgemeinsten):
+- Der erste Begriff ist der genaueste. Gehört die Form zur Zutat, gehört sie \
+dazu: „passierte Tomaten" ist etwas anderes als „Tomaten".
+- Danach wirst du allgemeiner. Der Katalog sucht über Wortanfänge, kurze \
+Begriffe finden mehr.
+- Zusammengesetzte Wörter nennst du zusätzlich als Grundwort: \
+„Knoblauchzehen" auch als „Knoblauch", „Lasagneplatten" auch als „Lasagne", \
+„Staudensellerie" auch als „Sellerie".
+- Gebräuchliche Synonyme nimmst du auf: „Möhren" auch als „Karotten", \
+„geriebener Käse" auch als „Reibekäse".
+- Klammern und Mehrzahlformen der Rezeptseite lässt du weg: aus „Zwiebel(n)" \
+wird „Zwiebel".
+- Jeder Begriff muss die Zutat für sich allein benennen. Kein Adjektiv ohne \
+sein Hauptwort, keine Abkürzung, kein halbes Wort.
+
+Regeln für die Liste:
+- Eine Zeile je Zutat des Rezepts, in derselben Reihenfolge.
+- Was in jedem Haushalt steht (Salz, Pfeffer, Wasser, Zucker, Öl, Essig, \
+Gewürze), lässt du weg.
+- Kommt dieselbe Zutat mehrfach vor, fasst du sie zu einer Zeile zusammen.
+- Die Menge ist die Anzahl PACKUNGEN, die gekauft werden soll — nicht die \
+Menge aus dem Rezept. Im Zweifel 1.
+- Die Zutatenliste ist die Wahrheit. Erfinde nichts dazu, was nicht dasteht.
+- Nur Suchbegriffe und Mengen. KEINE Produktnamen, KEINE Marken, KEINE Nummern.
+
+Antworte ausschliesslich als JSON:
+{"begriffe": [{"suchbegriffe": ["passierte Tomaten", "Tomaten"], "menge": 1}, \
+{"suchbegriffe": ["Knoblauch"], "menge": 1}]}"""
+
+
+def zutatenliste(zutaten: list[dict], *, gericht: str | None = None,
+                 servings=None, rest: str | None = None) -> str:
+    """Die Zutaten der Quelle als Prompt — so, wie sie auf der Seite stehen.
+
+    Menge und Einheit gehen mit, obwohl gekauft wird und nicht gekocht: „500
+    ml passierte Tomaten" ist eine Packung, „3 Liter Wasser" ist keine, und
+    ohne die Menge kann das Modell den Unterschied nicht sehen.
+    """
+    zeilen = []
+    if gericht:
+        kopf = f"Rezept: {gericht}"
+        if servings:
+            kopf += f" (für {servings} Portionen)"
+        zeilen.append(kopf)
+    zeilen.append("Zutaten:")
+    for z in zutaten:
+        menge = z.get("amount")
+        if menge is not None:
+            menge = int(menge) if float(menge).is_integer() else menge
+        teile = [str(menge) if menge is not None else "",
+                 (z.get("unit") or "").strip(),
+                 (z.get("raw_name") or z.get("name") or "").strip()]
+        zeilen.append("- " + " ".join(t for t in teile if t))
+    if rest:
+        # Was neben dem Gericht im Satz stand („… und Klopapier"). Es hier
+        # mitzugeben kostet eine Zeile im Prompt und erspart der Nutzerin
+        # einen Freitext-Vorschlag für etwas, das der Katalog kennt.
+        zeilen.append(f"Ausserdem gewünscht, nicht aus dem Rezept: {rest}")
+    return "\n".join(zeilen)
+
+
+def zutatenbegriffe(zugang, zutaten: list[dict], *, gericht: str | None = None,
+                    servings=None, rest: str | None = None,
+                    guided: bool = True, system: str = SYSTEM_ZUTATEN,
+                    temperatur: float = TEMPERATUR,
+                    max_tokens: int = MAX_TOKENS,
+                    denken: bool = DENKEN) -> list[dict]:
+    """Zutatenliste einer Quelle -> `[{"suchbegriffe": […], "menge": …}, …]`.
+
+    Dieselbe Form wie `extract()`, damit Stufe 2 und Stufe 3 unverändert
+    weiterlaufen: was sich ändert, ist die HERKUNFT der Zutaten, nicht der
+    Weg durch den Shop.
+
+    Wirft `PlanFehler` wie `extract()`. Der Aufrufer hat dann immer noch die
+    Zutaten der Quelle und kann sich daraus selbst Ketten bauen
+    (`gerichte.chefkoch.zutat_kette`) — schlechter als das Modell, aber
+    besser als nichts.
+    """
+    if not zutaten:
+        raise PlanFehler("Die Quelle hat keine Zutaten geliefert.")
+    antwort = _frage(zugang, system,
+                     zutatenliste(zutaten, gericht=gericht, servings=servings,
+                                  rest=rest),
+                     SCHEMA_EXTRACT, "begriffe", guided, temperatur,
+                     max_tokens, denken)
+    begriffe = _zutaten_aus(
+        _eintraege(antwort, ("begriffe", "zutaten", "items", "liste")))
+    if not begriffe:
+        raise PlanFehler(
+            "Das Modell hat aus der Zutatenliste keine Suchbegriffe gemacht.")
+    return begriffe
 
 
 # --------------------------------------------------------------------------
