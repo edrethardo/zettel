@@ -36,6 +36,20 @@ Zwei Folgen daraus, die leicht zu übersehen sind:
   Produkt gegen `chat_kandidat` — dieselbe Regel wie in `plan.choose`, nur
   für die Nutzerin. Was sie sonst noch will, kommt aus dem Katalog oder als
   Freitext (`stattdessen_freitext()`), und dann steht es auch so da.
+
+**Seit WB-361 ist keine Entscheidung mehr endgültig.** Jede Zeile — „Ja",
+„Nein" und auch eine Korrektur — lässt sich auf `offen` zurücknehmen. Das ist
+Datenqualität und keine Bequemlichkeit: auf dem Handy sitzen die beiden
+Knöpfe nebeneinander, und ein Fehltipp verfälscht genau die Zahlen, um die es
+in diesem Projekt geht (das Label aus Spec 8.1 und, ab WB-341, das
+Vorlieben-Signal). Weil die Annotationen erst beim ABSCHICKEN entstehen
+(WB-329), kostet ein Rückweg vorher nichts — er muss nur angeboten werden.
+
+Der Rückweg bringt aber eine Falle mit, die vorher keine war: **der Schutz
+gegen den Doppeltipp durfte nicht länger am Vergleich der letzten Entscheidung
+hängen.** „Ja, rückgängig, Ja" hätte zweimal eingelegt. Er hängt jetzt an
+`chat_suggestion.eingelegt_at` — „war diese Zeile schon einmal im Korb" — und
+das ist die Frage, die er die ganze Zeit stellen wollte.
 """
 from __future__ import annotations
 
@@ -123,6 +137,7 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
 _VORSCHLAG_SQL = (
     "SELECT s.id, s.chat_message_id, s.product_id, s.free_text, s.qty,"
     "       s.search_term, s.rank AS rang, s.decision, s.decided_at,"
+    "       s.eingelegt_at, s.zurueckgenommen,"
     "       s.corrected_from, s.fallback_term,"
     "       coalesce(p.name, s.free_text) AS name,"
     "       p.unit_text, p.price_cents, p.image_path, p.active,"
@@ -148,6 +163,14 @@ def _auf(row: sqlite3.Row) -> dict:
     v["offen"] = v["decision"] == OFFEN
     v["behalten"] = v["decision"] == BEHALTEN
     v["ist_korrektur"] = v["corrected_from"] is not None
+    # Die Spalte darf NULL sein (siehe `db.NACHGETRAGENE_SPALTEN`); nach
+    # aussen ist „nie zurückgenommen" eine 0 und kein None, sonst müsste jede
+    # Vorlage und jede Auswertung denselben Fall noch einmal abfangen.
+    v["zurueckgenommen"] = int(v["zurueckgenommen"] or 0)
+    # Liegt (oder lag) diese Zeile im Korb? Das ist NICHT dasselbe wie
+    # `behalten`: nach einem zurückgenommenen „Ja" steht die Korbzeile
+    # weiter da, und die Oberfläche muss es sagen können.
+    v["im_korb"] = v["eingelegt_at"] is not None
     # Wird in `liste()` gefüllt; hier gesetzt, damit eine einzeln geholte
     # Zeile dieselben Felder hat und keine Vorlage über ein fehlendes
     # stolpert.
@@ -174,9 +197,11 @@ def liste(con: sqlite3.Connection, chat_message_id: int) -> list[dict]:
     anzahl = {r["suggestion_id"]: r["n"] for r in con.execute(
         _ALTERNATIVEN_ZAEHLEN, (chat_message_id,)).fetchall()}
     # Die Korrekturen stehen in derselben Nachricht — die Verknüpfung kostet
-    # keine weitere Abfrage.
+    # keine weitere Abfrage. Zurückgenommene zählen nicht: dieselbe Regel wie
+    # in `korrektur()`, und sie muss dieselbe sein, sonst zeigte die
+    # Oberfläche eine Korrektur an, die die Logik längst nicht mehr kennt.
     nach_quelle = {z["corrected_from"]: z
-                   for z in zeilen if z["ist_korrektur"]}
+                   for z in zeilen if z["ist_korrektur"] and not z["offen"]}
     for z in zeilen:
         z["n_alternativen"] = int(anzahl.get(z["id"], 0))
         z["korrektur"] = nach_quelle.get(z["id"])
@@ -292,15 +317,29 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
                 entscheidung: str) -> dict:
     """`kept` legt in den Korb, `removed` nicht. Gibt den Vorschlag zurück.
 
-    Zweimal „Ja" legt NICHT zweimal ein: die Entscheidung wird vorher
-    verglichen. Ohne das erhöht ein doppelter Tipp — auf dem Handy schnell
-    passiert — die Menge im Korb.
+    **`offen` ist der Rückweg** (WB-361): jede Entscheidung lässt sich
+    zurücknehmen, und zwar auf den Zustand VOR dem Tipp — unentschieden, beide
+    Knöpfe wieder da. Nicht auf „doch behalten": das wäre eine neue Behauptung
+    statt der Rücknahme einer alten. Auf dem Handy sitzen „Ja" und „Nein"
+    nebeneinander, und ein Fehltipp verfälscht sonst genau die Daten, um die
+    es hier geht (das Eval-Label aus Spec 8.1 und das Vorlieben-Signal).
 
-    Ein „Nein" NACH einem „Ja" ändert das Label und rührt den Korb nicht an.
-    Das ist Absicht: `orders.einlegen()` fasst gleiche Zeilen zusammen, die
-    Korbzeile kann also längst eine sein, die die Nutzerin selbst aufgestockt
-    hat. Sie hier wieder herauszunehmen hiesse, fremde Mengen zu löschen. Im
-    Korb steht ein Löschknopf — einen Tipp entfernt und ohne Rätselraten.
+    **Zweimal „Ja" legt NICHT zweimal ein — und „Ja, rückgängig, Ja" auch
+    nicht.** Der Schutz hängt an `eingelegt_at` und ausdrücklich nicht mehr am
+    Vergleich mit der letzten Entscheidung: sobald es einen Rückweg gibt, ist
+    „steht schon auf kept" kein Schutz mehr, sondern ein Loch — der Umweg über
+    `offen` machte aus einem doppelten Tipp zwei Einlagen und aus einer Menge
+    zwei. Gefragt ist „war diese Zeile schon einmal im Korb", und das
+    beantwortet nur die Spalte.
+
+    Ein „Nein" NACH einem „Ja" ändert das Label und rührt den Korb nicht an —
+    und **eine Rücknahme genauso wenig**. Das ist Absicht:
+    `orders.einlegen()` fasst gleiche Zeilen zusammen, die Korbzeile kann also
+    längst eine sein, die die Nutzerin selbst aufgestockt hat. Sie hier wieder
+    herauszunehmen hiesse, fremde Mengen zu löschen. Im Korb steht ein
+    Löschknopf — einen Tipp entfernt und ohne Rätselraten. Die Oberfläche sagt
+    das nach einer Rücknahme ausdrücklich, statt es zu verschweigen
+    (`im_korb`).
     """
     if entscheidung not in db.DECISIONS:
         raise VorschlagFehler(
@@ -309,22 +348,59 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
     v = eine(con, suggestion_id)
     if v["decision"] == entscheidung:
         return v
-    if entscheidung == BEHALTEN:
+    # Der eigentliche Schutz: eingelegt wird, wenn diese Zeile noch NIE im
+    # Korb war. Alles andere ist ein Label-Wechsel.
+    if entscheidung == BEHALTEN and not v["im_korb"]:
         orders.einlegen(con, product_id=v["product_id"],
                         free_text=v["free_text"], qty=v["qty"])
+        eingelegt = jetzt()
+    else:
+        eingelegt = v["eingelegt_at"]
+    # Ein zurückgenommener Fehltipp hinterlässt kein Label (die Annotationen
+    # entstehen erst beim Abschicken, WB-329) — ohne diesen Zähler sähe
+    # später also niemand, wie oft danebengetippt wurde. Er zählt die
+    # Rücknahmen, nicht die Entscheidungen: „zweimal umentschieden" ist etwas
+    # anderes als „zweimal daneben".
+    zurueck = v["zurueckgenommen"] + (1 if entscheidung == OFFEN else 0)
     con.execute(
-        "UPDATE chat_suggestion SET decision = ?, decided_at = ? WHERE id = ?",
+        "UPDATE chat_suggestion SET decision = ?, decided_at = ?,"
+        "       eingelegt_at = ?, zurueckgenommen = ? WHERE id = ?",
         (entscheidung, None if entscheidung == OFFEN else jetzt(),
-         suggestion_id))
+         eingelegt, zurueck, suggestion_id))
     con.commit()
     return eine(con, suggestion_id)
 
 
 def korrektur(con: sqlite3.Connection, suggestion_id: int) -> dict | None:
-    """Die Korrekturzeile zu einem Vorschlag, falls es eine gibt."""
+    """Die GELTENDE Korrekturzeile zu einem Vorschlag, falls es eine gibt.
+
+    Eine zurückgenommene Korrektur (`offen`) ist hier keine mehr (WB-361).
+    Das ist der ganze Sinn des Rückwegs an dieser Stelle: eine falsche
+    Korrektur ist schlimmer als der Fehlgriff, den sie geradezieht — sie
+    behauptet „das wäre richtig gewesen". Wer sie zurücknimmt, bekommt die
+    Alternativen wieder aufgeklappt und darf eine andere wählen; bliebe die
+    zurückgenommene Zeile als Korrektur stehen, versperrte sie genau das.
+    """
     row = con.execute(_VORSCHLAG_SQL + " WHERE s.corrected_from = ?"
-                      " ORDER BY s.id LIMIT 1", (suggestion_id,)).fetchone()
+                      "   AND s.decision <> ? ORDER BY s.id LIMIT 1",
+                      (suggestion_id, OFFEN)).fetchone()
     return None if row is None else _auf(row)
+
+
+def _korrekturzeile(con: sqlite3.Connection, suggestion_id: int,
+                    product_id, free_text) -> dict | None:
+    """Die Korrekturzeile mit GENAU dieser Wahl — auch eine zurückgenommene.
+
+    Getrennt von `korrektur()`, weil zwei verschiedene Fragen dahinterstehen:
+    „gilt hier schon eine Korrektur" (die blockiert) und „gab es diese
+    Korrektur schon einmal" (die wird wiederverwendet statt verdoppelt).
+    """
+    row = con.execute(
+        "SELECT id FROM chat_suggestion WHERE corrected_from = ?"
+        "   AND product_id IS ? AND coalesce(free_text, '') = ?"
+        " ORDER BY id LIMIT 1",
+        (suggestion_id, product_id, free_text or "")).fetchone()
+    return None if row is None else eine(con, int(row["id"]))
 
 
 def _statt(con: sqlite3.Connection, suggestion_id: int, *, product_id=None,
@@ -346,17 +422,29 @@ def _statt(con: sqlite3.Connection, suggestion_id: int, *, product_id=None,
 
     **Zweimal dieselbe Korrektur legt nicht zweimal ein.** Auf dem Handy ist
     ein Doppeltipp schnell passiert; die zweite Runde findet die vorhandene
-    Korrektur und gibt sie unverändert zurück. Eine ZWEITE, andere Korrektur
-    wird abgewiesen statt still danebengelegt — sonst stünden zwei Zeilen im
-    Korb und zwei „das wäre richtig gewesen" am selben Fehlgriff.
+    Korrekturzeile und entscheidet sie noch einmal — was dank `eingelegt_at`
+    kein zweites Mal einlegt. Das gilt auch über eine Rücknahme hinweg
+    (WB-361): „Das", rückgängig, „Das" ergibt eine Korbzeile und nicht zwei.
+    Deshalb wird hier nach der Zeile mit DIESER Wahl gesucht und nicht nur
+    nach der geltenden Korrektur.
+
+    Eine ZWEITE, andere Korrektur wird abgewiesen statt still danebengelegt —
+    sonst stünden zwei Zeilen im Korb und zwei „das wäre richtig gewesen" am
+    selben Fehlgriff. Nach einer Rücknahme ist der Platz wieder frei: dann ist
+    eine andere Wahl genau der Weg, für den der Rückweg da ist.
     """
     quelle = eine(con, suggestion_id)
+    dieselbe = _korrekturzeile(con, suggestion_id, product_id, free_text)
+    if dieselbe is not None:
+        # Auch eine zurückgenommene wird hier wiederbelebt statt verdoppelt:
+        # eine zweite Zeile auf dasselbe Produkt wäre zweimal dasselbe „das
+        # wäre richtig gewesen" — und zweimal im Korb.
+        # Der Fehlgriff bleibt dabei verworfen: eine Korrektur, deren Quelle
+        # offen dasteht, wäre keine Korrektur, sondern eine zweite Meinung.
+        entscheiden(con, suggestion_id, VERWORFEN)
+        return entscheiden(con, dieselbe["id"], BEHALTEN)
     vorhanden = korrektur(con, suggestion_id)
     if vorhanden is not None:
-        gleich = (vorhanden["product_id"] == product_id
-                  and (vorhanden["free_text"] or "") == (free_text or ""))
-        if gleich:
-            return vorhanden
         raise VorschlagFehler(
             f"„{quelle['name']}“ wurde schon zu „{vorhanden['name']}“ "
             "korrigiert. Im Korb steht ein Löschknopf.")

@@ -130,8 +130,10 @@ from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
 from picknick.assistant import oberbegriffe  # noqa: E402
 from picknick.catalog import categories, search  # noqa: E402
+from picknick.assistant import vorschlaege  # noqa: E402
 from picknick.llm import wake  # noqa: E402
 from picknick.llm.client import Modellzugang  # noqa: E402
+from picknick.obs import labels  # noqa: E402
 from picknick.web import app as webapp  # noqa: E402
 
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
@@ -1091,6 +1093,98 @@ def _mehrere_sorten(con) -> str:
 # --------------------------------------------------------------------------
 # 8. Die Bindung
 
+def checks_zuruecknehmen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    """Ein Fehltipp ist nicht endgültig — und kostet den Korb trotzdem nichts.
+
+    Am HTTP-Rand geklickt, weil genau dort der Unterschied sitzt: `entscheiden`
+    konnte `offen` immer schon, es fragte nur niemand danach. Und die Falle des
+    Tickets („Ja, rückgängig, Ja") ist erst über die Oberfläche eine.
+    """
+    b.abschnitt("Eine Entscheidung ist ein Tipp und kein Urteil (WB-361)")
+
+    con = db.connect(db_datei)
+    try:
+        butter = pid(con, "Salzbutter")
+    finally:
+        con.close()
+    agent = chatmodul.Chat(
+        _mock_zugang(_extract(("Butter", 1)), _choose(("Butter", butter, 1))),
+        wecker=_Box())
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        client.post("/warenkorb/chat", data={"satz": "Butter"},
+                    headers={"HX-Request": "true"})
+        con = db.connect(db_datei)
+        try:
+            sid = int(con.execute("SELECT id FROM chat_suggestion ORDER BY id"
+                                  ).fetchone()["id"])
+            b.pruefe("„Ja“ lässt sich zurücknehmen — die Zeile ist wieder "
+                     "unentschieden, der Korb bleibt stehen",
+                     lambda: _ja_zuruecknehmen(client, con, sid))
+            b.pruefe("„Ja“ / rückgängig / „Ja“ legt NUR EINMAL ein "
+                     "(der Schutz hängt nicht an der letzten Entscheidung)",
+                     lambda: _kein_doppeltes_einlegen(client, con, sid))
+            b.pruefe("ein zurückgenommener Fehltipp hinterlässt kein "
+                     "Eval-Label", lambda: _kein_label(client, con, sid))
+        finally:
+            con.close()
+
+
+def _entscheiden(client, sid: int, decision: str):
+    antwort = client.post(
+        f"/warenkorb/vorschlag/{sid}/entscheiden?decision={decision}",
+        headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, f"POST entscheiden?decision={decision}")
+    return antwort.text
+
+
+def _korb(con) -> list[tuple]:
+    return [(z["product_id"], z["qty"]) for z in orders.inhalt(con)]
+
+
+def _ja_zuruecknehmen(client, con, sid: int) -> str:
+    stueck = _entscheiden(client, sid, "kept")
+    wahr("rückgängig" in stueck, "Die entschiedene Zeile bietet keinen Rückweg.")
+    vorher = _korb(con)
+    gleich(len(vorher), 1, "Korbzeilen nach dem „Ja“")
+
+    stueck = _entscheiden(client, sid, "offen")
+    gleich(vorschlaege.eine(con, sid)["decision"], "offen", "decision")
+    gleich(_korb(con), vorher, "Korb nach der Rücknahme")
+    # Der Korb wird bewusst nicht angerührt (`orders.einlegen()` fasst
+    # zusammen) — dann muss die Oberfläche es sagen.
+    wahr("die Zeile bleibt im Korb" in stueck,
+         "Die Rücknahme verschweigt, dass die Korbzeile stehen bleibt.")
+    wahr("decision=kept" in stueck and "decision=removed" in stueck,
+         "Nach der Rücknahme fehlen die Knöpfe — die Zeile wäre eine Sackgasse.")
+    return "offen, Korb unverändert, beide Knöpfe wieder da"
+
+
+def _kein_doppeltes_einlegen(client, con, sid: int) -> str:
+    """Die Falle des Tickets: der alte Schutz verglich `decision`."""
+    for _ in range(3):
+        _entscheiden(client, sid, "kept")
+        _entscheiden(client, sid, "offen")
+    _entscheiden(client, sid, "kept")
+    korb = _korb(con)
+    gleich(korb, [(vorschlaege.eine(con, sid)["product_id"], 1)], "Korb")
+    return "4 × „Ja“ über 3 Rücknahmen hinweg — eine Zeile, Menge 1"
+
+
+def _kein_label(client, con, sid: int) -> str:
+    """Vor dem Abschicken ist nichts geschrieben (WB-329) — und `offen`
+    bekommt auch dann nichts. Die Rücknahme steht als Zähler da, nicht als
+    Urteil."""
+    _entscheiden(client, sid, "offen")
+    order_id = orders.warenkorb_id(con)
+    annos = labels.annotationen(con, order_id)
+    gleich([a for a in annos
+            if a["name"] == labels.NAME_ENTSCHEIDUNG], [], "Einzellabels")
+    n = vorschlaege.eine(con, sid)["zurueckgenommen"]
+    wahr(n >= 4, f"Die Rücknahmen wurden nicht gezählt ({n}).")
+    return f"kein Label, aber withdrawn={n}"
+
+
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
 
@@ -1170,6 +1264,11 @@ def main() -> int:
         sorten_db = ordner / "sorten.db"
         sorten_katalog_anlegen(sorten_db)
         checks_sorten(b, sorten_db)
+        # Und noch eine: der Rückweg klickt sich durch denselben Warenkorb
+        # wie oben und hätte dort die abgeschickte Bestellung im Rücken.
+        zurueck_db = ordner / "zuruecknehmen.db"
+        katalog_anlegen(zurueck_db)
+        checks_zuruecknehmen(b, zurueck_db, bild_dir)
     checks_bindung(b)
     return b.ende()
 

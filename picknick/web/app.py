@@ -813,13 +813,19 @@ def create_app(db_path: str | Path | None = None,
 
     @app.post("/warenkorb/vorschlag/{sid}/entscheiden")
     async def vorschlag_entscheiden(request: Request, sid: int):
-        """„Ja" oder „Nein" zu einer Zeile — das Eval-Label (Spec 8.1).
+        """„Ja", „Nein" — oder zurück auf `offen` (WB-361).
 
         Ein „Nein" verwirft nicht mehr bloss, es **klappt die Alternativen
         auf** (WB-359): die Kandidaten, die die Suche zu dieser Zutat ohnehin
         vorgelegt hat. Aufgeklappt wird genau die eine Zeile, die gerade
         verworfen wurde — ältere bleiben eingeklappt, sonst stünde nach fünf
         „Nein" eine Seite voller Listen.
+
+        **Der Rückweg ist dieselbe Adresse mit `decision=offen`** und kein
+        eigener Endpunkt. Er ist keine vierte Sache, die man mit einem
+        Vorschlag tun kann, sondern die dritte Entscheidung, die es seit
+        Spec 8.1 gibt — sie war bloss nie anzutippen. Ein zweiter Endpunkt
+        müsste dieselbe Prüfung und dieselbe Antwort noch einmal bauen.
         """
         werte = await eingaben(request)
         c = con()

@@ -184,3 +184,59 @@ def test_eine_alte_datenbank_bekommt_die_neuen_spalten(tmp_path):
         db.migrate(con)          # und noch einmal, ohne „duplicate column"
     finally:
         con.close()
+
+
+def test_ein_altes_ja_gilt_als_eingelegt(tmp_path):
+    """WB-361: der Schutz gegen den Doppeltipp hängt an `eingelegt_at`.
+
+    Eine gewachsene Datenbank kennt die Spalte nicht; ihre `kept`-Zeilen
+    kämen mit NULL heraus, und dann wäre der Schutz ausgerechnet für die
+    vorhandenen Zeilen ausgehebelt — zurücknehmen und noch einmal „Ja" legte
+    ein zweites Mal ein. Der Anfangswert ist `decided_at`: vor diesem Ticket
+    fielen entscheiden und einlegen zusammen.
+    """
+    pfad = tmp_path / "alt.db"
+    alt = sqlite3.connect(pfad)
+    alt.executescript("""
+        CREATE TABLE orders (id INTEGER PRIMARY KEY, state TEXT, created_at TEXT);
+        CREATE TABLE chat_message (id INTEGER PRIMARY KEY, order_id INTEGER,
+                                   role TEXT, content TEXT, span_id TEXT,
+                                   created_at TEXT);
+        CREATE TABLE chat_suggestion (
+            id INTEGER PRIMARY KEY, chat_message_id INTEGER, product_id INTEGER,
+            free_text TEXT, qty INTEGER NOT NULL DEFAULT 1, search_term TEXT,
+            rank REAL, decision TEXT NOT NULL DEFAULT 'offen', decided_at TEXT);
+        INSERT INTO chat_message (id, order_id, role, content, created_at)
+             VALUES (1, 1, 'assistant', 'Vorschläge', 'x');
+        INSERT INTO chat_suggestion (chat_message_id, free_text, search_term,
+                                     decision, decided_at)
+             VALUES (1, 'Butter', 'Butter', 'kept', '2026-08-01T10:00:00'),
+                    (1, 'Milch', 'Milch', 'removed', '2026-08-01T10:01:00'),
+                    (1, 'Reis', 'Reis', 'offen', NULL);
+    """)
+    alt.commit()
+    alt.close()
+
+    con = db.connect(pfad)
+    try:
+        db.migrate(con)
+        zeilen = con.execute("SELECT decision, eingelegt_at, zurueckgenommen"
+                             "  FROM chat_suggestion ORDER BY id").fetchall()
+        assert [r["eingelegt_at"] for r in zeilen] == [
+            "2026-08-01T10:00:00", None, None]
+        # Der Zähler beginnt leer und wird beim Lesen zu 0 (`_auf`) — hier
+        # steht nur, dass die Migration nichts erfindet.
+        assert [r["zurueckgenommen"] for r in zeilen] == [None, None, None]
+
+        # Und die Nachtragung läuft genau einmal: ein danach zurückgenommenes
+        # „Ja" darf beim nächsten `migrate()` nicht wieder als eingelegt
+        # dastehen … und ein zurückgenommenes bleibt eingelegt, weil es das
+        # im Korb ja auch ist.
+        con.execute("UPDATE chat_suggestion SET decision = 'offen',"
+                    " decided_at = NULL WHERE id = 1")
+        con.commit()
+        db.migrate(con)
+        assert con.execute("SELECT eingelegt_at FROM chat_suggestion"
+                           " WHERE id = 1").fetchone()[0] == "2026-08-01T10:00:00"
+    finally:
+        con.close()

@@ -263,6 +263,32 @@ SCHEMA = [
         decision        TEXT NOT NULL DEFAULT 'offen'
                             CHECK (decision IN ('offen', 'kept', 'removed')),
         decided_at      TEXT,
+        -- Wann diese Zeile in den Korb gelegt wurde (WB-361). Das ist der
+        -- Schutz gegen den Doppeltipp, und er hängt bewusst NICHT mehr an
+        -- `decision`: seit eine Entscheidung zurücknehmbar ist, wäre
+        -- „steht schon auf kept" kein Schutz mehr — „Ja, rückgängig, Ja"
+        -- liefe zweimal durch `orders.einlegen()` und stockte die Menge im
+        -- Korb auf. Gefragt ist nicht „ist sie gerade behalten", sondern
+        -- „war sie schon einmal im Korb", und das steht nur hier.
+        --
+        -- Ein Zeitstempel und kein Ja/Nein: er kostet dasselbe und sagt
+        -- zusätzlich, WANN — und beim Zurücknehmen eines „Ja" weiss die
+        -- Oberfläche daran, dass sie auf die Korbzeile hinweisen muss, die
+        -- absichtlich stehen bleibt.
+        eingelegt_at    TEXT,
+        -- Wie oft diese Entscheidung zurückgenommen wurde (WB-361). Ein
+        -- Fehltipp hinterlässt sonst KEINE Spur: das Label wird erst beim
+        -- Abschicken geschrieben (WB-329), und eine zurückgenommene
+        -- Entscheidung schreibt gar keines — richtig so, aber dann sähe
+        -- später niemand, wie oft auf dem Handy danebengetippt wird. Der
+        -- Zähler wandert als Metadatum an die Annotation.
+        --
+        -- Nullable und nicht `NOT NULL DEFAULT 0`: dieselbe Spalte entsteht
+        -- auch per ALTER TABLE an einer gewachsenen Datenbank
+        -- (`NACHGETRAGENE_SPALTEN`), und die kann dort nur NULL sein. Zwei
+        -- Vorgaben für dieselbe Spalte wären zwei Verhalten; gelesen wird
+        -- sie an einer Stelle mit `or 0`.
+        zurueckgenommen INTEGER,
         -- Diese Zeile ist die KORREKTUR eines anderen Vorschlags (WB-359):
         -- die Nutzerin hat „Nein" gesagt und aus den aufgehobenen Kandidaten
         -- etwas anderes gewählt. Ohne diesen Verweis stünden hinterher zwei
@@ -579,6 +605,10 @@ NACHGETRAGENE_SPALTEN = (
     ("chat_suggestion", "corrected_from",
      "INTEGER REFERENCES chat_suggestion(id) ON DELETE CASCADE"),
     ("chat_suggestion", "fallback_term", "TEXT"),
+    # WB-361: der Rückweg. `eingelegt_at` ist der Schutz gegen den
+    # Doppeltipp, seit er nicht mehr an `decision` hängen darf.
+    ("chat_suggestion", "eingelegt_at", "TEXT"),
+    ("chat_suggestion", "zurueckgenommen", "INTEGER"),
     # WB-338: was zum Kochen gehört und woher das Rezept stammt. Eine
     # Datenbank aus der Zeit davor hat `recipe` bereits — `CREATE TABLE IF
     # NOT EXISTS` sähe sie gar nicht an, und die Rezeptansicht fiele mit
@@ -598,17 +628,39 @@ NACHGETRAGENE_SPALTEN = (
 )
 
 
-def _spalten_nachziehen(con: sqlite3.Connection) -> None:
+def _spalten_nachziehen(con: sqlite3.Connection) -> set[tuple[str, str]]:
     """Trägt fehlende Spalten an bestehenden Tabellen nach.
 
     Nur ADD COLUMN, und nur mit `NULL` als Vorgabe: das ist die einzige
     Änderung, die SQLite ohne Tabellenkopie beherrscht, und die einzige, die
     ein älterer Prozess auf derselben Datei überlebt — der laufende Shop
     schreibt seine Spalten weiter namentlich und merkt von der neuen nichts.
+
+    Gibt zurück, was tatsächlich neu entstanden ist. Eine Spalte, die nur mit
+    NULL beginnen kann, braucht manchmal einen Anfangswert aus dem
+    vorhandenen Bestand — und der darf genau einmal gesetzt werden, nicht bei
+    jedem `migrate()`.
     """
+    neu = set()
     for tabelle, name, typ in NACHGETRAGENE_SPALTEN:
         if name not in _spalten(con, tabelle):
             con.execute(f"ALTER TABLE {tabelle} ADD COLUMN {name} {typ}")
+            neu.add((tabelle, name))
+    return neu
+
+
+def _eingelegt_nachtragen(con: sqlite3.Connection) -> None:
+    """Füllt `eingelegt_at` für Zeilen, die vor WB-361 schon im Korb lagen.
+
+    Ohne das wäre der Schutz gegen den Doppeltipp für genau die Zeilen
+    ausgehebelt, die eine gewachsene Datenbank schon enthält: ein altes „Ja"
+    hat `decision = 'kept'`, aber `eingelegt_at IS NULL` — zurücknehmen und
+    noch einmal „Ja" legte ein zweites Mal ein. `decided_at` ist der richtige
+    Wert dafür: es ist der Zeitpunkt, an dem eingelegt wurde, denn vor diesem
+    Ticket fielen beide zusammen.
+    """
+    con.execute("UPDATE chat_suggestion SET eingelegt_at = decided_at"
+                " WHERE decision = 'kept' AND eingelegt_at IS NULL")
 
 
 def _fts_nachziehen(con: sqlite3.Connection) -> bool:
@@ -635,7 +687,8 @@ def migrate(con: sqlite3.Connection) -> None:
     for stmt in SCHEMA:
         con.execute(stmt)
     _norm_spalten_nachziehen(con)
-    _spalten_nachziehen(con)
+    if ("chat_suggestion", "eingelegt_at") in _spalten_nachziehen(con):
+        _eingelegt_nachtragen(con)
     neu_gebaut = _fts_nachziehen(con)
     for stmt in FTS_SCHEMA:
         con.execute(stmt)
