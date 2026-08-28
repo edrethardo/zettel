@@ -72,7 +72,7 @@ Zwei Regeln tragen den Entwurf:
 product      (id, source, external_id, name, brand, price_cents, price_per_unit_cents,
               unit_text, unit, image_path, category_l1, category_l2, category_l3,
               in_stock, last_seen_at, active)
-order        (id, state, note, created_at, submitted_at, done_at)
+orders       (id, state, note, created_at, submitted_at, done_at)
 order_item   (id, order_id, product_id NULL, free_text NULL, qty, store,
               picked_at NULL)
 recipe       (id, name, servings, note)
@@ -82,6 +82,11 @@ chat_suggestion (id, chat_message_id, product_id NULL, free_text NULL, qty,
               search_term, rank, decision, decided_at)
 scrape_run   (id, source, started_at, finished_at, status, n_products, error)
 ```
+
+**Abweichung, nachträglich:** Die Bestelltabelle heisst `orders`, nicht
+`order`. `order` ist ein SQL-Schlüsselwort und müsste in jeder Abfrage gequotet
+werden — eine Falle, die jedes Folgeticket einmal gestellt hätte. Alle Spalten
+sind unverändert.
 
 Entwurfsentscheidungen mit Begründung:
 
