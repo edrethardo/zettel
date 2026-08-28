@@ -300,12 +300,23 @@ zeigte ins Leere.
   Namen (nur über die Kategorie), „Klopapier" findet nie „Toilettenpapier".
   Ein Teil dessen, was im Trace nach Retrieval-Schwäche aussieht, ist diese
   eine Eigenschaft.
-* **Die Zahnpasta-Null im Butter-Fall ist keine Suchschwäche, sondern eine
-  Katalog-Lücke.** `zahnpasta` steht in der Crawl-Begriffsliste, wurde aber nie
-  eingesammelt: von den 170 Begriffen liefern **59 im heutigen Katalog gar
-  keinen Treffer** (gemessen 2026-08-28). Der Trace kann diese beiden Fälle
-  nicht auseinanderhalten — „0 Kandidaten" sieht gleich aus, ob das Produkt
-  fehlt oder die Suche es nicht findet.
+* **„0 Kandidaten" hat zwei Ursachen, und der Trace unterscheidet sie nicht.**
+  Entweder fehlt das Produkt im Katalog, oder die Suche findet es nicht. Beides
+  sieht im RETRIEVER-Span gleich aus. Der Butter-Fall enthält ein Beispiel für
+  jede Sorte:
+
+  - `zahnpasta` war eine **Crawl-Lücke**. Zum Zeitpunkt der Aufzeichnung
+    stammte der Katalog aus einem 12-Begriffe-Lauf; nach dem Vollcrawl
+    (2026-08-28, 36 min 57 s, 10.361 Produkte) findet dieselbe Suche
+    `meridol ZAHNPASTA`. Von 59 leeren Begriffen blieben 4.
+  - `klopapier` ist eine **echte Suchschwäche** und bleibt auch nach dem
+    Vollcrawl bei 0 Treffern: der Katalog führt „Toilettenpapier", und die
+    Präfixsuche kennt kein Synonym.
+
+  Ein dritter Fall ist noch unangenehmer, weil er nicht leer aussieht:
+  **`mehl` liefert „Kartoffeln mehligkochend"** — `mehl*` greift auf das
+  falsche Wort. Im Trace steht ein Kandidat mit Score, und nur wer ihn liest,
+  merkt es.
 * **`document.score` ist über Traces hinweg nicht vergleichbar**, weil er vom
   Katalogumfang abhängt. Zwei Züge vor und nach einem Crawl haben andere
   Zahlen bei gleichem Verhalten.

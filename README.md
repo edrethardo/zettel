@@ -93,8 +93,14 @@ Zwei weitere Dinge, die man kennen muss, bevor man dem Katalog etwas anlastet:
   Modells.
 * **Der Katalog ist so breit wie die Begriffsliste** in
   `picknick/scrapers/begriffe.py` — Knuspr hat keinen Endpunkt für den ganzen
-  Katalog, nur die Suche. Von den 170 Begriffen liefern derzeit **59 gar
-  keinen Treffer** (gemessen 2026-08-28, 2.498 Produkte): der Vollcrawl ist
-  nie durchgelaufen. „Zahnpasta" im Beispiel oben ist so eine Lücke — sie
-  steht in der Liste, sie wurde nur nie geholt.
+  Katalog, nur die Suche. Der Vollcrawl über alle 170 Begriffe ist am
+  2026-08-28 gelaufen: **36 min 57 s, 10.361 Produkte**, danach liefern noch
+  **4 von 170 Begriffen** keinen Treffer (`sojasosse`, `paprikapulver`,
+  `tiefkuehlpizza`, `tiefkuehlgemuese` — zusammengeschriebene Wörter, die
+  Knuspr getrennt führt).
+
+  Davor stammte der Katalog aus einem 12-Begriffe-Lauf mit 2.498 Produkten,
+  und 59 Begriffe waren leer. Wer ältere Beispiele in diesem Projekt liest,
+  sollte das wissen: „Zahnpasta liefert nichts" war eine **Crawl-Lücke, kein
+  fehlendes Sortiment** — heute findet die Suche `meridol ZAHNPASTA`.
 

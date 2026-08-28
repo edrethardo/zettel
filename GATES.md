@@ -127,11 +127,12 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   belegt, nicht per Verhalten:** dass systemd einen verpassten nächtlichen Lauf
   nach dem Aufklappen des Laptops nachholt, steht in der Unit und in der
   Dokumentation — beobachtet hat es niemand.
-* **Der Vollcrawl.** Der Lauf über alle 170 Begriffe ist **nie durchgelaufen**.
-  Die geschätzten 15–25 Minuten sind gerechnet (Begriffe × Seiten × Pause),
-  nicht gemessen. Der Katalog stammt aus einem Lauf vom 2026-08-28
-  (10 min 22 s, 2.498 Produkte), und **59 der 170 Begriffe liefern darin gar
-  keinen Treffer** — die Lücke ist gemessen, ihr Umfang bekannt.
+* **Der Vollcrawl.** Er ist inzwischen gelaufen (2026-08-28): **36 min 57 s,
+  10.361 Produkte**, danach 4 von 170 Begriffen ohne Treffer. Die vorher im
+  README geschätzten 15–25 Minuten lagen um rund die Hälfte zu niedrig — das
+  Gate misst das nicht und wird es nie messen, es geht per Konstruktion nicht
+  ins Netz. Wer die Dauer wissen will, startet
+  `python -m picknick.scrapers.nachtlauf` von Hand.
 * **Die Sicherungen.** Dass `VACUUM INTO` eine brauchbare Datei schreibt,
   prüfen die Tests. Dass ein Zurückspielen im Ernstfall den Shop rettet, hat
   niemand geübt. Und die Sicherungen liegen auf **derselben Platte** wie die

@@ -237,9 +237,13 @@ mitzitieren.
 * **Präzision belohnt Weglassen**, siehe oben. Die beiden Scores
   gegeneinander zu lesen ist deshalb Pflicht, nicht Kür — eine Variante, die
   nur die Präzision hebt, ist verdächtig.
-* **Der Katalog ist unvollständig.** Von den 170 Crawl-Begriffen liefern 59 im
-  heutigen Katalog gar keinen Treffer (gemessen 2026-08-28). Ein Beispiel, das
-  in eine dieser Lücken fällt, misst den Crawler.
+* **Der Katalog ist unvollständig.** Nach dem Vollcrawl vom 2026-08-28
+  (10.361 Produkte) liefern noch 4 der 170 Crawl-Begriffe keinen Treffer;
+  davor waren es 59. Ein Beispiel, das in eine dieser Lücken fällt, misst den
+  Crawler und nicht den Agenten. **Die hier ausgewiesenen Scores wurden auf dem
+  kleineren Katalog (2.498 Produkte) gemessen** — sie sind gültig für den
+  Vergleich der Varianten untereinander, aber nicht mit einem Lauf auf dem
+  vollen Katalog vergleichbar. Wer neu misst, misst alle Varianten neu.
 * **Die vier Läufe der Dataset-Version 3** (07:34–07:37) stehen noch in
   Phoenix und zeigen fast dieselben Zahlen (Präzision 0,830 / 0,943 / 0,850 /
   0,830). Sie sind nicht gelöscht, weil ein verschwundener Lauf schlechter ist
