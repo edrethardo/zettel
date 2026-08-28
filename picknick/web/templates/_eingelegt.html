@@ -1,0 +1,6 @@
+{# Rückmeldung des „+"-Knopfs an der Kachel. Zwei Dinge auf einmal: die Menge
+   an der Kachel selbst und — per hx-swap-oob — die Zahl oben im Kopf. Ohne
+   die Zahl im Kopf sieht man nicht, dass sich der Korb überhaupt füllt; ohne
+   die Meldung an der Kachel drückt man zweimal. #}
+<span class="ok" role="status">{{ zeile.qty }}× im Korb</span>
+<span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl }}</span>

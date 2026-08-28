@@ -1,0 +1,9 @@
+{% extends "basis.html" %}
+{% block titel %}Warenkorb — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Warenkorb</h1>
+{# Ein Korb für beide (Spec 4). Der Satz steht hier, weil sonst jemand nach
+   „seinem" Korb sucht und ihn nicht findet. #}
+<p class="fussnote">Ein gemeinsamer Korb — was hier steht, sieht auch der andere.</p>
+<div id="korb">{% include "_korb.html" %}</div>
+{% endblock %}

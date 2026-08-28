@@ -1,0 +1,81 @@
+{# Der Warenkorb — der `draft` (Spec 4). Wird beim ersten Aufruf mit
+   ausgeliefert und danach von HTMX gegen genau dieses Stück getauscht.
+
+   Jede Zeile ist zugleich ein Formular ohne JavaScript: `action` und `hx-post`
+   zeigen auf dieselbe Adresse. Fällt HTMX aus, lädt die Seite eben neu. #}
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
+
+{% if not posten %}
+  <p class="leer">Der Warenkorb ist leer.</p>
+{% else %}
+<ul class="korb">
+  {% for i in posten %}
+  <li class="zeile">
+    {% if i.bild_url %}
+      <img class="bild" src="{{ i.bild_url }}" alt="" loading="lazy" width="56" height="56">
+    {% else %}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      <span class="name">{{ i.name }}</span>
+      <span class="menge">
+        {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}
+        · {{ i.price_cents | euro }}{% endif %}
+      </span>
+    </span>
+    <span class="stellen">
+      <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
+            hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
+            hx-target="#korb" hx-swap="innerHTML">
+        <button class="mini" type="submit"
+                aria-label="weniger {{ i.name }}">&minus;</button>
+      </form>
+      <span class="anzahl">{{ i.qty }}</span>
+      <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
+            hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
+            hx-target="#korb" hx-swap="innerHTML">
+        <button class="mini" type="submit"
+                aria-label="mehr {{ i.name }}">+</button>
+      </form>
+      {# Der Laden hängt am Posten, nicht am Produkt (Spec 4). Vorbelegt ist
+         die letzte Wahl für dasselbe Produkt. #}
+      <form method="post" action="/warenkorb/posten/{{ i.id }}/laden"
+            hx-post="/warenkorb/posten/{{ i.id }}/laden"
+            hx-trigger="change, submit" hx-target="#korb" hx-swap="innerHTML">
+        <select name="store" aria-label="Laden für {{ i.name }}">
+          {% for s in stores %}
+          <option value="{{ s }}" {% if s == i.store %}selected{% endif %}>
+            {{ laden_titel[s] }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button class="mini" type="submit">ok</button></noscript>
+      </form>
+      <form method="post" action="/warenkorb/posten/{{ i.id }}/loeschen"
+            hx-post="/warenkorb/posten/{{ i.id }}/loeschen"
+            hx-target="#korb" hx-swap="innerHTML">
+        <button class="mini loeschen" type="submit"
+                aria-label="{{ i.name }} löschen">&times;</button>
+      </form>
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{# Das Freitext-Ventil (Spec 4): der Katalog wird Lücken haben, und ohne dieses
+   Feld wäre der Shop genau dort unbenutzbar, wo er es nicht sein darf. #}
+<form class="freitext" method="post" action="/warenkorb/einlegen"
+      hx-post="/warenkorb/einlegen" hx-target="#korb" hx-swap="innerHTML">
+  <input type="text" name="free_text" autocomplete="off"
+         aria-label="Artikel, den der Katalog nicht hat"
+         placeholder="Etwas, das der Katalog nicht hat…">
+  <button type="submit">Dazu</button>
+</form>
+
+{% if posten %}
+<form class="abschicken" method="post" action="/warenkorb/abschicken">
+  <button class="gross" type="submit">Bestellung abschicken</button>
+</form>
+{% endif %}

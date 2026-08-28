@@ -1,0 +1,34 @@
+{% extends "basis.html" %}
+{% block titel %}Bestellungen — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Bestellungen</h1>
+{% if not bestellungen %}
+  <p class="leer">Noch nichts abgeschickt.</p>
+  <p><a class="knopf" href="/warenkorb">Zum Warenkorb</a></p>
+{% else %}
+{# Offene oben, erledigte darunter (Spec 9) — die Reihenfolge kommt aus
+   `orders.bestellungen()`, die Vorlage sortiert nicht selbst. #}
+<ul class="bestellungen">
+  {% for b in bestellungen %}
+  <li class="bestellung {{ b.state }}" id="b{{ b.id }}">
+    <a class="zweig" href="/pick/{{ b.id }}">
+      <span class="text">
+        <span class="name">
+          {%- if b.state == 'offen' -%}
+            offen · {{ b.n_offen }} von {{ b.n_posten }} noch zu holen
+          {%- else -%}
+            erledigt · {{ b.n_posten }} Posten
+          {%- endif -%}
+        </span>
+        <span class="menge">
+          {% if b.state == 'offen' %}abgeschickt {{ b.submitted_at }}
+          {% else %}fertig {{ b.done_at }}{% endif %}
+        </span>
+        <span class="menge">{{ b.posten | map(attribute='name') | join(', ') }}</span>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

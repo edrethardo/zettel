@@ -189,6 +189,15 @@ SCHEMA = [
         error       TEXT
     )
     """,
+    # Genau EIN Warenkorb, gemeinsam für beide (Spec 4). Der Zwang steht
+    # bewusst hier und nicht nur in `orders.warenkorb()`: eine Python-Funktion
+    # kann zwei gleichzeitige Aufrufe nicht daran hindern, beide „kein draft
+    # vorhanden" zu lesen und beide einen anzulegen. Ein partieller UNIQUE-Index
+    # kann es — der zweite INSERT scheitert, egal aus welchem Prozess er kommt.
+    # Nur `state = 'draft'` ist eingeschränkt; von `offen` und `erledigt` darf
+    # es beliebig viele geben.
+    "CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_ein_draft"
+    " ON orders(state) WHERE state = 'draft'",
     "CREATE INDEX IF NOT EXISTS ix_order_item_order ON order_item(order_id)",
     "CREATE INDEX IF NOT EXISTS ix_recipe_item_recipe ON recipe_item(recipe_id)",
     "CREATE INDEX IF NOT EXISTS ix_chat_message_order ON chat_message(order_id)",

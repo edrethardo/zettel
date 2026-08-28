@@ -19,13 +19,14 @@ import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import parse_qsl, urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import db
+from picknick import db, orders
 from picknick.catalog import categories, search
 
 HIER = Path(__file__).parent
@@ -254,6 +255,80 @@ def _mit_bild(produkte: list[dict], image_dir) -> list[dict]:
     return produkte
 
 
+def _posten_mit_bild(zeilen: list[dict], image_dir) -> list[dict]:
+    """Dasselbe für Bestellposten — deren `id` ist die Zeile, nicht das Produkt.
+
+    Eine eigene Funktion und nicht `_mit_bild()`: dort steht die Produkt-id im
+    Feld `id`, hier die des Postens. Mit derselben Funktion zeigte die
+    Pick-Ansicht im Laden fremde Bilder, und zwar plausibel aussehende.
+    Freitext-Zeilen haben kein Produkt und damit nie ein Bild.
+    """
+    for z in zeilen:
+        z["bild_url"] = (
+            f"/bild/{z['product_id']}"
+            if z.get("product_id") and bilddatei(image_dir, z.get("image_path"))
+            else None)
+    return zeilen
+
+
+# --------------------------------------------------------------------------
+# Formulareingaben
+#
+# `python-multipart` ist keine Abhängigkeit des Projekts (Spec 15), und
+# Starlette 1.6 verweigert `request.form()` ohne sie — auch für schlicht
+# urlencodierte Formulare, die es selbst parsen könnte (gemessen 2026-08-28).
+# Deshalb wird der Rumpf hier von Hand gelesen. Das ist wenig Code, es hält
+# die Abhängigkeitsliste bei dem, was die Spec nennt, und es gilt für beide
+# Wege gleich: HTMX schickt seine Werte im Rumpf, ein Formular ohne
+# JavaScript ebenso, und Knöpfe ohne Feld bringen ihre Werte in der URL mit.
+
+async def eingaben(request: Request) -> dict[str, str]:
+    """Query-Parameter und urlencodierter Rumpf in einem Wörterbuch.
+
+    Der Rumpf gewinnt: er trägt die Eingabe, die der Mensch gerade gemacht
+    hat, die URL nur, was in der Vorlage stand.
+    """
+    werte = dict(request.query_params)
+    if request.method in ("POST", "PUT", "PATCH"):
+        rumpf = (await request.body()).decode("utf-8", "replace")
+        if rumpf:
+            werte.update(dict(parse_qsl(rumpf, keep_blank_values=True)))
+    return werte
+
+
+def zahl(wert, vorgabe: int) -> int:
+    """`'3'` -> 3, alles Unlesbare -> Vorgabe. Wirft nie.
+
+    Eingaben aus einer URL sind beliebig; eine 500er-Seite wegen eines
+    verrutschten Zeichens wäre eine Fehlfunktion und keine Strenge.
+    """
+    try:
+        return int(str(wert).strip())
+    except (TypeError, ValueError):
+        return vorgabe
+
+
+def ist_htmx(request: Request) -> bool:
+    """Kommt die Anfrage von HTMX? Dann reicht das Bruchstück als Antwort."""
+    return request.headers.get("HX-Request") == "true"
+
+
+def zurueck_zum_katalog(request: Request, vorgabe: str = "/katalog") -> str:
+    """Wohin ein Formular ohne JavaScript zurückspringt.
+
+    Aus dem Referer wird ausschliesslich Pfad und Query übernommen und nur,
+    wenn der Pfad `/katalog` ist. Der Host wird bewusst weggeworfen: ein
+    Weiterleitungsziel, das aus einem Kopf des Aufrufers stammt, ist sonst
+    eine offene Weiterleitung — hier ohne echten Schaden, aber es ist die
+    Sorte Kleinigkeit, die man nicht stehen lässt.
+    """
+    referer = request.headers.get("referer") or ""
+    teile = urlsplit(referer)
+    if teile.path == "/katalog":
+        return teile.path + (f"?{teile.query}" if teile.query else "")
+    return vorgabe
+
+
 # --------------------------------------------------------------------------
 # App
 
@@ -324,6 +399,38 @@ def create_app(db_path: str | Path | None = None,
                                httponly=True, samesite="lax")
         return antwort
 
+    def _rahmen(request: Request, c: sqlite3.Connection) -> dict:
+        """Was jede Vollseite braucht: Rolle und Zahl im Warenkorb-Knopf."""
+        return {"rolle": request.cookies.get(COOKIE_ROLLE),
+                "korb_anzahl": orders.korb_anzahl(c)}
+
+    def _korb_kontext(c: sqlite3.Connection, fehler: str | None = None) -> dict:
+        """Alles, was `_korb.html` braucht — für Vollseite und HTMX-Bruchstück.
+
+        Eine Funktion für beide Wege, aus demselben Grund wie bei der
+        Trefferliste in WB-323: sonst entwickelt sich das Bruchstück von der
+        ersten Ansicht weg, und niemand merkt es.
+        """
+        return {"posten": _posten_mit_bild(orders.inhalt(c), app.state.image_dir),
+                "stores": db.STORES,
+                "laden_titel": orders.LADEN_TITEL,
+                "korb_anzahl": orders.korb_anzahl(c),
+                "fehler": fehler}
+
+    def _korb_antwort(request: Request, c: sqlite3.Connection,
+                      fehler: str | None = None):
+        """HTMX bekommt den Korb, ein Formular ohne JavaScript die ganze Seite."""
+        if ist_htmx(request):
+            return vorlagen.TemplateResponse(request, "_korb.html",
+                                             _korb_kontext(c, fehler))
+        if fehler:
+            # Mit einer Weiterleitung ginge die Begründung verloren, und die
+            # Nutzerin sähe nur, dass nichts passiert ist.
+            return vorlagen.TemplateResponse(
+                request, "warenkorb.html",
+                {**_rahmen(request, c), **_korb_kontext(c, fehler)})
+        return RedirectResponse("/warenkorb", status_code=303)
+
     @app.get("/katalog")
     def katalog(request: Request, q: str = "",
                 l1: str | None = None, l2: str | None = None,
@@ -331,11 +438,11 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "katalog.html", {
+                **_rahmen(request, c),
                 "produkte": _liste(c, q, l1, l2, l3),
                 "baum": categories.tree(c),
                 "hinweis": katalog_hinweis(c),
-                "q": q, "l1": l1, "l2": l2, "l3": l3,
-                "rolle": request.cookies.get(COOKIE_ROLLE)})
+                "q": q, "l1": l1, "l2": l2, "l3": l3})
         finally:
             c.close()
 
@@ -355,10 +462,189 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    # ----------------------------------------------------------------------
+    # Warenkorb (Spec 9)
+
+    @app.post("/katalog/einlegen")
+    async def katalog_einlegen(request: Request):
+        """Der „+"-Knopf an der Kachel: einlegen ohne Seitenwechsel.
+
+        WB-323 hat ihn weggelassen, weil es keinen Warenkorb gab. Jetzt gibt
+        es einen — und weil er der meistgedrückte Knopf des Shops ist, gibt er
+        sichtbar Rückmeldung: die Menge an der Kachel und die Zahl oben im
+        Kopf. Ohne Rückmeldung drückt man zweimal.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                item = orders.einlegen(c, product_id=werte.get("product_id"),
+                                       qty=zahl(werte.get("qty"), 1))
+            except orders.UngueltigerPosten:
+                return Response(status_code=404)
+            zeile = next(z for z in orders.inhalt(c) if z["id"] == item)
+            if ist_htmx(request):
+                return vorlagen.TemplateResponse(request, "_eingelegt.html", {
+                    "zeile": zeile, "korb_anzahl": orders.korb_anzahl(c)})
+            return RedirectResponse(zurueck_zum_katalog(request),
+                                    status_code=303)
+        finally:
+            c.close()
+
+    @app.get("/warenkorb")
+    def warenkorb(request: Request):
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "warenkorb.html", {
+                **_rahmen(request, c), **_korb_kontext(c)})
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/einlegen")
+    async def warenkorb_einlegen(request: Request):
+        """Das Freitext-Feld — das Ventil für alles, was der Katalog nicht hat."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                orders.einlegen(c, product_id=werte.get("product_id"),
+                                free_text=werte.get("free_text"),
+                                qty=zahl(werte.get("qty"), 1))
+            except orders.UngueltigerPosten:
+                fehler = ("Schreib hin, was es sein soll — ein leeres Feld "
+                          "ergibt keine Zeile im Laden.")
+            return _korb_antwort(request, c, fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/posten/{item_id}/menge")
+    async def posten_menge(request: Request, item_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                orders.menge_setzen(c, item_id, zahl(werte.get("qty"), 1))
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _korb_antwort(request, c, fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/posten/{item_id}/laden")
+    async def posten_laden(request: Request, item_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            try:
+                orders.laden_setzen(c, item_id, werte.get("store", ""))
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _korb_antwort(request, c, fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/posten/{item_id}/loeschen")
+    def posten_loeschen(request: Request, item_id: int):
+        c = con()
+        try:
+            fehler = None
+            try:
+                orders.entfernen(c, item_id)
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _korb_antwort(request, c, fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/abschicken")
+    async def warenkorb_abschicken(request: Request):
+        """`draft -> offen`. Danach fängt der nächste Korb leer an."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                bestellung = orders.abschicken(c, note=werte.get("note"))
+            except orders.LeererWarenkorb as e:
+                return _korb_antwort(request, c, str(e))
+            ziel = f"/bestellungen#b{bestellung['id']}"
+            if ist_htmx(request):
+                # Ein 303 würde HTMX die neue Seite in den Korb hineintauschen;
+                # HX-Redirect lässt den Browser richtig navigieren.
+                return Response(status_code=204, headers={"HX-Redirect": ziel})
+            return RedirectResponse(ziel, status_code=303)
+        finally:
+            c.close()
+
+    # ----------------------------------------------------------------------
+    # Bestellungen und Pick-Ansicht (Spec 9)
+
+    @app.get("/bestellungen")
+    def bestelluebersicht(request: Request):
+        c = con()
+        try:
+            liste = orders.bestellungen(c)
+            for b in liste:
+                b["posten"] = orders.posten(c, b["id"])
+            return vorlagen.TemplateResponse(request, "bestellungen.html", {
+                **_rahmen(request, c), "bestellungen": liste})
+        finally:
+            c.close()
+
+    def _pick_kontext(c: sqlite3.Connection, order_id: int | None) -> dict:
+        if order_id is None:
+            return {"bestellung": None, "gruppen": [],
+                    "auswahl": orders.offene(c)}
+        gruppen = orders.nach_laden(c, order_id)
+        for g in gruppen:
+            _posten_mit_bild(g["posten"], app.state.image_dir)
+        return {"bestellung": orders.bestellung(c, order_id),
+                "gruppen": gruppen,
+                "offen": sum(g["n_offen"] for g in gruppen),
+                "auswahl": [b for b in orders.offene(c) if b["id"] != order_id]}
+
     @app.get("/pick")
     def pick(request: Request):
-        return vorlagen.TemplateResponse(request, "pick.html", {
-            "rolle": request.cookies.get(COOKIE_ROLLE)})
+        """Die Pick-Ansicht macht mit der ältesten offenen Bestellung auf.
+
+        Ohne Auswahlschritt: im Laden will man die Liste sehen, nicht erst
+        eine Liste von Listen. Gibt es weitere offene, stehen sie unten.
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "pick.html", {
+                **_rahmen(request, c), **_pick_kontext(c, orders.naechste(c))})
+        finally:
+            c.close()
+
+    @app.get("/pick/{order_id}")
+    def pick_eine(request: Request, order_id: int):
+        c = con()
+        try:
+            if orders.bestellung(c, order_id) is None:
+                return Response(status_code=404)
+            return vorlagen.TemplateResponse(request, "pick.html", {
+                **_rahmen(request, c), **_pick_kontext(c, order_id)})
+        finally:
+            c.close()
+
+    @app.post("/pick/{order_id}/posten/{item_id}")
+    async def pick_abhaken(request: Request, order_id: int, item_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                orders.abhaken(c, item_id, gepickt=werte.get("gepickt") != "0")
+            except orders.UngueltigerPosten:
+                return Response(status_code=404)
+            if ist_htmx(request):
+                return vorlagen.TemplateResponse(request, "_pick.html",
+                                                 _pick_kontext(c, order_id))
+            return RedirectResponse(f"/pick/{order_id}", status_code=303)
+        finally:
+            c.close()
 
     @app.get("/bild/{produkt_id}")
     def bild(produkt_id: int):

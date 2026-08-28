@@ -1,9 +1,24 @@
 {% extends "basis.html" %}
 {% block titel %}Pick-Liste — Picknick{% endblock %}
 {% block inhalt %}
-<h1>Pick-Liste</h1>
-{# Die Ansicht aus Spec 9 gibt es noch nicht (Warenkorb und Bestellung sind
-   eigene Tickets). Statt einer leeren Seite der Weg zurück in den Katalog. #}
-<p>Die Pick-Liste ist noch nicht gebaut — es gibt noch keine Bestellungen.</p>
-<p><a class="knopf" href="/katalog">Zum Katalog</a></p>
+{% if bestellung %}
+  <h1>Einkauf Nr. {{ bestellung.id }}</h1>
+  <div id="pickliste">{% include "_pick.html" %}</div>
+{% else %}
+  <h1>Pick-Liste</h1>
+  <p class="leer">Nichts zu holen — es ist keine Bestellung offen.</p>
+  <p><a class="knopf" href="/katalog">Zum Katalog</a></p>
+{% endif %}
+
+{% if auswahl %}
+<h2>Weitere offene Bestellungen</h2>
+<ul class="bestellungen">
+  {% for b in auswahl %}
+  <li class="bestellung offen">
+    <a class="zweig" href="/pick/{{ b.id }}">Nr. {{ b.id }} · {{ b.n_offen }} zu holen
+      <span class="anzahl">{{ b.submitted_at }}</span></a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
 {% endblock %}

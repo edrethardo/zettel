@@ -97,3 +97,96 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 
 .leer, .fussnote { color: var(--gedaempft); }
 .fussnote { font-size: 14px; margin-top: 24px; }
+
+/* Warenkorb, Bestellungen, Pick-Ansicht (WB-324) --------------------------
+   Dieselben drei Regeln wie oben. Die zweite wiegt hier am schwersten: die
+   Pick-Ansicht wird einhändig im Laden benutzt, mit dem Korb in der anderen
+   Hand. Ein Tap-Ziel, das dort danebengeht, kostet mehr als eine hässliche
+   Zeile. */
+
+/* „+" an der Katalogkachel */
+.einlegen { margin: 0; }
+.plus {
+  min-width: var(--tap); min-height: var(--tap);
+  font-size: 24px; line-height: 1; padding: 0;
+  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
+  color: inherit; cursor: pointer;
+}
+.rueckmeldung { flex: 0 0 auto; min-width: 0; font-size: 14px; }
+.ok { color: #17692c; white-space: nowrap; }
+.korbzahl {
+  display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px;
+  border-radius: 11px; background: #e2eefc; color: #14508c;
+  font-size: 14px; text-align: center;
+}
+
+/* Warenkorbzeile */
+.korb { list-style: none; margin: 0; padding: 0; }
+.zeile {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--linie);
+  flex-wrap: wrap;              /* auf 360 px rutschen die Stellknöpfe in die
+                                   zweite Zeile, statt die Seite quer zu
+                                   scrollen */
+}
+.zeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
+.stellen { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.stellen form { margin: 0; }
+.mini {
+  min-width: var(--tap); min-height: var(--tap); padding: 0 8px;
+  font-size: 18px; border: 1px solid var(--linie); border-radius: 8px;
+  background: #f4f4f4; color: inherit; cursor: pointer;
+}
+.mini.loeschen { color: #8c1414; }
+.stellen .anzahl { margin: 0; min-width: 2ch; text-align: center;
+                   color: inherit; font-variant-numeric: tabular-nums; }
+.stellen select {
+  min-height: var(--tap); font-size: 16px; padding: 0 4px;
+  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+}
+
+.freitext { display: flex; gap: 8px; margin: var(--rand) 0; }
+.freitext input {
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}
+.freitext button, .abschicken .gross {
+  min-height: var(--tap); padding: 0 16px; font-size: 17px;
+  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
+  cursor: pointer;
+}
+.abschicken { margin-top: var(--rand); }
+.abschicken .gross { width: 100%; min-height: 52px; font-weight: 600;
+                     background: #e2eefc; border-color: #8ab4e8; }
+
+.fehler { padding: 10px; border-radius: 8px;
+          background: #fdecec; border: 1px solid #e8a1a1; }
+.fertig { padding: 10px; border-radius: 8px;
+          background: #e8f6ea; border: 1px solid #8ec99a; }
+.stand { color: var(--gedaempft); }
+
+/* Bestellübersicht */
+.bestellungen { list-style: none; margin: 0; padding: 0; }
+.bestellungen .zweig { padding: 8px; align-items: flex-start; }
+.bestellung.erledigt .name { color: var(--gedaempft); }
+
+/* Pick-Ansicht: grosse Checkboxen mit Bild (Spec 9) */
+.gruppe h2 { display: flex; align-items: center; font-size: 19px;
+             margin: 20px 0 4px; padding-bottom: 4px;
+             border-bottom: 2px solid #333; }
+.pickliste { list-style: none; margin: 0; padding: 0; }
+.pickzeile { border-bottom: 1px solid var(--linie); }
+.pickzeile form { display: flex; align-items: center; margin: 0; }
+.haken {
+  display: flex; align-items: center; gap: var(--rand);
+  flex: 1 1 auto; min-height: 64px;     /* deutlich über 44 px: hier wird im
+                                           Gehen getippt */
+  padding: 6px 4px; cursor: pointer;
+}
+.haken input[type="checkbox"] {
+  width: 32px; height: 32px; flex: 0 0 32px; margin: 0;
+  accent-color: #14508c;
+}
+.pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
+.pickzeile.ab .name { text-decoration: line-through; color: var(--gedaempft); }
+.pickzeile.ab { background: #f6f6f6; }

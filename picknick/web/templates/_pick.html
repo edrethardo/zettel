@@ -1,0 +1,43 @@
+{# Die Liste einer Bestellung, nach Laden getrennt. Wird von HTMX nach jedem
+   Haken gegen genau dieses Stück getauscht — deshalb steht hier auch die
+   Fertigmeldung: der letzte Haken macht die Bestellung erledigt, und das muss
+   im selben Austausch sichtbar werden. #}
+{% if bestellung.state == 'erledigt' %}
+<p class="fertig" role="status">Alles abgehakt — erledigt {{ bestellung.done_at }}.</p>
+{% else %}
+<p class="stand" role="status">Noch {{ offen }} zu holen.</p>
+{% endif %}
+
+{% for g in gruppen %}
+<section class="gruppe">
+  <h2>{{ g.titel }} <span class="anzahl">{{ g.n_offen }} offen</span></h2>
+  <ul class="pickliste">
+    {% for i in g.posten %}
+    <li class="pickzeile{% if i.gepickt %} ab{% endif %}">
+      {# Das Ziel trägt den GEWÜNSCHTEN Zustand, nicht den aktuellen: so ist
+         der Klick auch dann eindeutig, wenn zwei Handys dieselbe Liste offen
+         haben. Ohne JavaScript schickt derselbe Knopf dasselbe ab. #}
+      {% set ziel = "/pick/" ~ bestellung.id ~ "/posten/" ~ i.id ~ "?gepickt=" ~ (0 if i.gepickt else 1) %}
+      <form method="post" action="{{ ziel }}" hx-post="{{ ziel }}"
+            hx-trigger="change, submit" hx-target="#pickliste" hx-swap="innerHTML">
+        <label class="haken">
+          <input type="checkbox" {% if i.gepickt %}checked{% endif %}>
+          {% if i.bild_url %}
+            <img class="bild" src="{{ i.bild_url }}" alt="" loading="lazy" width="56" height="56">
+          {% else %}
+            <span class="bild bild-fehlt" aria-hidden="true"></span>
+          {% endif %}
+          <span class="text">
+            <span class="name">{{ i.qty }}× {{ i.name }}</span>
+            <span class="menge">
+              {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}{% endif %}
+            </span>
+          </span>
+        </label>
+        <noscript><button class="mini" type="submit">ok</button></noscript>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}

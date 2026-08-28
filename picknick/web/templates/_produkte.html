@@ -21,6 +21,17 @@
       <span class="menge">{{ p.unit_text or "" }}</span>
     </span>
     <span class="preis">{{ p.price_cents | euro }}</span>
+    {# „+" legt ein, ohne Seitenwechsel (Spec 9). Ohne HTMX schickt dasselbe
+       Formular denselben POST und die Seite kommt neu — mit demselben
+       Suchbegriff, den der Referer mitbringt. #}
+    <form class="einlegen" method="post"
+          action="/katalog/einlegen?product_id={{ p.id }}"
+          hx-post="/katalog/einlegen?product_id={{ p.id }}"
+          hx-target="#rm-{{ p.id }}" hx-swap="innerHTML">
+      <button class="plus" type="submit"
+              aria-label="{{ p.name }} in den Warenkorb">+</button>
+    </form>
+    <span class="rueckmeldung" id="rm-{{ p.id }}" role="status"></span>
   </li>
   {% endfor %}
 </ul>
