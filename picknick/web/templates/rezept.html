@@ -1,0 +1,37 @@
+{% extends "basis.html" %}
+{% block titel %}{{ rezept.name }} — Picknick{% endblock %}
+{% block inhalt %}
+<h1>{{ rezept.name }}</h1>
+
+<div id="rezept">{% include "_rezept.html" %}</div>
+
+{# Zutat aus dem Katalog: dieselbe Suche wie im Katalog, nur legt das „+“ hier
+   ins Rezept statt in den Korb. Ohne HTMX schickt dasselbe Formular ein GET
+   auf diese Seite und die Trefferliste steht danach ebenso da. #}
+<h2>Zutat aus dem Katalog</h2>
+<form class="suche" action="/rezepte/{{ rezept.id }}" method="get" role="search">
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="Produkt suchen…"
+         autocomplete="off"
+         hx-get="/rezepte/{{ rezept.id }}/suche"
+         hx-trigger="input changed delay:300ms, search"
+         hx-target="#rezept-treffer" hx-swap="innerHTML">
+  <button type="submit">Suchen</button>
+</form>
+<div id="rezept-treffer">{% include "_rezept_treffer.html" %}</div>
+
+<h2>Kopfdaten</h2>
+<form class="rezeptkopf" method="post" action="/rezepte/{{ rezept.id }}/bearbeiten">
+  <label>Name
+    <input type="text" name="name" value="{{ rezept.name }}" autocomplete="off"></label>
+  <label>Portionen
+    <input type="text" inputmode="numeric" name="servings"
+           value="{{ rezept.servings if rezept.servings is not none else '' }}"></label>
+  <label>Notiz
+    <textarea name="note" rows="3">{{ rezept.note or '' }}</textarea></label>
+  <button class="knopf" type="submit">Speichern</button>
+</form>
+
+<form class="rezeptloeschen" method="post" action="/rezepte/{{ rezept.id }}/loeschen">
+  <button class="knopf loeschen" type="submit">Rezept löschen</button>
+</form>
+{% endblock %}

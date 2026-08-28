@@ -76,13 +76,18 @@ def korb_anzahl(con: sqlite3.Connection) -> int:
     return int(row["n"]) if row else 0
 
 
-def _genau_eines(product_id, free_text) -> tuple[int | None, str | None]:
+def genau_eines(product_id, free_text,
+                was: str = "Ein Bestellposten") -> tuple[int | None, str | None]:
     """Prüft die Regel „entweder Produkt oder Freitext" vor dem INSERT.
 
     Die Datenbank hat denselben CHECK und ist die letzte Instanz. Hier steht
     er trotzdem, weil ein `IntegrityError` der Nutzerin nichts sagt — und weil
     ein leeres Textfeld ('' oder '   ') sonst als gültiger Freitext durchginge
     und eine namenlose Zeile im Laden erzeugte.
+
+    Öffentlich (und mit `was` für die Anrede), weil `recipes` genau dieselbe
+    Regel für `recipe_item` braucht — dieselbe Spaltenform, derselbe CHECK.
+    Eine zweite Kopie liefe irgendwann auseinander, und zwar still.
     """
     text = (free_text or "").strip() or None
     try:
@@ -95,7 +100,7 @@ def _genau_eines(product_id, free_text) -> tuple[int | None, str | None]:
             f"{product_id!r} ist keine Produkt-id.") from None
     if (pid is None) == (text is None):
         raise UngueltigerPosten(
-            "Ein Bestellposten braucht genau eines von beidem: ein Produkt aus "
+            f"{was} braucht genau eines von beidem: ein Produkt aus "
             "dem Katalog oder einen Freitext. "
             f"Bekommen: product_id={product_id!r}, free_text={free_text!r}.")
     return pid, text
@@ -114,7 +119,7 @@ def vorbelegter_laden(con: sqlite3.Connection, product_id=None,
     Entscheidung ist die beste Auskunft, unabhängig davon, ob sie schon
     abgeschickt wurde.
     """
-    pid, text = _genau_eines(product_id, free_text)
+    pid, text = genau_eines(product_id, free_text)
     row = con.execute(
         "SELECT store FROM order_item"
         " WHERE product_id IS ? AND free_text IS ?"
@@ -134,7 +139,7 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
 
     Gibt die id des Postens zurück.
     """
-    pid, text = _genau_eines(product_id, free_text)
+    pid, text = genau_eines(product_id, free_text)
     if pid is not None and not con.execute(
             "SELECT 1 FROM product WHERE id = ?", (pid,)).fetchone():
         # Sonst antwortet der Fremdschlüssel mit einem IntegrityError, der

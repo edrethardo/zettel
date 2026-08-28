@@ -1,0 +1,92 @@
+{# Zutatenliste eines Rezepts samt Meldung. Wird beim ersten Aufruf mit
+   ausgeliefert und danach von HTMX gegen genau dieses Stück getauscht — eine
+   Vorlage für beide Wege, damit sie sich nicht auseinanderentwickeln.
+
+   Der Knopf „Alles in den Warenkorb“ steht hier drin und nicht in der
+   Vollseite, weil er verschwinden muss, sobald das Rezept leer ist. #}
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
+{% if meldung %}
+<p class="fertig" role="status">{{ meldung }}</p>
+{% endif %}
+
+{% if rezept.n_ausgemustert %}
+{# Spec 11 sinngemäss: die Oberfläche schweigt nicht, wenn etwas fehlt. Eine
+   still weggelassene Zutat wäre der schlimmste Ausgang — dann steht jemand im
+   Laden und weiss nicht, dass etwas fehlt. #}
+<p class="band" role="status">
+  {{ rezept.n_ausgemustert }} {% if rezept.n_ausgemustert == 1 %}Zutat steht{% else %}Zutaten stehen{% endif %}
+  nicht mehr im Katalog. Sie {% if rezept.n_ausgemustert == 1 %}bleibt{% else %}bleiben{% endif %}
+  im Rezept und {% if rezept.n_ausgemustert == 1 %}wandert{% else %}wandern{% endif %}
+  mit in den Korb — nur der Preis kann alt sein.
+</p>
+{% endif %}
+
+{% if not rezept.zutaten %}
+  <p class="leer">Noch keine Zutat. Ohne Zutaten wird daraus kein Einkauf.</p>
+{% else %}
+<ul class="korb">
+  {% for z in rezept.zutaten %}
+  <li class="zeile{% if z.nicht_im_katalog %} fehlt-im-katalog{% endif %}">
+    {% if z.bild_url %}
+      <img class="bild" src="{{ z.bild_url }}" alt="" loading="lazy" width="56" height="56">
+    {% else %}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      <span class="name">{{ z.name }}</span>
+      <span class="menge">
+        {% if z.ist_freitext %}Freitext
+        {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
+        {%- if z.nicht_im_katalog %}
+        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
+      </span>
+    </span>
+    <span class="stellen">
+      <form method="post"
+            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
+            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
+            hx-target="#rezept" hx-swap="innerHTML">
+        <button class="mini" type="submit"
+                aria-label="weniger {{ z.name }}">&minus;</button>
+      </form>
+      <span class="anzahl">{{ z.qty }}</span>
+      <form method="post"
+            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
+            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
+            hx-target="#rezept" hx-swap="innerHTML">
+        <button class="mini" type="submit"
+                aria-label="mehr {{ z.name }}">+</button>
+      </form>
+      <form method="post"
+            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/loeschen"
+            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/loeschen"
+            hx-target="#rezept" hx-swap="innerHTML">
+        <button class="mini loeschen" type="submit"
+                aria-label="{{ z.name }} entfernen">&times;</button>
+      </form>
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{# Das Freitext-Ventil, hier wie im Korb: der Katalog hat Lücken, und ein
+   Rezept, in dem „Salz“ nicht stehen darf, ist kein Rezept (Spec 4). #}
+<form class="freitext" method="post" action="/rezepte/{{ rezept.id }}/zutaten"
+      hx-post="/rezepte/{{ rezept.id }}/zutaten"
+      hx-target="#rezept" hx-swap="innerHTML">
+  <input type="text" name="free_text" autocomplete="off"
+         aria-label="Zutat, die der Katalog nicht hat"
+         placeholder="Zutat ohne Katalogprodukt…">
+  <button type="submit">Dazu</button>
+</form>
+
+{% if rezept.zutaten %}
+<form class="abschicken" method="post" action="/rezepte/{{ rezept.id }}/korb"
+      hx-post="/rezepte/{{ rezept.id }}/korb"
+      hx-target="#rezept" hx-swap="innerHTML">
+  <button class="gross" type="submit">Alles in den Warenkorb</button>
+</form>
+{% endif %}

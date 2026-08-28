@@ -1,0 +1,40 @@
+{% extends "basis.html" %}
+{% block titel %}Rezepte — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Rezepte</h1>
+
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
+
+{% if not rezepte %}
+  <p class="leer">Noch kein Rezept. Leg eines an — oder mach an einer
+    erledigten Bestellung eines daraus.</p>
+{% else %}
+<ul class="rezepte">
+  {% for r in rezepte %}
+  <li class="rezeptzeile">
+    <a class="zweig" href="/rezepte/{{ r.id }}">
+      <span class="text">
+        <span class="name">{{ r.name }}</span>
+        <span class="menge">
+          {{ r.n_zutaten }} {% if r.n_zutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
+          {%- if r.servings %} · für {{ r.servings }}{% endif %}
+          {%- if r.n_ausgemustert %}
+          {# Der Hinweis steht schon in der Liste: wer ein Rezept in den Korb
+             legen will, soll es vorher wissen und nicht erst im Laden. #}
+          · <span class="ausgemustert">{{ r.n_ausgemustert }} nicht mehr im Katalog</span>{% endif %}
+        </span>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<form class="freitext" method="post" action="/rezepte">
+  <input type="text" name="name" autocomplete="off" placeholder="Neues Rezept…"
+         aria-label="Name des neuen Rezepts" value="{{ name or '' }}">
+  <button type="submit">Anlegen</button>
+</form>
+{% endblock %}

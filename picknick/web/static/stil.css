@@ -190,3 +190,40 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 .pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
 .pickzeile.ab .name { text-decoration: line-through; color: var(--gedaempft); }
 .pickzeile.ab { background: #f6f6f6; }
+
+/* Rezepte (WB-325) ---------------------------------------------------------
+   Kein eigenes Aussehen: die Zutatenliste benutzt dieselbe `.zeile` samt
+   `.stellen` wie der Warenkorb, weil es dieselbe Sache ist — eine Zeile mit
+   Menge, die man antippt. Neu ist nur, was der Katalog nicht mehr hergibt. */
+
+.rezepte { list-style: none; margin: 0; padding: 0; }
+.rezeptzeile .zweig { padding: 8px; align-items: flex-start; }
+
+/* Eine Zutat, die es im Katalog nicht mehr gibt (`active = 0`, Spec 5.3).
+   Sie wird MARKIERT und nicht ausgeblendet: eine stillschweigend fehlende
+   Zutat merkt man erst im Laden, und dann ist es zu spät. */
+.ausgemustert { color: #8a5a00; font-weight: 600; }
+.fehlt-im-katalog { background: #fff8e8; }
+
+/* Kopfdaten und die beiden grossen Knöpfe. Tap-Ziel 44 px wie überall — hier
+   steht niemand im Laden, aber eine Eingabe, die man dreimal antippen muss,
+   ist auf dem Sofa genauso ärgerlich. */
+.rezeptkopf { display: flex; flex-direction: column; gap: 10px;
+              margin: var(--rand) 0; }
+.rezeptkopf label { display: flex; flex-direction: column; gap: 4px;
+                    color: var(--gedaempft); font-size: 15px; }
+.rezeptkopf input, .rezeptkopf textarea {
+  min-height: var(--tap); padding: 8px 10px; font-size: 17px; color: #111;
+  border: 1px solid var(--linie); border-radius: 8px; width: 100%;
+  font-family: inherit;
+}
+.rezeptkopf .knopf { align-self: flex-start; }
+.rezeptloeschen { margin: 24px 0; }
+.rezeptloeschen .knopf.loeschen { color: #8c1414; border-color: #e8a1a1; }
+
+/* „Daraus ein Rezept machen“ an der erledigten Bestellung (Spec 6). */
+.rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 8px 10px; }
+.rezept-daraus input {
+  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}

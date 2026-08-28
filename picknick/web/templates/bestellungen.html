@@ -2,6 +2,9 @@
 {% block titel %}Bestellungen — Picknick{% endblock %}
 {% block inhalt %}
 <h1>Bestellungen</h1>
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
 {% if not bestellungen %}
   <p class="leer">Noch nichts abgeschickt.</p>
   <p><a class="knopf" href="/warenkorb">Zum Warenkorb</a></p>
@@ -27,6 +30,17 @@
         <span class="menge">{{ b.posten | map(attribute='name') | join(', ') }}</span>
       </span>
     </a>
+    {% if b.state == 'erledigt' %}
+    {# Spec 6: der Knopf steht genau hier, weil das der einzige Moment ist, in
+       dem die Zutaten ohnehin beisammen sind. Der Name ist vorgeschlagen und
+       überschreibbar — „Einkauf vom 3. Mai“ findet später niemand wieder. #}
+    <form class="rezept-daraus" method="post" action="/bestellungen/{{ b.id }}/rezept">
+      <input type="text" name="name" autocomplete="off"
+             aria-label="Name des Rezepts aus Bestellung {{ b.id }}"
+             placeholder="Name für das Rezept…">
+      <button class="knopf" type="submit">Daraus ein Rezept machen</button>
+    </form>
+    {% endif %}
   </li>
   {% endfor %}
 </ul>

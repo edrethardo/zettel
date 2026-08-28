@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import db, orders
+from picknick import db, orders, recipes
 from picknick.catalog import categories, search
 
 HIER = Path(__file__).parent
@@ -647,6 +647,220 @@ def create_app(db_path: str | Path | None = None,
                 return vorlagen.TemplateResponse(request, "_pick.html",
                                                  _pick_kontext(c, order_id))
             return RedirectResponse(f"/pick/{order_id}", status_code=303)
+        finally:
+            c.close()
+
+    def _gibt_es(c: sqlite3.Connection, recipe_id: int) -> bool:
+        """Gibt es dieses Rezept? Eine 404 ist die ehrliche Antwort auf eine
+        Adresse, die ins Leere zeigt — ein Fehlertext im Rezept wäre es nicht,
+        denn es gibt kein Rezept, in dem er stehen könnte."""
+        return c.execute("SELECT 1 FROM recipe WHERE id = ?",
+                         (recipe_id,)).fetchone() is not None
+
+    # ----------------------------------------------------------------------
+    # Rezepte (Spec 9)
+    #
+    # Eine Spalte, dieselben Tap-Ziele wie überall (stil.css), dieselben
+    # HTMX-Bruchstücke wie im Warenkorb. Der Unterschied zum Korb ist der
+    # Punkt, an dem dieses Ticket steht: ein Rezept überlebt den Katalog, und
+    # eine Zutat, die inzwischen `active = 0` ist, wird angezeigt und
+    # eingelegt statt stillschweigend zu verschwinden.
+
+    def _rezept_kontext(c: sqlite3.Connection, recipe_id: int,
+                        q: str = "", meldung: str | None = None,
+                        fehler: str | None = None) -> dict:
+        """Alles, was `_rezept.html` braucht — für Vollseite und Bruchstück."""
+        r = recipes.rezept(c, recipe_id)
+        _posten_mit_bild(r["zutaten"], app.state.image_dir)
+        return {"rezept": r, "q": q, "meldung": meldung, "fehler": fehler,
+                "treffer": _mit_bild(search.search(c, q, limit=SEITE),
+                                     app.state.image_dir) if q.strip() else []}
+
+    def _rezept_antwort(request: Request, c: sqlite3.Connection, recipe_id: int,
+                        meldung: str | None = None, fehler: str | None = None):
+        """HTMX bekommt die Zutatenliste, ein Formular ohne JS die ganze Seite."""
+        kontext = _rezept_kontext(c, recipe_id, meldung=meldung, fehler=fehler)
+        if ist_htmx(request):
+            return vorlagen.TemplateResponse(request, "_rezept.html", kontext)
+        if meldung or fehler:
+            # Eine Weiterleitung würde die Begründung verlieren, und die
+            # Nutzerin sähe nur, dass nichts passiert ist.
+            return vorlagen.TemplateResponse(
+                request, "rezept.html", {**_rahmen(request, c), **kontext})
+        return RedirectResponse(f"/rezepte/{recipe_id}", status_code=303)
+
+    @app.get("/rezepte")
+    def rezeptliste(request: Request):
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "rezepte.html", {
+                **_rahmen(request, c), "rezepte": recipes.rezepte(c)})
+        finally:
+            c.close()
+
+    @app.post("/rezepte")
+    async def rezept_anlegen(request: Request):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                neu = recipes.anlegen(c, werte.get("name"))
+            except recipes.RezeptFehler as e:
+                return vorlagen.TemplateResponse(request, "rezepte.html", {
+                    **_rahmen(request, c), "rezepte": recipes.rezepte(c),
+                    "fehler": str(e)})
+            return RedirectResponse(f"/rezepte/{neu}", status_code=303)
+        finally:
+            c.close()
+
+    @app.get("/rezepte/{recipe_id}")
+    def rezept_ansicht(request: Request, recipe_id: int, q: str = ""):
+        c = con()
+        try:
+            try:
+                kontext = _rezept_kontext(c, recipe_id, q=q)
+            except recipes.RezeptFehler:
+                return Response(status_code=404)
+            return vorlagen.TemplateResponse(request, "rezept.html", {
+                **_rahmen(request, c), **kontext})
+        finally:
+            c.close()
+
+    @app.get("/rezepte/{recipe_id}/suche")
+    def rezept_suche(request: Request, recipe_id: int, q: str = ""):
+        """Nur die Trefferliste — das Stück, das HTMX beim Tippen austauscht."""
+        c = con()
+        try:
+            try:
+                kontext = _rezept_kontext(c, recipe_id, q=q)
+            except recipes.RezeptFehler:
+                return Response(status_code=404)
+            return vorlagen.TemplateResponse(request, "_rezept_treffer.html",
+                                             kontext)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/bearbeiten")
+    async def rezept_bearbeiten(request: Request, recipe_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            try:
+                recipes.aendern(c, recipe_id, name=werte.get("name"),
+                                servings=werte.get("servings"),
+                                note=werte.get("note"))
+            except recipes.RezeptFehler as e:
+                # Der Name war leer: die Begründung muss stehen bleiben, sonst
+                # sieht die Nutzerin nur, dass nichts gespeichert wurde.
+                return _rezept_antwort(request, c, recipe_id, fehler=str(e))
+            return RedirectResponse(f"/rezepte/{recipe_id}", status_code=303)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/loeschen")
+    def rezept_loeschen(request: Request, recipe_id: int):
+        c = con()
+        try:
+            try:
+                recipes.loeschen(c, recipe_id)
+            except recipes.RezeptFehler:
+                return Response(status_code=404)
+            return RedirectResponse("/rezepte", status_code=303)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/zutaten")
+    async def rezept_zutat(request: Request, recipe_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            fehler = None
+            try:
+                recipes.zutat_hinzufuegen(
+                    c, recipe_id, product_id=werte.get("product_id"),
+                    free_text=werte.get("free_text"),
+                    qty=zahl(werte.get("qty"), 1))
+            except orders.UngueltigerPosten:
+                fehler = ("Schreib hin, was es sein soll — ein leeres Feld "
+                          "ergibt keine Zutat.")
+            return _rezept_antwort(request, c, recipe_id, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/zutaten/{item_id}/menge")
+    async def rezept_zutat_menge(request: Request, recipe_id: int, item_id: int):
+        werte = await eingaben(request)
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            fehler = None
+            try:
+                recipes.zutat_menge(c, item_id, zahl(werte.get("qty"), 1))
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _rezept_antwort(request, c, recipe_id, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/zutaten/{item_id}/loeschen")
+    def rezept_zutat_loeschen(request: Request, recipe_id: int, item_id: int):
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            fehler = None
+            try:
+                recipes.zutat_entfernen(c, item_id)
+            except orders.UngueltigerPosten as e:
+                fehler = str(e)
+            return _rezept_antwort(request, c, recipe_id, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/korb")
+    def rezept_in_den_korb(request: Request, recipe_id: int):
+        """„Alles in den Warenkorb“ — mit Bericht, nicht mit blossem „ok“.
+
+        Der Bericht ist der Grund, warum diese Route eine Meldung zurückgibt
+        und nicht einfach weiterleitet: liegt eine Zutat im Korb, die nicht
+        mehr im Katalog steht, muss die Nutzerin das hier lesen — nicht erst
+        im Laden.
+        """
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            try:
+                bericht = recipes.in_den_korb(c, recipe_id)
+            except recipes.LeeresRezept as e:
+                return _rezept_antwort(request, c, recipe_id, fehler=str(e))
+            return _rezept_antwort(request, c, recipe_id,
+                                   meldung=bericht["meldung"])
+        finally:
+            c.close()
+
+    @app.post("/bestellungen/{order_id}/rezept")
+    async def bestellung_zu_rezept(request: Request, order_id: int):
+        """Spec 6: der Knopf an der erledigten Bestellung."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                neu = recipes.aus_bestellung(c, order_id,
+                                             name=werte.get("name"))
+            except recipes.RezeptFehler as e:
+                liste = orders.bestellungen(c)
+                for b in liste:
+                    b["posten"] = orders.posten(c, b["id"])
+                return vorlagen.TemplateResponse(request, "bestellungen.html", {
+                    **_rahmen(request, c), "bestellungen": liste,
+                    "fehler": str(e)}, status_code=404)
+            return RedirectResponse(f"/rezepte/{neu}", status_code=303)
         finally:
             c.close()
 

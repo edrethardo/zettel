@@ -1,0 +1,31 @@
+{# Katalogtreffer beim Zutat-Suchen. Fast dasselbe Stück wie `_produkte.html`,
+   aber bewusst eine eigene Datei: dort legt das „+“ in den Warenkorb, hier ins
+   Rezept. Mit einer gemeinsamen Vorlage und einem Umschalter wäre genau diese
+   Verwechslung eine Frage der Zeit. #}
+{% if not treffer %}
+  {% if q %}<p class="leer">Nichts gefunden zu „{{ q }}“.</p>{% endif %}
+{% else %}
+<ul class="kacheln">
+  {% for p in treffer %}
+  <li class="kachel">
+    {% if p.bild_url %}
+      <img class="bild" src="{{ p.bild_url }}" alt="" loading="lazy" width="72" height="72">
+    {% else %}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      <span class="name">{{ p.name }}</span>
+      <span class="menge">{{ p.unit_text or "" }}</span>
+    </span>
+    <span class="preis">{{ p.price_cents | euro }}</span>
+    <form class="einlegen" method="post"
+          action="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}"
+          hx-post="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}"
+          hx-target="#rezept" hx-swap="innerHTML">
+      <button class="plus" type="submit"
+              aria-label="{{ p.name }} ins Rezept">+</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
