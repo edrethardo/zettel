@@ -29,6 +29,8 @@ from urllib.parse import urlsplit
 
 import openai
 
+from picknick import obs
+
 ENV_ENDPUNKT = "PICKNICK_LLM_ENDPOINT"
 ENV_SCHLUESSEL = "PICKNICK_LLM_API_KEY"
 
@@ -198,7 +200,13 @@ class Modellzugang:
 
     def _erfrage_modell(self) -> str:
         try:
-            liste = self.client.models.list(timeout=TIMEOUT_MODELLE_S)
+            # Ohne Span: der OpenAI-Instrumentor (Spec 7.2) macht aus jedem
+            # SDK-Aufruf einen LLM-Span, auch aus dieser Tabellenabfrage. Sie
+            # stünde dann als zusätzlicher Ast im Baum aus Spec 7.1 und zählte
+            # als LLM-Aufruf mit — ohne Modellnamen, ohne Tokenzahlen, ohne
+            # Inferenz. Gemessen: ein Span namens `SyncPage[Model]`, Kind LLM.
+            with obs.ohne_trace():
+                liste = self.client.models.list(timeout=TIMEOUT_MODELLE_S)
         except (openai.APIConnectionError, openai.APITimeoutError) as e:
             raise ModellNichtErreichbar(_schlaeft_wohl(self.endpunkt, e)) from e
         except openai.APIError as e:

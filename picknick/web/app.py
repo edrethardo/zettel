@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import db, orders, recipes
+from picknick import db, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
@@ -348,6 +348,11 @@ async def _lifespan(app: FastAPI):
     finally:
         con.close()
     yield
+    # Beim Herunterfahren die Schlange leeren: der Export läuft in einem
+    # Hintergrund-Thread (picknick.obs.otel), und ein systemd-Neustart nähme
+    # sonst die letzten Spans mit. Wartet höchstens fünf Sekunden — ein
+    # Neustart soll nicht an einem Collector hängen bleiben.
+    obs.flush(5_000)
 
 
 def create_app(db_path: str | Path | None = None,
@@ -360,6 +365,14 @@ def create_app(db_path: str | Path | None = None,
     Tests schieben einen mit Fake-LLM unter — kein Test darf ins Netz oder die
     Box wecken (Spec 13).
     """
+    # Der Tracer wird hier eingerichtet und nicht beim ersten Chat-Zug: der
+    # OpenAIInstrumentor patcht das openai-SDK, und das soll einmal beim
+    # Hochfahren passieren und nicht mitten in einem Request. `einrichten()`
+    # wirft nie und blockiert nicht — ein Phoenix, das nicht läuft, darf den
+    # Shop nicht am Starten hindern (Spec 7.3). Abschaltbar über
+    # PICKNICK_TRACING=0; die Testsuite tut genau das (tests/conftest.py).
+    obs.einrichten()
+
     app = FastAPI(title="Picknick", lifespan=_lifespan)
     app.state.db_path = str(db_path or os.environ.get(ENV_DB) or db.DEFAULT_DB)
     app.state.image_dir = Path(image_dir or os.environ.get(ENV_IMAGE_DIR)

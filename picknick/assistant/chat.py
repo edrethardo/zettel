@@ -30,13 +30,29 @@ Fällt das Modell aus, ist nur der Chat betroffen (Spec 11): `turn()` wirft
 `ChatNichtVerfuegbar` mit dem Zustand des Weckers, und der Rest des Shops
 merkt davon nichts. Geschrieben wird erst am Ende — ein abgebrochener Zug
 hinterlässt keine halbe Unterhaltung in der Datenbank.
+
+**Der Zug ist zugleich der Span-Baum aus Spec 7.1** (WB-328):
+
+```
+CHAIN       chat.turn        input: der Satz der Nutzerin
+ ├ LLM      plan.extract     output: [{begriff, menge}, …]
+ ├ RETRIEVER catalog.search  input: begriff -> n Kandidaten mit Score
+ ├ RETRIEVER catalog.search  (ein Span je Suchbegriff)
+ ├ LLM      plan.choose      Kandidaten -> gewählte product_ids
+ └ output: die Vorschlagsliste
+```
+
+Der Rezeptweg erzeugt nur den CHAIN-Span, mit `picknick.path = "recipe"`.
+Fällt Phoenix aus, ändert sich an diesem Ablauf nichts: die Span-Aufrufe
+sind dann No-Ops und der Export läuft ohnehin in einem anderen Thread
+(`picknick.obs.otel`).
 """
 from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass, field
 
-from picknick import orders
+from picknick import obs, orders
 from picknick.assistant import plan, rezeptweg, vorschlaege
 from picknick.catalog import search
 from picknick.llm import wake
@@ -139,25 +155,73 @@ class Chat:
         """
         text = " ".join((satz or "").split())
         if not text:
+            # Vor dem Span: ein leerer Satz ist kein Zug des Agenten, sondern
+            # ein nicht ausgefülltes Formular. Als CHAIN-Span mit Fehler
+            # verzerrte er jede Auswertung über Fehlerquoten.
             raise ChatFehler("Schreib hin, was du brauchst — leer geht nicht.")
-        # Der Chat gehört in den Warenkorb (Spec 9), also hängt er an dessen
-        # Bestellung. Beim Abschicken wandert er mit, und die Entscheidungen
-        # bleiben bei dem Einkauf, zu dem sie gehören.
-        order_id = orders.warenkorb(con)
 
-        treffer = rezeptweg.erkenne(con, text)
-        if treffer:
-            plan_zeilen, meldung = self._aus_rezept(con, treffer)
-            weg, begriffe, verworfen = WEG_REZEPT, [], []
-        else:
-            plan_zeilen, meldung, begriffe, verworfen = self._aus_modell(
-                con, text)
-            weg = WEG_LLM
+        # Ab hier läuft der Baum aus Spec 7.1. Der CHAIN-Span umschliesst den
+        # ganzen Zug; die LLM- und RETRIEVER-Spans darunter entstehen in
+        # `_aus_modell`. Ohne eingerichteten Tracer ist das ein No-Op.
+        with obs.chain("chat.turn", eingabe=text) as span:
+            # Der Chat gehört in den Warenkorb (Spec 9), also hängt er an
+            # dessen Bestellung. Beim Abschicken wandert er mit, und die
+            # Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören.
+            order_id = orders.warenkorb(con)
+            # Derselbe Warenkorb ist auch die Sitzung: mehrere Sätze zu einem
+            # Einkauf gehören in Phoenix zusammen, sonst steht jeder Zug für
+            # sich und „sie hat nachgebessert" ist nicht mehr zu sehen.
+            obs.setze(span, {"session.id": f"korb-{order_id}",
+                             "picknick.order_id": order_id})
 
-        return self._schreiben(
-            con, order_id, text, weg, plan_zeilen, meldung, span_id,
-            begriffe=begriffe, verworfen=verworfen,
-            rezepte=[r["name"] for r in treffer.rezepte])
+            treffer = rezeptweg.erkenne(con, text)
+            if treffer:
+                plan_zeilen, meldung = self._aus_rezept(con, treffer)
+                weg, begriffe, verworfen, aufgaben = WEG_REZEPT, [], [], []
+            else:
+                (plan_zeilen, meldung, begriffe, verworfen,
+                 aufgaben) = self._aus_modell(con, text)
+                weg = WEG_LLM
+
+            ergebnis = self._schreiben(
+                con, order_id, text, weg, plan_zeilen, meldung,
+                # Die echte Span-ID, ausser ein Aufrufer gibt eine vor. Damit
+                # findet eine Annotation aus Spec 8.1 später genau diesen Zug.
+                span_id if span_id is not None else obs.span_id(span),
+                begriffe=begriffe, verworfen=verworfen,
+                rezepte=[r["name"] for r in treffer.rezepte])
+            self._span_abschluss(span, ergebnis, aufgaben)
+            return ergebnis
+
+    def _span_abschluss(self, span, ergebnis: Ergebnis,
+                        aufgaben: list[dict]) -> None:
+        """Das Ergebnis auf den CHAIN-Span (Spec 7.1).
+
+        `weakest_term`/`weakest_rank` sind die Abkürzung zur Frage des ganzen
+        Tickets: wessen Suche hat am schlechtesten vorgelegt? Im Butter-Fall
+        aus WB-327 stünde hier „Butter" und 4,01 — und damit die Auskunft,
+        dass ein Fehlgriff bei diesem Begriff eher der Suche als dem Modell
+        anzulasten ist, ohne dass man einen einzigen Ast aufklappt.
+        """
+        schwach, rang = obs.schwaechste_suche(aufgaben)
+        obs.setze(span, {
+            obs.PFAD: ergebnis.weg,
+            "picknick.chat_message_id": ergebnis.chat_message_id,
+            "picknick.terms": len(ergebnis.begriffe),
+            "picknick.products": ergebnis.n_produkte,
+            "picknick.free_text": ergebnis.n_freitext,
+            # Wie oft das Modell eine ID nannte, die ihm nie vorgelegt wurde.
+            # Die interessanteste Zahl von Stufe 3 (Spec 6).
+            "picknick.rejected": len(ergebnis.verworfen),
+            "picknick.recipes": ", ".join(ergebnis.rezepte) or None,
+            "picknick.weakest_term": schwach,
+            "picknick.weakest_rank": rang,
+        })
+        obs.setze_ausgabe(span, [
+            {"product_id": v["product_id"], "name": v["name"],
+             "menge": v["qty"], "begriff": v["search_term"],
+             "rang": v["rang"], "freitext": v["ist_freitext"]}
+            for v in ergebnis.vorschlaege])
 
     # -- Weg 1: Rezept ----------------------------------------------------
 
@@ -194,34 +258,52 @@ class Chat:
         Reihenfolge mit Absicht: erst der Weckzustand (billig, und ohne
         bedienende Box hat der Rest keinen Sinn), dann Stufe 1, dann die
         Suche, dann Stufe 3.
+
+        Gibt `(zeilen, meldung, begriffe, verworfen, aufgaben)` zurück.
+        `aufgaben` sind die Begriffe samt ihren Kandidaten — sie gehen nicht
+        nur in Stufe 3, sondern auch in die Zusammenfassung auf dem
+        CHAIN-Span (`_span_abschluss`).
         """
         zustand = self.zustand()
         if not zustand.bedient:
             raise ChatNichtVerfuegbar(zustand)
 
         try:
-            begriffe = plan.extract(self.zugang, text, guided=self.guided,
-                                    denken=self.denken)
+            # `stufe()` benennt den Span, den der OpenAI-Instrumentor um
+            # diesen Aufruf öffnet, in `plan.extract` um (Spec 7.1). Ein
+            # eigener LLM-Span daneben würde die Tokenzahlen verdoppeln.
+            with obs.stufe("plan.extract"):
+                begriffe = plan.extract(self.zugang, text, guided=self.guided,
+                                        denken=self.denken)
         except plan.PlanFehler as e:
             # Kein JSON, leeres Array, falscher Typ: daraus lässt sich nichts
             # bauen, ohne zu raten. Der Request bleibt heil, die Nutzerin
             # bekommt einen Satz statt einer Fehlerseite.
             return [], (f"Das Modell hat den Satz nicht in Suchbegriffe "
                         f"zerlegt ({e}). Schreib es anders — oder leg es "
-                        "direkt aus dem Katalog ein."), [], []
+                        "direkt aus dem Katalog ein."), [], [], []
         except ModellNichtErreichbar as e:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
 
+        # Ein RETRIEVER-Span je Begriff (Spec 7.1) — nicht einer für alle
+        # Suchen zusammen. Die Frage lautet „hat die Suche für DIESEN Begriff
+        # etwas Brauchbares vorgelegt", und an einem Sammel-Span ist sie nicht
+        # mehr zu stellen.
         aufgaben = []
         for b in begriffe:
-            aufgaben.append({
-                **b, "kandidaten": search.search(con, b["begriff"],
-                                                 limit=self.kandidaten)})
+            with obs.retriever("catalog.search",
+                               begriff=b["begriff"]) as such:
+                kandidaten = search.search(con, b["begriff"],
+                                           limit=self.kandidaten)
+                obs.dokumente(such, kandidaten)
+                obs.setze(such, {"picknick.qty": b["menge"]})
+            aufgaben.append({**b, "kandidaten": kandidaten})
 
         try:
-            auswahl = plan.choose(self.zugang, text, aufgaben,
-                                  guided=self.guided, denken=self.denken)
+            with obs.stufe("plan.choose"):
+                auswahl = plan.choose(self.zugang, text, aufgaben,
+                                      guided=self.guided, denken=self.denken)
             choose_kaputt = None
         except plan.PlanFehler as e:
             # Auch das kostet keinen Begriff: ohne Wahl wird JEDER Begriff zu
@@ -251,7 +333,7 @@ class Chat:
 
         meldung = self._meldung_modell(begriffe, freitext, auswahl,
                                        choose_kaputt)
-        return zeilen, meldung, begriffe, auswahl.verworfen
+        return zeilen, meldung, begriffe, auswahl.verworfen, aufgaben
 
     def _meldung_modell(self, begriffe, freitext, auswahl, choose_kaputt):
         """Der Satz über der Liste. Nennt beim Namen, was nicht geklappt hat."""
