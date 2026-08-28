@@ -1,0 +1,35 @@
+{# Grundgerüst aller Ansichten. Alles, was hier geladen wird, liegt lokal —
+   im ausgelieferten HTML steht kein Verweis auf eine fremde Domain, weil das
+   Tailnet nicht zwingend online ist (Spec 15). #}
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
+     jede Angabe zu Tap-Zielen unten wäre wirkungslos. #}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titel %}Picknick{% endblock %}</title>
+  <link rel="stylesheet" href="/static/stil.css">
+  {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:
+     ohne Internet wäre der Shop sonst genau dann tot, wenn nur das Tailnet
+     steht. #}
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header class="kopf">
+    <a class="marke" href="/">Picknick</a>
+    <nav>
+      <a href="/katalog">Katalog</a>
+      <a href="/pick">Pick-Liste</a>
+      <a href="/rolle">{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
+    </nav>
+  </header>
+
+  {% if hinweis %}
+  {# Spec 11: die Oberfläche schweigt nicht, wenn der Katalog alt ist. #}
+  <p class="band" role="status">{{ hinweis }}</p>
+  {% endif %}
+
+  <main>{% block inhalt %}{% endblock %}</main>
+</body>
+</html>

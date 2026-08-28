@@ -1,0 +1,99 @@
+/* Handy zuerst — beide benutzen Telefone, er im Laden (Spec 9).
+   Drei Regeln tragen dieses Blatt:
+   1. Eine Spalte. Kein Raster, das auf 360 px Breite zu zwei 140-px-Kacheln
+      zusammenfällt, in denen der Produktname nicht mehr lesbar ist.
+   2. Tap-Ziele mindestens 44 px hoch. Darunter trifft ein Daumen im Laden
+      daneben — das ist keine Kosmetik, sondern der Unterschied zwischen
+      benutzbar und nicht.
+   3. Nichts darf breiter werden als der Bildschirm. Deshalb border-box
+      überall und Umbruch auch mitten im Wort: Knuspr-Produktnamen sind lang. */
+
+* { box-sizing: border-box; }
+
+:root {
+  --tap: 44px;
+  --rand: 12px;
+  --linie: #ddd;
+  --gedaempft: #666;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;              /* iOS zoomt Eingabefelder unter 16px heran */
+  line-height: 1.4;
+  color: #111;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+
+main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
+
+/* Kopf ------------------------------------------------------------------ */
+.kopf {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--rand);
+  padding: 0 var(--rand); border-bottom: 1px solid var(--linie);
+}
+.marke { font-weight: 700; text-decoration: none; color: inherit;
+         min-height: var(--tap); display: flex; align-items: center; }
+.kopf nav { display: flex; gap: var(--rand); margin-left: auto; }
+.kopf nav a {
+  min-height: var(--tap); display: flex; align-items: center;
+  color: var(--gedaempft); text-decoration: none;
+}
+
+/* Hinweisband (Spec 11) -------------------------------------------------- */
+.band {
+  margin: 0; padding: 10px var(--rand);
+  background: #fff4d6; border-bottom: 1px solid #e6cf8a;
+}
+
+/* Suche ------------------------------------------------------------------ */
+.suche { display: flex; gap: 8px; margin-bottom: var(--rand); }
+.suche input {
+  flex: 1 1 auto; min-width: 0;          /* min-width:0, sonst sprengt das
+                                            Feld in einem Flex-Container die
+                                            Zeile und die Seite scrollt quer */
+  min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}
+.suche button, .knopf, .rollen button {
+  min-height: var(--tap); padding: 0 16px; font-size: 17px;
+  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
+  color: inherit; text-decoration: none; display: inline-flex;
+  align-items: center; justify-content: center; cursor: pointer;
+}
+.rollen { display: flex; flex-direction: column; gap: 10px; }
+.rollen button { width: 100%; }
+.rollen .gewaehlt { background: #e2eefc; border-color: #8ab4e8; }
+
+/* Kategorien ------------------------------------------------------------- */
+.kategorien { margin-bottom: var(--rand); }
+.kategorien summary,
+.zweig {
+  min-height: var(--tap); display: flex; align-items: center;
+  padding: 0 8px; border-bottom: 1px solid var(--linie);
+  color: inherit; text-decoration: none; cursor: pointer;
+}
+.zweig { padding-left: 24px; color: #14508c; }
+.zweig.alle { padding-left: 8px; font-weight: 600; }
+.anzahl { margin-left: auto; color: var(--gedaempft); font-size: 14px; }
+
+/* Kacheln ---------------------------------------------------------------- */
+.kacheln { list-style: none; margin: 0; padding: 0; }
+.kachel {
+  display: flex; align-items: center; gap: var(--rand);
+  padding: 8px 0; border-bottom: 1px solid var(--linie);
+  min-height: 72px;
+}
+.bild { width: 72px; height: 72px; flex: 0 0 72px; object-fit: contain;
+        border-radius: 8px; background: #f4f4f4; }
+.bild-fehlt { display: block; }
+.text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.name { font-weight: 600; }
+.menge { color: var(--gedaempft); font-size: 15px; }
+.preis { white-space: nowrap; font-variant-numeric: tabular-nums;
+         font-weight: 600; }
+
+.leer, .fussnote { color: var(--gedaempft); }
+.fussnote { font-size: 14px; margin-top: 24px; }

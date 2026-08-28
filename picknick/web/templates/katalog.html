@@ -1,0 +1,41 @@
+{% extends "basis.html" %}
+{% block titel %}Katalog — Picknick{% endblock %}
+{% block inhalt %}
+
+<form class="suche" action="/katalog" method="get" role="search">
+  {# hx-get tauscht nur die Liste aus; ohne HTMX (kein JS) schickt dasselbe
+     Formular die Suche an /katalog und die Seite lädt eben ganz neu. #}
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="Suchen…"
+         autocomplete="off"
+         hx-get="/produkte"
+         hx-trigger="input changed delay:300ms, search"
+         hx-target="#produkte" hx-swap="innerHTML">
+  <button type="submit">Suchen</button>
+</form>
+
+<nav class="kategorien" aria-label="Kategorien">
+  <a class="zweig alle" href="/katalog"
+     hx-get="/produkte" hx-target="#produkte" hx-swap="innerHTML">Alles</a>
+  {% for k1 in baum %}
+  <details>
+    <summary>{{ k1.name }} <span class="anzahl">{{ k1.anzahl }}</span></summary>
+    <a class="zweig" href="/katalog?l1={{ k1.name | urlencode }}"
+       hx-get="/produkte?l1={{ k1.name | urlencode }}"
+       hx-target="#produkte" hx-swap="innerHTML">alles aus {{ k1.name }}</a>
+    {% for k2 in k1.kinder %}
+    <a class="zweig" href="/katalog?l1={{ k1.name | urlencode }}&amp;l2={{ k2.name | urlencode }}"
+       hx-get="/produkte?l1={{ k1.name | urlencode }}&amp;l2={{ k2.name | urlencode }}"
+       hx-target="#produkte" hx-swap="innerHTML">{{ k2.name }}
+       <span class="anzahl">{{ k2.anzahl }}</span></a>
+    {% endfor %}
+  </details>
+  {% endfor %}
+</nav>
+
+<div id="produkte">{% include "_produkte.html" %}</div>
+
+<p class="fussnote">
+  Preise stammen von knuspr.de und sind Richtwerte — eingekauft wird bei Rewe
+  und Lidl (Spec 5.1).
+</p>
+{% endblock %}

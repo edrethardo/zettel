@@ -1,0 +1,27 @@
+{# Nur die Trefferliste. Wird beim ersten Aufruf mit ausgeliefert und danach
+   von HTMX gegen genau dieses Stück getauscht — eine Vorlage für beide Wege,
+   damit sich Suche und Erstansicht nicht auseinanderentwickeln. #}
+{% if not produkte %}
+  <p class="leer">
+    {% if q %}Nichts gefunden zu „{{ q }}".{% else %}Hier steht noch nichts.{% endif %}
+  </p>
+{% else %}
+<ul class="kacheln">
+  {% for p in produkte %}
+  <li class="kachel">
+    {% if p.bild_url %}
+      <img class="bild" src="{{ p.bild_url }}" alt="" loading="lazy" width="72" height="72">
+    {% else %}
+      {# Kein Bild heruntergeladen: ein leerer Rahmen statt eines kaputten
+         Symbols, damit das Raster nicht ausfranst. #}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      <span class="name">{{ p.name }}</span>
+      <span class="menge">{{ p.unit_text or "" }}</span>
+    </span>
+    <span class="preis">{{ p.price_cents | euro }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
