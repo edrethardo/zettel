@@ -1,0 +1,4377 @@
+{
+ "status": 200,
+ "messages": [],
+ "data": {
+  "productList": [
+   {
+    "productId": 5496,
+    "productName": "Alpro Haferdrink Original VEGAN",
+    "mainCategoryId": 2438,
+    "categories": [
+     {
+      "id": 2438,
+      "name": "Haferdrink",
+      "nameId": "haferdrink",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 2431,
+      "name": "Pflanzendrinks",
+      "nameId": "pflanzendrinks",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 2430,
+      "name": "Pflanzenbasiertes Kühlregal",
+      "nameId": "pflanzenbasiertes-kuehlregal",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 2416,
+      "name": "Plant Based",
+      "nameId": "plant-based",
+      "nameLong": "Unser rein pflanzliches Sortiment",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/5496/5496-1754569575927.jpg",
+    "baseLink": "5496-alpro-haferdrink-original-vegan",
+    "link": "?productPopup=5496-alpro-haferdrink-original-vegan",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 2.59,
+     "whole": 2,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 2.59,
+     "whole": 2,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "promoted",
+      "label": "Gesponsert",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 10,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 192.0,
+      "energyValueKcal": 46.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 0.2,
+      "carbohydrates": 6.6,
+      "sugars": 3.3,
+      "proteins": 0.8,
+      "salt": 0.08,
+      "fiber": 1.4
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Alpro",
+    "brandSlug": "alpro",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": "6a90ee5fa767d6c548836ad6",
+    "productPromotionType": "SPONSORED",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 79540,
+    "productName": "Luisenhof BIO ESL-Milch 3,8% Kuh + Kalb",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/79540/79540-1712406915624.jpg",
+    "baseLink": "79540-luisenhof-bio-esl-milch-3-8-kuh-kalb",
+    "link": "?productPopup=79540-luisenhof-bio-esl-milch-3-8-kuh-kalb",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20090662,
+      "type": "premium",
+      "remaining": 544,
+      "price": {
+       "full": 1.7,
+       "whole": 1,
+       "fraction": 70.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.7,
+       "whole": 1,
+       "fraction": 70.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.89,
+       "whole": 1,
+       "fraction": 89.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.19,
+       "whole": 0,
+       "fraction": 19.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-04-17 02:30:26",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 285.0,
+      "energyValueKcal": 68.0,
+      "fats": 3.9,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 4.9,
+      "sugars": 4.9,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Luisenhof",
+    "brandSlug": "luisenhof",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 95793,
+    "productName": "Miil Frische Landmilch 3,8% Vollmilch",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/95793/95793-1738160256165.jpg",
+    "baseLink": "95793-miil-frische-landmilch-3-8-vollmilch",
+    "link": "?productPopup=95793-miil-frische-landmilch-3-8-vollmilch",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.19,
+     "whole": 1,
+     "fraction": 19.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.19,
+     "whole": 1,
+     "fraction": 19.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20091141,
+      "type": "premium",
+      "remaining": 37,
+      "price": {
+       "full": 1.07,
+       "whole": 1,
+       "fraction": 7.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.07,
+       "whole": 1,
+       "fraction": 7.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.19,
+       "whole": 1,
+       "fraction": 19.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.12,
+       "whole": 0,
+       "fraction": 12.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-04-17 02:30:38",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 36,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [
+     {
+      "slug": "best-buy",
+      "label": "Knuspr-Günstig",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 278.0,
+      "energyValueKcal": 67.0,
+      "fats": 3.8,
+      "saturatedFattyAcids": 2.5,
+      "carbohydrates": 4.8,
+      "sugars": 4.8,
+      "proteins": 3.3,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Miil",
+    "brandSlug": "miil",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 330746,
+    "productName": "MIIL Deutsche Markenbutter",
+    "mainCategoryId": 540,
+    "categories": [
+     {
+      "id": 540,
+      "name": "Butter",
+      "nameId": "butter",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 539,
+      "name": "Butter & Fette",
+      "nameId": "butter-fette",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/330746/330746-1782818551280515703.jpg",
+    "baseLink": "330746-miil-deutsche-markenbutter",
+    "link": "?productPopup=330746-miil-deutsche-markenbutter",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "250 g",
+    "semicaliber": false,
+    "price": {
+     "full": 1.05,
+     "whole": 1,
+     "fraction": 5.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 4.2,
+     "whole": 4,
+     "fraction": 20.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20274959,
+      "type": "premium",
+      "remaining": 1604,
+      "price": {
+       "full": 0.94,
+       "whole": 0,
+       "fraction": 94.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 3.76,
+       "whole": 3,
+       "fraction": 76.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.05,
+       "whole": 1,
+       "fraction": 5.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.11,
+       "whole": 0,
+       "fraction": 11.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-07-01 02:30:18",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "promoted",
+      "label": "Gesponsert",
+      "dataTip": ""
+     },
+     {
+      "slug": "best-buy",
+      "label": "Knuspr-Günstig",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 3054.0,
+      "energyValueKcal": 743.0,
+      "fats": 82.0,
+      "saturatedFattyAcids": 55.0,
+      "carbohydrates": 0.5,
+      "sugars": 0.5,
+      "proteins": 0.7,
+      "salt": 0.03,
+      "fiber": 0.0
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Miil",
+    "brandSlug": "miil",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": "6a90ee5fa767d6c548836ad7",
+    "productPromotionType": "SPONSORED",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 5274,
+    "productName": "Berchtesgadener Land Frische Bergbauern-Milch, 3.5% Fett (MEHRWEG)",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/5274/5274-1658911596958.jpg",
+    "baseLink": "5274-berchtesgadener-land-frische-bergbauern-milch-3-5-fett-mehrweg",
+    "link": "?productPopup=5274-berchtesgadener-land-frische-bergbauern-milch-3-5-fett-mehrweg",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 275.0,
+      "energyValueKcal": 66.0,
+      "fats": 3.6,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 5.0,
+      "sugars": 5.0,
+      "proteins": 3.3,
+      "salt": 0.11,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Berchtesgadener Land",
+    "brandSlug": "berchtesgadener-land",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 331471,
+    "productName": "Hemme Milch Schultüte",
+    "mainCategoryId": 549,
+    "categories": [
+     {
+      "id": 549,
+      "name": "Milchgetränke",
+      "nameId": "milchgetraenke",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/331471/331471-1786360300402550400.png",
+    "baseLink": "331471-hemme-milch-schultuete",
+    "link": "?productPopup=331471-hemme-milch-schultuete",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "1,6 kg",
+    "semicaliber": false,
+    "price": {
+     "full": 6.99,
+     "whole": 6,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 4.37,
+     "whole": 4,
+     "fraction": 37.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 4.37,
+     "whole": 4,
+     "fraction": 37.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20394002,
+      "type": "sale",
+      "remaining": 60,
+      "price": {
+       "full": 5.59,
+       "whole": 5,
+       "fraction": 59.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 3.49,
+       "whole": 3,
+       "fraction": 49.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 6.99,
+       "whole": 6,
+       "fraction": 99.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 20,
+      "discountPrice": {
+       "full": 1.4,
+       "whole": 1,
+       "fraction": 40.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-08-25 12:00:00",
+      "endsAt": "2026-09-05 23:59:00",
+      "codeActivationId": null,
+      "active": true,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "new",
+      "label": "Neu",
+      "dataTip": ""
+     },
+     {
+      "slug": "local-brand",
+      "label": "Lokale Erzeuger",
+      "dataTip": null
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 376.0,
+      "energyValueKcal": 90.0,
+      "fats": 3.9,
+      "saturatedFattyAcids": 2.8,
+      "carbohydrates": 9.4,
+      "sugars": 9.2,
+      "proteins": 3.5,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Hemme Milch Uckermark",
+    "brandSlug": "hemme-milch-uckermark",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 2194,
+    "productName": "Weihenstephan Frische Milch 1,5% Fett",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/2194/2194-1637585565159.jpg",
+    "baseLink": "2194-weihenstephan-frische-milch-1-5-fett",
+    "link": "?productPopup=2194-weihenstephan-frische-milch-1-5-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 198.0,
+      "energyValueKcal": 47.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 4.9,
+      "sugars": 4.9,
+      "proteins": 3.5,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Weihenstephan",
+    "brandSlug": "weihenstephan",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 91714,
+    "productName": "Milram Buttermilch Erdbeere",
+    "mainCategoryId": 550,
+    "categories": [
+     {
+      "id": 550,
+      "name": "Buttermilch, Dickmilch & Kefir",
+      "nameId": "buttermilch-dickmilch-kefir",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/91714/91714-1725875020133.jpg",
+    "baseLink": "91714-milram-buttermilch-erdbeere",
+    "link": "?productPopup=91714-milram-buttermilch-erdbeere",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "0,78 kg",
+    "semicaliber": false,
+    "price": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 2.42,
+     "whole": 2,
+     "fraction": 42.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 229.0,
+      "energyValueKcal": 54.0,
+      "fats": 0.4,
+      "saturatedFattyAcids": 0.3,
+      "carbohydrates": 9.7,
+      "sugars": 9.7,
+      "proteins": 2.2,
+      "salt": 0.24,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Milram",
+    "brandSlug": "milram",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 79542,
+    "productName": "Luisenhof BIO DEMETER frische Vollmilch 3,8%",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/79542/79542-1712407114917.jpg",
+    "baseLink": "79542-luisenhof-bio-demeter-frische-vollmilch-3-8",
+    "link": "?productPopup=79542-luisenhof-bio-demeter-frische-vollmilch-3-8",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 16686350,
+      "type": "premium",
+      "remaining": 242,
+      "price": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.99,
+       "whole": 1,
+       "fraction": 99.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.2,
+       "whole": 0,
+       "fraction": 20.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2025-04-24 03:05:30",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 285.0,
+      "energyValueKcal": 68.0,
+      "fats": 3.9,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 4.9,
+      "sugars": 4.9,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Luisenhof",
+    "brandSlug": "luisenhof",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 79337,
+    "productName": "Hemme Milch Tagesfrische Vollmilch 3,7% Fett",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/79337/79337-1787122339311153293.png",
+    "baseLink": "79337-hemme-milch-tagesfrische-vollmilch-3-7-fett",
+    "link": "?productPopup=79337-hemme-milch-tagesfrische-vollmilch-3-7-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "local-brand",
+      "label": "Lokale Erzeuger",
+      "dataTip": null
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 ml",
+      "energyValueKJ": 284.0,
+      "energyValueKcal": 68.0,
+      "fats": 3.8,
+      "saturatedFattyAcids": 2.8,
+      "carbohydrates": 4.5,
+      "sugars": 4.5,
+      "proteins": 3.4,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Hemme Milch Uckermark",
+    "brandSlug": "hemme-milch-uckermark",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 5256,
+    "productName": "Berchtesgadener Land Frische Bergbauern-Milch 1.5% Fett (länger haltbar)",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/5256/5256-1658911897391.jpg",
+    "baseLink": "5256-berchtesgadener-land-frische-bergbauern-milch-1-5-fett-laenger-haltbar",
+    "link": "?productPopup=5256-berchtesgadener-land-frische-bergbauern-milch-1-5-fett-laenger-haltbar",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 201.0,
+      "energyValueKcal": 48.0,
+      "fats": 1.6,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 5.1,
+      "sugars": 5.1,
+      "proteins": 3.4,
+      "salt": 0.11,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Berchtesgadener Land",
+    "brandSlug": "berchtesgadener-land",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 5254,
+    "productName": "Berchtesgadener Land Haltbare Berg- und Alpenmilch 3.5%",
+    "mainCategoryId": 548,
+    "categories": [
+     {
+      "id": 548,
+      "name": "H-Milch",
+      "nameId": "h-milch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/5254/5254-1658911639443.jpg",
+    "baseLink": "5254-berchtesgadener-land-haltbare-berg-und-alpenmilch-3-5",
+    "link": "?productPopup=5254-berchtesgadener-land-haltbare-berg-und-alpenmilch-3-5",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 275.0,
+      "energyValueKcal": 66.0,
+      "fats": 3.6,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 5.0,
+      "sugars": 5.0,
+      "proteins": 3.3,
+      "salt": 0.11,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Berchtesgadener Land",
+    "brandSlug": "berchtesgadener-land",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 2192,
+    "productName": "Weihenstephan Haltbare Milch 3.5% Fett",
+    "mainCategoryId": 548,
+    "categories": [
+     {
+      "id": 548,
+      "name": "H-Milch",
+      "nameId": "h-milch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/2192/2192-1658851333227.jpg",
+    "baseLink": "2192-weihenstephan-haltbare-milch-3-5-fett",
+    "link": "?productPopup=2192-weihenstephan-haltbare-milch-3-5-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 1,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 267.0,
+      "energyValueKcal": 64.0,
+      "fats": 3.5,
+      "saturatedFattyAcids": 2.3,
+      "carbohydrates": 4.7,
+      "sugars": 4.7,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Weihenstephan",
+    "brandSlug": "weihenstephan",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 78033,
+    "productName": "Schwarzwaldmilch Protein H-Milch 0,1% Fett",
+    "mainCategoryId": 548,
+    "categories": [
+     {
+      "id": 548,
+      "name": "H-Milch",
+      "nameId": "h-milch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/78033/78033-1709022126882.jpg",
+    "baseLink": "78033-schwarzwaldmilch-protein-h-milch-0-1-fett",
+    "link": "?productPopup=78033-schwarzwaldmilch-protein-h-milch-0-1-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 245.0,
+      "energyValueKcal": 58.0,
+      "fats": 0.9,
+      "saturatedFattyAcids": 0.6,
+      "carbohydrates": 4.8,
+      "sugars": 4.8,
+      "proteins": 7.5,
+      "salt": 0.12,
+      "fiber": 0.0
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Schwarzwaldmilch Protein",
+    "brandSlug": "schwarzwaldmilch-protein",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 102365,
+    "productName": "Hemme Milch Milch 1,8 %",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/102365/102365-1746620826.jpg",
+    "baseLink": "102365-hemme-milch-milch-1-8",
+    "link": "?productPopup=102365-hemme-milch-milch-1-8",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 21,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [
+     {
+      "slug": "local-brand",
+      "label": "Lokale Erzeuger",
+      "dataTip": null
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100g",
+      "energyValueKJ": 207.0,
+      "energyValueKcal": 49.0,
+      "fats": 1.8,
+      "saturatedFattyAcids": 1.2,
+      "carbohydrates": 4.7,
+      "sugars": 4.7,
+      "proteins": 3.4,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Hemme Milch Uckermark",
+    "brandSlug": "hemme-milch-uckermark",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 20905,
+    "productName": "Müller Müllermilch Bananen-Geschmack (Einweg)",
+    "mainCategoryId": 549,
+    "categories": [
+     {
+      "id": 549,
+      "name": "Milchgetränke",
+      "nameId": "milchgetraenke",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/20905/20905-1653484064439.jpg",
+    "baseLink": "20905-mueller-muellermilch-bananen-geschmack-einweg",
+    "link": "?productPopup=20905-mueller-muellermilch-bananen-geschmack-einweg",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "400 ml",
+    "semicaliber": false,
+    "price": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 3.98,
+     "whole": 3,
+     "fraction": 98.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 2,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 284.0,
+      "energyValueKcal": 67.0,
+      "fats": 1.4,
+      "saturatedFattyAcids": 0.9,
+      "carbohydrates": 10.5,
+      "sugars": 10.0,
+      "proteins": 3.2,
+      "salt": 0.14,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Müller",
+    "brandSlug": "muller",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 122114,
+    "productName": "Miil Buttermilch 1%",
+    "mainCategoryId": 550,
+    "categories": [
+     {
+      "id": 550,
+      "name": "Buttermilch, Dickmilch & Kefir",
+      "nameId": "buttermilch-dickmilch-kefir",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/122114/122114-1760342233223471643.jpg",
+    "baseLink": "122114-miil-buttermilch-1",
+    "link": "?productPopup=122114-miil-buttermilch-1",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "500 ml",
+    "semicaliber": false,
+    "price": {
+     "full": 0.59,
+     "whole": 0,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.18,
+     "whole": 1,
+     "fraction": 18.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 1.18,
+     "whole": 1,
+     "fraction": 18.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 18286845,
+      "type": "premium",
+      "remaining": 366,
+      "price": {
+       "full": 0.53,
+       "whole": 0,
+       "fraction": 53.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.06,
+       "whole": 1,
+       "fraction": 6.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 0.59,
+       "whole": 0,
+       "fraction": 59.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.06,
+       "whole": 0,
+       "fraction": 6.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2025-10-14 02:30:27",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "best-buy",
+      "label": "Knuspr-Günstig",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100g",
+      "energyValueKJ": 152.0,
+      "energyValueKcal": 36.0,
+      "fats": 1.0,
+      "saturatedFattyAcids": 0.6,
+      "carbohydrates": 3.8,
+      "sugars": 3.8,
+      "proteins": 3.0,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Miil",
+    "brandSlug": "miil",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 11943,
+    "productName": "Berchtesgadener Land Frische Bergbauern-Milch, 1.5% Fett (Mehrweg)",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/11943/11943-1658911771502.jpg",
+    "baseLink": "11943-berchtesgadener-land-frische-bergbauern-milch-1-5-fett-mehrweg",
+    "link": "?productPopup=11943-berchtesgadener-land-frische-bergbauern-milch-1-5-fett-mehrweg",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 201.0,
+      "energyValueKcal": 48.0,
+      "fats": 1.6,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 5.1,
+      "sugars": 5.1,
+      "proteins": 3.4,
+      "salt": 0.11,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Berchtesgadener Land",
+    "brandSlug": "berchtesgadener-land",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 328172,
+    "productName": "MÜLLER Fruchtbuttermilch Orange-Mango (Einweg)",
+    "mainCategoryId": 567,
+    "categories": [
+     {
+      "id": 567,
+      "name": "Trinkjoghurt",
+      "nameId": "trinkjoghurt",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 534,
+      "name": "Joghurt & Desserts",
+      "nameId": "joghurt-desserts",
+      "nameLong": "Nicht schubsen, ich habe einen Joghurt im Beutel",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/328172/328172-1774014414826914548.JPEG",
+    "baseLink": "328172-mueller-fruchtbuttermilch-orange-mango-einweg",
+    "link": "?productPopup=328172-mueller-fruchtbuttermilch-orange-mango-einweg",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "500 g",
+    "semicaliber": false,
+    "price": {
+     "full": 1.49,
+     "whole": 1,
+     "fraction": 49.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 2.98,
+     "whole": 2,
+     "fraction": 98.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20368516,
+      "type": "multipack",
+      "remaining": 37,
+      "price": {
+       "full": 1.19,
+       "whole": 1,
+       "fraction": 19.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 2.38,
+       "whole": 2,
+       "fraction": 38.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.49,
+       "whole": 1,
+       "fraction": 49.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 20,
+      "discountPrice": {
+       "full": 0.3,
+       "whole": 0,
+       "fraction": 30.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": 3,
+      "multipackAsPriceDiff": true,
+      "asPriceDiff": true,
+      "startedAt": "2026-08-25 00:00:00",
+      "endsAt": "2026-08-31 23:59:00",
+      "codeActivationId": null,
+      "active": true,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 37,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100g",
+      "energyValueKJ": 257.0,
+      "energyValueKcal": 61.0,
+      "fats": 0.5,
+      "saturatedFattyAcids": 0.3,
+      "carbohydrates": 10.8,
+      "sugars": 10.2,
+      "proteins": 2.7,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Müller",
+    "brandSlug": "muller",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 81583,
+    "productName": "Kärntnermilch BIO Wiesenmilch Buttermilch 1%",
+    "mainCategoryId": 550,
+    "categories": [
+     {
+      "id": 550,
+      "name": "Buttermilch, Dickmilch & Kefir",
+      "nameId": "buttermilch-dickmilch-kefir",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/81583/81583-1714125752492.jpg",
+    "baseLink": "81583-kaerntnermilch-bio-wiesenmilch-buttermilch-1",
+    "link": "?productPopup=81583-kaerntnermilch-bio-wiesenmilch-buttermilch-1",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "500 g",
+    "semicaliber": false,
+    "price": {
+     "full": 1.49,
+     "whole": 1,
+     "fraction": 49.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 2.98,
+     "whole": 2,
+     "fraction": 98.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 16686831,
+      "type": "premium",
+      "remaining": 93,
+      "price": {
+       "full": 1.34,
+       "whole": 1,
+       "fraction": 34.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 2.68,
+       "whole": 2,
+       "fraction": 68.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.49,
+       "whole": 1,
+       "fraction": 49.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.15,
+       "whole": 0,
+       "fraction": 15.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2025-04-24 03:05:30",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 174.0,
+      "energyValueKcal": 41.0,
+      "fats": 1.0,
+      "saturatedFattyAcids": 0.6,
+      "carbohydrates": 4.1,
+      "sugars": 4.1,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Kärntnermilch",
+    "brandSlug": "karntnermilch",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 1444,
+    "productName": "Andechser BIO Kefir 1. 5%",
+    "mainCategoryId": 550,
+    "categories": [
+     {
+      "id": 550,
+      "name": "Buttermilch, Dickmilch & Kefir",
+      "nameId": "buttermilch-dickmilch-kefir",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/1444/1444-1786359385384955921.png",
+    "baseLink": "1444-andechser-bio-kefir-1-5",
+    "link": "?productPopup=1444-andechser-bio-kefir-1-5",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "500 g",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 3.38,
+     "whole": 3,
+     "fraction": 38.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20089703,
+      "type": "premium",
+      "remaining": 249,
+      "price": {
+       "full": 1.52,
+       "whole": 1,
+       "fraction": 52.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 3.04,
+       "whole": 3,
+       "fraction": 4.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.69,
+       "whole": 1,
+       "fraction": 69.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.17,
+       "whole": 0,
+       "fraction": 17.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-04-17 02:30:05",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 2,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 195.0,
+      "energyValueKcal": 46.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 3.8,
+      "sugars": 3.8,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Andechser",
+    "brandSlug": "andechser",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 1696,
+    "productName": "Gläserne Molkerei BIO Buttermilch",
+    "mainCategoryId": 550,
+    "categories": [
+     {
+      "id": 550,
+      "name": "Buttermilch, Dickmilch & Kefir",
+      "nameId": "buttermilch-dickmilch-kefir",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/1696/1696-1617285495558.jpg",
+    "baseLink": "1696-glaeserne-molkerei-bio-buttermilch",
+    "link": "?productPopup=1696-glaeserne-molkerei-bio-buttermilch",
+    "preorderEnabled": false,
+    "unit": "kg",
+    "textualAmount": "500 g",
+    "semicaliber": false,
+    "price": {
+     "full": 1.39,
+     "whole": 1,
+     "fraction": 39.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 2.78,
+     "whole": 2,
+     "fraction": 78.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20089742,
+      "type": "premium",
+      "remaining": 272,
+      "price": {
+       "full": 1.25,
+       "whole": 1,
+       "fraction": 25.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 2.5,
+       "whole": 2,
+       "fraction": 50.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.39,
+       "whole": 1,
+       "fraction": 39.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.14,
+       "whole": 0,
+       "fraction": 14.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-04-17 02:30:06",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 157.0,
+      "energyValueKcal": 37.0,
+      "fats": 0.5,
+      "saturatedFattyAcids": 0.3,
+      "carbohydrates": 4.0,
+      "sugars": 4.0,
+      "proteins": 3.5,
+      "salt": 0.14,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Gläserne Molkerei",
+    "brandSlug": "glaserne-molkerei",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 2191,
+    "productName": "Weihenstephan Haltbare Milch 1,5% Fett",
+    "mainCategoryId": 548,
+    "categories": [
+     {
+      "id": 548,
+      "name": "H-Milch",
+      "nameId": "h-milch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/2191/2191-1658851282589.jpg",
+    "baseLink": "2191-weihenstephan-haltbare-milch-1-5-fett",
+    "link": "?productPopup=2191-weihenstephan-haltbare-milch-1-5-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.59,
+     "whole": 1,
+     "fraction": 59.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 6,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 198.0,
+      "energyValueKcal": 47.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 4.9,
+      "sugars": 4.9,
+      "proteins": 3.5,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Weihenstephan",
+    "brandSlug": "weihenstephan",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 101392,
+    "productName": "Hemme Milch Erdbeermilch",
+    "mainCategoryId": 549,
+    "categories": [
+     {
+      "id": 549,
+      "name": "Milchgetränke",
+      "nameId": "milchgetraenke",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/101392/101392-1745333003507.jpg",
+    "baseLink": "101392-hemme-milch-erdbeermilch",
+    "link": "?productPopup=101392-hemme-milch-erdbeermilch",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "0,6 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 3.15,
+     "whole": 3,
+     "fraction": 15.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 24,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [
+     {
+      "slug": "local-brand",
+      "label": "Lokale Erzeuger",
+      "dataTip": null
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 ml",
+      "energyValueKJ": 356.0,
+      "energyValueKcal": 85.0,
+      "fats": 3.6,
+      "saturatedFattyAcids": 2.6,
+      "carbohydrates": 9.4,
+      "sugars": 8.9,
+      "proteins": 3.2,
+      "salt": 0.1,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Hemme Milch Uckermark",
+    "brandSlug": "hemme-milch-uckermark",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 101381,
+    "productName": "Luisenhof Bio ESL-Milch 1,5% KuhKalb",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/101381/101381-1744872480787.jpg",
+    "baseLink": "101381-luisenhof-bio-esl-milch-1-5-kuhkalb",
+    "link": "?productPopup=101381-luisenhof-bio-esl-milch-1-5-kuhkalb",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.69,
+     "whole": 1,
+     "fraction": 69.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 16690398,
+      "type": "premium",
+      "remaining": 114,
+      "price": {
+       "full": 1.52,
+       "whole": 1,
+       "fraction": 52.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.52,
+       "whole": 1,
+       "fraction": 52.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.69,
+       "whole": 1,
+       "fraction": 69.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.17,
+       "whole": 0,
+       "fraction": 17.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2025-04-24 03:05:34",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 200.0,
+      "energyValueKcal": 48.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 5.0,
+      "sugars": 5.0,
+      "proteins": 3.5,
+      "salt": 0.13,
+      "fiber": 0.0
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Luisenhof",
+    "brandSlug": "luisenhof",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 12545,
+    "productName": "Berchtesgadener Land BIO frische Milch 3. 5% laktosefrei",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/12545/12545-1786436614175506462.png",
+    "baseLink": "12545-berchtesgadener-land-bio-frische-milch-3-5-laktosefrei",
+    "link": "?productPopup=12545-berchtesgadener-land-bio-frische-milch-3-5-laktosefrei",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 16681867,
+      "type": "premium",
+      "remaining": 36,
+      "price": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.99,
+       "whole": 1,
+       "fraction": 99.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.2,
+       "whole": 0,
+       "fraction": 20.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2025-04-24 03:05:23",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 36,
+    "maxBasketAmountReason": "AVAILABLE",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 2,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 ml",
+      "energyValueKJ": 275.0,
+      "energyValueKcal": 66.0,
+      "fats": 3.6,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 5.0,
+      "sugars": 5.0,
+      "proteins": 3.3,
+      "salt": 0.11,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Berchtesgadener Land",
+    "brandSlug": "berchtesgadener-land",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   },
+   {
+    "productId": 2195,
+    "productName": "Weihenstephan Frische Milch 3,5% Fett",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/2195/2195-1637166207484.jpg",
+    "baseLink": "2195-weihenstephan-frische-milch-3-5-fett",
+    "link": "?productPopup=2195-weihenstephan-frische-milch-3-5-fett",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.89,
+     "whole": 1,
+     "fraction": 89.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 ml",
+      "energyValueKJ": 269.0,
+      "energyValueKcal": 64.0,
+      "fats": 3.5,
+      "saturatedFattyAcids": 2.4,
+      "carbohydrates": 4.8,
+      "sugars": 4.8,
+      "proteins": 3.4,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Weihenstephan",
+    "brandSlug": "weihenstephan",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": null
+   },
+   {
+    "productId": 19060,
+    "productName": "Gläserne Molkerei Frische BIO Weidemilch 1,5 %",
+    "mainCategoryId": 547,
+    "categories": [
+     {
+      "id": 547,
+      "name": "Frischmilch",
+      "nameId": "frischmilch",
+      "nameLong": "",
+      "level": 3
+     },
+     {
+      "id": 546,
+      "name": "Milch",
+      "nameId": "milch",
+      "nameLong": "",
+      "level": 2
+     },
+     {
+      "id": 533,
+      "name": "Milch, Molkerei & Butter",
+      "nameId": "milch-molkerei-butter",
+      "nameLong": "",
+      "level": 1
+     },
+     {
+      "id": 532,
+      "name": "Kühlregal",
+      "nameId": "kuehlregal",
+      "nameLong": "Wir empfehlen wärmstens:        Unser Kühlregal",
+      "level": 0
+     }
+    ],
+    "imgPath": "/images/grocery/products/19060/19060-1744365799937.jpg",
+    "baseLink": "19060-glaeserne-molkerei-frische-bio-weidemilch-1-5",
+    "link": "?productPopup=19060-glaeserne-molkerei-frische-bio-weidemilch-1-5",
+    "preorderEnabled": false,
+    "unit": "l",
+    "textualAmount": "1 l",
+    "semicaliber": false,
+    "price": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "pricePerUnit": {
+     "full": 1.99,
+     "whole": 1,
+     "fraction": 99.0,
+     "currency": "€"
+    },
+    "recommendedPricePerUnit": {
+     "full": 0.0,
+     "whole": 0,
+     "fraction": 0.0,
+     "currency": "€"
+    },
+    "originalPrice": {
+     "full": 0,
+     "whole": 0,
+     "fraction": 0,
+     "currency": "€"
+    },
+    "goodPrice": false,
+    "goodPriceSalePercentage": 0,
+    "sales": [
+     {
+      "id": 20090367,
+      "type": "premium",
+      "remaining": 470,
+      "price": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "priceForUnit": {
+       "full": 1.79,
+       "whole": 1,
+       "fraction": 79.0,
+       "currency": "€"
+      },
+      "originalPrice": {
+       "full": 1.99,
+       "whole": 1,
+       "fraction": 99.0,
+       "currency": "€"
+      },
+      "minimalPrice": null,
+      "discountPercentage": 10,
+      "discountPrice": {
+       "full": 0.2,
+       "whole": 0,
+       "fraction": 20.0,
+       "currency": "€"
+      },
+      "multipackNeedAmount": null,
+      "multipackAsPriceDiff": false,
+      "asPriceDiff": false,
+      "startedAt": "2026-04-17 02:30:19",
+      "endsAt": null,
+      "codeActivationId": null,
+      "active": false,
+      "soonExpirationType": null,
+      "soonExpirationTypeId": null,
+      "multiProductPromoId": null,
+      "relatedMealDeals": [],
+      "mealDeal": null,
+      "silent": false,
+      "unlimitedAmount": true
+     }
+    ],
+    "maxBasketAmount": 50,
+    "maxBasketAmountReason": "ALLOWED",
+    "badge": [
+     {
+      "slug": "bio",
+      "label": "BIO",
+      "dataTip": ""
+     }
+    ],
+    "imageScaleRatio": null,
+    "imagesCount": 1,
+    "immediateConsumption": false,
+    "watchDogActive": false,
+    "watchDogEnabled": true,
+    "composition": {
+     "additiveScoreMax": 6,
+     "withoutAdditives": true,
+     "nutritionalValues": {
+      "dose": "100 g",
+      "energyValueKJ": 200.0,
+      "energyValueKcal": 48.0,
+      "fats": 1.5,
+      "saturatedFattyAcids": 1.0,
+      "carbohydrates": 5.0,
+      "sugars": 5.0,
+      "proteins": 3.5,
+      "salt": 0.13,
+      "fiber": null
+     }
+    },
+    "companyId": 1,
+    "productStory": null,
+    "vivino": null,
+    "archived": false,
+    "unavailabilityReason": null,
+    "deliveryRestriction": null,
+    "premiumOnly": false,
+    "brand": "Gläserne Molkerei",
+    "brandSlug": "glaserne-molkerei",
+    "availabilityDimension": 0,
+    "recipes": null,
+    "billablePackaging": null,
+    "impressionId": null,
+    "productPromotionType": "STANDARD",
+    "inStock": true,
+    "favourite": false,
+    "coo": "de"
+   }
+  ],
+  "totalHits": 948,
+  "companies": [
+   {
+    "id": 1,
+    "name": "Großer Kern GmbH / Knuspr",
+    "shortName": "",
+    "label": "Supermarket Knuspr.de",
+    "url": "/",
+    "type": "main",
+    "totalHits": 948,
+    "logos": [
+     {
+      "type": "LOGO",
+      "url": "https://cdn.knuspr.de/images/company/knuspr-logo.svg"
+     },
+     {
+      "type": "LOGO_DARK",
+      "url": "https://cdn.knuspr.de/images/company/knuspr-logo-dark.svg"
+     },
+     {
+      "type": "PLACEHOLDER",
+      "url": "https://cdn.knuspr.de/images/company/knuspr-placeholder.svg"
+     },
+     {
+      "type": "LOGO_SMALL",
+      "url": "https://cdn.knuspr.de/images/company/knuspr-logo-small.svg"
+     }
+    ],
+    "showLogo": false
+   },
+   {
+    "id": 5,
+    "name": "PreussenApotheke.de - Preussen Apotheke Kurfürsten",
+    "shortName": "Preussen",
+    "label": "PreussenApotheke.de",
+    "url": "/apotheke/berlin/c3807-apotheke",
+    "type": "drugstore",
+    "totalHits": 27,
+    "logos": [
+     {
+      "type": "LOGO",
+      "url": "https://cdn.knuspr.de/images/company/preussen-apotheke.png"
+     },
+     {
+      "type": "PLACEHOLDER",
+      "url": "https://cdn.knuspr.de/images/company/preussen-placeholder.svg"
+     },
+     {
+      "type": "LOGO_SMALL",
+      "url": "https://cdn.knuspr.de/images/company/preussen-apotheke.png"
+     }
+    ],
+    "showLogo": false
+   }
+  ],
+  "hybridSearchUsed": false,
+  "correctedSearch": null,
+  "correction": null,
+  "attributionToken": null,
+  "searchMethod": "ELASTIC",
+  "vaisRequestJson": null,
+  "vaisResponseJson": null,
+  "productIds": [
+   5496,
+   79540,
+   95793,
+   330746,
+   5274,
+   331471,
+   2194,
+   91714,
+   79542,
+   79337,
+   5256,
+   5254,
+   2192,
+   78033,
+   102365,
+   20905,
+   122114,
+   11943,
+   328172,
+   81583,
+   1444,
+   1696,
+   2191,
+   101392,
+   101381,
+   12545,
+   2195,
+   19060
+  ],
+  "impressions": [
+   {
+    "productId": 5496,
+    "impressionId": "6a90ee5fa767d6c548836ad6"
+   },
+   {
+    "productId": 330746,
+    "impressionId": "6a90ee5fa767d6c548836ad7"
+   }
+  ],
+  "categories": [
+   {
+    "id": 546,
+    "name": "Milch",
+    "topParentName": "Kühlregal",
+    "link": "/c546-milch",
+    "nameLong": "",
+    "images": [
+     "/images/grocery/products/1724/1724-1621266871194.jpg",
+     "/images/grocery/products/5257/5257-1658911936069.jpg",
+     "/images/grocery/products/6533/6533-1637585664594.jpg"
+    ],
+    "type": "CATEGORY"
+   },
+   {
+    "id": 533,
+    "name": "Milch, Molkerei & Butter",
+    "topParentName": "Kühlregal",
+    "link": "/c533-milch-molkerei-butter",
+    "nameLong": "",
+    "images": [
+     "/images/grocery/products/5272/5272-1619092578382.jpg"
+    ],
+    "type": "CATEGORY"
+   },
+   {
+    "id": 539,
+    "name": "Butter & Fette",
+    "topParentName": "Kühlregal",
+    "link": "/c539-butter-fette",
+    "nameLong": "",
+    "images": [
+     "/images/grocery/products/2248/2248-1621266738848.jpg",
+     "/images/grocery/products/1846/1846-1619703163687.jpg",
+     "/images/grocery/products/4715/4715-1620805492547.jpg"
+    ],
+    "type": "CATEGORY"
+   }
+  ],
+  "noResults": null,
+  "recipes": [
+   {
+    "id": 2390,
+    "name": "Milchdessert mit Haselnüssen & Schokolade",
+    "link": "/chef/2390-milchdessert-mit-haselnuessen-schokolade",
+    "image": "/images/meals/small/recipe_2390_1777312528170_hazelnut-chocolate-cream-dessert_2f582207.jpg",
+    "type": "SYSTEM",
+    "favorite": false,
+    "new": false,
+    "bestSeller": false,
+    "favoriteOld": false,
+    "isNew": false,
+    "isBestSeller": false,
+    "favourite": false,
+    "isFavorite": false
+   },
+   {
+    "id": 60,
+    "name": "Erdbeer-Milchshake ",
+    "link": "/chef/60-erdbeer-milchshake",
+    "image": "/images/meals/small/recipe_60_1775293259101_strawberry-milkshake-with-mint-and-ice-cream_dce4a528.png",
+    "type": "SYSTEM",
+    "favorite": false,
+    "new": false,
+    "bestSeller": false,
+    "favoriteOld": false,
+    "isNew": false,
+    "isBestSeller": false,
+    "favourite": false,
+    "isFavorite": false
+   },
+   {
+    "id": 1045,
+    "name": "Cremiger Milchreis mit Himbeeren",
+    "link": "/chef/1045-cremiger-milchreis-mit-himbeeren",
+    "image": "/images/meals/small/recipe_1045_1775584082403_rice-pudding-with-raspberries-and-mint_8bb552c2.png",
+    "type": "SYSTEM",
+    "favorite": false,
+    "new": false,
+    "bestSeller": false,
+    "favoriteOld": false,
+    "isNew": false,
+    "isBestSeller": false,
+    "favourite": false,
+    "isFavorite": false
+   },
+   {
+    "id": 3050,
+    "name": "Classic Diner Vanille-Milchshake",
+    "link": "/chef/3050-classic-diner-vanille-milchshake",
+    "image": "/images/meals/small/recipe_3050_1780494143582_vanilla-milkshake-with-whipped-cream-and-cherry_3f3911ab.jpg",
+    "type": "SYSTEM",
+    "favorite": false,
+    "new": false,
+    "bestSeller": false,
+    "favoriteOld": false,
+    "isNew": false,
+    "isBestSeller": false,
+    "favourite": false,
+    "isFavorite": false
+   }
+  ],
+  "mediumRectangleBanners": [
+   {
+    "id": 11892,
+    "link": "https://www.knuspr.de/thema/product-page-11892",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11892/banner/image/1785937734761-4560f699.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b4f",
+    "productIds": [
+     329168,
+     328152,
+     328155,
+     328159,
+     329170,
+     329651,
+     328151,
+     329174,
+     328153,
+     328157,
+     18327,
+     329162,
+     329165,
+     329167,
+     328161,
+     99416,
+     18330,
+     328158,
+     328160,
+     329650,
+     328156,
+     328154,
+     99417,
+     328162,
+     99415,
+     101637,
+     32468,
+     101636
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11892/banner/image/1785937735057-8495e2b1.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 12144,
+    "link": "https://www.knuspr.de/thema/product-page-12144",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/12144/banner/image/1787403599832-416341af.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b50",
+    "productIds": [
+     90962,
+     123374,
+     123373,
+     100535,
+     90963,
+     120068,
+     100531,
+     100534,
+     123375,
+     52634,
+     102753,
+     120067
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/12144/banner/image/1787403600271-69aacedd.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 11741,
+    "link": "https://www.knuspr.de/thema/product-page-11741",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11741/banner/image/1785232920936.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b51",
+    "productIds": [
+     330555,
+     330556,
+     330553,
+     330546,
+     330558,
+     330560,
+     330551,
+     330548
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11741/banner/image/1785232921145.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 12140,
+    "link": "https://www.knuspr.de/thema/product-page-12140",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/12140/banner/image/1787315825906-89d45b2c.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b52",
+    "productIds": [
+     330337,
+     330339,
+     330338,
+     330340
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/12140/banner/image/1787315826592-52451585.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 11329,
+    "link": "https://www.knuspr.de/thema/product-page-11329",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11329/banner/image/1783318609555.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b53",
+    "productIds": [
+     100010,
+     100012,
+     89193,
+     100011,
+     125952,
+     89195,
+     89194
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11329/banner/image/1783318609840.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 11729,
+    "link": "https://www.knuspr.de/thema/product-page-11729",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11729/banner/image/1786613119882-96a8c0f5.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b54",
+    "productIds": [
+     89196,
+     1512,
+     19893,
+     19894,
+     19892,
+     1511,
+     1506,
+     91127,
+     125957,
+     31469,
+     1508,
+     31467,
+     91128,
+     31470,
+     1513,
+     1507,
+     31468,
+     31755,
+     95311,
+     95312
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11729/banner/image/1786613120116-1ccd32d1.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 11755,
+    "link": "/thema/gqb-sommer-2026",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11755/banner/image/1785238802786.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b55",
+    "productIds": [],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11755/banner/image/1785238803000.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 12158,
+    "link": "https://www.knuspr.de/thema/product-page-12158",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/12158/banner/image/1787552996967-68a48ccb.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b56",
+    "productIds": [
+     30975,
+     125639,
+     125631,
+     97911,
+     97923,
+     97967,
+     125652,
+     97965,
+     9323,
+     126076,
+     32088,
+     30972,
+     101715,
+     78271,
+     78361
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/12158/banner/image/1787552997132-362e261b.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 12134,
+    "link": "https://www.knuspr.de/thema/product-page-12134",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/12134/banner/image/1787299112547-0655ee7a.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b57",
+    "productIds": [
+     621,
+     101526,
+     620,
+     88715,
+     88722,
+     92092,
+     614,
+     88720,
+     88712,
+     609,
+     20797,
+     628,
+     20798,
+     101525,
+     101527,
+     611,
+     92093,
+     88713,
+     615,
+     92094,
+     88723,
+     624,
+     88721,
+     20799,
+     88711,
+     92090,
+     20801,
+     92087,
+     92089,
+     629,
+     20800,
+     101528,
+     88719,
+     88714,
+     625,
+     92091,
+     121488,
+     121487
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/12134/banner/image/1787299112781-9c8c974d.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   },
+   {
+    "id": 11945,
+    "link": "https://www.knuspr.de/thema/product-page-11945",
+    "linkType": "default",
+    "image": {
+     "path": "https://cdn.knuspr.de/smp/11945/banner/image/1786433721517-3799facb.png",
+     "alt": "null - null",
+     "updatedAt": null
+    },
+    "trackingCode": "not set",
+    "impressionId": "6a90ee5fa516271a7a871b58",
+    "productIds": [
+     81067,
+     102371,
+     81070,
+     12865,
+     12863,
+     96074,
+     96075,
+     12867,
+     13622,
+     81065,
+     81069,
+     329038,
+     19537,
+     81064,
+     81075,
+     77682,
+     79152,
+     77683,
+     12323,
+     81072,
+     12324,
+     329039,
+     96076,
+     81068,
+     12869,
+     12322,
+     91730,
+     91735,
+     102980,
+     96071,
+     4374,
+     4375,
+     81076,
+     77684,
+     79157,
+     102978,
+     12866,
+     13406,
+     12325,
+     96072,
+     79150,
+     81071,
+     79148,
+     19535,
+     81074,
+     79154,
+     4377,
+     79155,
+     91736,
+     103103,
+     103104,
+     81063,
+     13628,
+     4378,
+     4372,
+     4373,
+     79153,
+     91731,
+     91734,
+     91732,
+     91733,
+     81066,
+     79151,
+     79149,
+     102979,
+     329037,
+     126833
+    ],
+    "impressions": [],
+    "standardBannerImage": {
+     "path": "https://cdn.knuspr.de/smp/11945/banner/image/1786433721994-54b40386.png",
+     "alt": "null - null",
+     "updatedAt": null
+    }
+   }
+  ],
+  "fuzzy": false,
+  "totalRecipeHits": 14
+ }
+}
