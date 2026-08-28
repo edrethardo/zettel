@@ -228,6 +228,37 @@ Vier Dinge sind hier einen Satz wert:
   90 Minuten Vorbereitung, 480 Minuten Kochzeit und einem Link auf die
   Originalseite. Wer abends um sieben Pho anfängt, sollte das vorher wissen.
 
+### Und beim Abschicken wird daraus ein Rezept (WB-337)
+
+Seit WB-337 endet dieselbe Antwort mit einem Satz mehr — hier gemessen am
+2026-08-28 gegen die echte Box und den echten Katalog, mit dem Satz
+„alles für Spaghetti Bolognese, und Klopapier“:
+
+```
+„Die echte Sauce Bolognese“ von Chefkoch — 13 Zutaten im Rezept, 11 davon
+auf dem Zettel, 10 im Katalog gefunden. […] Daraus kann ein Rezept
+„Spaghetti Bolognese“ werden — 11 Zutaten, gespeichert erst beim Abschicken.
+```
+
+Unter den Vorschlägen steht dann ein **Rezeptentwurf**: der Name (überschreibbar),
+die elf Gerichtszutaten mit ihren Mengen, je ein „raus“ daneben und ein
+„Kein Rezept daraus“ darunter. **Das Klopapier steht nicht darin** — es liegt
+im Korb und gehört in kein Rezept. Die Trennung kostet keinen Modellaufruf:
+was aus Chefkochs Zutatenliste stammt, findet seine Zutat wieder
+(`assistant.herkunft`), was daneben im Satz stand, nicht.
+
+Beim **Abschicken** entsteht das Rezept, mit den bestätigten Zutaten und
+ihren Mengen (125 g Butter, 1000 g Hackfleisch, 600 ml Tomaten …). Danach:
+
+```
+zweiter Satz „heute Spaghetti Bolognese“ -> weg = recipe, 11 Vorschläge,
+                                            null Modellaufrufe
+```
+
+Geprüft mit einem Modell, das bei jedem Aufruf wirft — es wurde nie gefragt.
+**Jedes so angelegte Rezept ist ein dauerhafter Fix für ein Gericht**, und
+der Weg ist der schnellste, den der Shop hat.
+
 **Zum Ausfall:** wer sehen will, was ohne Chefkoch passiert, zieht das Netz
 ab und fragt nach einem Gericht, das noch nicht im Speicher steht. Der Zug
 läuft mit den geratenen Begriffen zu Ende und sagt es: *„Chefkoch war für
