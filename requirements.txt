@@ -14,7 +14,8 @@ arize-phoenix-otel
 arize-phoenix-client
 openinference-instrumentation-openai
 
-# Nur für scripts/trace_probe.py: die Verifikation aus Spec 7.4 geht über
+# Nur für die Verifikationsskripte (scripts/trace_probe.py und
+# scripts/label_probe.py): die Abfragen aus Spec 7.4 und 8.1 gehen über
 # `spans.get_spans_dataframe()`, und das gibt einen pandas-Dataframe zurück.
 # Der Shop selbst benutzt pandas nirgends.
 pandas

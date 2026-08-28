@@ -13,6 +13,7 @@ from __future__ import annotations
 import sqlite3
 
 from picknick import db
+from picknick.obs import labels
 from picknick.orders.bestellung import (LeererWarenkorb, UngueltigerPosten,
                                         jetzt, posten, wechsle)
 
@@ -246,6 +247,12 @@ def abschicken(con: sqlite3.Connection, note: str | None = None) -> dict:
     einen neuen an. Genau das ist mit „kein Kopieren beim Abschicken" gemeint
     (Spec 4): dieselbe Zeile wechselt den Zustand, die Posten bleiben liegen,
     wo sie sind.
+
+    **Hier fällt das Eval-Label an** (Spec 8.1, WB-329): die Entscheidungen
+    über die Chat-Vorschläge dieser Bestellung gehen als Annotationen auf den
+    `chat.turn`-Span. Erst jetzt und nicht beim Tippen — bis zum Abschicken
+    kann sie ihre Meinung ändern. `obs.labels.schreiben()` wirft nie und
+    wartet nicht auf Phoenix; siehe dort.
     """
     korb = _draft_id(con)
     if korb is None or not posten(con, korb):
@@ -255,4 +262,9 @@ def abschicken(con: sqlite3.Connection, note: str | None = None) -> dict:
     felder = {"submitted_at": jetzt()}
     if note is not None and note.strip():
         felder["note"] = note.strip()
-    return wechsle(con, korb, "offen", **felder)
+    bestellung = wechsle(con, korb, "offen", **felder)
+    # Nach dem Zustandswechsel: was hier auch schiefgeht, die Bestellung ist
+    # abgeschickt. Umgekehrt wäre eine Annotation über eine Bestellung
+    # geschrieben, die es dann doch nicht gab.
+    labels.schreiben(con, korb)
+    return bestellung
