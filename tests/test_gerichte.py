@@ -25,14 +25,12 @@ from picknick.assistant import plan
 from picknick.gerichte import chefkoch, lauf, quelle, speicher
 from picknick.llm import wake
 from picknick.llm.client import Antwort
-from picknick.scrapers import knuspr
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SUCHE = json.loads((FIXTURES / "chefkoch_pho_suche.json")
                    .read_text(encoding="utf-8"))
 REZEPT = json.loads((FIXTURES / "chefkoch_pho_rezept.json")
                     .read_text(encoding="utf-8"))
-KNUSPR = FIXTURES / "knuspr_milch.json"
 
 #: Das Rezept, das die Gewichtung aus der aufgezeichneten Suche wählt.
 PHO_BO = "3595991540759513"
@@ -66,14 +64,6 @@ class _Antwort:
 
     def json(self):
         return self._payload
-
-
-class KnusprHTTP:
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
 
 
 class FakeLLM:
@@ -118,22 +108,27 @@ ZUSATZ = [
 ]
 
 
-@pytest.fixture
-def con(tmp_path):
-    # Eine DATEI und nicht `:memory:`: der Abruf läuft in einem eigenen
-    # Prozess und braucht einen Pfad. Eine Verbindung ohne Datei ist ein
-    # eigener Testfall (siehe ganz unten).
-    c = db.connect(tmp_path / "picknick.db")
-    db.migrate(c)
-    knuspr.crawl(c, KnusprHTTP([json.loads(KNUSPR.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
+def _zusatz(con):
     for external_id, name, l1, l2, l3 in ZUSATZ:
-        c.execute(
+        con.execute(
             "INSERT INTO product (source, external_id, name, price_cents,"
             " unit_text, category_l1, category_l2, category_l3)"
             " VALUES ('knuspr', ?, ?, 199, '1 Stk', ?, ?, ?)",
             (external_id, name, l1, l2, l3))
-    c.commit()
+    con.commit()
+
+
+@pytest.fixture
+def con(vorlagen, tmp_path):
+    # Eine DATEI und nicht `:memory:`: der Abruf läuft in einem eigenen
+    # Prozess und braucht einen Pfad. Eine Verbindung ohne Datei ist ein
+    # eigener Testfall (siehe ganz unten).
+    #
+    # Gebaut wird sie einmal je Testlauf als Vorlage (`conftest.py`) und hier
+    # nur kopiert — der eigene Name, weil `ZUSATZ` hier ein anderer ist als
+    # in `test_assistant.py`.
+    c = db.connect(vorlagen.datei(tmp_path / "picknick.db", "gerichte_katalog",
+                                  vorlagen.katalog, _zusatz))
     yield c
     c.close()
 

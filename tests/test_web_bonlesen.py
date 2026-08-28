@@ -71,11 +71,7 @@ DEUTUNG = json.dumps({"zeilen": [
 ]}, ensure_ascii=False)
 
 
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
+def _produkte(con):
     for i, (name, preis) in enumerate(PRODUKTE, start=1):
         con.execute(
             "INSERT INTO product (source, external_id, name, price_cents,"
@@ -84,8 +80,18 @@ def db_datei(tmp_path):
             " VALUES ('knuspr', ?, ?, ?, '250 g', 'Molkerei', 'Käse', 'Käse')",
             (str(200 + i), name, preis))
     con.commit()
-    con.close()
-    return pfad
+
+
+@pytest.fixture
+def db_datei(vorlagen, tmp_path):
+    """Die zwei Produkte von oben — einmal gebaut, hier kopiert (conftest.py).
+
+    Der eigene Vorlagenname: `db_datei` heisst in den anderen Web-Tests der
+    volle Katalog, hier sind es genau die beiden Zeilen, die der nachgebaute
+    Bon nennt.
+    """
+    return vorlagen.datei(tmp_path / "picknick.db", "bonlesen_produkte",
+                          _produkte)
 
 
 @pytest.fixture

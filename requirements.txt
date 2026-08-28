@@ -3,6 +3,13 @@ uvicorn
 jinja2
 httpx
 pytest
+
+# Die Testsuite parallel (WB-366): `pytest -q -n auto`. Reine pip-Abhängigkeit,
+# nichts davon wird zur Laufzeit des Shops importiert. Nötig ist sie nicht —
+# `pytest -q` läuft weiter seriell durch, und keine Zusicherung hängt daran.
+# Gemessen am 2026-08-28 auf 28 Kernen: 19,5 s seriell, 13,9 s mit `-n auto`.
+pytest-xdist
+
 openai
 
 # Observability (Spec 7, WB-328). Geprüft am 2026-08-28 gegen ein laufendes

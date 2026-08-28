@@ -6,63 +6,22 @@ Wo zwei Verbindungen gebraucht werden (der Wettlauf um den einen Warenkorb),
 läuft der Test gegen eine Datei in `tmp_path` — `:memory:` gibt jeder
 Verbindung ihre eigene, leere Datenbank und würde genau das nicht prüfen.
 """
-import json
 import sqlite3
 import threading
-from pathlib import Path
 
 import pytest
 
 from picknick import db, orders, recipes
 from picknick.orders import korb as korb_modul
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
 
 
-class FakeHTTP:
-    """Liefert die Fixture als erste Seite und danach nichts mehr."""
-
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
-
-
-def _befuellen(con):
-    from picknick.scrapers import knuspr
-    payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    knuspr.crawl(con, FakeHTTP([payload]), ["milch"], pause_s=0)
-
-
 @pytest.fixture
-def con():
-    c = db.connect(":memory:")
-    db.migrate(c)
-    _befuellen(c)
-    yield c
-    c.close()
-
-
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    c = db.connect(pfad)
-    db.migrate(c)
-    _befuellen(c)
-    c.close()
-    return pfad
+def con(katalog_con):
+    """Der Katalog aus der Vorlage (conftest.py) — einmal gebaut, hier kopiert."""
+    return katalog_con
 
 
 def _pid(con, name):

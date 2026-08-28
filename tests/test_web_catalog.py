@@ -3,14 +3,15 @@
 Kein Browser, kein Netz. Die Oberfläche wird über `fastapi.testclient` als
 HTTP-Client geprüft; die Produkte kommen aus derselben aufgezeichneten
 Knuspr-Antwort wie in `test_knuspr.py` und `test_catalog.py`, durch den echten
-Crawler in eine Datei geschrieben — die App öffnet ihre eigene Verbindung, mit
-`:memory:` sähe sie eine leere Datenbank.
+Crawler in eine Datei geschrieben (die Vorlage aus `conftest.py`) — die App
+öffnet ihre eigene Verbindung, mit `:memory:` sähe sie eine leere Datenbank.
+Der Crawl legt selbst einen `ok`-Lauf von heute an; der Katalog ist damit
+frisch, solange ein Test nichts anderes einträgt.
 
 Die Bindung wird an der Konfiguration geprüft, nicht am echten Socket: ein Test,
 der wirklich auf 0.0.0.0 bindet, um zu sehen, dass es nicht geht, tut genau das,
 was er verhindern soll.
 """
-import json
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -19,31 +20,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from picknick import db
-from picknick.scrapers import knuspr
 from picknick.web import app as webapp
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
-
-
-class FakeHTTP:
-    """Liefert die Fixture als erste Seite und danach nichts mehr."""
-
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
 
 
 def _lauf(con, status, vor_tagen):
@@ -53,19 +33,6 @@ def _lauf(con, status, vor_tagen):
         "INSERT INTO scrape_run (source, started_at, finished_at, status,"
         " n_products) VALUES ('knuspr', ?, ?, ?, 1)", (stand, stand, status))
     con.commit()
-
-
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    knuspr.crawl(con, FakeHTTP([payload]), ["milch"], pause_s=0)
-    # Der Crawl legt selbst einen `ok`-Lauf von heute an — der Katalog ist
-    # damit frisch, solange ein Test nichts anderes einträgt.
-    con.close()
-    return pfad
 
 
 @pytest.fixture

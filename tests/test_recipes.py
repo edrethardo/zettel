@@ -9,44 +9,18 @@ Der Test, um den es in diesem Ticket wirklich geht, steht unter „Ein Rezept
 überlebt den Katalog": ein Produkt, das der Crawler auf `active = 0` gesetzt
 hat, muss sich weiter einlegen lassen und muss sichtbar bleiben.
 """
-import json
-from pathlib import Path
-
 import pytest
 
-from picknick import db, orders, recipes
+from picknick import orders, recipes
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
 
 
-class FakeHTTP:
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
-
-
 @pytest.fixture
-def con():
-    from picknick.scrapers import knuspr
-    c = db.connect(":memory:")
-    db.migrate(c)
-    knuspr.crawl(c, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
-    yield c
-    c.close()
+def con(katalog_con):
+    """Der Katalog aus der Vorlage (conftest.py) — einmal gebaut, hier kopiert."""
+    return katalog_con
 
 
 def _pid(con, name):

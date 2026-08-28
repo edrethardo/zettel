@@ -1,43 +1,21 @@
 """Tests für Katalogsuche und Kategoriebaum (WB-322).
 
 KEIN Test geht ins Netz. Die Produkte kommen aus derselben aufgezeichneten
-Knuspr-Antwort wie in `test_knuspr.py` und werden durch den echten Crawler in
-eine `:memory:`-Datenbank geschrieben — so ist mitgeprüft, dass die
+Knuspr-Antwort wie in `test_knuspr.py`. Eingespielt hat sie der echte Crawler
+— einmal je Testlauf beim Bauen der Vorlage (`conftest.py`), von der jeder
+Test eine eigene `:memory:`-Kopie bekommt. So ist mitgeprüft, dass die
 FTS-Trigger auf dem Weg greifen, den der Katalog im Betrieb wirklich nimmt.
 Alles, was die Fixture nicht hergibt (Spülmittel, ein inaktives Produkt),
 wird daneben von Hand eingefügt.
 """
-import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 
 from picknick import db
 from picknick.catalog import categories, search
-from picknick.scrapers import knuspr
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
-
-
-class FakeHTTP:
-    """Liefert die Fixture als erste Seite und danach nichts mehr."""
-
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
 
 
 def _insert(con, external_id, name, brand=None,
@@ -51,15 +29,9 @@ def _insert(con, external_id, name, brand=None,
 
 
 @pytest.fixture
-def con():
-    c = db.connect(":memory:")
-    db.migrate(c)
-    payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    # totalHits der Fixture ist grösser als die eine aufgezeichnete Seite; der
-    # Crawler fragt danach eine leere zweite Seite ab und bricht ab.
-    knuspr.crawl(c, FakeHTTP([payload]), ["milch"], pause_s=0)
-    yield c
-    c.close()
+def con(katalog_con):
+    """Der Katalog aus der Vorlage (conftest.py) — einmal gebaut, hier kopiert."""
+    return katalog_con
 
 
 # --------------------------------------------------------------------------

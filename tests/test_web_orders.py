@@ -8,7 +8,6 @@ Geprüft wird durchgehend am HTTP-Rand und an der Datenbank dahinter: dass eine
 Seite einen Knopf zeigt, sagt nichts darüber, ob der Knopf etwas tut. Deshalb
 steht hinter jedem Klick eine Abfrage, was danach in der Datenbank steht.
 """
-import json
 import re
 from pathlib import Path
 
@@ -16,43 +15,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from picknick import db, orders
-from picknick.scrapers import knuspr
 from picknick.web import app as webapp
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 STIL = Path(webapp.STATIC_DIR) / "stil.css"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
 
 HTMX = {"HX-Request": "true"}
-
-
-class FakeHTTP:
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
-
-
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    knuspr.crawl(con, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
-    con.close()
-    return pfad
 
 
 @pytest.fixture

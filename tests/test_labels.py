@@ -23,18 +23,14 @@ tatsächlich aktualisiert statt danebenzulegen. Hier steht nur, dass dieselbe
 Sache immer denselben Schlüssel bekommt — der Rest ist eine Zusage der API und
 wird gegen das echte Phoenix in `scripts/label_probe.py` nachgemessen.
 """
-import json
 import threading
 import time
-from pathlib import Path
 
 import pytest
 
-from picknick import db, obs, orders
+from picknick import obs, orders
 from picknick.assistant import vorschlaege
 from picknick.obs import labels
-
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 
 SPAN = "a1b2c3d4e5f60718"
 SPAN_ZWEI = "00112233445566ff"
@@ -102,31 +98,13 @@ def tracing_an(monkeypatch):
 
 
 @pytest.fixture
-def con():
-    c = db.connect(":memory:")
-    db.migrate(c)
-    _befuellen(c)
-    yield c
+def con(katalog_con):
+    """Der Katalog aus der Vorlage (conftest.py) — einmal gebaut, hier kopiert."""
+    yield katalog_con
     # Wartet auf die Hintergrund-Threads, bevor die Verbindung zugeht: sonst
-    # zieht ein langsamer Test dem nächsten den Boden weg.
+    # zieht ein langsamer Test dem nächsten den Boden weg. `katalog_con`
+    # schliesst danach.
     labels.abwarten(5.0)
-    c.close()
-
-
-def _befuellen(con):
-    from picknick.scrapers import knuspr
-
-    class FakeHTTP:
-        def __init__(self, seiten):
-            self.seiten = list(seiten)
-
-        def get(self, url):
-            payload = self.seiten.pop(0) if self.seiten else {"data": {}}
-            return type("A", (), {"json": lambda self: payload,
-                                  "content": b""})()
-
-    knuspr.crawl(con, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
 
 
 # --------------------------------------------------------------------------
