@@ -541,6 +541,61 @@ def test_eine_zurueckgenommene_korrektur_behauptet_nichts(con):
     assert [a for a in annos if a["name"] == labels.NAME_KORREKTUR] == []
 
 
+# --------------------------------------------------------------------------
+# Der zurückgenommene Fehltipp (WB-361)
+#
+# Er darf KEIN Label hinterlassen — das ist der ganze Grund, warum ein
+# Rückweg vor dem Abschicken nichts kostet. Sichtbar sein muss er trotzdem,
+# sonst sähe später niemand, wie oft danebengetippt wird; dafür steht
+# `withdrawn` in den Metadaten.
+
+def test_ein_zurueckgenommener_fehltipp_hinterlaesst_kein_label(con):
+    """Er steht beim Abschicken auf `offen`, und `offen` bekommt nichts."""
+    msg = _zug(con, begriffe=("Butter",))
+    sid = vorschlaege.liste(con, msg)[0]["id"]
+    vorschlaege.entscheiden(con, sid, VERWORFEN)
+    vorschlaege.entscheiden(con, sid, vorschlaege.OFFEN)
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+
+    assert [a for a in annos if a["name"] == labels.NAME_ENTSCHEIDUNG] == []
+    # Und auch keine Quote: entschieden wurde am Ende gar nichts.
+    assert annos == []
+
+
+def test_die_ruecknahme_steht_als_metadatum_an_der_annotation(con):
+    """Ein `kept`, bei dem vorher danebengetippt wurde, ist ein anderer
+    Datenpunkt als ein `kept` beim ersten Hinsehen."""
+    msg = _zug(con, begriffe=("Butter", "Milch"))
+    erste, zweite = [v["id"] for v in vorschlaege.liste(con, msg)]
+    vorschlaege.entscheiden(con, erste, VERWORFEN)
+    vorschlaege.entscheiden(con, erste, vorschlaege.OFFEN)
+    vorschlaege.entscheiden(con, erste, BEHALTEN)
+    vorschlaege.entscheiden(con, zweite, BEHALTEN)
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+    einzel = [a for a in annos if a["name"] == labels.NAME_ENTSCHEIDUNG]
+    quote = [a for a in annos if a["name"] == labels.NAME_QUOTE][0]
+
+    assert [a["metadata"]["withdrawn"] for a in einzel] == [1, 0]
+    # An der Zugannotation die Summe — und in der Erklärung, damit man sie in
+    # einer Liste von Zügen sieht, ohne etwas aufzuklappen.
+    assert quote["metadata"]["withdrawn"] == 1
+    assert "1 Entscheidung zurückgenommen" in quote["result"]["explanation"]
+
+
+def test_ohne_ruecknahme_steht_dort_eine_null_und_kein_satz(con):
+    """Die Gegenprobe: der Normalfall bleibt unverändert lesbar."""
+    msg = _zug(con, begriffe=("Butter",))
+    _entscheiden(con, msg, [BEHALTEN])
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+    quote = [a for a in annos if a["name"] == labels.NAME_QUOTE][0]
+
+    assert quote["metadata"]["withdrawn"] == 0
+    assert "zurückgenommen" not in quote["result"]["explanation"]
+
+
 def test_nur_ueber_den_allgemeinen_begriff_steht_an_der_annotation(con):
     """Der Befund aus WB-358: ein Treffer, der nur über den allgemeinsten
     Kettenbegriff kam, ist kein sicherer — und die Eval soll das sehen."""

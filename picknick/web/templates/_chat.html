@@ -93,6 +93,16 @@
             {% if v.nicht_im_katalog %}
             <span class="ausgemustert">Nicht mehr im Katalog.</span>
             {% endif %}
+            {% if v.offen and v.im_korb %}
+            {# Zurückgenommenes „Ja" (WB-361): der Korb wird dabei bewusst
+               NICHT angerührt — `orders.einlegen()` fasst gleiche Zeilen
+               zusammen, die Korbzeile kann also längst eine sein, die sie
+               selbst aufgestockt hat. Das darf die Oberfläche nicht
+               verschweigen, sonst sucht sie die Zeile im Korb und findet
+               sie doch. #}
+            <span class="hinweis">Zurückgenommen —
+              die Zeile bleibt im Korb; dort steht ein Löschknopf.</span>
+            {% endif %}
           </span>
           <span class="stellen">
             {% if v.offen %}
@@ -110,12 +120,37 @@
                 <button class="mini nein" type="submit"
                         aria-label="{{ v.name }} verwerfen">Nein</button>
               </form>
-            {% elif v.behalten %}
-              {# Der Korb hat einen Löschknopf; von hier aus wird er nicht
-                 angerührt (siehe vorschlaege.entscheiden). #}
-              <span class="marke ja">im Korb</span>
             {% else %}
-              <span class="marke nein">verworfen</span>
+              {% if v.behalten %}
+                {# Der Korb hat einen Löschknopf; von hier aus wird er nicht
+                   angerührt (siehe vorschlaege.entscheiden). #}
+                <span class="marke ja">im Korb</span>
+              {% else %}
+                <span class="marke nein">verworfen</span>
+              {% endif %}
+              {# Der Rückweg (WB-361): eine Entscheidung ist ein Tipp und kein
+                 Urteil. Er führt auf `offen` — den Zustand VOR dem Fehltipp —
+                 und nicht auf die andere Seite; „doch behalten" wäre eine
+                 neue Behauptung statt der Rücknahme einer alten.
+
+                 Kleiner als die Hauptentscheidung, aber nicht kleiner als der
+                 Daumen: `.mini` bürgt für 44 px, `.zurueck` nimmt nur Gewicht
+                 und Farbe zurück.
+
+                 Steht an einer verworfenen Zeile schon eine Korrektur, führt
+                 der Rückweg über SIE. „Verworfen" zurückzunehmen, während
+                 daneben ein „stattdessen X" im Korb liegt, ergäbe einen
+                 Zustand, den niemand gemeint hat. #}
+              {% if v.behalten or not v.korrektur %}
+              <form method="post"
+                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+                    hx-target="#chat" hx-swap="outerHTML">
+                <button class="mini zurueck" type="submit"
+                        aria-label="Entscheidung zu {{ v.name }} zurücknehmen{% if v.behalten %} — die Zeile bleibt im Korb{% endif %}"
+                        >rückgängig</button>
+              </form>
+              {% endif %}
             {% endif %}
           </span>
           {# Ein „Nein" ist seit WB-359 keine Sackgasse: die Kandidaten, die

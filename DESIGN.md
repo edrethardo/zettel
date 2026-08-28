@@ -105,6 +105,31 @@ oder „Nein" entschieden wird. Erst „Ja" legt ein. Diese Entscheidung ist
 zugleich das Eval-Label (siehe `OBSERVABILITY.md`) — das Label fällt aus dem
 Produkt heraus, weil die Nutzerin die Liste ohnehin durchgehen muss.
 
+### Keine Entscheidung ist endgültig — und der Korb bleibt trotzdem stehen
+
+Ein Tipp ist ein Tipp, kein Urteil: „Ja", „Nein" und auch eine Korrektur
+lassen sich zurücknehmen (WB-361). Der Rückweg führt auf `offen` — den Zustand
+VOR dem Fehltipp — und nicht auf die andere Seite; „doch behalten" wäre eine
+neue Behauptung statt der Rücknahme einer alten. Er ist Datenqualität und
+keine Bequemlichkeit: auf dem Telefon sitzen die beiden Knöpfe nebeneinander,
+und ein Fehltipp verfälscht sonst genau die Zahlen, die dieses Projekt
+interessant machen — das Eval-Label und (ab WB-341) das Vorlieben-Signal.
+
+**Der Korb wird beim Zurücknehmen NICHT angerührt.** `orders.einlegen()` fasst
+gleiche Zeilen zusammen, die Korbzeile kann also längst eine sein, die die
+Nutzerin selbst aufgestockt hat; sie hier herauszunehmen hiesse, fremde Mengen
+zu löschen. Im Korb steht ein Löschknopf. Verschwiegen wird es aber nicht — an
+der zurückgenommenen Zeile steht, dass die Korbzeile bleibt und wo sie
+wegzubekommen ist.
+
+Der Rückweg macht dabei eine Zusicherung kaputt, die vorher hielt: **der
+Schutz gegen den doppelten Tipp durfte nicht länger am Vergleich der letzten
+Entscheidung hängen.** „steht schon auf `kept`" ist kein Schutz mehr, sobald
+es einen Umweg über `offen` gibt — „Ja, rückgängig, Ja" liefe zweimal durch
+`orders.einlegen()` und stockte die Menge auf. Er hängt jetzt an
+`chat_suggestion.eingelegt_at`: „war diese Zeile schon einmal im Korb". Das
+ist die Frage, die er die ganze Zeit stellen wollte.
+
 ### „Nein" verwirft nicht bloss, es zeigt die Alternativen
 
 Die Alternativen gibt es längst: `suche_kette()` legt sie vor, Stufe 3 wählt

@@ -25,6 +25,15 @@ gefüllt in WB-328). Zwei Sorten:
   wertvollste Datenpunkt überhaupt, weil er die richtige Antwort benennt statt
   nur die falsche zu zählen.
 
+**Ein zurückgenommener Tipp hinterlässt kein Label** (WB-361). Er kann keines
+hinterlassen: geschrieben wird erst beim Abschicken, und wer zurückgenommen
+hat, steht dann auf `offen` — und `offen` bekommt nichts (Punkt 2 unten).
+Genau deshalb steht `withdrawn` in den Metadaten: an der einzelnen Annotation,
+wie oft an dieser Zeile zurückgenommen wurde, und an `mapping_precision` die
+Summe für den Zug. Ohne diese Zahl wäre der Fehltipp restlos unsichtbar, und
+niemand könnte fragen, wie oft auf dem Handy danebengetippt wird. Ein Label
+ist es trotzdem nicht: „zurückgenommen" ist kein Urteil über den Vorschlag.
+
 Vier Entscheidungen, die die Zahlen ehrlich halten:
 
 1. **Erst beim Abschicken** (`orders.abschicken`), nicht beim Tippen. Bis
@@ -152,6 +161,14 @@ def annotationen(con, order_id: int) -> list[dict]:
     for zug in zuege:
         span_id, msg_id = zug["span_id"], int(zug["id"])
         q = vorschlaege.quote(con, msg_id)
+        zeilen = vorschlaege.liste(con, msg_id)
+        # Wie oft in diesem Zug eine Entscheidung zurückgenommen wurde
+        # (WB-361). Korrekturzeilen zählen mit: eine zurückgenommene Korrektur
+        # ist genauso ein Fehltipp. Diese Zahl ist die EINZIGE Spur, die ein
+        # zurückgenommener Tipp hinterlässt — ein Label bekommt er bewusst
+        # keines (siehe unten), und ohne sie sähe niemand, wie oft auf dem
+        # Handy danebengetippt wird.
+        zurueck = sum(v["zurueckgenommen"] for v in zeilen)
         if q["quote"] is not None:
             # Kein Label, nur ein Score: „0.75" ist die Aussage, und eine
             # danebengestellte Textmarke („gut"/„schlecht") wäre eine
@@ -159,14 +176,14 @@ def annotationen(con, order_id: int) -> list[dict]:
             raus.append(_anno(
                 span_id, NAME_QUOTE,
                 score=float(q["quote"]),
-                explanation=_quote_satz(q),
+                explanation=_quote_satz(q, zurueck),
                 identifier=f"picknick-turn-{msg_id}",
                 metadata={"order_id": order_id, "chat_message_id": msg_id,
                           "suggested": q["vorgeschlagen"],
                           "kept": q["behalten"], "removed": q["verworfen"],
-                          "open": q["offen"]}))
+                          "open": q["offen"], "withdrawn": zurueck}))
 
-        for v in vorschlaege.liste(con, msg_id):
+        for v in zeilen:
             if v["ist_korrektur"]:
                 # Eine Korrekturzeile ist kein Vorschlag des Modells, sondern
                 # die Handbewegung danach (WB-359). Sie bekommt ihre eigene
@@ -225,6 +242,13 @@ def annotationen(con, order_id: int) -> list[dict]:
                           "corrected_to_product_id": (
                               k["product_id"] if k else None),
                           "corrected_to_suggestion_id": k["id"] if k else None,
+                          # Wie oft an DIESER Zeile zurückgenommen wurde
+                          # (WB-361). Ein `kept` mit `withdrawn = 1` ist ein
+                          # anderer Datenpunkt als ein `kept` beim ersten
+                          # Hinsehen — dort hat jemand gezögert oder
+                          # danebengetippt, und ein Label, das das
+                          # verschweigt, sieht sicherer aus, als es ist.
+                          "withdrawn": v["zurueckgenommen"],
                           "free_text": bool(v["ist_freitext"])}))
     return raus
 
@@ -269,11 +293,17 @@ def _name(v: dict | None) -> str | None:
     return None if v is None else v["name"]
 
 
-def _quote_satz(q: dict) -> str:
+def _quote_satz(q: dict, zurueckgenommen: int = 0) -> str:
     satz = (f"{q['behalten']} von {q['behalten'] + q['verworfen']} "
             "entschiedenen Vorschlägen behalten")
     if q["offen"]:
         satz += f"; {q['offen']} offen und nicht gewertet"
+    if zurueckgenommen:
+        # Steht in der Erklärung und nicht nur in den Metadaten: wer eine
+        # Liste von Zügen durchsieht, soll den zurückgenommenen Fehltipp
+        # sehen, ohne eine einzelne Annotation aufzuklappen.
+        satz += (f"; {zurueckgenommen} Entscheidung"
+                 f"{'en' if zurueckgenommen != 1 else ''} zurückgenommen")
     return satz + "."
 
 

@@ -507,6 +507,18 @@ button:disabled { opacity: 0.5; cursor: default; }
            border-color: var(--ok-linie); font-weight: 700; }
 .mini.nein { color: var(--beere); background: var(--beere-hell);
              border-color: transparent; }
+/* Der Rückweg (WB-361): kleiner als die Entscheidung, aber nicht kleiner als
+   der Daumen. Die Grösse kommt von `.mini` und bleibt damit bei 44 px; hier
+   werden nur Gewicht, Rahmen und Farbe zurückgenommen, damit „rückgängig"
+   neben „Ja"/„Nein" nicht wie eine dritte gleichrangige Wahl aussieht. Eine
+   eigene kleinere Pille wäre ein zweites Gestaltungssystem — und auf dem
+   Handy ein Tap-Ziel, das man dreimal trifft. */
+.mini.zurueck {
+  font-size: 14px; font-weight: 500; padding: 0 10px;
+  color: var(--gedaempft); background: none; border-color: transparent;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
 /* Entschieden-Marken: kleine Pillen statt nackter Wörter. */
 span.marke { font-size: 13px; font-weight: 600; padding: 5px 10px;
              border-radius: 999px; background: var(--karte-tief);
@@ -542,6 +554,11 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 /* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359): Honig, nicht
    Rot — kein Fehler, aber auch kein sicherer Treffer. */
 .vorschlag .schwach { font-size: 13px; color: var(--honig); }
+
+/* Nach einem zurückgenommenen „Ja" (WB-361): die Zeile bleibt im Korb, und
+   das muss dastehen. Gedämpft und nicht rot — es ist keine Warnung, sondern
+   eine Auskunft über einen Zustand, den die Nutzerin sonst suchen müsste. */
+.vorschlag .hinweis { font-size: 13px; color: var(--gedaempft); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 

@@ -436,6 +436,141 @@ def test_die_tap_ziele_der_alternativen_sind_gross_genug(db_datei, tmp_path):
 
 
 # --------------------------------------------------------------------------
+# Der Rückweg (WB-361)
+#
+# Über HTTP, weil hier der Unterschied sitzt: die Logik konnte `offen` immer
+# schon, es fragte nur niemand danach.
+
+def _sid(db_datei):
+    con = db.connect(db_datei)
+    try:
+        return con.execute("SELECT id FROM chat_suggestion ORDER BY id"
+                           ).fetchone()["id"]
+    finally:
+        con.close()
+
+
+def _entscheiden(client, sid, decision):
+    return client.post(
+        f"/warenkorb/vorschlag/{sid}/entscheiden?decision={decision}",
+        headers=HTMX)
+
+
+def test_die_entschiedene_zeile_bietet_den_rueckweg_an(db_datei, tmp_path):
+    """Beide Seiten, dieselbe Geste, derselbe Ort."""
+    milch = _pid(db_datei, MILCH)
+    for decision, marke in (("kept", "im Korb"), ("removed", "verworfen")):
+        client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
+                            _choose(("Landmilch", milch, 1)))
+        client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+                    headers=HTMX)
+        con = db.connect(db_datei)
+        sid = con.execute("SELECT id FROM chat_suggestion ORDER BY id DESC"
+                          ).fetchone()["id"]
+        con.close()
+
+        stueck = _entscheiden(client, sid, decision).text
+
+        assert marke in stueck
+        assert "rückgängig" in stueck
+        assert (f'hx-post="/warenkorb/vorschlag/{sid}/entscheiden'
+                '?decision=offen"') in stueck
+
+
+def test_ja_ruecknahme_ja_legt_auch_ueber_die_oberflaeche_nur_einmal_ein(
+        db_datei, tmp_path):
+    """Die Falle des Tickets, am HTTP-Rand: der Schutz gegen den Doppeltipp
+    darf nicht am Vergleich der letzten Entscheidung hängen."""
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 2)),
+                        _choose(("Landmilch", milch, 2)))
+    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    sid = _sid(db_datei)
+
+    _entscheiden(client, sid, "kept")
+    _entscheiden(client, sid, "offen")
+    _entscheiden(client, sid, "kept")
+
+    assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == [
+        (milch, 2)]
+
+
+def test_die_ruecknahme_sagt_dass_die_zeile_im_korb_bleibt(db_datei, tmp_path):
+    """Der Korb wird bewusst nicht angerührt — verschweigen darf die
+    Oberfläche das nicht, sonst sucht sie die Zeile dort vergeblich."""
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
+                        _choose(("Landmilch", milch, 1)))
+    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    sid = _sid(db_datei)
+    _entscheiden(client, sid, "kept")
+
+    stueck = _entscheiden(client, sid, "offen").text
+
+    assert "die Zeile bleibt im Korb" in stueck
+    assert "Löschknopf" in stueck
+    assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == [
+        (milch, 1)]
+    # Und die Zeile ist wieder entscheidbar: beide Knöpfe stehen da.
+    assert (f'/warenkorb/vorschlag/{sid}/entscheiden?decision=kept'
+            in stueck)
+    assert (f'/warenkorb/vorschlag/{sid}/entscheiden?decision=removed'
+            in stueck)
+
+
+def test_ein_zurueckgenommenes_nein_zeigt_die_alternativen_nicht_mehr(
+        db_datei, tmp_path):
+    """Die Zeile ist wieder unentschieden — dann gibt es auch nichts zu
+    korrigieren. Der Aufklapper gehört zum „Nein", nicht zur Zeile."""
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+    _entscheiden(client, sid, "removed")
+
+    stueck = _entscheiden(client, sid, "offen").text
+
+    assert "Nichts davon" not in stueck
+    assert "rückgängig" not in stueck        # offen ist nichts zurückzunehmen
+    assert _inhalt(db_datei) == []
+
+
+def test_eine_korrektur_laesst_sich_ueber_die_oberflaeche_zuruecknehmen(
+        db_datei, tmp_path):
+    """Und danach steht die Alternativenliste wieder offen."""
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+    _entscheiden(client, sid, "removed")
+    andere = _alternativen(db_datei, sid)[0]
+    client.post(f"/warenkorb/vorschlag/{sid}/statt?produkt_id={andere['id']}",
+                headers=HTMX)
+    con = db.connect(db_datei)
+    korrektur = con.execute(
+        "SELECT id FROM chat_suggestion WHERE corrected_from = ?",
+        (sid,)).fetchone()["id"]
+    con.close()
+
+    stueck = _entscheiden(client, korrektur, "offen").text
+
+    # Der Korb behält die Zeile (dieselbe Begründung wie beim „Ja"), …
+    assert [z["product_id"] for z in _inhalt(db_datei)] == [andere["id"]]
+    # … und die Wahl steht wieder offen.
+    assert f'/warenkorb/vorschlag/{sid}/statt?produkt_id=' in stueck
+    assert "Nichts davon" in stueck
+
+
+def test_das_tap_ziel_des_rueckwegs_ist_gross_genug(db_datei, tmp_path):
+    """Kleiner als die Hauptentscheidung — aber nicht kleiner als der Daumen.
+
+    Die Grösse kommt von `.mini` (44 px); `.mini.zurueck` nimmt nur Gewicht
+    und Farbe zurück und darf sie nicht überschreiben.
+    """
+    stil = (Path(webapp.__file__).parent / "static" / "stil.css").read_text(
+        encoding="utf-8")
+    block = stil.split(".mini.zurueck")[1].split("}")[0]
+    assert "min-height" not in block and "min-width" not in block
+    assert "font-size: 14px" in block
+    grund = stil.split(".mini {")[1].split("}")[0]
+    assert "min-height: var(--tap)" in grund
+
+
+# --------------------------------------------------------------------------
 # Oberbegriffe auffächern (WB-368)
 #
 # Ein eigener Katalog: die Milch-Vorlage der übrigen Tests hat keine

@@ -140,7 +140,36 @@ Zum Gegenstück: an einer Zutat, die der Katalog nicht hat („Sellerie"), steht
 statt der Liste „Mehr hat der Katalog dazu nicht hergegeben" und daneben das
 Freitextfeld. Das ist dort der richtige Ausgang und nicht der Notausgang.
 
-### 3b. „alles für Pho" — die Quelle gegen das Gedächtnis (WB-338, WB-367)
+### 3b. „rückgängig" — ein Fehltipp ist nicht endgültig (WB-361)
+
+An der Zahnpastazeile auf **Ja** tippen, dann auf das kleine **rückgängig**
+neben „im Korb". Die Zeile steht wieder mit Ja/Nein da, und darunter steht:
+
+```
+Zurückgenommen — die Zeile bleibt im Korb; dort steht ein Löschknopf.
+```
+
+**Prüfung:** die Korbzahl oben bleibt bei 1. Das ist Absicht und keine Panne —
+`orders.einlegen()` fasst gleiche Zeilen zusammen, die Korbzeile kann also
+längst eine sein, die sie selbst aufgestockt hat; sie hier herauszunehmen
+hiesse, fremde Mengen zu löschen. Verschwiegen wird es trotzdem nicht.
+
+Jetzt **noch einmal Ja**. Die Korbzahl bleibt bei **1**.
+
+Das ist der interessante Teil: der Schutz gegen den doppelten Tipp hing bis
+WB-361 am Vergleich der letzten Entscheidung („steht schon auf `kept`"), und
+der Umweg über „rückgängig" hätte ihn ausgehebelt — zweimal einlegen, Menge 2.
+Er hängt jetzt daran, ob DIESE Zeile schon einmal im Korb war
+(`chat_suggestion.eingelegt_at`).
+
+**Warum das mehr ist als Bequemlichkeit:** auf dem Telefon sitzen „Ja" und
+„Nein" nebeneinander. Ein Fehltipp würde in Phoenix zu einem `removed`-Label
+(Schritt 5) und die Trefferquote drücken, obwohl der Agent nichts falsch
+gemacht hat. Weil die Annotationen erst beim ABSCHICKEN entstehen, kostet der
+Rückweg vorher nichts — der Fehltipp hinterlässt kein Label, nur ein
+`withdrawn = 1` in den Metadaten. **Der Rückweg ist Datenqualität.**
+
+### 3c. „alles für Pho" — die Quelle gegen das Gedächtnis (WB-338, WB-367)
 
 Der Fall, für den das Ticket geschrieben wurde. Vorher einmal sicherstellen,
 dass das Gericht wirklich neu ist (sonst zeigt der Zug nur den

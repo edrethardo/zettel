@@ -290,8 +290,8 @@ Annotationen auf den `chat.turn`-Span dieses Zugs:
 
 | Annotation | Form |
 |---|---|
-| `mapping_precision` | ein Score je Zug: behaltene / entschiedene Vorschläge. Kein Label — „0,75" ist die Aussage, eine Textmarke daneben wäre eine Schwelle, die niemand festgelegt hat. |
-| `suggestion` | eine je Vorschlag. Label `kept`/`removed`, Score `1.0`/`0.0`, **Erklärung = der Suchbegriff**, Metadaten mit `search_term`, `product_id`, `rank`, `free_text` — und seit WB-359 `fallback_term` sowie, wenn korrigiert wurde, `corrected_to`. |
+| `mapping_precision` | ein Score je Zug: behaltene / entschiedene Vorschläge. Kein Label — „0,75" ist die Aussage, eine Textmarke daneben wäre eine Schwelle, die niemand festgelegt hat. Metadaten mit `suggested`, `kept`, `removed`, `open` — und seit WB-361 `withdrawn`: wie oft in diesem Zug eine Entscheidung zurückgenommen wurde. |
+| `suggestion` | eine je Vorschlag. Label `kept`/`removed`, Score `1.0`/`0.0`, **Erklärung = der Suchbegriff**, Metadaten mit `search_term`, `product_id`, `rank`, `free_text` — seit WB-359 `fallback_term` sowie, wenn korrigiert wurde, `corrected_to`, und seit WB-361 `withdrawn`. |
 | `correction` | eine je Korrektur (WB-359). Label `corrected` (aus der Vorlage gewählt) oder `free_text` (nichts passte, Katalog-Lücke), **Erklärung = „X statt Y“**, Metadaten mit beiden Produkten. Kein Score, und ein eigener Name: unter `suggestion` hübe die Korrektur den Mittelwert, den sie erklären soll. |
 
 An jeder steht `annotator_kind = "HUMAN"`. Das ist kein Formfeld, sondern der
@@ -349,6 +349,46 @@ Zwei Dinge daran sind Absicht und keine Kosmetik:
   Modellfehler. Das zweite heisst „in der Vorlage stand es gar nicht“ — eine
   Katalog-Lücke, und die ist keinem Modell anzulasten. Unter einem Label wären
   die beiden nicht mehr zu trennen.
+
+### Der Fehltipp, den es nie gegeben hat (WB-361)
+
+Auf dem Telefon sitzen „Ja" und „Nein" nebeneinander, und danebentippen
+passiert. Seit WB-361 lässt sich **jede** Entscheidung zurücknehmen — „Ja",
+„Nein" und auch eine Korrektur. Das ist Datenqualität und keine Bequemlichkeit:
+ein Fehltipp verfälscht sonst genau die Zahlen, die dieses Projekt interessant
+machen.
+
+Für Phoenix folgen daraus zwei Dinge, und sie ziehen in verschiedene
+Richtungen:
+
+* **Ein zurückgenommener Tipp hinterlässt KEIN Label.** Er kann keines
+  hinterlassen: geschrieben wird erst beim Abschicken (Regel 1 unten), und wer
+  zurückgenommen hat, steht dann auf `offen` — und `offen` bekommt nichts
+  (Regel 2). Genau deshalb kostet ein Rückweg vorher nichts. Ein Test hält es
+  fest (`tests/test_labels.py`), denn es ist eine Eigenschaft der Reihenfolge
+  und keine Zeile Code, die man beim Umbau stehen sieht.
+* **Sichtbar sein muss er trotzdem** — sonst sähe später niemand, wie oft
+  danebengetippt wird. Dafür steht `withdrawn` in den Metadaten: an der
+  einzelnen `suggestion` die Rücknahmen an DIESER Zeile, an
+  `mapping_precision` die Summe für den Zug, und dort zusätzlich in der
+  Erklärung:
+
+```
+identifier              label     score  explanation
+picknick-suggestion-77  kept       1,0   Butter                       withdrawn = 1
+picknick-turn-31        —          0,5   1 von 2 entschiedenen Vorschlägen behalten; 1 Entscheidung zurückgenommen.
+```
+
+Ein `kept` mit `withdrawn = 1` ist ein anderer Datenpunkt als ein `kept` beim
+ersten Hinsehen: dort hat jemand gezögert oder danebengetippt. Ein LABEL ist
+die Rücknahme trotzdem nicht — „zurückgenommen" ist kein Urteil über den
+Vorschlag, und als drittes Label neben `kept`/`removed` verdürbe es die
+Mapping-Präzision, die genau zwei Ausgänge kennt.
+
+Die Zahl steht in der Datenbank (`chat_suggestion.zurueckgenommen`) und nicht
+am Span: die Rücknahme passiert Minuten nach dem Zug, und der `chat.turn`-Span
+ist da längst geschlossen. Ein Span-Attribut liesse sich nachträglich nicht
+mehr setzen — genau dafür sind Annotationen da.
 
 ### Ein Treffer, der nur über den allgemeinsten Begriff kam
 
@@ -460,6 +500,13 @@ zeigte ins Leere.
   **`mehl` liefert „Kartoffeln mehligkochend"** — `mehl*` greift auf das
   falsche Wort. Im Trace steht ein Kandidat mit Score, und nur wer ihn liest,
   merkt es.
+* **Ein Zug, in dem am Ende ALLES offen steht, verschwindet ganz** — auch
+  seine Rücknahmen. `withdrawn` hängt an der `mapping_precision`-Annotation,
+  und die entsteht nur, wenn wenigstens eine Entscheidung stehen blieb (Regel
+  3). Wer „Ja" tippt, zurücknimmt und dann die Seite verlässt, hinterlässt
+  nichts. Das ist die Kehrseite davon, dass eine fehlende Zahl ehrlicher ist
+  als eine erfundene; wer die Fehltipp-Häufigkeit wirklich messen will, muss
+  sie in `chat_suggestion.zurueckgenommen` zählen und nicht in Phoenix.
 * **`document.score` ist über Traces hinweg nicht vergleichbar**, weil er vom
   Katalogumfang abhängt. Zwei Züge vor und nach einem Crawl haben andere
   Zahlen bei gleichem Verhalten.

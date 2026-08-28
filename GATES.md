@@ -3,8 +3,8 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 51 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 709 Tests, rund 22 s
+.venv/bin/python checks/smoke.py     # 54 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 728 Tests, rund 22 s
 ```
 
 Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
@@ -109,6 +109,14 @@ wurde, wird verworfen und benannt; eine gewählte Sorte landet im normalen
 Kandidatenablauf mit Vorschlag, Alternativen und Ja/Nein; und von mehreren
 angekreuzten Sorten fällt die nicht angebotene weg.
 
+**Der Rückweg** (3, WB-361) — am HTTP-Rand geklickt: ein „Ja" lässt sich
+zurücknehmen, die Zeile steht danach wieder unentschieden da, **der Korb bleibt
+unverändert** und die Oberfläche sagt das auch; „Ja / rückgängig / Ja" legt
+über drei Runden hinweg genau EINMAL ein (der Schutz gegen den Doppeltipp hängt
+an `eingelegt_at` und nicht mehr an der letzten Entscheidung — sonst wäre der
+Rückweg ein Loch in ihm); und ein zurückgenommener Fehltipp hinterlässt **kein
+Eval-Label**, nur den Zähler `withdrawn`.
+
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe
 enthält nur Erlaubtes; `PICKNICK_HOST=127.0.0.1,0.0.0.0` kommt nicht durch;
@@ -205,8 +213,8 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   `test_web_chat.py` und `test_labels.py` decken sie ab — aufgehobene
   Kandidaten, „Nein" klappt sie auf, ein Tipp legt eine statt des Vorschlags
   ein, der Freitext-Ausgang, die `correction`-Annotation. **Das Gate selbst
-  fasst nichts davon an**: es fährt einen Chat-Zug, entscheidet aber keine
-  Zeile. Ungemessen bleibt dabei:
+  fasst davon nur das Zurücknehmen an** (WB-361, siehe oben); die Korrektur
+  selbst klickt es nicht. Ungemessen bleibt dabei:
   * **Wie viele Alternativen der echte Katalog hergibt, hängt am Katalog.**
     Der Rauchtest-Katalog hat fünf Butter; die Zahlen aus `DESIGN.md` (Butter
     15, Schmand 26, Sellerie 2) stammen aus einer Handprobe am 2026-08-28

@@ -1169,3 +1169,164 @@ def test_abgeschnitten_wird_nicht_stillschweigend_weniger(monkeypatch):
     assert text == '[{"a": 1}]'          # bleibt ein str, Aufrufer merken nichts
     assert text.abgeschnitten is True
     assert text.gerettet == 1 and text.budget == 800
+
+
+# --------------------------------------------------------------------------
+# Entscheidungen zurücknehmen (WB-361)
+#
+# Ein Fehltipp darf nicht endgültig sein — auf dem Handy sitzen „Ja" und
+# „Nein" nebeneinander. Die Falle dabei ist nicht der Knopf, sondern der
+# Schutz gegen den Doppeltipp: er verglich die letzte Entscheidung, und genau
+# das trägt nicht mehr, sobald es einen Rückweg gibt.
+
+def _milchzeile(con):
+    """Ein Zug über „Landmilch" — gibt die id des einen Vorschlags zurück."""
+    agent, _ = _chat(con, _extract(("Landmilch", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1)))
+    return agent.turn(con, "Landmilch").vorschlaege[0]["id"]
+
+
+def test_ja_ruecknahme_ja_legt_nur_einmal_ein(con):
+    """Die Falle des ganzen Tickets.
+
+    Der alte Schutz gegen den Doppeltipp verglich nur die letzte Entscheidung
+    (`decision == entscheidung`). Über den Umweg `offen` wäre er wirkungslos:
+    zweimal `kept`, zweimal `orders.einlegen()`, Menge 2 im Korb. Der Schutz
+    hängt deshalb an `eingelegt_at` — „war diese Zeile schon einmal im Korb".
+    """
+    sid = _milchzeile(con)
+    vorschlaege.entscheiden(con, sid, "kept")
+    vorschlaege.entscheiden(con, sid, "offen")
+    vorschlaege.entscheiden(con, sid, "kept")
+
+    assert [(z["product_id"], z["qty"]) for z in orders.inhalt(con)] == [
+        (_pid(con, MILCH), 1)]
+
+
+def test_zehnmal_hin_und_her_bleibt_eine_zeile_im_korb(con):
+    """Dasselbe, nur ausdauernder — der Zähler darf nicht mitwachsen."""
+    sid = _milchzeile(con)
+    for _ in range(5):
+        vorschlaege.entscheiden(con, sid, "kept")
+        vorschlaege.entscheiden(con, sid, "offen")
+    vorschlaege.entscheiden(con, sid, "kept")
+
+    assert [z["qty"] for z in orders.inhalt(con)] == [1]
+
+
+def test_ein_verworfener_vorschlag_ist_danach_wieder_entscheidbar(con):
+    """„Nein" ist keine Sackgasse mehr — der Rückweg führt auf `offen`.
+
+    Nicht auf `kept`: das wäre eine neue Behauptung statt der Rücknahme einer
+    alten. Was vor dem Fehltipp galt, war „noch nicht entschieden".
+    """
+    sid = _milchzeile(con)
+    vorschlaege.entscheiden(con, sid, "removed")
+
+    zurueck = vorschlaege.entscheiden(con, sid, "offen")
+
+    assert zurueck["decision"] == "offen" and zurueck["offen"]
+    assert zurueck["decided_at"] is None
+    assert orders.inhalt(con) == []
+    # Und danach geht beides wieder.
+    assert vorschlaege.entscheiden(con, sid, "kept")["behalten"]
+
+
+def test_ein_zurueckgenommenes_ja_laesst_den_korb_stehen(con):
+    """Bewusst so (siehe `entscheiden()`): `orders.einlegen()` fasst gleiche
+    Zeilen zusammen, die Korbzeile kann also längst eine sein, die sie selbst
+    aufgestockt hat. Sie hier herauszunehmen hiesse, fremde Mengen zu löschen.
+    """
+    sid = _milchzeile(con)
+    vorschlaege.entscheiden(con, sid, "kept")
+    vorher = [(z["product_id"], z["qty"]) for z in orders.inhalt(con)]
+
+    zurueck = vorschlaege.entscheiden(con, sid, "offen")
+
+    assert [(z["product_id"], z["qty"]) for z in orders.inhalt(con)] == vorher
+    # Und die Zeile weiss es, damit die Oberfläche es sagen kann statt es zu
+    # verschweigen.
+    assert zurueck["im_korb"] is True and zurueck["offen"]
+
+
+def test_die_ruecknahme_wird_gezaehlt(con):
+    """Die einzige Spur, die ein Fehltipp hinterlässt — ein Label bekommt er
+    keines (`test_labels.py`)."""
+    sid = _milchzeile(con)
+    assert vorschlaege.eine(con, sid)["zurueckgenommen"] == 0
+    vorschlaege.entscheiden(con, sid, "kept")
+    vorschlaege.entscheiden(con, sid, "offen")
+    vorschlaege.entscheiden(con, sid, "removed")
+    vorschlaege.entscheiden(con, sid, "offen")
+
+    assert vorschlaege.eine(con, sid)["zurueckgenommen"] == 2
+
+
+def test_eine_korrektur_laesst_sich_zuruecknehmen(con):
+    """Sonst wäre eine falsche Korrektur schlimmer als der Fehlgriff selbst:
+    sie behauptet zusätzlich, was richtig gewesen wäre."""
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    weihenstephan = _pid(con, "Weihenstephan Butter")
+    neu = vorschlaege.korrigieren(con, sid, weihenstephan)
+
+    zurueck = vorschlaege.entscheiden(con, neu["id"], "offen")
+
+    assert zurueck["offen"] and zurueck["ist_korrektur"]
+    # Der Korb bleibt auch hier unangetastet — dieselbe Begründung.
+    assert [z["product_id"] for z in orders.inhalt(con)] == [weihenstephan]
+    # Und die Zeile ist wieder frei: die Alternativen dürfen erneut aufgehen.
+    assert vorschlaege.korrektur(con, sid) is None
+    assert vorschlaege.eine(con, sid)["decision"] == vorschlaege.VERWORFEN
+
+
+def test_dieselbe_korrektur_nach_der_ruecknahme_legt_nicht_zweimal_ein(con):
+    """Die Falle von oben, eine Ebene höher: „Das", rückgängig, „Das".
+
+    Wiederverwendet wird die vorhandene Korrekturzeile; eine zweite auf
+    dasselbe Produkt wäre zweimal dasselbe „das wäre richtig gewesen" — und
+    zweimal im Korb.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    weihenstephan = _pid(con, "Weihenstephan Butter")
+    erste = vorschlaege.korrigieren(con, sid, weihenstephan)
+    vorschlaege.entscheiden(con, erste["id"], "offen")
+
+    zweite = vorschlaege.korrigieren(con, sid, weihenstephan)
+
+    assert zweite["id"] == erste["id"] and zweite["behalten"]
+    assert [(z["product_id"], z["qty"]) for z in orders.inhalt(con)] == [
+        (weihenstephan, 1)]
+    assert len([z for z in vorschlaege.liste(con, ergebnis.chat_message_id)
+                if z["ist_korrektur"]]) == 1
+
+
+def test_nach_der_ruecknahme_darf_eine_andere_alternative_gewaehlt_werden(con):
+    """Vorher stand hier eine Absage („wurde schon korrigiert"). Genau dafür
+    ist der Rückweg da — die zurückgenommene Korrektur blockiert nicht mehr.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    erste = vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+    vorschlaege.entscheiden(con, erste["id"], "offen")
+
+    andere = vorschlaege.korrigieren(con, sid,
+                                     _pid(con, "Kerrygold irische Butter"))
+
+    assert andere["id"] != erste["id"] and andere["behalten"]
+    assert vorschlaege.korrektur(con, sid)["id"] == andere["id"]
+    # Der Korb behält beide Zeilen — er wird beim Zurücknehmen nicht
+    # angerührt, und das ist die bewusste Entscheidung, keine Nachlässigkeit.
+    assert len(orders.inhalt(con)) == 2
+
+
+def test_eine_stehende_korrektur_blockiert_weiterhin(con):
+    """Die Zusicherung aus WB-359 bleibt: solange die Korrektur gilt, wird
+    keine zweite danebengelegt."""
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.korrigieren(con, sid, _pid(con, "Kerrygold irische Butter"))
