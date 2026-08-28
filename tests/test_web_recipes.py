@@ -331,3 +331,142 @@ def test_rezeptansicht_ist_fuers_handy_gebaut(client, con):
                    ".rezept-daraus input {"):
         block = stil.split(klasse, 1)[1].split("}", 1)[0]
         assert "min-height: var(--tap)" in block, klasse
+
+
+# --------------------------------------------------------------------------
+# Portionen wählen und die Rechnung zeigen (WB-362)
+
+def _mit_gebinde(con, name, unit_text):
+    """Setzt einer Katalogzeile eine bekannte Packungsgrösse.
+
+    Die aufgezeichnete Fixture bringt echte `unit_text` mit; für eine
+    nachlesbare Rechnung muss die Zahl im Test stehen und nicht in einer
+    Aufzeichnung, die sich beim nächsten Crawl ändern kann.
+    """
+    pid = _pid(con, name)
+    con.execute("UPDATE product SET unit_text = ? WHERE id = ?",
+                (unit_text, pid))
+    con.commit()
+    return pid
+
+
+def test_die_portionszahl_steht_neben_dem_korbknopf(client, con):
+    """Vorbelegt mit dem, was am Rezept steht — dort wird sie gewählt.
+
+    Nicht in den Kopfdaten: „diesmal für acht" ist eine Aussage über diesen
+    Einkauf, und wer sie dort einträgt, ändert das Rezept.
+    """
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Sugo", "servings": "4"})
+    client.post(f"/rezepte/{rid}/zutaten?product_id={_pid(con, MILCH)}",
+                headers=HTMX)
+
+    seite = client.get(f"/rezepte/{rid}").text
+    assert 'name="portionen"' in seite
+    assert "Für wie viele Portionen" in seite
+    feld = seite.split('name="portionen"', 1)[1].split(">", 1)[0]
+    assert 'value="4"' in feld
+
+
+def test_fuer_acht_statt_vier_werden_zwei_packungen_daraus(client, con):
+    """Der ganze Weg über die Oberfläche: Menge verknüpfen, Portionen wählen,
+    Korb füllen — und die Meldung sagt, was gerechnet wurde."""
+    pid = _mit_gebinde(con, MILCH, "500 g")
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Sugo", "servings": "4"})
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=500&unit=ml",
+                headers=HTMX)
+
+    r = client.post(f"/rezepte/{rid}/korb", data={"portionen": "8"},
+                    headers=HTMX)
+    assert r.status_code == 200
+    assert "für 8 statt 4 Portionen" in r.text
+    assert "1000 ml" in r.text and "2 × 500 g" in r.text
+    assert [(z["name"], z["qty"]) for z in orders.inhalt(con)] == [(MILCH, 2)]
+
+    # Das Rezept selbst bleibt bei vier.
+    assert recipes.rezept(con, rid)["servings"] == 4
+
+
+def test_der_warenkorb_zeigt_was_gerechnet_wurde(client, con):
+    """Regel 6: eine stumme 2 im Mengenfeld erklärt nichts."""
+    pid = _mit_gebinde(con, MILCH, "500 g")
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Sugo", "servings": "4"})
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=1000&unit=ml",
+                headers=HTMX)
+    client.post(f"/rezepte/{rid}/korb", headers=HTMX)
+
+    korb = client.get("/warenkorb").text
+    assert "1000 ml gebraucht" in korb
+    assert "2 ×" in korb
+
+
+def test_die_zutat_des_rezepts_fuehrt_mit_ihrer_menge_in_die_suche(client, con):
+    """Der Weg, auf dem eine Menge überhaupt an eine Zutat kommt.
+
+    Ohne ihn müsste jemand „500 ml" von Hand in ein Mengenfeld tippen — und
+    in der Praxis bliebe es leer. Dann skalierte nichts, und das Ticket wäre
+    eine Zusage ohne Deckung.
+    """
+    rid = _rid(client)
+    con.execute("INSERT INTO recipe_ingredient (recipe_id, pos, raw_name,"
+                " name, amount, unit) VALUES (?, 0, ?, ?, ?, ?)",
+                (rid, "Tomaten, passierte", "passierte Tomaten", 500.0, "ml"))
+    con.commit()
+
+    seite = client.get(f"/rezepte/{rid}").text
+    assert "amount=500" in seite and "unit=ml" in seite
+
+    # Und der Treffer legt sie mit ins Rezept.
+    treffer = client.get(f"/rezepte/{rid}/suche?q=Milch&amount=500&unit=ml").text
+    assert "amount=500" in treffer
+    client.post(f"/rezepte/{rid}/zutaten?product_id={_pid(con, MILCH)}"
+                "&amount=500&unit=ml", headers=HTMX)
+    assert recipes.zutaten(con, rid)[0]["amount"] == 500.0
+
+
+def test_was_nicht_ausrechenbar_ist_steht_als_solches_da(client, con):
+    """Regel 4 in der Oberfläche: nicht raten, aber auch nicht schweigen."""
+    pid = _mit_gebinde(con, MILCH, "1 kg")
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Suppe", "servings": "4"})
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=1&unit=Stk",
+                headers=HTMX)
+
+    r = client.post(f"/rezepte/{rid}/korb", data={"portionen": "8"},
+                    headers=HTMX)
+    assert "Nicht ausrechenbar" in r.text
+    assert "1 kg" in r.text
+    # Und im Korb liegt trotzdem genau eine Packung.
+    assert [z["qty"] for z in orders.inhalt(con)] == [1]
+
+
+def test_die_menge_einer_zutat_laesst_sich_korrigieren(client, con):
+    """Wer sich vertippt hat, soll die Zutat nicht löschen und neu suchen
+    müssen — und ein leeres Feld nimmt die Menge ganz wieder weg.
+
+    Eine eigene Route und nicht `…/menge`: die benötigte Menge wächst mit den
+    Portionen, die Packungszahl nicht. Ein gemeinsames „Menge setzen" baute
+    genau die Verwechslung ein, um die es in WB-362 geht.
+    """
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=500&unit=ml",
+                headers=HTMX)
+    item = recipes.zutaten(con, rid)[0]["id"]
+
+    r = client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                    data={"amount": "0,25", "unit": "l"}, headers=HTMX)
+    assert r.status_code == 200
+    assert recipes.zutaten(con, rid)[0]["amount"] == 250.0
+
+    client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                data={"amount": "", "unit": "ml"}, headers=HTMX)
+    assert recipes.zutaten(con, rid)[0]["amount"] is None
+    # Und die Packungszahl bleibt davon unberührt — es sind zwei Grössen.
+    assert recipes.zutaten(con, rid)[0]["qty"] == 1

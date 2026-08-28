@@ -18,9 +18,14 @@
       <span class="menge">{{ p.unit_text or "" }}</span>
     </span>
     <span class="preis">{{ p.price_cents | euro }}</span>
+    {# Menge und Einheit reisen mit (WB-362): wurde von einer Zutat des
+       Rezepts aus gesucht, verknüpft das „+“ das Produkt samt der Menge, die
+       das Rezept dafür braucht. Ohne sie ist die Zutat eine Packung und
+       skaliert nicht mit den Portionen. #}
+    {%- set mengenteil = ("&amount=" ~ (amount | urlencode) ~ "&unit=" ~ ((unit or "") | urlencode)) if amount else "" -%}
     <form class="einlegen" method="post"
-          action="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}"
-          hx-post="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}"
+          action="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}{{ mengenteil }}"
+          hx-post="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}{{ mengenteil }}"
           hx-target="#rezept" hx-swap="innerHTML">
       <button class="plus" type="submit"
               aria-label="{{ p.name }} ins Rezept">+</button>

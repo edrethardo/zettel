@@ -3,8 +3,8 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 54 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 728 Tests, rund 22 s
+.venv/bin/python checks/smoke.py     # 57 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 807 Tests, rund 24 s
 ```
 
 Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
@@ -116,6 +116,16 @@ unverändert** und die Oberfläche sagt das auch; „Ja / rückgängig / Ja" leg
 an `eingelegt_at` und nicht mehr an der letzten Entscheidung — sonst wäre der
 Rückweg ein Loch in ihm); und ein zurückgenommener Fehltipp hinterlässt **kein
 Eval-Label**, nur den Zähler `withdrawn`.
+
+**Portionen und die Reihenfolge der Rechenschritte** (3, WB-362) — am
+HTTP-Rand geklickt, weil die Reihenfolge eine Eigenschaft des WEGES ist und
+keine einer Hilfsfunktion: ein Rezept für 4, für 8 Portionen in den Korb
+gelegt, verdoppelt die Zutatenmenge (250 g -> 500 g) und ergibt 2 × 250 g;
+zwei Rezepte mit je 100 g ergeben zusammen 200 g und damit **eine** Packung à
+250 g (wer je Rezept aufrundet, kommt auf zwei); und eine Zwiebel aus einem
+1-kg-Netz bleibt auch für 8 Portionen ein Netz — geprüft wird dabei
+ausdrücklich BEIDES, dass auf 2 Stück skaliert wurde und dass die Packungszahl
+trotzdem 1 ist, samt der Begründung „gegen ‚1 kg' nicht ausrechenbar".
 
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe

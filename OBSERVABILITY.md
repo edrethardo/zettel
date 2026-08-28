@@ -130,6 +130,13 @@ und `picknick.fanout_source` sagt, ob dafür überhaupt ein Modell nötig war
 (`catalog` heisst: das getippte Wort war selbst eine Kategorie, der Zug lief
 in 0,0 s).
 
+**`korb.menge` steht NICHT unter `chat.turn`** (WB-362). Er entsteht, wenn
+eine Menge in den Korb gerechnet wird — meistens beim Tipp auf „Alles in den
+Warenkorb", also ohne jeden Chat-Zug. Ihn an den Baum oben zu hängen hiesse,
+eine Verwandtschaft zu behaupten, die es nicht gibt; er ist ein eigener Trace
+mit einer eigenen Frage („warum liegen hier zwei Packungen?"), und die
+Attribute stehen weiter unten.
+
 **Seit WB-367 ist ein `llm`-Zug MIT gesetztem `picknick.dish` ein Befund und
 kein Normalfall.** Vorher war er die Regel: der erste Satz zu einem neuen
 Gericht riet, der Abruf lief daneben, und dasselbe Gericht tauchte zweimal
@@ -244,6 +251,55 @@ ein Fehlgriff sähe unerklärlicher aus, als er ist.
 Bei null Treffern wird `rank_top` **nicht gesetzt**. Eine 0 dort wäre eine
 Zahl, die niemand gemessen hat, und sie stünde in jeder Auswertung neben
 echten Nullen.
+
+### `korb.menge` — `CHAIN` (WB-362)
+
+Ein Span je Korbposten, **und nur wenn wirklich gerechnet wurde**: ein „+" an
+der Kachel legt eine Packung ein und rechnet nichts aus — ein Span, der so
+aussähe, als hätte er es getan, wäre eine Behauptung ohne Messung.
+
+Er beantwortet die eine Frage, die man später an einen Warenkorb stellt:
+**warum liegen hier zwei Packungen und nicht eine?**
+
+| Attribut | Typ | Bedeutung |
+|---|---|---|
+| `input.value` | Text | der Produktname |
+| `output.value` | Text | der Satz, den die Nutzerin an der Zeile liest: „1000 ml gebraucht — 2 × Pomito 500 g." |
+| `picknick.item_id` | int | die Zeile in `order_item` |
+| `picknick.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird |
+| `picknick.servings` | int | für wie viele Portionen dieses Einlegen gerechnet hat |
+| `picknick.need_added` | float | der Beitrag **dieses** Einlegens, schon skaliert |
+| `picknick.need_added_unit` | Text | dessen Einheit, wie das Rezept sie schreibt |
+| `picknick.need_amount` | float | die **Summe** an der Zeile, über alle Rezepte |
+| `picknick.need_unit` | Text | deren Grundeinheit: `g`, `ml`, `Stk` — oder eine eigene wie `bund` |
+| `picknick.pack_text` | Text | die Packungsgrösse, wie sie am Produkt steht: `0,75 l` |
+| `picknick.pack_amount` | float | dieselbe in der Grundeinheit: `750` |
+| `picknick.pack_unit` | Text | deren Einheit |
+| `picknick.hand_qty` | int | wie viele Packungen ausdrücklich verlangt wurden (Griff ins Regal, von Hand gesetzte Menge) |
+| `picknick.qty` | int | was am Ende im Korb liegt |
+| `picknick.computable` | bool | **liess sich die Packungszahl ausrechnen?** |
+| `picknick.packages` | int | die ausgerechnete Packungszahl; **fehlt**, wenn `computable` falsch ist |
+| `picknick.reason` | Text | warum nicht: „2 Stk passt nicht zur Packung ‚1 kg'" |
+| `picknick.assumption` | Text | die Annahme, unter der gerechnet wurde — bisher genau eine: `1 ml als 1 g gerechnet` |
+
+**`need_added` und `need_amount` stehen beide da, und das ist der Punkt.**
+Erst ihr Unterschied macht das Zusammenzählen sichtbar: zwei Züge mit je
+`need_added = 40` und danach `need_amount = 80`, `packages = 1` — das ist der
+Beweis, dass nach dem Zusammenzählen aufgerundet wurde und nicht davor. Stünde
+nur eine der beiden Zahlen da, sähe ein einzelner Span in beiden Welten gleich
+aus.
+
+**`computable = false` ist ein eigenes Feld und nicht bloss ein fehlendes
+`packages`.** Genau diese Fälle will man in Phoenix suchen: dort stammt die
+Zahl im Korb aus einer Vorgabe und nicht aus einer Rechnung, und wenn sich
+solche Züge häufen, fehlt dem Katalog oder dem Zerleger etwas. Ein fehlendes
+Attribut lässt sich nicht filtern.
+
+**`assumption` ist die Ehrlichkeitsspalte.** Milliliter gegen Gramm werden 1:1
+gerechnet — für Wässriges stimmt das, für Mehl (1 l wiegt rund 550 g) und Öl
+(rund 910 g) nicht. Wer wissen will, wie oft der Shop auf dieser Annahme
+steht, filtert danach. Sie steht aus demselben Grund auch in dem Satz, den die
+Nutzerin liest: eine Annahme, die man nicht sieht, kann man nicht bestreiten.
 
 ### `plan.extract` / `plan.choose` — `LLM`
 

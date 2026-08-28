@@ -14,7 +14,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
-from picknick import db
+from picknick import db, mengen
 
 
 class BestellFehler(RuntimeError):
@@ -148,7 +148,7 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     """
     rows = con.execute(
         "SELECT i.id, i.order_id, i.product_id, i.free_text, i.qty, i.store,"
-        "       i.picked_at,"
+        "       i.picked_at, i.need_amount, i.need_unit, i.hand_qty,"
         "       coalesce(p.name, i.free_text) AS name,"
         "       p.unit_text, p.price_cents, p.image_path, p.active"
         "  FROM order_item i LEFT JOIN product p ON p.id = i.product_id"
@@ -160,6 +160,17 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     for r in rows:
         e = markiere_katalogstand(dict(r))
         e["gepickt"] = e["picked_at"] is not None
+        # Was gerechnet wurde, steht an der Zeile und nicht nur im Trace
+        # (WB-362, Regel 6): eine stumme 2 im Mengenfeld ist genau das, was
+        # dieses Ticket verhindern soll. Der Satz entsteht in `mengen` und
+        # nicht in der Vorlage, damit die Tests denselben prüfen, den die
+        # Nutzerin liest.
+        rechnung = mengen.rechne(e["need_amount"], e["need_unit"],
+                                 e["unit_text"])
+        e["rechnung"] = rechnung
+        e["bedarf_satz"] = mengen.satz(rechnung, produkt=e["name"],
+                                       unit_text=e["unit_text"],
+                                       qty=int(e["qty"]))
         eintraege.append(e)
     return eintraege
 

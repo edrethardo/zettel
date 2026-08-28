@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from picknick import db
+from picknick import db, mengen, obs
 from picknick.obs import labels
 from picknick.orders.bestellung import (LeererWarenkorb, UngueltigerPosten,
                                         jetzt, posten, wechsle)
@@ -140,13 +140,150 @@ def vorbelegter_laden(con: sqlite3.Connection, product_id=None,
     return row["store"] if row else LADEN_VORGABE
 
 
+def gebinde(con: sqlite3.Connection, product_id) -> str | None:
+    """Der `unit_text` eines Produkts — die Packungsgrösse als Text.
+
+    `None` für Freitext und für ein Produkt, das es nicht (mehr) gibt. Beides
+    heisst dasselbe: es gibt keine Packungsgrösse, gegen die sich rechnen
+    liesse.
+    """
+    if product_id is None:
+        return None
+    row = con.execute("SELECT unit_text FROM product WHERE id = ?",
+                      (product_id,)).fetchone()
+    return row["unit_text"] if row else None
+
+
+def rechnung(con: sqlite3.Connection, item_id: int) -> mengen.Rechnung:
+    """Die Rechnung eines Korbpostens: benötigte Menge gegen Packungsgrösse.
+
+    **Immer aus dem GESAMTBEDARF der Zeile**, nie aus einem einzelnen Beitrag.
+    Das ist die Reihenfolge aus dem Nachtrag des Tickets: zusammengezählt wird
+    in `need_amount`, aufgerundet wird hier, und zwar danach.
+    """
+    row = con.execute(
+        "SELECT need_amount, need_unit, product_id FROM order_item"
+        " WHERE id = ?", (item_id,)).fetchone()
+    if row is None:
+        return mengen.Rechnung()
+    return mengen.rechne(row["need_amount"], row["need_unit"],
+                         gebinde(con, row["product_id"]))
+
+
+def _neu_rechnen(con: sqlite3.Connection, item_id: int) -> int:
+    """Rechnet die Packungszahl einer Zeile neu und schreibt sie.
+
+    Die eine Stelle, an der `order_item.qty` aus einer Menge entsteht — und
+    der Grund, warum sie eine eigene Funktion ist: sie muss nach JEDER
+    Änderung am Bedarf laufen. Bliebe eine alte Zahl stehen, läge eine
+    Packung im Korb, die niemand mehr braucht, und niemand könnte sagen,
+    woher sie kommt.
+
+        qty = max(hand_qty, ausgerechnete Packungen, 1)
+
+    Alle drei Glieder sind nötig. `hand_qty`, damit ein von Hand eingelegter
+    Posten nicht verschwindet, nur weil ein Rezept mit weniger auskäme. Die
+    ausgerechnete Zahl, weil sie der eigentliche Zweck des Tickets ist. Und
+    die 1, weil eine Zeile mit Menge 0 eine Lüge im Regal wäre.
+    """
+    row = con.execute(
+        "SELECT hand_qty, qty FROM order_item WHERE id = ?",
+        (item_id,)).fetchone()
+    hand = int(row["hand_qty"] or 0)
+    aus_menge = rechnung(con, item_id).packungen or 0
+    neu = max(hand, aus_menge, 1)
+    if neu != int(row["qty"]):
+        con.execute("UPDATE order_item SET qty = ? WHERE id = ?",
+                    (neu, item_id))
+    return neu
+
+
+def _bedarf_span(con: sqlite3.Connection, item_id: int, *,
+                 menge, einheit, portionen=None) -> None:
+    """Schreibt die Rechnung dieses Postens in einen Span (Spec 7).
+
+    **Was gerechnet wurde, gehört in den Trace** — sonst ist später nicht
+    nachvollziehbar, warum zwei Packungen im Korb liegen und nicht eine. Der
+    Fall „nicht ausrechenbar" steht ausdrücklich mit drin: er ist die
+    interessantere Hälfte, weil dort die Menge unverändert bleibt und die
+    Zahl im Korb aus einer Vorgabe stammt statt aus einer Rechnung.
+
+    Nur wenn eine Menge im Spiel ist. Ein Griff ins Regal („+" an der Kachel)
+    rechnet nichts aus und bekommt deshalb auch keinen Span, der so aussähe,
+    als hätte er es getan.
+    """
+    if menge is None:
+        return
+    row = con.execute(
+        "SELECT i.qty, i.hand_qty, i.need_amount, i.need_unit, i.product_id,"
+        "       p.name, p.unit_text FROM order_item i"
+        "  LEFT JOIN product p ON p.id = i.product_id WHERE i.id = ?",
+        (item_id,)).fetchone()
+    r = mengen.rechne(row["need_amount"], row["need_unit"], row["unit_text"])
+    with obs.chain("korb.menge", eingabe=str(row["name"] or "")) as span:
+        obs.setze(span, {
+            "picknick.item_id": item_id,
+            "picknick.product_id": row["product_id"],
+            "picknick.servings": portionen,
+            # Der EINZELNE Beitrag dieses Einlegens …
+            "picknick.need_added": float(menge),
+            "picknick.need_added_unit": str(einheit or "") or None,
+            # … und die Summe, die daraus wurde. Beide, weil erst der
+            # Unterschied zwischen ihnen das Zusammenzählen sichtbar macht.
+            "picknick.need_amount": row["need_amount"],
+            "picknick.need_unit": row["need_unit"],
+            "picknick.pack_text": row["unit_text"],
+            "picknick.pack_amount": r.packung,
+            "picknick.pack_unit": r.packung_einheit,
+            "picknick.hand_qty": int(row["hand_qty"] or 0),
+            "picknick.qty": int(row["qty"]),
+            # Ausdrücklich als eigenes Feld und nicht bloss als fehlendes
+            # `packages`: „nicht ausrechenbar" ist eine Antwort und soll sich
+            # in Phoenix filtern lassen.
+            "picknick.computable": r.ausrechenbar,
+            "picknick.packages": r.packungen,
+            "picknick.reason": r.grund,
+            "picknick.assumption": r.annahme,
+        })
+        obs.setze_ausgabe(span, mengen.satz(r, produkt=row["name"],
+                                            unit_text=row["unit_text"],
+                                            qty=int(row["qty"])) or "")
+
+
 def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
-             qty: int = 1, store: str | None = None) -> int:
+             qty: int = 1, store: str | None = None,
+             menge=None, einheit=None, portionen=None) -> int:
     """Legt ein Produkt oder einen Freitext in den gemeinsamen Warenkorb.
 
-    Liegt dieselbe Sache schon drin, wird die Menge erhöht statt eine zweite
-    Zeile angelegt. Zweimal „+" an derselben Kachel heisst „zwei davon" und
-    nicht „zwei Zeilen, die im Laden zweimal gegriffen werden".
+    Liegt dieselbe Sache schon drin, wird die Zeile ERGÄNZT statt eine zweite
+    angelegt. Zweimal „+" an derselben Kachel heisst „zwei davon" und nicht
+    „zwei Zeilen, die im Laden zweimal gegriffen werden".
+
+    **`menge` und `einheit` sind der Kern von WB-362.** Sie sagen, wie viel
+    GEBRAUCHT wird — 80 g Knoblauch —, während `qty` sagt, wie viele
+    PACKUNGEN verlangt sind. Wer eine Menge mitgibt, überlässt die
+    Packungszahl dieser Funktion; wer keine mitgibt, verlangt Packungen und
+    bekommt sie.
+
+    Damit ergibt sich die Reihenfolge aus dem Nachtrag des Tickets von selbst:
+
+    * Mengen werden in `need_amount` ADDIERT — über Rezepte hinweg, über die
+      Produkt-ID, weil die Zeile über die Produkt-ID gefunden wird. Zwei
+      Rezepte mit je 40 g stehen danach als 80 g da.
+    * Aufgerundet wird erst hinterher, in `_neu_rechnen`, aus der Summe.
+      Deshalb ergeben zwei mal 40 g EINE Packung à 100 g und nicht zwei.
+
+    **Was sich nicht ausrechnen lässt, zählt als Packung.** Passt die Einheit
+    des Bedarfs nicht zur Packungsgrösse („2 Stangen" gegen „ca. 500 g"), wird
+    nicht geraten: die mitgegebene Packungszahl wird wie ein Handposten
+    behandelt, die Menge bleibt trotzdem stehen, und die Oberfläche kann
+    sagen, warum. Das ist Regel 4 des Tickets, und es hält zugleich das
+    Verhalten von vor diesem Ticket für alles, was keine Menge hat.
+
+    **Freitext bekommt keine Menge.** Ein Posten ohne Produkt hat keine
+    Packungsgrösse, gegen die sich rechnen liesse — er bleibt eine Zeile mit
+    einer Stückzahl, und das ist richtig so (Ticket: „Freitext-Posten lassen
+    sich nicht zusammenzählen").
 
     Gibt die id des Postens zurück.
     """
@@ -158,25 +295,54 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
         # (mehr) gibt — ein Katalog-Lauf kann Produkte inaktiv setzen, und ein
         # altes Kachel-Formular im Browser zeigt danach ins Leere.
         raise UngueltigerPosten(f"Produkt {pid} gibt es nicht.")
-    menge = max(1, int(qty))
+    packungen = max(1, int(qty))
+    if pid is None:
+        menge, einheit = None, None
     laden = store if store in db.STORES else vorbelegter_laden(con, pid, text)
     korb = warenkorb(con)
 
     vorhanden = con.execute(
-        "SELECT id, qty FROM order_item"
+        "SELECT id, qty, hand_qty, need_amount, need_unit FROM order_item"
         " WHERE order_id = ? AND product_id IS ? AND free_text IS ?",
         (korb, pid, text)).fetchone()
-    if vorhanden:
-        con.execute("UPDATE order_item SET qty = ? WHERE id = ?",
-                    (vorhanden["qty"] + menge, vorhanden["id"]))
-        con.commit()
-        return int(vorhanden["id"])
+    if vorhanden is None:
+        cur = con.execute(
+            "INSERT INTO order_item (order_id, product_id, free_text, qty,"
+            "                        hand_qty, store)"
+            " VALUES (?, ?, ?, ?, 0, ?)", (korb, pid, text, packungen, laden))
+        item_id = int(cur.lastrowid)
+        alt_menge, alt_einheit, hand = None, None, 0
+    else:
+        item_id = int(vorhanden["id"])
+        alt_menge = vorhanden["need_amount"]
+        alt_einheit = vorhanden["need_unit"]
+        hand = int(vorhanden["hand_qty"] or 0)
 
-    cur = con.execute(
-        "INSERT INTO order_item (order_id, product_id, free_text, qty, store)"
-        " VALUES (?, ?, ?, ?, ?)", (korb, pid, text, menge, laden))
+    if menge is not None:
+        summe = mengen.summiere(alt_menge, alt_einheit, menge, einheit)
+        if summe is None:
+            # Zwei Bedarfe, die sich nicht zusammenzählen lassen — „4 Stangen"
+            # und „200 g" am selben Produkt. Addiert wird nicht: eine Zahl
+            # aus zwei Einheiten wäre schlimmer als keine. Der ältere Bedarf
+            # bleibt stehen, der neue zählt als Packung.
+            menge = None
+        else:
+            con.execute(
+                "UPDATE order_item SET need_amount = ?, need_unit = ?"
+                " WHERE id = ?", (summe[0], summe[1], item_id))
+
+    if menge is None or not rechnung(con, item_id).ausrechenbar:
+        # Ohne Menge, oder mit einer, die zur Packung nicht passt: dann ist
+        # die mitgegebene Packungszahl das Beste, was dasteht.
+        hand += packungen
+        con.execute("UPDATE order_item SET hand_qty = ? WHERE id = ?",
+                    (hand, item_id))
+
+    _neu_rechnen(con, item_id)
     con.commit()
-    return int(cur.lastrowid)
+    _bedarf_span(con, item_id, menge=menge, einheit=einheit,
+                 portionen=portionen)
+    return item_id
 
 
 def _posten_im_draft(con: sqlite3.Connection, item_id: int) -> sqlite3.Row:
@@ -200,18 +366,32 @@ def _posten_im_draft(con: sqlite3.Connection, item_id: int) -> sqlite3.Row:
 
 
 def menge_setzen(con: sqlite3.Connection, item_id: int, qty: int) -> int:
-    """Setzt die Menge einer Zeile. Menge unter 1 entfernt sie.
+    """Setzt die Packungszahl einer Zeile von Hand. Unter 1 entfernt sie.
 
     Der Minus-Knopf muss eine Zeile auch loswerden können, ohne dass man ihn
     erst gegen den Löschknopf tauscht; und eine Zeile mit Menge 0 wäre eine
     Lüge im Regal. Gibt die neue Menge zurück, 0 für „ist weg".
+
+    **Der Mensch hat hier das letzte Wort, auch gegen die Rechnung** (WB-362).
+    Die gesetzte Zahl gilt, selbst wenn der Bedarf zwei Packungen verlangt und
+    sie eine tippt: ein Minus-Knopf, der nichts tut, weil eine Rechnung
+    dagegensteht, ist ein kaputter Knopf. Die benötigte Menge bleibt trotzdem
+    stehen — sie ist eine Tatsache über das Rezept und keine über den Korb,
+    und die Oberfläche sagt beides („1000 ml gebraucht — 2 × 500 g. Im Korb
+    liegt 1.").
+
+    Die Zahl wird als `hand_qty` gemerkt und ist damit von da an die
+    Untergrenze: legt jemand später ein Rezept dazu, das mehr braucht, steigt
+    sie wieder — aber unter das, was ausdrücklich verlangt wurde, fällt sie
+    nicht.
     """
     _posten_im_draft(con, item_id)
     menge = int(qty)
     if menge < 1:
         entfernen(con, item_id)
         return 0
-    con.execute("UPDATE order_item SET qty = ? WHERE id = ?", (menge, item_id))
+    con.execute("UPDATE order_item SET qty = ?, hand_qty = ? WHERE id = ?",
+                (menge, menge, item_id))
     con.commit()
     return menge
 

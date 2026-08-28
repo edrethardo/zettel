@@ -38,7 +38,13 @@
   {% endif %}
   <li>
     <span class="menge">{% if z.amount %}{{ z.amount | menge }}{% endif %} {{ z.unit or "" }}</span>
-    <span class="name">{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</span>
+    {# Der Weg von der Zutat zum Produkt — und die Menge geht mit (WB-362).
+       Ohne diesen Griff müsste jemand „500 ml“ von Hand in das Suchfeld und
+       dann in das Mengenfeld tippen, und in der Praxis bliebe die Menge
+       leer. Dann skalierte die verknüpfte Zutat nicht, und das ganze Ticket
+       wäre eine Zusage ohne Deckung. #}
+    <a class="name" href="/rezepte/{{ rezept.id }}?q={{ z.name | urlencode }}{% if z.amount %}&amount={{ z.amount }}&unit={{ (z.unit or '') | urlencode }}{% endif %}"
+       >{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</a>
   </li>
   {% endfor %}
 </ul>
@@ -59,12 +65,23 @@
    ins Rezept statt in den Korb. Ohne HTMX schickt dasselbe Formular ein GET
    auf diese Seite und die Trefferliste steht danach ebenso da. #}
 <h2>Zutat aus dem Katalog</h2>
+{% if amount %}
+{# Es wurde von einer Rezeptzutat aus gesucht: die Menge hängt an der Suche
+   und geht mit dem „+“ ins Rezept. Sie STEHT hier, statt still mitzureisen —
+   was gleich mitgespeichert wird, soll vorher zu lesen sein. #}
+<p class="fussnote" role="status">Menge aus dem Rezept:
+  {{ amount | menge }} {{ unit or "Stk" }} — sie wird beim „+“ mit verknüpft
+  und wächst mit den Portionen.</p>
+{% endif %}
 <form class="suche" action="/rezepte/{{ rezept.id }}" method="get" role="search">
   <input type="search" name="q" value="{{ q or '' }}" placeholder="Produkt suchen…"
          autocomplete="off"
          hx-get="/rezepte/{{ rezept.id }}/suche"
          hx-trigger="input changed delay:300ms, search"
-         hx-target="#rezept-treffer" hx-swap="innerHTML">
+         hx-target="#rezept-treffer" hx-swap="innerHTML"
+         hx-include="closest form">
+  <input type="hidden" name="amount" value="{{ amount or '' }}">
+  <input type="hidden" name="unit" value="{{ unit or '' }}">
   <button type="submit">Suchen</button>
 </form>
 <div id="rezept-treffer">{% include "_rezept_treffer.html" %}</div>
