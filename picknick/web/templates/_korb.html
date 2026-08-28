@@ -8,7 +8,11 @@
 {% endif %}
 
 {% if not posten %}
-  <p class="leer">Der Warenkorb ist leer.</p>
+  {# Der leere Zustand sagt, was als Nächstes sinnvoll ist, statt nur zu
+     schweigen (WB-360). Der Satz davor bleibt wörtlich — Tests kennen ihn. #}
+  <p class="leer">Der Warenkorb ist leer.<br>
+    Stöber im Katalog oder frag unten im Chat nach allem auf einmal.<br>
+    <a class="knopf" href="/katalog">Zum Katalog</a></p>
 {% else %}
 <ul class="korb">
   {% for i in posten %}

@@ -1,179 +1,390 @@
 /* Handy zuerst — beide benutzen Telefone, er im Laden (Spec 9).
-   Drei Regeln tragen dieses Blatt:
-   1. Eine Spalte. Kein Raster, das auf 360 px Breite zu zwei 140-px-Kacheln
-      zusammenfällt, in denen der Produktname nicht mehr lesbar ist.
-   2. Tap-Ziele mindestens 44 px hoch. Darunter trifft ein Daumen im Laden
-      daneben — das ist keine Kosmetik, sondern der Unterschied zwischen
-      benutzbar und nicht.
-   3. Nichts darf breiter werden als der Bildschirm. Deshalb border-box
-      überall und Umbruch auch mitten im Wort: Knuspr-Produktnamen sind lang. */
+   Drei Regeln tragen dieses Blatt weiterhin:
+   1. Eine Spalte. Kein Raster, das auf 360 px zu unlesbaren Kacheln
+      zusammenfällt.
+   2. Tap-Ziele mindestens 44 px. Darunter trifft ein Daumen im Laden daneben.
+   3. Nichts wird breiter als der Bildschirm: border-box überall, Umbruch auch
+      mitten im Wort.
+
+   Dazu seit WB-360 eine HALTUNG: Marktstand, nicht Formular.
+   - Grund ist warmes Papier, Inhalte liegen auf cremeweissen Karten; die
+     Produktfotos (weisser Fond ab Werk) liegen darauf wie auf Tellern.
+   - EINE Handlungsfarbe: Blattgrün. Rot nur fürs Wegnehmen, Honig für
+     Warnungen. Alles andere ist Tinte auf Papier.
+   - Formensprache: Pillen für Knöpfe, 14-px-Radien für Karten. Überschriften
+     in ui-rounded, wo es das gibt (iOS) — sonst Systemschrift.
+   - Bewegung nur an drei belohnenden Stellen: der grüne Plus-Knopf drückt
+     sich, die Korbzahl ploppt, die Rückmeldung taucht auf. Sonst Ruhe.
+   - Dunkelmodus ist ein zweiter Entwurf, kein Negativ: das Papier wird zu
+     dunklem Holz, die Fotos werden sanft gedimmt statt grell zu leuchten.
+   - Die Pick-Ansicht bleibt nüchtern: Grund statt Karten, grosse Zeilen,
+     klebende Laden-Überschriften. Im Laden zählt Kontrast, nicht Charme.
+
+   Farbwelt als Variablen in :root; der Dunkelmodus tauscht NUR die Variablen.
+   Achtung: Tests schneiden Blöcke am Selektortext auf — teils samt öffnender
+   Klammer, teils am nackten Klassennamen (siehe tests/test_web_chat.py,
+   test_web_recipes.py, test_web_orders.py). Die Schreibweise dieser
+   Selektoren ist Vertrag, nicht Geschmack, und ihr ERSTES Vorkommen im Blatt
+   muss der echte Block sein — deshalb nennt dieser Kommentar absichtlich
+   keinen davon beim Namen. */
 
 * { box-sizing: border-box; }
 
 :root {
   --tap: 44px;
   --rand: 12px;
-  --linie: #ddd;
-  --gedaempft: #666;
+  --radius: 14px;
+
+  /* Papier und Tinte */
+  --grund: #f6f1e7;
+  --karte: #fffdf9;
+  --karte-tief: #efe8da;
+  --tinte: #33291a;
+  --gedaempft: #857866;
+  --linie: #e5dcc9;
+
+  /* Blattgrün — die eine Handlungsfarbe */
+  --akzent: #3e7d33;
+  --auf-akzent: #ffffff;
+  --akzent-tinte: #2c5d24;
+  --akzent-hell: #e4efdb;
+
+  /* Tomate — wegnehmen, verwerfen */
+  --beere: #b23a2a;
+  --beere-hell: #f9e7e2;
+
+  /* Honig — Warnung, alte Preise, ausgemustert */
+  --honig: #8a5a00;
+  --honig-hell: #fdf3d8;
+  --honig-linie: #ecd9a0;
+
+  /* Rückmeldungen */
+  --fehler-text: #a03024;
+  --fehler-hell: #fbe9e4;
+  --fehler-linie: #eab6a8;
+  --ok-text: #2c5d24;
+  --ok-hell: #e4efdb;
+  --ok-linie: #b9d8a8;
+
+  --bildfond: #ffffff;
+  --schatten: 0 1px 2px rgba(72, 56, 28, 0.05), 0 4px 14px rgba(72, 56, 28, 0.07);
+}
+
+/* Abends auf dem Sofa: dunkles Holz statt Papier. Warm abgedunkelt, nicht
+   invertiert — Grün und Honig werden heller, damit sie auf dunklem Grund
+   lesbar bleiben, die Flächen dazu tiefer. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #191512;
+    --karte: #241f19;
+    --karte-tief: #2f2921;
+    --tinte: #f0e8d9;
+    --gedaempft: #a2957f;
+    --linie: #3a332a;
+
+    --akzent: #6fae5c;
+    --auf-akzent: #16230f;
+    --akzent-tinte: #a5d295;
+    --akzent-hell: #2b3a22;
+
+    --beere: #e08975;
+    --beere-hell: #3b241d;
+
+    --honig: #dcb75e;
+    --honig-hell: #322913;
+    --honig-linie: #55471f;
+
+    --fehler-text: #f0a18e;
+    --fehler-hell: #3b211a;
+    --fehler-linie: #5c3226;
+    --ok-text: #a5d295;
+    --ok-hell: #263420;
+    --ok-linie: #3e5731;
+
+    --bildfond: #e9e1d2;
+    --schatten: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+  /* Die Fotos haben weissen Fond ab Werk. Ungedimmt sind sie nachts das
+     hellste auf der Seite und blenden — leicht heruntergedreht wirken sie
+     wie angeleuchtet statt wie ein Loch im Dunkel. */
+  img.bild { filter: brightness(0.88); }
 }
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 17px;              /* iOS zoomt Eingabefelder unter 16px heran */
-  line-height: 1.4;
-  color: #111;
-  background: #fff;
+  line-height: 1.45;
+  color: var(--tinte);
+  background: var(--grund);
   overflow-wrap: anywhere;
 }
 
-main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
+main { padding: var(--rand) var(--rand) 32px; max-width: 680px; margin: 0 auto; }
+
+/* Typografie-Skala: 28 / 20 / 17 / 15 / 13. Überschriften rund und schwer,
+   damit die Systemschrift einen Charakter bekommt, ohne eine Datei zu laden. */
+h1, h2 {
+  font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 800; letter-spacing: -0.02em;
+}
+h1 { font-size: 28px; margin: 18px 0 10px; }
+h2 { font-size: 20px; margin: 24px 0 8px; }
+
+:is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--akzent); outline-offset: 2px; border-radius: 8px;
+}
+input::placeholder { color: var(--gedaempft); opacity: 1; }
+button:disabled { opacity: 0.5; cursor: default; }
 
 /* Kopf ------------------------------------------------------------------ */
 .kopf {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--rand);
-  padding: 0 var(--rand); border-bottom: 1px solid var(--linie);
+  display: flex; align-items: center; gap: 4px var(--rand);
+  padding: 0 var(--rand);
+  background: var(--karte); border-bottom: 1px solid var(--linie);
 }
-.marke { font-weight: 700; text-decoration: none; color: inherit;
-         min-height: var(--tap); display: flex; align-items: center; }
-.kopf nav { display: flex; gap: var(--rand); margin-left: auto; }
+.kopf .marke {
+  font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 800; font-size: 20px; letter-spacing: -0.02em;
+  text-decoration: none; color: var(--akzent-tinte);
+  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+/* Der eine kleine Schmuck: eine grüne Beere hinter dem Namen. */
+.kopf .marke::after {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--akzent); margin-top: 6px;
+}
+/* Acht Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
+   statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen. */
+.kopf nav {
+  display: flex; gap: 2px; margin-left: auto; min-width: 0;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.kopf nav::-webkit-scrollbar { display: none; }
 .kopf nav a {
   min-height: var(--tap); display: flex; align-items: center;
+  padding: 0 10px; border-radius: 999px;
   color: var(--gedaempft); text-decoration: none;
+  font-size: 15px; font-weight: 500; white-space: nowrap;
 }
+.kopf nav a:active { background: var(--karte-tief); }
 
 /* Hinweisband (Spec 11) -------------------------------------------------- */
 .band {
-  margin: 0; padding: 10px var(--rand);
-  background: #fff4d6; border-bottom: 1px solid #e6cf8a;
+  margin: 0; padding: 10px var(--rand) 10px 34px; position: relative;
+  background: var(--honig-hell); color: var(--honig);
+  border-bottom: 1px solid var(--honig-linie); font-size: 15px;
 }
+.band::before {
+  content: ""; position: absolute; left: var(--rand); top: 17px;
+  width: 10px; height: 10px; border-radius: 50%; background: var(--honig);
+}
+.band .fussnote { color: inherit; opacity: 0.85; }
 
 /* Suche ------------------------------------------------------------------ */
-.suche { display: flex; gap: 8px; margin-bottom: var(--rand); }
+.suche { display: flex; gap: 8px; margin: var(--rand) 0 16px; }
 .suche input {
-  flex: 1 1 auto; min-width: 0;          /* min-width:0, sonst sprengt das
-                                            Feld in einem Flex-Container die
-                                            Zeile und die Seite scrollt quer */
-  min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 auto; min-width: 0;          /* sonst sprengt das Feld die Zeile */
+  min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 .suche button, .knopf, .rollen button {
-  min-height: var(--tap); padding: 0 16px; font-size: 17px;
-  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
-  color: inherit; text-decoration: none; display: inline-flex;
-  align-items: center; justify-content: center; cursor: pointer;
+  min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
+  border: 1.5px solid var(--linie); border-radius: 999px;
+  background: var(--karte); color: var(--tinte); text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.12s ease;
 }
+.suche button:active, .knopf:active, .rollen button:active { transform: scale(0.96); }
 .rollen { display: flex; flex-direction: column; gap: 10px; }
-.rollen button { width: 100%; }
-.rollen .gewaehlt { background: #e2eefc; border-color: #8ab4e8; }
+.rollen button { width: 100%; min-height: 56px; }
+.rollen .gewaehlt { background: var(--akzent-hell); border-color: var(--akzent);
+                    color: var(--akzent-tinte); }
 
-/* Kategorien ------------------------------------------------------------- */
-.kategorien { margin-bottom: var(--rand); }
+/* Kategorien: eine Karte, in der die Äste aufklappen --------------------- */
+.kategorien {
+  margin-bottom: 16px; background: var(--karte);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  box-shadow: var(--schatten); overflow: hidden;
+}
 .kategorien summary,
 .zweig {
-  min-height: var(--tap); display: flex; align-items: center;
-  padding: 0 8px; border-bottom: 1px solid var(--linie);
+  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
+  padding: 0 14px; border-bottom: 1px solid var(--linie);
   color: inherit; text-decoration: none; cursor: pointer;
 }
-.zweig { padding-left: 24px; color: #14508c; }
-.zweig.alle { padding-left: 8px; font-weight: 600; }
-.anzahl { margin-left: auto; color: var(--gedaempft); font-size: 14px; }
-
-/* Kacheln ---------------------------------------------------------------- */
-.kacheln { list-style: none; margin: 0; padding: 0; }
-.kachel {
-  display: flex; align-items: center; gap: var(--rand);
-  padding: 8px 0; border-bottom: 1px solid var(--linie);
-  min-height: 72px;
+.kategorien summary { list-style: none; font-weight: 600; }
+.kategorien summary::-webkit-details-marker { display: none; }
+.kategorien summary::before {
+  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
 }
-.bild { width: 72px; height: 72px; flex: 0 0 72px; object-fit: contain;
-        border-radius: 8px; background: #f4f4f4; }
-.bild-fehlt { display: block; }
+.kategorien details[open] > summary::before { transform: rotate(90deg); }
+.kategorien details:last-child .zweig:last-child,
+.kategorien > .zweig.alle:last-child { border-bottom: none; }
+.zweig { padding-left: 34px; color: var(--akzent-tinte); }
+.zweig.alle { padding-left: 14px; font-weight: 700; color: var(--tinte); }
+.anzahl {
+  margin-left: auto; color: var(--gedaempft); font-size: 13px;
+  background: var(--karte-tief); border-radius: 999px; padding: 2px 9px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* Kacheln: die Produktfotos sind das Beste am Shop und liegen jetzt gross
+   auf eigenen Karten — 88 px auf weissem Teller statt 72 px am Zeilenrand. */
+.kacheln { list-style: none; margin: 0; padding: 0;
+           display: flex; flex-direction: column; gap: 10px; }
+.kachel {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) max-content;
+  grid-template-areas: "bild text plus" "bild fuss plus";
+  column-gap: var(--rand); row-gap: 2px; align-items: center;
+  padding: 10px; min-height: 72px;
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius); box-shadow: var(--schatten);
+}
+.kachel > .bild { grid-area: bild; width: 88px; height: 88px; }
+.kachel .text { grid-area: text; align-self: end; }
+.kachel .preis { grid-area: fuss; align-self: start; }
+.einlegen { grid-area: plus; margin: 0; align-self: center; }
+.rueckmeldung { grid-area: fuss; justify-self: end; align-self: start;
+                min-width: 0; font-size: 14px; }
+
+.bild {
+  width: 72px; height: 72px; flex: 0 0 72px; object-fit: contain;
+  border-radius: 12px; background: var(--bildfond); padding: 3px;
+}
+.bild-fehlt { display: block; background: var(--karte-tief); }
 .text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .name { font-weight: 600; }
 .menge { color: var(--gedaempft); font-size: 15px; }
 .preis { white-space: nowrap; font-variant-numeric: tabular-nums;
-         font-weight: 600; }
+         font-weight: 700; }
 
-.leer, .fussnote { color: var(--gedaempft); }
-.fussnote { font-size: 14px; margin-top: 24px; }
+/* Leere Zustände sind gestaltet, nicht übrig: eine ruhige, gestrichelte
+   Karte mit einem Satz, der sagt, was als Nächstes sinnvoll ist. */
+.leer {
+  margin: 14px 0; padding: 26px 16px; text-align: center;
+  color: var(--gedaempft); background: var(--karte);
+  border: 1.5px dashed var(--linie); border-radius: var(--radius);
+}
+.leer .knopf { margin-top: 12px; }
+.fussnote { color: var(--gedaempft); font-size: 14px; margin-top: 20px; }
+.fussnote a { color: inherit; }
 
 /* Warenkorb, Bestellungen, Pick-Ansicht (WB-324) --------------------------
-   Dieselben drei Regeln wie oben. Die zweite wiegt hier am schwersten: die
-   Pick-Ansicht wird einhändig im Laden benutzt, mit dem Korb in der anderen
-   Hand. Ein Tap-Ziel, das dort danebengeht, kostet mehr als eine hässliche
-   Zeile. */
+   Tap-Ziele wiegen hier am schwersten: die Pick-Ansicht wird einhändig im
+   Laden benutzt, mit dem Korb in der anderen Hand. */
 
-/* „+" an der Katalogkachel */
-.einlegen { margin: 0; }
+/* Der grüne Plus-Knopf: der eine Moment, der belohnt. Er ist rund, er ist
+   die Handlungsfarbe, und er drückt sich sichtbar ein. */
 .plus {
+  width: var(--tap); height: var(--tap);
   min-width: var(--tap); min-height: var(--tap);
-  font-size: 24px; line-height: 1; padding: 0;
-  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
-  color: inherit; cursor: pointer;
+  font-size: 26px; line-height: 1; padding: 0;
+  border: none; border-radius: 50%;
+  background: var(--akzent); color: var(--auf-akzent);
+  box-shadow: var(--schatten); cursor: pointer;
+  transition: transform 0.12s ease;
 }
-.rueckmeldung { flex: 0 0 auto; min-width: 0; font-size: 14px; }
-.ok { color: #17692c; white-space: nowrap; }
+.plus:active { transform: scale(0.85); }
+.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
+      animation: auftauchen 0.3s ease; }
 .korbzahl {
-  display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px;
-  border-radius: 11px; background: #e2eefc; color: #14508c;
-  font-size: 14px; text-align: center;
+  display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 4px;
+  border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
+  font-size: 14px; font-weight: 700; text-align: center;
+  font-variant-numeric: tabular-nums;
+  animation: plopp 0.35s ease;
 }
 
-/* Warenkorbzeile */
-.korb { list-style: none; margin: 0; padding: 0; }
+/* Warenkorbzeile: die Liste ist EINE Karte, die Zeilen trennen sich mit
+   feinen Linien — Karten je Zeile frässen auf dem Telefon zu viel Höhe. */
+.korb {
+  list-style: none; margin: 0; padding: 0 10px;
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius); box-shadow: var(--schatten);
+}
 .zeile {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 0; border-bottom: 1px solid var(--linie);
+  padding: 10px 4px; border-bottom: 1px solid var(--linie);
   flex-wrap: wrap;              /* auf 360 px rutschen die Stellknöpfe in die
-                                   zweite Zeile, statt die Seite quer zu
-                                   scrollen */
+                                   zweite Zeile, statt quer zu scrollen */
 }
+.korb > .zeile:last-child { border-bottom: none; }
 .zeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
 .stellen { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .stellen form { margin: 0; }
 .mini {
-  min-width: var(--tap); min-height: var(--tap); padding: 0 8px;
-  font-size: 18px; border: 1px solid var(--linie); border-radius: 8px;
-  background: #f4f4f4; color: inherit; cursor: pointer;
+  min-width: var(--tap); min-height: var(--tap); padding: 0 12px;
+  font-size: 16px; font-weight: 600;
+  border: 1.5px solid var(--linie); border-radius: 999px;
+  background: var(--karte); color: var(--tinte); cursor: pointer;
+  transition: transform 0.12s ease;
 }
-.mini.loeschen { color: #8c1414; }
+.mini:active { transform: scale(0.94); }
+.mini.loeschen { color: var(--beere); }
 .stellen .anzahl { margin: 0; min-width: 2ch; text-align: center;
-                   color: inherit; font-variant-numeric: tabular-nums; }
+                   padding: 0; background: none; font-size: 17px;
+                   color: inherit; font-variant-numeric: tabular-nums;
+                   font-weight: 600; }
 .stellen select {
-  min-height: var(--tap); font-size: 16px; padding: 0 4px;
-  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+  min-height: var(--tap); font-size: 16px; padding: 0 8px;
+  border: 1.5px solid var(--linie); border-radius: 999px;
+  background: var(--karte); color: var(--tinte);
 }
 
 .freitext { display: flex; gap: 8px; margin: var(--rand) 0; }
 .freitext input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 .freitext button, .abschicken .gross {
-  min-height: var(--tap); padding: 0 16px; font-size: 17px;
-  border: 1px solid var(--linie); border-radius: 8px; background: #f4f4f4;
-  cursor: pointer;
+  min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
+  border: 1.5px solid var(--linie); border-radius: 999px;
+  background: var(--karte); color: var(--tinte); cursor: pointer;
+  transition: transform 0.12s ease;
 }
-.abschicken { margin-top: var(--rand); }
-.abschicken .gross { width: 100%; min-height: 52px; font-weight: 600;
-                     background: #e2eefc; border-color: #8ab4e8; }
+.freitext button:active { transform: scale(0.96); }
+.abschicken { margin-top: 16px; }
+.abschicken .gross {
+  width: 100%; min-height: 54px; font-size: 18px; font-weight: 700;
+  border: none; background: var(--akzent); color: var(--auf-akzent);
+  box-shadow: var(--schatten);
+}
+.abschicken .gross:active { transform: scale(0.98); }
 
-.fehler { padding: 10px; border-radius: 8px;
-          background: #fdecec; border: 1px solid #e8a1a1; }
-.fertig { padding: 10px; border-radius: 8px;
-          background: #e8f6ea; border: 1px solid #8ec99a; }
-.stand { color: var(--gedaempft); }
+.fehler { padding: 12px 14px; border-radius: var(--radius);
+          background: var(--fehler-hell); color: var(--fehler-text);
+          border: 1px solid var(--fehler-linie); }
+.fertig { padding: 12px 14px; border-radius: var(--radius);
+          background: var(--ok-hell); color: var(--ok-text);
+          border: 1px solid var(--ok-linie); font-weight: 600;
+          animation: auftauchen 0.35s ease; }
+.stand { color: var(--gedaempft); font-weight: 600; }
 
-/* Bestellübersicht */
-.bestellungen { list-style: none; margin: 0; padding: 0; }
-.bestellungen .zweig { padding: 8px; align-items: flex-start; }
+/* Bestellübersicht: dieselbe Karten-Liste wie der Korb. */
+.bestellungen, .rezepte {
+  list-style: none; margin: 0; padding: 0 10px;
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius); box-shadow: var(--schatten);
+}
+.bestellungen .zweig, .rezepte .zweig { padding: 10px 4px; align-items: flex-start; }
+.bestellungen > li:last-child .zweig,
+.rezepte > li:last-child .zweig { border-bottom: none; }
 .bestellung.erledigt .name { color: var(--gedaempft); }
 
-/* Pick-Ansicht: grosse Checkboxen mit Bild (Spec 9) */
-.gruppe h2 { display: flex; align-items: center; font-size: 19px;
-             margin: 20px 0 4px; padding-bottom: 4px;
-             border-bottom: 2px solid #333; }
+/* Pick-Ansicht: ein anderer Ort. Kein Kartenschmuck, grosse Zeilen, klebende
+   Laden-Überschriften — im Laden zählt Kontrast und ein Daumen, der trifft. */
+.gruppe h2 {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 8px; font-size: 20px;
+  margin: 20px 0 4px; padding: 8px 0 6px;
+  background: var(--grund); border-bottom: 2px solid var(--tinte);
+}
 .pickliste { list-style: none; margin: 0; padding: 0; }
 .pickzeile { border-bottom: 1px solid var(--linie); }
 .pickzeile form { display: flex; align-items: center; margin: 0; }
@@ -185,188 +396,224 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 }
 .haken input[type="checkbox"] {
   width: 32px; height: 32px; flex: 0 0 32px; margin: 0;
-  accent-color: #14508c;
+  accent-color: var(--akzent);
 }
+.pickzeile .name { font-size: 18px; }
 .pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
+.pickzeile.ab { opacity: 0.55; }
 .pickzeile.ab .name { text-decoration: line-through; color: var(--gedaempft); }
-.pickzeile.ab { background: #f6f6f6; }
 
-/* Rezepte (WB-325) ---------------------------------------------------------
-   Kein eigenes Aussehen: die Zutatenliste benutzt dieselbe `.zeile` samt
-   `.stellen` wie der Warenkorb, weil es dieselbe Sache ist — eine Zeile mit
-   Menge, die man antippt. Neu ist nur, was der Katalog nicht mehr hergibt. */
+/* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
+   weil es dieselbe Sache ist. */
+.rezeptzeile .zweig { align-items: flex-start; }
 
-.rezepte { list-style: none; margin: 0; padding: 0; }
-.rezeptzeile .zweig { padding: 8px; align-items: flex-start; }
+/* Eine Zutat, die es im Katalog nicht mehr gibt (`active = 0`, Spec 5.3):
+   MARKIERT, nicht ausgeblendet — Honig, nicht Rot: kein Fehler, aber etwas,
+   das man wissen muss, BEVOR man im Laden steht. */
+.ausgemustert { color: var(--honig); font-weight: 600; }
+.fehlt-im-katalog { background: var(--honig-hell); border-radius: 10px; }
 
-/* Eine Zutat, die es im Katalog nicht mehr gibt (`active = 0`, Spec 5.3).
-   Sie wird MARKIERT und nicht ausgeblendet: eine stillschweigend fehlende
-   Zutat merkt man erst im Laden, und dann ist es zu spät. */
-.ausgemustert { color: #8a5a00; font-weight: 600; }
-.fehlt-im-katalog { background: #fff8e8; }
-
-/* Dasselbe im Warenkorb und auf der Pickliste (WB-335). Bewusst KEINE eigenen
-   Klassen: es ist dieselbe Sache wie im Rezept und darf nicht wie zwei
-   aussehen. Neu ist nur, dass hier ein ganzer Satz steht statt zweier Wörter —
-   der Hinweis soll sagen, was zu tun ist, und muss deshalb umbrechen dürfen.
-
-   Er hängt an der Zeile und nicht an einem Band am Seitenkopf: im Laden wird
-   gescrollt, und ein Band ist dann nicht mehr im Bild — gelesen werden muss
-   der Satz aber, BEVOR jemand vor dem Regal steht und sucht. */
+/* Im Warenkorb und auf der Pickliste (WB-335) hängt der Hinweis an der
+   ZEILE, nicht an einem Band am Seitenkopf: im Laden wird gescrollt. */
 .zeile .ausgemustert, .pickzeile .ausgemustert {
   font-size: 14px; line-height: 1.3; white-space: normal;
 }
-/* Abgehakt schlägt Warnung: was schon im Einkaufswagen liegt, muss niemand
-   mehr suchen. Der Hintergrund erledigt `.pickzeile.ab` ohnehin (zwei Klassen
-   schlagen eine); hier geht es um den Text daneben. */
+/* Abgehakt schlägt Warnung: was im Wagen liegt, muss niemand mehr suchen. */
 .pickzeile.ab .ausgemustert { color: var(--gedaempft); font-weight: 400; }
 
-/* Kopfdaten und die beiden grossen Knöpfe. Tap-Ziel 44 px wie überall — hier
-   steht niemand im Laden, aber eine Eingabe, die man dreimal antippen muss,
-   ist auf dem Sofa genauso ärgerlich. */
+/* Kopfdaten des Rezepts. */
 .rezeptkopf { display: flex; flex-direction: column; gap: 10px;
               margin: var(--rand) 0; }
 .rezeptkopf label { display: flex; flex-direction: column; gap: 4px;
                     color: var(--gedaempft); font-size: 15px; }
 .rezeptkopf input, .rezeptkopf textarea {
-  min-height: var(--tap); padding: 8px 10px; font-size: 17px; color: #111;
-  border: 1px solid var(--linie); border-radius: 8px; width: 100%;
+  min-height: var(--tap); padding: 10px 14px; font-size: 17px;
+  color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: var(--radius); width: 100%;
   font-family: inherit;
 }
 .rezeptkopf .knopf { align-self: flex-start; }
 .rezeptloeschen { margin: 24px 0; }
-.rezeptloeschen .knopf.loeschen { color: #8c1414; border-color: #e8a1a1; }
+.rezeptloeschen .knopf.loeschen { color: var(--beere); border-color: var(--beere-hell);
+                                  background: var(--beere-hell); }
 
-/* „Daraus ein Rezept machen“ an der erledigten Bestellung (Spec 6). */
-.rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 8px 10px; }
+/* „Daraus ein Rezept machen" an der erledigten Bestellung (Spec 6). */
+.rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 10px; }
 .rezept-daraus input {
-  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 
-/* Chat (WB-327) ------------------------------------------------------------
-   Er steht im Warenkorb und nicht auf einer eigenen Seite (Spec 9). Eine
-   Vorschlagszeile sieht bewusst aus wie eine Korbzeile — es ist dieselbe
-   Sache, nur noch nicht bestätigt. Der Unterschied steckt in den beiden
-   Knöpfen rechts und in der Herkunftszeile darunter. */
-
-.chat { margin: 24px 0 0; border-top: 1px solid var(--linie);
+/* Chat (WB-327): Sprechblasen — ihre rechts in Blattgrün-Fläche, die
+   Antworten links auf Karte. Eine Vorschlagszeile ist eine kleine Karte, die
+   aussieht wie eine Korbzeile: dieselbe Sache, nur noch nicht bestätigt. */
+.chat { margin: 28px 0 0; border-top: 1px solid var(--linie);
         padding-top: var(--rand); }
-.chat h2 { font-size: 19px; margin: 0 0 8px; }
-.chatband { border: 1px solid #e6cf8a; border-radius: 8px;
+.chat h2 { margin: 0 0 8px; }
+.chatband { border: 1px solid var(--honig-linie); border-radius: var(--radius);
             margin-bottom: var(--rand); }
+.chatband::before { animation: puls 1.6s ease-in-out infinite; }
 .chatband .fussnote { display: block; }
 
-.chatzeile { margin: 8px 0; padding: 8px 10px; border-radius: 10px; }
-.chatzeile.ich { background: #eef4ff; }
-.chatzeile.agent { background: #f4f4f4; color: #333; font-size: 15px; }
+.chatzeile { margin: 10px 0; padding: 10px 14px; border-radius: 16px;
+             max-width: 92%; width: fit-content; }
+.chatzeile.ich { background: var(--akzent-hell); color: var(--tinte);
+                 margin-left: auto; border-bottom-right-radius: 4px; }
+.chatzeile.agent { background: var(--karte); border: 1px solid var(--linie);
+                   color: var(--tinte); font-size: 15px;
+                   border-bottom-left-radius: 4px; }
 
 .vorschlaege { list-style: none; margin: 0 0 8px; padding: 0; }
-/* Woraus die Zeile entstanden ist: Suchbegriff und Rang der Suche. Das steht
-   sichtbar an der Zeile und nicht nur im Trace — es ist die Erklärung zur
-   Entscheidung, und die Entscheidung ist das Eval-Label (Spec 8.1). */
+.vorschlaege > .zeile {
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius); box-shadow: var(--schatten);
+  padding: 8px 10px; margin: 8px 0;
+}
+.vorschlaege > .zeile.fehlt-im-katalog { background: var(--honig-hell);
+                                         border-color: var(--honig-linie); }
+/* Woraus die Zeile entstanden ist: Suchbegriff und Rang (Spec 8.1). */
 .vorschlag .woher { font-size: 13px; color: var(--gedaempft); }
-.vorschlag.entschieden { opacity: 0.65; }
+.vorschlag.entschieden { opacity: 0.6; }
 .vorschlag .stellen { align-items: center; }
-.mini.ja { font-weight: 700; }
-.mini.nein { color: #8c1414; }
-.marke { font-size: 13px; color: var(--gedaempft); white-space: nowrap; }
+.mini.ja { color: var(--ok-text); background: var(--ok-hell);
+           border-color: var(--ok-linie); font-weight: 700; }
+.mini.nein { color: var(--beere); background: var(--beere-hell);
+             border-color: transparent; }
+/* Entschieden-Marken: kleine Pillen statt nackter Wörter. */
+span.marke { font-size: 13px; font-weight: 600; padding: 5px 10px;
+             border-radius: 999px; background: var(--karte-tief);
+             color: var(--gedaempft); white-space: nowrap; }
+span.marke.ja { background: var(--ok-hell); color: var(--ok-text); }
+span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
-/* Die Alternativen zu einer verworfenen Zeile (WB-359). Sie klappen UNTER der
-   Zeile auf und schieben sie nicht auseinander — `flex-basis: 100%` in der
-   umgebenden `.zeile`, wie schon bei der Bon-Korrektur aus WB-358.
-
-   `<details>` und kein JavaScript: das Aufklappen entscheidet der Server (die
-   gerade verworfene Zeile bekommt `open`), das Zuklappen der Daumen. Ohne
-   Zutun steht die Liste offen genau einmal da.
-
-   Die Höhenbegrenzung ist der Grund, warum die Anzeigegrenze gross sein darf:
-   fünfzehn Alternativen sprengen die Seite nicht, wenn die Liste selbst
-   scrollt. 60vh lässt die Zeile darüber und das Freitextfeld darunter
-   sichtbar — man sieht immer noch, WOZU man gerade auswählt. */
+/* Die Alternativen zu einer verworfenen Zeile (WB-359): klappen UNTER der
+   Zeile auf, die Liste scrollt in sich (60vh), damit fünfzehn Kandidaten die
+   Seite nicht sprengen und man sieht, WOZU man auswählt. */
 .alternativen { flex-basis: 100%; margin-top: 8px; }
 .alternativen > summary {
   min-height: var(--tap); display: flex; align-items: center;
   padding: 0 4px; font-size: 15px; color: var(--gedaempft); cursor: pointer;
 }
-.altliste { max-height: 60vh; overflow-y: auto; margin: 0; }
-.altliste .zeile { padding: 6px 0; }
+.altliste { max-height: 60vh; overflow-y: auto; margin: 0;
+            background: var(--karte-tief); border-radius: 10px; padding: 0 8px; }
+.altliste > .zeile { background: none; border: none; box-shadow: none;
+                     border-radius: 0; margin: 0; padding: 8px 0;
+                     border-bottom: 1px solid var(--linie); }
+.altliste > .zeile:last-child { border-bottom: none; }
 
 /* „Nichts davon, ich schreibe es selbst" — bei einer Katalog-Lücke der
    richtige Ausgang und nicht der Notausgang. */
 .selbst { display: flex; gap: 8px; margin: 8px 0 4px; }
 .selbst input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 .selbst button { white-space: nowrap; }
 
-/* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359, Befund aus
-   WB-358). Kein Fehler, aber auch kein sicherer Treffer — gelb wie die
-   Ausgemustert-Marke, nicht rot wie ein Fehler. */
-.vorschlag .schwach { font-size: 13px; color: #7a5b00; }
+/* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359): Honig, nicht
+   Rot — kein Fehler, aber auch kein sicherer Treffer. */
+.vorschlag .schwach { font-size: 13px; color: var(--honig); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
 .chatform { display: flex; gap: 8px; margin-top: var(--rand); }
 .chatform input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 .chatform button {
-  min-height: var(--tap); padding: 0 var(--rand); font-size: 17px;
-  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+  min-height: var(--tap); padding: 0 18px; font-size: 17px; font-weight: 700;
+  border: none; border-radius: 999px;
+  background: var(--akzent); color: var(--auf-akzent);
+  box-shadow: var(--schatten); cursor: pointer;
+  transition: transform 0.12s ease;
 }
+.chatform button:active { transform: scale(0.96); }
 
-/* Ein 27B-Modell antwortet in Sekunden, nicht in Millisekunden. Ohne
-   sichtbares Warten drückt man ein zweites Mal — htmx blendet dieses Stück
-   für die Dauer der Anfrage ein. */
+/* Ein 27B-Modell antwortet in Sekunden. Ohne sichtbares Warten drückt man
+   ein zweites Mal — htmx blendet dieses Stück für die Anfrage ein. */
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }
 
-/* Statusseite (WB-331). Dieselbe Liste wie überall, nur ohne Bild: die
-   Zeilen sind Meldungen und keine Produkte. */
-.laeufe { list-style: none; margin: 0; padding: 0; }
-.lauf { display: flex; flex-direction: column; padding: 8px;
+/* Statusseite (WB-331): dieselbe Karten-Liste, nur ohne Bild. */
+.laeufe { list-style: none; margin: 0; padding: 0 10px;
+          background: var(--karte); border: 1px solid var(--linie);
+          border-radius: var(--radius); box-shadow: var(--schatten); }
+.lauf { display: flex; flex-direction: column; padding: 10px 4px;
         border-bottom: 1px solid var(--linie); }
+.laeufe > .lauf:last-child { border-bottom: none; }
 .lauf .name { font-weight: 600; }
-.lauf.verworfen { background: #fff8e8; }
-.lauf.error .name { color: #8c1414; }
+.lauf.verworfen { background: var(--honig-hell); border-radius: 10px; }
+.lauf.error .name { color: var(--fehler-text); }
+code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
+       font-size: 15px; }
 
-/* Bons (WB-344). Eine Spalte wie überall: der Upload passiert auf dem Handy,
-   und die Dateiauswahl des Telefons braucht die volle Breite — als Flex-Zeile
-   neben dem Knopf schneidet iOS den Dateinamen ab. */
+/* Bons (WB-344): der Upload ist eine gestrichelte Ablagefläche — man legt
+   etwas hinein. Eine Spalte, weil die Dateiauswahl des Telefons die volle
+   Breite braucht. */
 .bonupload { display: flex; flex-direction: column; gap: 10px;
-             margin-bottom: var(--rand); }
+             margin-bottom: var(--rand); padding: 14px;
+             background: var(--karte); border: 1.5px dashed var(--linie);
+             border-radius: var(--radius); }
 .bonupload input[type="file"] {
-  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 17px;
-  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 15px;
+  color: var(--tinte);
+  border: 1.5px solid var(--linie); border-radius: var(--radius);
+  background: var(--grund);
 }
 .bonupload button { width: 100%; min-height: 52px; font-size: 17px;
-                    font-weight: 600; border: 1px solid #8ab4e8;
-                    border-radius: 8px; background: #e2eefc; color: inherit;
-                    cursor: pointer; }
-.bons { list-style: none; margin: 0; padding: 0; }
+                    font-weight: 700; border: none;
+                    border-radius: 999px; background: var(--akzent);
+                    color: var(--auf-akzent); box-shadow: var(--schatten);
+                    cursor: pointer; transition: transform 0.12s ease; }
+.bonupload button:active { transform: scale(0.98); }
+.bons { list-style: none; margin: 0; padding: 0 10px;
+        background: var(--karte); border: 1px solid var(--linie);
+        border-radius: var(--radius); box-shadow: var(--schatten); }
 .bonzeile { display: flex; align-items: center; gap: 8px;
-            padding: 8px 0; border-bottom: 1px solid var(--linie);
-            min-height: var(--tap); }
-/* Zwei Knöpfe je Zeile seit WB-358 (auslesen, löschen). Der Abstand kommt
-   deshalb an den Behälter und nicht mehr an jedes Formular — sonst schöbe
-   `margin-left: auto` beide einzeln nach rechts und der Löschknopf klebte am
-   Auslesen-Knopf. */
+            padding: 10px 4px; border-bottom: 1px solid var(--linie);
+            min-height: var(--tap); flex-wrap: wrap; }
+.bons > .bonzeile:last-child { border-bottom: none; }
+.bonzeile a { color: inherit; }
 .bonzeile .text { display: flex; flex-direction: column; min-width: 0; }
 .bonzeile .stellen { display: flex; align-items: center; gap: 6px;
                      margin-left: auto; }
 .bonzeile form { margin: 0; }
 .bonzeile .woher { font-size: 13px; color: var(--gedaempft); }
 
-/* Eine Bon-Zeile korrigieren (WB-358): das Suchfeld und die Kandidaten
-   klappen UNTER der Zeile auf und schieben sie nicht auseinander. */
+/* Eine Bon-Zeile korrigieren (WB-358): klappt UNTER der Zeile auf. */
 .korrektur:empty { display: none; }
 .korrektur { flex-basis: 100%; margin-top: 8px; }
 .bonsuche { display: flex; gap: 8px; margin-bottom: 8px; }
 .bonsuche input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
-  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 999px;
 }
 .vorschlag { flex-wrap: wrap; }
+
+/* Bewegung: drei Belohnungen und ein Statuslicht — mehr nicht. Wer weniger
+   Bewegung will, bekommt sie auch nicht. */
+@keyframes plopp {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@keyframes auftauchen {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes puls {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

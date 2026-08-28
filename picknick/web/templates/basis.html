@@ -8,6 +8,12 @@
   {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
      jede Angabe zu Tap-Zielen unten wäre wirkungslos. #}
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Beide Farbmodi sind gemeint (WB-360): das sagt dem Browser, dass er
+     Formulare und Bildlaufleisten gleich mit umfärben darf, und färbt die
+     Adressleiste des Telefons passend zum Kopf der Seite. #}
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fffdf9">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#241f19">
   <title>{% block titel %}Picknick{% endblock %}</title>
   <link rel="stylesheet" href="/static/stil.css">
   {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:
