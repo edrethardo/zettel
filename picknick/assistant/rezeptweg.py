@@ -115,19 +115,41 @@ def erkenne(con: sqlite3.Connection, satz: str) -> Rezeptweg:
     „Kartoffelsalat" ein zweites Mal heran.
 
     Rezepte ohne Zutaten werden übergangen: sie würden den Modellweg
-    abschneiden und nichts an seine Stelle setzen.
+    abschneiden und nichts an seine Stelle setzen. **Das ist zugleich die
+    Weiche zu WB-338:** ein aus Chefkoch geholtes Rezept hat noch keine
+    verknüpften Produkte (`recipe_item` ist leer), fängt den Zug hier also
+    nicht ab — es wird über die Gerichtequelle bedient, die aus seiner
+    Zutatenliste erst Katalogprodukte sucht. Verknüpft jemand später von Hand
+    Produkte, übernimmt wieder dieser Weg, und das ist richtig: dann stehen
+    dort die Produkte, die ein Mensch ausgesucht hat.
+    """
+    text = (satz or "").strip()
+    if not text:
+        return Rezeptweg()
+    kandidaten = [r for r in recipes.rezepte(con) if r["n_zutaten"] > 0]
+    return erkenne_in(text, kandidaten)
+
+
+def erkenne_in(satz: str, kandidaten, name_von=lambda e: e["name"]) -> Rezeptweg:
+    """Derselbe Namensvergleich, aber gegen eine beliebige Liste (WB-338).
+
+    Die Gerichtequelle braucht genau das, was der Rezeptweg hier tut: einen
+    Namen im Satz finden, mit Wortgrenzen, gefaltet, und den Rest des Satzes
+    sauber übrig behalten. Eine zweite Kopie dieser Logik liefe irgendwann
+    auseinander — dann fände der eine Weg „Gemüselasagne" und der andere
+    nicht, und niemand könnte erklären, warum.
     """
     text = (satz or "").strip()
     if not text:
         return Rezeptweg()
     gefaltet, stellen = falte(text)
-    kandidaten = [r for r in recipes.rezepte(con) if r["n_zutaten"] > 0]
-    kandidaten.sort(key=lambda r: len(r["name"]), reverse=True)
+    kandidaten = sorted(kandidaten, key=lambda r: len(name_von(r) or ""),
+                        reverse=True)
 
     getroffen: list[dict] = []
     spannen: list[tuple[int, int]] = []
     for r in kandidaten:
-        name, _ = falte(r["name"].strip())
+        name, _ = falte((name_von(r) or "").strip())
         if not name:
             continue
         for anfang, ende in _stellen_im_satz(gefaltet, stellen, name):

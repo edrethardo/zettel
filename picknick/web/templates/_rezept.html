@@ -24,7 +24,17 @@
 {% endif %}
 
 {% if not rezept.zutaten %}
+  {% if rezept.rezeptzutaten %}
+  {# Ein geholtes Rezept (WB-338) hat eine Zutatenliste, aber noch keine
+     verknüpften PRODUKTE — die beiden sind nicht dasselbe. Hier „noch keine
+     Zutat" zu schreiben wäre schlicht falsch: unten stehen 23. #}
+  <p class="leer">Noch kein Produkt verknüpft — die Zutaten laut Rezept
+    stehen unten. Schreib im Chat „alles für {{ rezept.name }}“, dann sucht
+    der Shop sie im Katalog. Was du hier von Hand zuordnest, hat beim
+    nächsten Mal Vorrang vor der Suche.</p>
+  {% else %}
   <p class="leer">Noch keine Zutat. Ohne Zutaten wird daraus kein Einkauf.</p>
+  {% endif %}
 {% else %}
 <ul class="korb">
   {% for z in rezept.zutaten %}

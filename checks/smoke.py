@@ -124,7 +124,9 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor  # noqa: E402
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (  # noqa: E402
     InMemorySpanExporter)
 
-from picknick import db, obs, orders  # noqa: E402
+from picknick import db, gerichte, obs, orders  # noqa: E402
+from picknick.gerichte import chefkoch  # noqa: E402
+from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
 from picknick.catalog import categories, search  # noqa: E402
 from picknick.llm import wake  # noqa: E402
@@ -746,7 +748,162 @@ def _span_id_verankert(con, ergebnis, spans) -> str:
 
 
 # --------------------------------------------------------------------------
-# 6. Die Bindung
+# 6. Die Gerichtequelle (WB-338) — ohne Netz, gegen die aufgezeichnete Antwort
+
+FIXTURES = WURZEL / "tests" / "fixtures"
+
+
+class _Chefkoch:
+    """Chefkoch, aufgezeichnet. Der Rauchtest hat kein Netz — das ist Punkt 1.
+
+    Genau deshalb steht dieser Abschnitt hier: er belegt, dass der Weg von
+    der fremden Antwort bis in die Vorschlagsliste ohne einen einzigen Socket
+    durchläuft. Was ins Netz will, gehört hinter einen Doppelgänger.
+    """
+
+    def __init__(self):
+        self.suche = json.loads(
+            (FIXTURES / "chefkoch_pho_suche.json").read_text(encoding="utf-8"))
+        self.rezept = json.loads(
+            (FIXTURES / "chefkoch_pho_rezept.json").read_text(encoding="utf-8"))
+        self.geholt = []
+
+    def get(self, url):
+        self.geholt.append(url)
+        payload = self.suche if "?query=" in url else self.rezept
+        return _JSON(payload)
+
+
+class _JSON:
+    def __init__(self, payload):
+        self._payload = payload
+        self.content = b""
+
+    def json(self):
+        return self._payload
+
+
+class _NieGefragt:
+    def get(self, url):
+        raise AssertionError(f"Es ging doch ins Netz: {url}")
+
+
+def checks_gerichte(b: Bericht, db_datei: Path) -> None:
+    b.abschnitt("Gerichte aus der Quelle statt aus dem Gedächtnis (WB-338)")
+
+    quelle = _Chefkoch()
+    con = db.connect(db_datei)
+    try:
+        b.pruefe("gewählt wird nach gewichteter Note — die rohe Höchstnote "
+                 "und die Platzhalter-Stimmen verlieren",
+                 lambda: _beste_wahl(quelle))
+        b.pruefe("der Abruf schreibt Rezept, Zutaten und Herkunft weg",
+                 lambda: _abruf(con, quelle))
+        b.pruefe("der zweite Zugriff kommt aus dem Speicher, ohne Netz",
+                 lambda: _aus_dem_speicher(con))
+        b.pruefe("der Chat-Zug nimmt die Zutaten aus dem Rezept "
+                 "(picknick.path = chefkoch)", lambda: _zug_aus_quelle(con))
+        b.pruefe("ein unbekanntes Gericht bricht den Zug nicht",
+                 lambda: _zug_ohne_quelle(con))
+    finally:
+        con.close()
+
+
+def _beste_wahl(quelle) -> str:
+    """Zwei naive Regeln, die beide etwas anderes gewählt hätten.
+
+    In der aufgezeichneten Suche nach „pho" steht das gewählte Rezept
+    zufällig an erster Stelle — „nimm das erste" wäre hier also nicht
+    aufgefallen. Was auffällt, sind die beiden anderen Regeln: die rohe
+    Höchstnote (5,00 aus zwei Stimmen) und die höchste GEWICHTETE Note ohne
+    die Plus-Regel (4,71 aus „255" Stimmen, einem Platzhalter). Beide
+    verlieren, und das ist der Check.
+    """
+    treffer = chefkoch.parse_treffer(quelle.suche)
+    wahl = chefkoch.bestes(treffer)
+    hoechste = max(treffer, key=lambda t: t["rating"])
+    wahr(hoechste["rezept_id"] != wahl["rezept_id"],
+         "Die rohe Höchstnote hat gewonnen — die Stimmen wiegen nicht mit.")
+    ungefiltert = max(treffer, key=chefkoch.gewicht)
+    wahr(ungefiltert["rezept_id"] != wahl["rezept_id"] and ungefiltert["plus"],
+         "Ein Plus-Rezept mit Platzhalter-Stimmen hat gewonnen.")
+    wahr(wahl is max((t for t in treffer if not t["plus"]),
+                     key=chefkoch.gewicht),
+         "Nicht das bestgewichtete der übrigen Rezepte.")
+    return (f"{wahl['titel'][:24]!r} {wahl['rating']:.2f}/{wahl['votes']} "
+            f"(Gewicht {chefkoch.gewicht(wahl):.2f}) schlägt "
+            f"{hoechste['rating']:.2f}/{hoechste['votes']} und "
+            f"{ungefiltert['rating']:.2f}/{ungefiltert['votes']} (Plus)")
+
+
+def _abruf(con, quelle) -> str:
+    zustand = gerichtelauf.hole_eines(con, quelle, "Pho", pause_s=0,
+                                      schreib=lambda _: None)
+    gleich(zustand, "ok", "status")
+    gericht = gerichte.gericht(con, "Pho")
+    wahr(gericht is not None, "Nach dem Abruf steht nichts im Speicher.")
+    rezept = gericht["rezept"]
+    wahr(rezept["source_url"].startswith("https://www.chefkoch.de/"),
+         "Die Herkunft fehlt am Rezept.")
+    wahr(rezept["cook_minutes"] == 480, "Die Kochzeit fehlt.")
+    wahr(len(chefkoch.schritte(rezept["instructions"])) > 5,
+         "Die Zubereitung ist eine Wand statt Schritte.")
+    return (f"{len(gericht['zutaten'])} Zutaten, "
+            f"{len(chefkoch.schritte(rezept['instructions']))} Schritte, "
+            f"{len(quelle.geholt)} Anfragen")
+
+
+def _aus_dem_speicher(con) -> str:
+    q = gerichte.Quelle(starter=gerichte.nicht_holen)
+    # Kein http-Doppelgänger im Spiel: was hier noch ins Netz wollte, hätte
+    # keine Adresse — und die Netzsperre aus Punkt 1 fienge es ohnehin.
+    gefunden = q.gericht(con, "pho")
+    wahr(gefunden is not None, "Der Speicher trägt nicht.")
+    wahr(q.anfordern(con, "Pho") is False,
+         "Ein frischer Eintrag hat trotzdem einen Abruf angestossen.")
+    return f"{len(gefunden['zutaten'])} Zutaten, 0 Anfragen"
+
+
+def _zug_aus_quelle(con) -> str:
+    zugang = _mock_zugang(
+        _extract((("Passierte Tomaten", "Tomaten"), 1), (("Zwiebeln",), 1)),
+        _choose(("Passierte Tomaten", pid(con, "Passierte Tomaten"), 1),
+                ("Zwiebeln", pid(con, "Zwiebeln"), 1)))
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(starter=gerichte.nicht_holen))
+    ergebnis = agent.turn(con, "alles für Pho")
+    gleich(ergebnis.weg, "chefkoch", "picknick.path")
+    wahr(ergebnis.quelle_url and ergebnis.quelle_name,
+         "Die Herkunft steht nicht am Ergebnis.")
+    return (f"{ergebnis.n_produkte} Produkte aus "
+            f"{ergebnis.quelle_name[:26]!r}")
+
+
+def _zug_ohne_quelle(con) -> str:
+    gestartet = []
+    # Stufe 1 nennt hier ein Gericht, das noch niemand geholt hat. Der Zug
+    # muss trotzdem zu Ende laufen — mit den geratenen Begriffen — und den
+    # Abruf in einem EIGENEN PROZESS anstossen, statt auf ihn zu warten.
+    erst = json.loads(_extract((("Spaghetti",), 1)))
+    erst["gericht"] = "Spaghetti Carbonara"
+    zugang = _mock_zugang(
+        json.dumps(erst, ensure_ascii=False),
+        _choose(("Spaghetti", pid(con, "Spaghetti"), 1)))
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(starter=gestartet.append))
+    ergebnis = agent.turn(con, "alles für Spaghetti Carbonara")
+    gleich(ergebnis.weg, "llm", "picknick.path")
+    wahr(ergebnis.n_produkte == 1, "Der Zug ist nicht zu Ende gelaufen.")
+    wahr(len(gestartet) == 1 and gestartet[0][1:3] == ["-m", gerichte.quelle.MODUL],
+         "Es wurde kein eigener Prozess angestossen.")
+    wahr("Chefkoch" in ergebnis.meldung,
+         "Die Meldung verschweigt, dass die Zutaten geraten sind.")
+    return (f"Modellweg, {len(gestartet)} eigener Prozess angestossen, "
+            f"0 s gewartet")
+
+
+# --------------------------------------------------------------------------
+# 7. Die Bindung
 
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
@@ -816,6 +973,12 @@ def main() -> int:
         span_db = ordner / "spans.db"
         katalog_anlegen(span_db)
         checks_spans(b, span_db)
+        # Wieder eine eigene Datei: der Gerichte-Lauf legt ein
+        # Rezept an, und das hat im Katalog der Wege oben
+        # nichts verloren.
+        gerichte_db = ordner / "gerichte.db"
+        katalog_anlegen(gerichte_db)
+        checks_gerichte(b, gerichte_db)
     checks_bindung(b)
     return b.ende()
 

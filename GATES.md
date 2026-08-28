@@ -84,6 +84,16 @@ denselben Weg geht wie im Betrieb:
 Der Katalog dieses Laufs ist der Butter-Fall aus `OBSERVABILITY.md` in klein:
 die fünf ButterBoyz stehen wörtlich so im echten Katalog.
 
+**Die Gerichtequelle** (5, WB-338) — gegen die aufgezeichnete
+Chefkoch-Antwort unter `tests/fixtures/`, also **ohne einen einzigen Socket**:
+gewählt wird nach gewichteter Note (die rohe Höchstnote 5,00 aus zwei Stimmen
+und die Platzhalter-Stimmen der Plus-Rezepte verlieren beide), der Abruf
+schreibt Rezept, Zutaten, Zubereitung und `siteUrl` weg, der zweite Zugriff
+kommt ohne Netz aus dem Speicher, ein Chat-Zug nimmt die Zutaten aus dem
+Rezept (`picknick.path = chefkoch`), und ein Gericht, das noch niemand geholt
+hat, bricht den Zug nicht — er läuft mit den geratenen Begriffen zu Ende und
+stösst einen EIGENEN PROZESS an, statt zu warten.
+
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe
 enthält nur Erlaubtes; `PICKNICK_HOST=127.0.0.1,0.0.0.0` kommt nicht durch;
@@ -104,6 +114,19 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   Projektzuordnung, ob Phoenix die `retrieval.documents` wirklich als
   Dokumentenliste rendert — dafür gibt es `scripts/trace_probe.py`, und das
   ist kein Gate, sondern Handarbeit gegen `localhost:6006`.
+* **Kein echtes Chefkoch.** Der Weg von der Antwort bis in die
+  Vorschlagsliste ist geprüft, die ANTWORT nicht: dass `api.chefkoch.de` noch
+  antwortet, noch dieses Format liefert und uns noch lässt, weiss dieses Gate
+  nicht. Dafür gibt es `scripts/record_chefkoch.py` (erneuert die Fixture —
+  bricht danach ein Test, hat sich das Format geändert) und
+  `scripts/gericht_probe.py` (die Handprobe gegen die echte Quelle und die
+  echte Box). Ebenso wenig geprüft ist die rechtliche Seite: robots.txt
+  erlaubt die beiden Endpunkte, die Nutzungsbedingungen sind nicht gelesen
+  (siehe README).
+* **Kein echter Hintergrundprozess.** Dass `Quelle.anfordern()` das richtige
+  Kommando zusammenbaut, ist geprüft; dass ein `subprocess.Popen` daraus auf
+  dieser Maschine wirklich startet, nicht — im Gate ist der Starter eine
+  Liste, die mitschreibt.
 * **Keine echten Annotationen.** Was `obs.labels.annotationen()` *berechnet*,
   ist geprüft; dass Phoenix sie annimmt, dem richtigen Span zuordnet und unter
   `annotator_kind = HUMAN` wiederfindet, prüft nur

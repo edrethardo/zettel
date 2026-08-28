@@ -437,6 +437,33 @@ button:disabled { opacity: 0.5; cursor: default; }
 .rezeptloeschen .knopf.loeschen { color: var(--beere); border-color: var(--beere-hell);
                                   background: var(--beere-hell); }
 
+/* Ein geholtes Rezept (WB-338): Herkunft, Zeiten, Zutaten laut Rezept und
+   die Zubereitung. Alles davon ist zum LESEN AM HERD und nicht zum Tippen —
+   deshalb grosszügige Zeilenhöhe und nummerierte Schritte statt einer Wand. */
+.rezeptherkunft {
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;
+  margin: 0 4px 12px; color: var(--gedaempft); font-size: 15px;
+}
+.rezeptherkunft .zeit::after { content: " ·"; color: var(--linie); }
+.rezeptherkunft .zeit:last-child::after { content: ""; }
+.rezeptherkunft .quelle { color: var(--akzent-tinte); text-decoration: underline; }
+
+.rezeptzutaten { list-style: none; margin: 0 0 var(--rand); padding: 0; }
+.rezeptzutaten li {
+  display: flex; gap: 10px; padding: 7px 4px; line-height: 1.4;
+  border-bottom: 1px solid var(--linie);
+}
+.rezeptzutaten li:last-child { border-bottom: none; }
+.rezeptzutaten .menge { flex: 0 0 8ch; text-align: right; color: var(--gedaempft); }
+.rezeptzutaten .hinweis { color: var(--gedaempft); }
+.rezeptzutaten .gruppe {
+  display: block; margin-top: 10px; font-weight: 700; color: var(--tinte);
+  border-bottom: none;
+}
+
+.zubereitung { margin: 0 0 var(--rand); padding-left: 1.4em; }
+.zubereitung li { margin-bottom: 12px; line-height: 1.55; }
+
 /* „Daraus ein Rezept machen" an der erledigten Bestellung (Spec 6). */
 .rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 10px; }
 .rezept-daraus input {

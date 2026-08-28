@@ -222,6 +222,25 @@ def euro(cents) -> str:
     return f"{int(cents) // 100},{int(cents) % 100:02d} €"
 
 
+def menge(wert) -> str:
+    """3.0 -> '3', 0.5 -> '0,5' (WB-338).
+
+    Die Zutatenmengen einer Rezeptseite sind Fliesskommazahlen, und „3.0
+    Liter Wasser" liest sich wie ein Messwert statt wie eine Angabe im
+    Kochbuch. Komma statt Punkt aus demselben Grund wie beim Preis: die
+    Oberfläche ist deutsch.
+    """
+    if wert in (None, ""):
+        return ""
+    try:
+        zahl = float(wert)
+    except (TypeError, ValueError):
+        return str(wert)
+    if zahl.is_integer():
+        return str(int(zahl))
+    return f"{zahl:g}".replace(".", ",")
+
+
 def _stand_letzter_lauf(con: sqlite3.Connection) -> str | None:
     row = con.execute(
         "SELECT coalesce(finished_at, started_at) AS stand FROM scrape_run"
@@ -414,6 +433,7 @@ def create_app(db_path: str | Path | None = None,
 
     vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR))
     vorlagen.env.filters["euro"] = euro
+    vorlagen.env.filters["menge"] = menge
 
     def con() -> sqlite3.Connection:
         return db.connect(app.state.db_path)

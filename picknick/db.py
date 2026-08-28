@@ -143,7 +143,89 @@ SCHEMA = [
         id       INTEGER PRIMARY KEY,
         name     TEXT NOT NULL,
         servings INTEGER,
-        note     TEXT
+        note     TEXT,
+        -- Ab hier: was zum KOCHEN gebraucht wird und nicht zum Einkaufen
+        -- (WB-338). Ein selbst angelegtes Rezept lässt alles davon leer —
+        -- die Ansicht darf deswegen nicht kaputt aussehen, und `note` ist
+        -- weiterhin die Stelle für eigene Notizen.
+        --
+        -- Die Zubereitung steht als EIN Text mit den Zeilenumbrüchen, die
+        -- die Quelle gesetzt hat. Die Schritte daraus macht die Ansicht
+        -- (`gerichte.chefkoch.schritte`): ein Absatz mit 3.924 Zeichen als
+        -- eine Wand ist auf einem Telefon am Herd unbrauchbar, und die
+        -- Struktur ist bereits im Text — sie darf nur nicht verlorengehen.
+        instructions  TEXT,
+        prep_minutes  INTEGER,
+        cook_minutes  INTEGER,
+        rest_minutes  INTEGER,
+        difficulty    INTEGER,
+        -- Die Herkunft, und zwar sichtbar und nicht bloss gespeichert: das
+        -- ist fremde Arbeit. Wer das Rezept wirklich kocht, soll die
+        -- Originalseite mit ihren Bildern und Kommentaren aufmachen können.
+        source        TEXT,
+        source_id     TEXT,
+        source_url    TEXT,
+        source_title  TEXT,
+        source_rating REAL,
+        source_votes  INTEGER,
+        fetched_at    TEXT
+    )
+    """,
+    # Die Zutaten, WIE DIE QUELLE SIE SCHREIBT — „500 ml Tomaten, passierte".
+    #
+    # **Ausdrücklich nicht `recipe_item`**, und der Unterschied ist der ganze
+    # Zweck der Tabelle: `recipe_item` sind die PRODUKTE, die für das Rezept
+    # gekauft werden (Katalogverweis oder Freitext, Spec 4). Hier steht die
+    # Zutatenliste des Rezepts: Menge, Einheit, Name, Gruppe („Für die
+    # Brühe"). Das eine ist ein Einkaufszettel, das andere ein Rezept, und
+    # beides in eine Tabelle zu legen hiesse, jeder Zeile eine Menge in
+    # Packungen UND eine in Litern zu geben.
+    #
+    # Solange ein aus Chefkoch geholtes Rezept keine verknüpften Produkte hat,
+    # bleibt `recipe_item` leer — und genau daran erkennt `rezeptweg.erkenne`,
+    # dass es den Chat-Zug NICHT abfangen soll (es hätte nichts vorzuschlagen).
+    """
+    CREATE TABLE IF NOT EXISTS recipe_ingredient (
+        id         INTEGER PRIMARY KEY,
+        recipe_id  INTEGER NOT NULL REFERENCES recipe(id) ON DELETE CASCADE,
+        pos        INTEGER NOT NULL,
+        gruppe     TEXT,
+        -- Wie es dasteht: „Zwiebel(n)". Bleibt unverändert, weil ein
+        -- besserer Zerleger später einen zweiten Versuch bekommen soll.
+        raw_name   TEXT NOT NULL,
+        -- Das genaueste Glied der Begriffskette: „passierte Tomaten".
+        name       TEXT NOT NULL,
+        amount     REAL,
+        unit       TEXT,
+        usage_info TEXT
+    )
+    """,
+    # Ein GEFRAGTES Gericht und was der Abruf ergeben hat (WB-338). Der
+    # Zwischenspeicher, ohne den jeder Chat-Zug erneut ins Netz ginge.
+    #
+    # Getrennt von `recipe`, weil hier die FRAGE steht und dort die ANTWORT:
+    # gefragt wird nach „Pho", geliefert wird „Pho Bo — Vietnamesische
+    # Rindfleischsuppe". Ohne eigene Zeile liesse sich weder „danach wurde
+    # schon einmal gefragt" noch „dazu kennt Chefkoch nichts" merken — und
+    # gerade das Nichts muss gemerkt werden, sonst kostet jedes unbekannte
+    # Gericht bei jedem Chat-Zug zwei Anfragen an eine fremde Seite.
+    """
+    CREATE TABLE IF NOT EXISTS dish (
+        id           INTEGER PRIMARY KEY,
+        -- Der gefaltete Suchschlüssel („gemueselasagne"), damit „Gemüse-
+        -- lasagne" und „gemuselasagne" dieselbe Zeile treffen.
+        name         TEXT NOT NULL UNIQUE,
+        -- Wie das Gericht genannt wurde. Das geht an die Quelle und steht
+        -- in der Meldung.
+        query        TEXT NOT NULL,
+        status       TEXT NOT NULL
+                         CHECK (status IN ('offen', 'ok', 'leer', 'fehler')),
+        source       TEXT,
+        recipe_id    INTEGER REFERENCES recipe(id) ON DELETE SET NULL,
+        error        TEXT,
+        requested_at TEXT NOT NULL,
+        -- Das Abrufdatum. Daran hängt, ob der Speicher noch gilt.
+        fetched_at   TEXT
     )
     """,
     """
@@ -321,6 +403,9 @@ SCHEMA = [
     " ON orders(state) WHERE state = 'draft'",
     "CREATE INDEX IF NOT EXISTS ix_order_item_order ON order_item(order_id)",
     "CREATE INDEX IF NOT EXISTS ix_recipe_item_recipe ON recipe_item(recipe_id)",
+    "CREATE INDEX IF NOT EXISTS ix_recipe_ingredient_recipe"
+    " ON recipe_ingredient(recipe_id)",
+    "CREATE INDEX IF NOT EXISTS ix_dish_status ON dish(status)",
     "CREATE INDEX IF NOT EXISTS ix_chat_message_order ON chat_message(order_id)",
     "CREATE INDEX IF NOT EXISTS ix_chat_sugg_message ON chat_suggestion(chat_message_id)",
     "CREATE INDEX IF NOT EXISTS ix_product_active ON product(active)",
@@ -396,6 +481,7 @@ FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
 #: damit eine vergessene Tabelle auffällt und nicht erst im Betrieb.
 TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
+    "recipe_ingredient", "dish",
     "chat_message", "chat_suggestion", "chat_kandidat",
     "receipt", "receipt_item",
     "scrape_run", "product_fts",
@@ -456,6 +542,22 @@ NACHGETRAGENE_SPALTEN = (
     ("chat_suggestion", "corrected_from",
      "INTEGER REFERENCES chat_suggestion(id) ON DELETE CASCADE"),
     ("chat_suggestion", "fallback_term", "TEXT"),
+    # WB-338: was zum Kochen gehört und woher das Rezept stammt. Eine
+    # Datenbank aus der Zeit davor hat `recipe` bereits — `CREATE TABLE IF
+    # NOT EXISTS` sähe sie gar nicht an, und die Rezeptansicht fiele mit
+    # „no such column: instructions" um.
+    ("recipe", "instructions", "TEXT"),
+    ("recipe", "prep_minutes", "INTEGER"),
+    ("recipe", "cook_minutes", "INTEGER"),
+    ("recipe", "rest_minutes", "INTEGER"),
+    ("recipe", "difficulty", "INTEGER"),
+    ("recipe", "source", "TEXT"),
+    ("recipe", "source_id", "TEXT"),
+    ("recipe", "source_url", "TEXT"),
+    ("recipe", "source_title", "TEXT"),
+    ("recipe", "source_rating", "REAL"),
+    ("recipe", "source_votes", "INTEGER"),
+    ("recipe", "fetched_at", "TEXT"),
 )
 
 

@@ -3,7 +3,57 @@
 {% block inhalt %}
 <h1>{{ rezept.name }}</h1>
 
+{# Herkunft und Zeiten (WB-338). Steht GANZ OBEN und nicht am Fuss: bei einem
+   geholten Rezept ist „480 Minuten Kochzeit" beim Planen wichtiger als die
+   Zutatenliste — wer abends um sieben Pho anfängt, sollte das vorher wissen.
+   Ein selbst angelegtes Rezept hat davon nichts, dann fällt der ganze Block
+   weg statt leer dazustehen. #}
+{% if rezept.source_url or rezept.prep_minutes or rezept.cook_minutes or rezept.difficulty %}
+<p class="rezeptherkunft">
+  {% if rezept.prep_minutes %}<span class="zeit">{{ rezept.prep_minutes }} Min. Zubereitung</span>{% endif %}
+  {%- if rezept.cook_minutes %}<span class="zeit">{{ rezept.cook_minutes }} Min. Kochzeit</span>{% endif %}
+  {%- if rezept.rest_minutes %}<span class="zeit">{{ rezept.rest_minutes }} Min. Ruhezeit</span>{% endif %}
+  {%- if rezept.difficulty %}<span class="zeit">Schwierigkeit {{ rezept.difficulty }} von 3</span>{% endif %}
+  {%- if rezept.source_rating %}<span class="zeit">{{ "%.2f"|format(rezept.source_rating) }} aus {{ rezept.source_votes or 0 }} Stimmen</span>{% endif %}
+  {%- if rezept.source_url %}
+  {# Die Herkunft SICHTBAR und nicht bloss gespeichert: das ist fremde Arbeit.
+     Wer das Rezept wirklich kocht, will die Originalseite mit ihren Bildern
+     und Kommentaren aufmachen können. #}
+  <a class="quelle" href="{{ rezept.source_url }}" target="_blank" rel="noopener noreferrer">{{ rezept.source_title or rezept.name }} auf {{ rezept.source or "der Quellseite" }}</a>
+  {%- endif %}
+</p>
+{% endif %}
+
 <div id="rezept">{% include "_rezept.html" %}</div>
+
+{% if rezept.rezeptzutaten %}
+{# Die Zutaten, WIE DAS REZEPT SIE NENNT — mit Menge und Einheit. Nicht
+   dasselbe wie die Liste darüber: dort stehen die Produkte, die dafür
+   gekauft werden, hier steht, was in den Topf kommt. #}
+<h2>Zutaten laut Rezept{% if rezept.servings %} (für {{ rezept.servings }} Portionen){% endif %}</h2>
+<ul class="rezeptzutaten">
+  {% for z in rezept.rezeptzutaten %}
+  {% if z.gruppe and (loop.first or z.gruppe != rezept.rezeptzutaten[loop.index0 - 1].gruppe) %}
+  <li class="gruppe">{{ z.gruppe }}</li>
+  {% endif %}
+  <li>
+    <span class="menge">{% if z.amount %}{{ z.amount | menge }}{% endif %} {{ z.unit or "" }}</span>
+    <span class="name">{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if rezept.zubereitung %}
+{# Nummerierte Schritte statt einer Wand aus 3.924 Zeichen: gelesen wird das
+   am Herd, auf einem Telefon, mit einer Hand. #}
+<h2>Zubereitung</h2>
+<ol class="zubereitung">
+  {% for schritt in rezept.zubereitung %}
+  <li>{{ schritt }}</li>
+  {% endfor %}
+</ol>
+{% endif %}
 
 {# Zutat aus dem Katalog: dieselbe Suche wie im Katalog, nur legt das „+“ hier
    ins Rezept statt in den Korb. Ohne HTMX schickt dasselbe Formular ein GET
