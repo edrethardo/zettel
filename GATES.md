@@ -3,8 +3,8 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 45 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 672 Tests, rund 20 s
+.venv/bin/python checks/smoke.py     # 51 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 709 Tests, rund 22 s
 ```
 
 Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
@@ -98,6 +98,16 @@ kommt ohne Netz aus dem Speicher, ein Chat-Zug nimmt die Zutaten aus dem
 Rezept (`picknick.path = chefkoch`), und ein Gericht, das noch niemand geholt
 hat, bricht den Zug nicht — er läuft mit den geratenen Begriffen zu Ende und
 stösst einen EIGENEN PROZESS an, statt zu warten.
+
+**Oberbegriffe auffächern** (6, WB-368) — gegen ein Aufschnittregal mit vier
+Sorten und einer fünften, die ausgemustert ist: „Aufschnitt" fächert in die
+Sorten des Katalogs auf, mit echter Stückzahl und **ohne einen einzigen
+Modellaufruf** (der Zugang meldet jeden Aufruf als Fehler); die ausgemusterte
+Sorte wird nicht angeboten; „Tomatenmark" fächert NICHT auf und läuft mit
+seinen zwei Stufen wie vorher; eine Kategorie, die dem Modell nie vorgelegt
+wurde, wird verworfen und benannt; eine gewählte Sorte landet im normalen
+Kandidatenablauf mit Vorschlag, Alternativen und Ja/Nein; und von mehreren
+angekreuzten Sorten fällt die nicht angebotene weg.
 
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe

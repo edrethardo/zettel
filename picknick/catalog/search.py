@@ -386,3 +386,59 @@ def kuerze_kette(kandidaten: list[dict], *, limit: int,
             continue
         gewaehlt.append(p)
     return gewaehlt
+
+
+def in_sorte(con: sqlite3.Connection, category_l1: str, category_l2: str, *,
+             limit: int = 20) -> list[dict]:
+    """Die Produkte EINER Sorte — aus dem Kategoriebaum, ohne Volltextsuche.
+
+    Stufe 2 des Agenten, wenn die Nutzerin eine Sorte aus einer Auffächerung
+    gewählt hat (WB-368). Der Rest des Wegs ist unverändert: die Kandidaten
+    gehen durch `plan.choose`, werden aufgehoben (`chat_kandidat`) und stehen
+    beim „Nein" als Alternativen da.
+
+    **Warum hier nicht gesucht wird.** Der Sortenname kommt aus dem Katalog,
+    und die Zahl daneben („Rohschinken & Bacon (58)") ist die Zahl der
+    Produkte in genau dieser Kategorie. Wer darauf tippt, hat 58 Produkte
+    angeboten bekommen; eine FTS-Abfrage auf denselben Namen fände etwas
+    anderes und im Zweifel weniger — „Rohschinken & Bacon" wird zu
+    `"rohschinken"* AND "bacon"*`, und ein Produkt, das nur eines von beiden
+    im Namen trägt, fiele heraus. Die Zusage der Auffächerung wäre damit
+    gebrochen, bevor der erste Kandidat dasteht.
+
+    Sortiert wird nach der **Wortstufe des Sortennamens** (WB-339): ein
+    Produkt, das ein Wort der Sorte im Namen trägt („Salami"), steht vor
+    einem, das nur in ihrer Kategorie liegt. Anders als bei der Suche zählt
+    hier das BESTE Wort und nicht das schwächste — „Rohschinken & Bacon" sind
+    zwei Sorten in einem Namen, und ein Bacon soll nicht dafür bestraft
+    werden, dass er kein Rohschinken ist.
+
+    `rang` ist `None` und nicht 0.0: es gab keine bm25-Abfrage, und eine
+    erfundene Null stünde später als Score im Trace und in
+    `chat_kandidat.rank`, als hätte die Suche schlecht abgeschnitten.
+    """
+    spalten = ", ".join(_PRODUKT_SPALTEN)
+    rows = con.execute(
+        f"SELECT {spalten} FROM product"
+        "  WHERE active = 1 AND category_l1 = ? AND category_l2 = ?",
+        (category_l1, category_l2)).fetchall()
+    suchworte = [w.casefold() for w in begriffe(category_l2)]
+
+    treffer = []
+    for r in rows:
+        p = dict(r)
+        p["wortstufe"] = max((wortstufe([w], p) for w in suchworte),
+                             default=0)
+        p["rang"] = None
+        # `via` ist überall im Chat „der Begriff, der diesen Kandidaten
+        # gebracht hat" — hier ist das die Sorte. Damit steht an der
+        # Vorschlagszeile und an jeder Alternative, woher sie kam.
+        p["via"] = category_l2
+        treffer.append(p)
+    treffer.sort(key=lambda p: (-p["wortstufe"], len(p["name"] or ""),
+                                p["name"] or ""))
+    # `via_platz` wie bei der Kette (WB-359): damit `kuerze_kette()` aus
+    # dieser Anzeigeliste dieselbe, nur kürzere Modellvorlage schneiden kann.
+    for platz, p in enumerate(treffer):
+        p["via_platz"] = platz
+    return treffer[:limit]

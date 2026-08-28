@@ -1,6 +1,6 @@
 """Der Chat-Zug: aus einem Satz wird eine Vorschlagsliste (Spec 6).
 
-Genau drei Wege, und welcher genommen wurde, wird festgehalten (`weg`, in
+Genau vier Wege, und welcher genommen wurde, wird festgehalten (`weg`, in
 Spec 7.1 `picknick.path`), weil sich sonst später keine Auswertung mehr
 trennen lässt:
 
@@ -15,6 +15,15 @@ trennen lässt:
   dem Gedächtnis drei Begriffe — Rinderhack, Rinderknochen, Rinderbrust —,
   von denen keiner in eine Pho gehört; aus der Quelle 19 Begriffe mit 11
   Katalogtreffern und acht ehrlichen Freitexten.
+* **`fanout`** — der Satz nennt einen OBERBEGRIFF (WB-368). „Aufschnitt" ist
+  kein Produktwunsch, sondern ein Regal: statt sechs Produkten, die zufällig
+  das Wort im Namen tragen, kommen die SORTEN des Katalogs mit ihren echten
+  Stückzahlen — Rohschinken & Bacon (58), Kochschinken (42), Salami (34) …
+  Der Zug legt keinen Vorschlag an; er stellt eine Frage. Ein Tipp auf eine
+  Sorte führt zurück in den gewöhnlichen Ablauf (`_aus_sorten`), und wer
+  nichts ankreuzt, sucht direkt nach dem getippten Wort. Ist das Wort selbst
+  ein Kategoriename, kostet dieser Weg **keinen Modellaufruf** und läuft auch
+  bei schlafender Box.
 * **`llm`** — die drei Stufen aus Spec 6: `plan.extract` (nur Begriffe),
   `catalog.search` (der SHOP sucht), `plan.choose` (Wahl aus den vorgelegten
   Kandidaten). Nennt der Satz ein Gericht, das noch niemand geholt hat, wird
@@ -70,15 +79,21 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from picknick import gerichte, obs, orders
-from picknick.assistant import plan, rezeptweg, vorschlaege
+from picknick.assistant import oberbegriffe, plan, rezeptweg, vorschlaege
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import ModellNichtErreichbar
 
-#: Die drei Wege. Englisch, weil sie so in Spec 7.1 als Span-Attribut
+#: Die vier Wege. Englisch, weil sie so in Spec 7.1 als Span-Attribut
 #: stehen und ein zweiter Name für dieselbe Sache eine Auswertung kostet.
 WEG_REZEPT = "recipe"
 WEG_LLM = "llm"
+#: Seit WB-368: der Satz nannte einen OBERBEGRIFF, und statt einer
+#: Vorschlagsliste sind die Sorten des Katalogs herausgekommen. Ein eigener
+#: Wert und kein Nebensatz, weil sich sonst nicht messen lässt, ob der Umweg
+#: über die Sorte hilft: ein `fanout`-Zug hat null Vorschläge, und ohne den
+#: Weg daneben sähe er aus wie ein Zug, der nichts gefunden hat.
+WEG_FAECHER = "fanout"
 #: Seit WB-338: die Zutaten kamen aus einer Quelle (Chefkoch) statt aus dem
 #: Gedächtnis des Modells. **Der Wert existiert, damit sich messen lässt, ob
 #: die Quelle wirklich besser ist als das Raten** — ohne ihn wären beide
@@ -130,6 +145,22 @@ class Ergebnis:
     #: Gericht im Satz stand. Auf `weg = llm` mit gesetztem `gericht` steht
     #: hier der Grund, warum trotzdem geraten wurde.
     abruf: str | None = None
+    #: Die Auffächerung dieses Zugs (WB-368): die Kategorie, unter der die
+    #: Sorten stehen, und die Sorten selbst. Auf einem `fanout`-Zug gefüllt;
+    #: auf dem FOLGEZUG steht `kategorie` weiter da, damit im Trace beide
+    #: Hälften desselben Umwegs zusammenfinden.
+    kategorie: str | None = None
+    sorten: list[dict] = field(default_factory=list)
+    #: Kam die Kategorie aus dem Katalog (`catalog`) oder aus dem Modell
+    #: (`model`)? Die Zahl, an der sich später ablesen lässt, ob der
+    #: Modellaufruf überhaupt gebraucht wird.
+    sorten_herkunft: str | None = None
+    #: Was das Modell als Kategorie nannte, obwohl es sie nicht gibt. Die
+    #: Schwester von `verworfen` — und der Beleg dafür, dass eine erfundene
+    #: Kategorie nicht durchkommt.
+    sorten_verworfen: str | None = None
+    #: Welche Sorten die Nutzerin angekreuzt hat. Nur auf dem Folgezug.
+    gewaehlte_sorten: list[str] = field(default_factory=list)
 
     @property
     def n_produkte(self) -> int:
@@ -194,8 +225,10 @@ class Chat:
                  anzeige_obergrenze: int = plan.MAX_KANDIDATEN_ANZEIGE,
                  guided: bool = True,
                  denken: bool = plan.DENKEN,
+                 auffaechern: bool = True,
                  system_extract: str = plan.SYSTEM_EXTRACT,
-                 system_choose: str = plan.SYSTEM_CHOOSE):
+                 system_choose: str = plan.SYSTEM_CHOOSE,
+                 system_choose_sorte: str = plan.SYSTEM_CHOOSE_SORTE):
         self._zugang = zugang
         self._wecker = wecker
         # Die Gerichtequelle (WB-338, WB-367). Wie `zugang` und `wecker`:
@@ -226,8 +259,14 @@ class Chat:
         self.anzeige_obergrenze = max(anzeige_obergrenze, obergrenze)
         self.guided = guided
         self.denken = denken
+        # Die Auffächerung als Stellschraube (Spec 8.3): ein Experiment soll
+        # „mit Sorten" gegen „ohne Sorten" fahren können, ohne dass jemand
+        # den Chat umbaut — und die Evals sollen den Weg abschalten können,
+        # der eine Rückfrage stellt statt eine Liste zu liefern.
+        self.auffaechern = auffaechern
         self.system_extract = system_extract
         self.system_choose = system_choose
+        self.system_choose_sorte = system_choose_sorte
 
     # -- Zugang -----------------------------------------------------------
 
@@ -256,10 +295,25 @@ class Chat:
             return self._wecker.zustand()
         return wake.zustand()
 
+    def _faechern(self, fuer_diesen_zug: bool | None) -> bool:
+        """Wird in diesem Zug aufgefächert? Der Zug schlägt die Stellschraube.
+
+        Zwei Schalter für dieselbe Sache, und beide werden gebraucht: der am
+        Objekt gilt für ein Experiment oder einen Eval-Lauf, der am Zug für
+        den einen Fall, in dem die Frage schon gestellt wurde — nach einem
+        „Überspringen" darf derselbe Satz nicht wieder in der Rückfrage
+        landen.
+        """
+        if fuer_diesen_zug is None:
+            return self.auffaechern
+        return bool(fuer_diesen_zug) and self.auffaechern
+
     # -- Der Zug ----------------------------------------------------------
 
     def turn(self, con: sqlite3.Connection, satz: str,
-             span_id: str | None = None) -> Ergebnis:
+             span_id: str | None = None, *,
+             auffaechern: bool | None = None,
+             aus_sorten: tuple[str, list[str]] | None = None) -> Ergebnis:
         """Ein Satz -> eine Vorschlagsliste. Legt nichts in den Warenkorb.
 
         Wirft `ChatFehler`, wenn der Satz leer ist, und `ChatNichtVerfuegbar`,
@@ -267,6 +321,17 @@ class Chat:
         Modellantwort wirft NICHT: sie wird zu einer ehrlichen Meldung und,
         wo möglich, zu Freitext-Vorschlägen. Der Request darf daran nicht
         zerbrechen.
+
+        `aus_sorten` ist `(Kategorie, [Sorten])` und heisst: die Nutzerin hat
+        aus einer Auffächerung gewählt (WB-368). Die Kandidaten kommen dann
+        aus dem Kategoriebaum statt aus der Volltextsuche; **alles danach ist
+        der normale Ablauf** — Stufe 3 wählt, die Kandidaten werden
+        aufgehoben, Ja/Nein und Alternativen sind dieselben.
+
+        `auffaechern=False` schaltet die Auffächerung für DIESEN Zug ab. Das
+        ist der Weg zurück in den Freitext: wer den Oberbegriff überspringt,
+        soll nach „Aufschnitt" suchen können, ohne dass ihm dieselbe Frage
+        noch einmal gestellt wird.
         """
         text = " ".join((satz or "").split())
         if not text:
@@ -302,10 +367,26 @@ class Chat:
             #    nicht herausrückt. Seit WB-367 ist das die Ausnahme und
             #    nicht mehr der erste Zug: ein unbekanntes Gericht wird im
             #    Request geholt (`_aus_modell`), nicht angefordert.
-            treffer = rezeptweg.erkenne(con, text)
-            gerichtsweg = None
-            if not treffer:
-                gerichtsweg = self._gericht_im_satz(con, text)
+            faecher = None
+            if aus_sorten is None:
+                treffer = rezeptweg.erkenne(con, text)
+                gerichtsweg = None
+                if not treffer:
+                    gerichtsweg = self._gericht_im_satz(con, text)
+                if not treffer and gerichtsweg is None and self._faechern(
+                        auffaechern):
+                    # **Der billige Weg zuerst** (WB-368): ist das getippte
+                    # Wort selbst ein Kategoriename, weiss der Katalog das
+                    # ohne Modell und ohne Wartezeit. Diese Abfrage kostet
+                    # ein GROUP BY und läuft auch, wenn die Box schläft.
+                    faecher = oberbegriffe.aus_katalog(con, text)
+            else:
+                # Eine gewählte Sorte ist weder ein Rezept noch ein Gericht,
+                # und sie darf auch nicht ein zweites Mal aufgefächert
+                # werden: „Salami" führt in die Kandidaten, nicht in die
+                # nächste Rückfrage.
+                treffer = rezeptweg.Rezeptweg()
+                gerichtsweg = None
 
             zusatz: dict = {}
             aus_quelle = None
@@ -319,13 +400,25 @@ class Chat:
             if treffer:
                 plan_zeilen, meldung = self._aus_rezept(con, treffer)
                 weg, begriffe, verworfen, aufgaben = WEG_REZEPT, [], [], []
+            elif faecher is not None:
+                # Ein Oberbegriff, aus dem Katalog erkannt: keine Suche, kein
+                # Modell, keine Vorschläge — die Sorten und die Frage, welche
+                # es sein sollen.
+                plan_zeilen, meldung = [], oberbegriffe.meldung(faecher)
+                weg, begriffe, verworfen, aufgaben = WEG_FAECHER, [], [], []
+                zusatz = {"faecher": faecher}
+            elif aus_sorten is not None:
+                (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
+                 zusatz) = self._aus_sorten(con, text, *aus_sorten)
+                weg = WEG_LLM
             elif aus_quelle is not None:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
                  zusatz) = aus_quelle
                 weg = WEG_QUELLE
             else:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
-                 zusatz) = self._aus_modell(con, text)
+                 zusatz) = self._aus_modell(
+                     con, text, auffaechern=self._faechern(auffaechern))
                 # Der Modellweg kann UNTERWEGS zum Quellenweg werden
                 # (WB-367): Stufe 1 nennt ein Gericht, das noch niemand
                 # geholt hat, es wird geholt, und die Zutaten kommen dann
@@ -405,6 +498,20 @@ class Chat:
             # gesetztem `dish` ist damit erklärbar statt bloss auffällig.
             "picknick.dish_requested": bool(ergebnis.abruf) or None,
             "picknick.dish_fetch": ergebnis.abruf,
+            # Die Auffächerung (WB-368). `fanout_category` steht auf BEIDEN
+            # Hälften des Umwegs — auf dem Zug, der die Sorten angeboten hat,
+            # und auf dem, der eine davon gewählt hat. Nur so lassen sich die
+            # beiden nebeneinanderlegen und die Frage beantworten, um die es
+            # geht: hilft der Umweg über die Sorte, oder kostet er nur einen
+            # Tipp mehr?
+            "picknick.fanout_category": ergebnis.kategorie,
+            "picknick.fanout_varieties": len(ergebnis.sorten) or None,
+            "picknick.fanout_source": ergebnis.sorten_herkunft,
+            # Wie `rejected` bei den Produkt-IDs: wie oft das Modell eine
+            # Kategorie nannte, die ihm nie vorgelegt wurde.
+            "picknick.fanout_rejected": ergebnis.sorten_verworfen,
+            "picknick.varieties_chosen":
+                ", ".join(ergebnis.gewaehlte_sorten) or None,
         })
         obs.setze_ausgabe(span, [
             {"product_id": v["product_id"], "name": v["name"],
@@ -558,9 +665,91 @@ class Chat:
             begriffe.append({"suchbegriffe": [rest], "menge": 1})
         return begriffe
 
+    # -- Die gewählten Sorten (WB-368) ------------------------------------
+
+    def _aus_sorten(self, con, text: str, kategorie: str,
+                    sorten: list[str]):
+        """Eine gewählte Sorte -> der normale Kandidatenablauf.
+
+        **Nur Stufe 2 ist eine andere.** Statt der Volltextsuche liefert der
+        Kategoriebaum die Kandidaten (`catalog.search.in_sorte`); Stufe 3
+        wählt daraus wie immer, die Kandidaten werden wie immer aufgehoben,
+        und ein „Nein" zeigt sie als Alternativen (WB-359). Ein zweiter
+        Auswahlmechanismus neben dem bestehenden entsteht dadurch nicht.
+
+        Warum nicht doch gesucht wird, steht an `in_sorte()`: die Zahl neben
+        der Sorte („Rohschinken & Bacon (58)") ist die Zahl der Produkte in
+        genau dieser Kategorie, und eine FTS-Abfrage auf denselben Namen fände
+        etwas anderes. Die Zusage wäre gebrochen, bevor der erste Kandidat
+        dasteht.
+
+        Stufe 1 entfällt ersatzlos: die Begriffe stehen bereits fest, sie sind
+        die Sorten. Ein Modellaufruf, der „Salami" in „Salami" übersetzt, wäre
+        Wartezeit ohne Ertrag.
+        """
+        zustand = self.zustand()
+        if not zustand.bedient:
+            raise ChatNichtVerfuegbar(zustand)
+
+        aufgaben = self._sorten_suchen(con, kategorie, sorten)
+        auswahl, choose_kaputt = self._waehlen(text, aufgaben,
+                                               self.system_choose_sorte)
+        zeilen, freitext = self._zeilen(aufgaben, auswahl)
+
+        n = len(sorten)
+        teile = [f"{n} Sorte{'n' if n != 1 else ''} aus „{kategorie}“: "
+                 + ", ".join(f"„{s}“" for s in sorten) + ". "
+                 f"{n - len(freitext)} davon mit einem Vorschlag."]
+        if freitext:
+            # **Nicht „im Katalog nicht gefunden".** Die Sorte steht im
+            # Katalog, ihre Zahl war echt und ihre Kandidaten liegen an der
+            # Zeile — das Modell hat sich nur nicht entschieden. Ein „Nein"
+            # klappt sie auf.
+            teile.append("Ohne Wahl des Modells und deshalb als Freitext: "
+                         + ", ".join(f"„{f}“" for f in freitext)
+                         + " — die Kandidaten stehen trotzdem an der Zeile.")
+        teile.extend(self._meldung_auswahl(auswahl, choose_kaputt))
+        begriffe = [{"suchbegriffe": [s], "menge": 1} for s in sorten]
+        return (zeilen, " ".join(teile), begriffe, auswahl.verworfen, aufgaben,
+                {"kategorie": kategorie, "gewaehlte_sorten": list(sorten)})
+
+    def _sorten_suchen(self, con, kategorie: str,
+                       sorten: list[str]) -> list[dict]:
+        """Stufe 2 aus dem Kategoriebaum — ein RETRIEVER-Span je SORTE.
+
+        Derselbe Span-Name und dieselbe Form wie bei der Suche (Spec 7.1):
+        eine Sorte ist hier das, was sonst eine Zutat ist, und zwei Namen für
+        dieselbe Stelle im Baum machten jede Auswertung über Stufe 2 zu einer
+        Fallunterscheidung. Dass die Kandidaten aus der Kategorie kommen,
+        steht als Attribut daneben und nicht im Spannamen.
+        """
+        aufgaben = []
+        for sorte in sorten:
+            with obs.retriever("catalog.search", suchbegriffe=[sorte]) as such:
+                aufgehoben = search.in_sorte(con, kategorie, sorte,
+                                             limit=self.anzeige_obergrenze)
+                kandidaten = search.kuerze_kette(
+                    aufgehoben, limit=self.kandidaten,
+                    obergrenze=self.obergrenze)
+                obs.dokumente(such, kandidaten)
+                obs.setze(such, {"picknick.qty": 1,
+                                 "picknick.candidates_kept": len(aufgehoben),
+                                 # Woher die Kandidaten kamen. Ohne das sähe
+                                 # der Span aus wie eine Suche, die zufällig
+                                 # keinen Rang hat.
+                                 "picknick.category": f"{kategorie} > {sorte}"})
+            aufgaben.append({"suchbegriffe": [sorte], "menge": 1,
+                             "begriff": sorte, "kandidaten": kandidaten,
+                             "aufgehoben": aufgehoben,
+                             # Es gibt keinen allgemeineren Begriff, auf den
+                             # diese Zutat hätte ausweichen können — eine
+                             # Sorte ist keine Kette.
+                             "nur_allgemein": None})
+        return aufgaben
+
     # -- Weg 3: Modell ----------------------------------------------------
 
-    def _aus_modell(self, con, text: str):
+    def _aus_modell(self, con, text: str, *, auffaechern: bool = True):
         """Die drei Stufen aus Spec 6.
 
         Reihenfolge mit Absicht: erst der Weckzustand (billig, und ohne
@@ -576,6 +765,13 @@ class Chat:
         if not zustand.bedient:
             raise ChatNichtVerfuegbar(zustand)
 
+        # Die Kategorienliste geht NUR bei einem kurzen Satz mit (WB-368).
+        # Damit ist der Aufruf für „alles für Pho" Wort für Wort derselbe wie
+        # vor dem Ticket — dieselben Token, dieselbe Wartezeit —, und die
+        # Frage nach dem Oberbegriff kostet keinen eigenen Modellaufruf,
+        # sondern reist in dem mit, der den Satz ohnehin liest.
+        kategorien = (oberbegriffe.namen(con)
+                      if auffaechern and oberbegriffe.moeglich(text) else None)
         try:
             # `stufe()` benennt den Span, den der OpenAI-Instrumentor um
             # diesen Aufruf öffnet, in `plan.extract` um (Spec 7.1). Ein
@@ -583,7 +779,8 @@ class Chat:
             with obs.stufe("plan.extract"):
                 erst = plan.extract_plan(self.zugang, text, guided=self.guided,
                                          denken=self.denken,
-                                         system=self.system_extract)
+                                         system=self.system_extract,
+                                         kategorien=kategorien)
             begriffe = erst.zutaten
         except plan.PlanFehler as e:
             # Kein JSON, leeres Array, falscher Typ: daraus lässt sich nichts
@@ -595,6 +792,41 @@ class Chat:
         except ModellNichtErreichbar as e:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
+
+        # Ein Oberbegriff, den der Katalog nicht wörtlich kennt (WB-368):
+        # „Nudeln" steht dort unter „Reis, Pasta & Getreide", und diese
+        # Übersetzung kann keine Zeichenkettenregel. Das Modell hat sie
+        # gerade nebenbei geliefert — geprüft gegen die vorgelegte Liste, was
+        # nicht darin stand, steht in `kategorie_verworfen` und wird NICHT
+        # benutzt.
+        #
+        # Ein GERICHT schlägt den Oberbegriff: „Pho" ist beides kurz und
+        # etwas, wofür ein Rezept vorliegt, und ein Rezept ist die bessere
+        # Antwort als eine Rückfrage.
+        faecher = None
+        if kategorien and not erst.gericht:
+            faecher = oberbegriffe.aus_modell(con, text, erst.kategorie)
+        if faecher is not None:
+            # Was Stufe 1 an Begriffen geraten hat, wird weggeworfen — wie
+            # beim Wechsel auf den Quellenweg (WB-367). Es war der Preis
+            # dafür, den Oberbegriff überhaupt zu erkennen, und eine
+            # Vorschlagsliste neben einer Rückfrage wäre die schlechteste
+            # aller Antworten.
+            return ([], oberbegriffe.meldung(faecher), [], [], [],
+                    {"weg": WEG_FAECHER, "faecher": faecher,
+                     "sorten_verworfen": erst.kategorie_verworfen})
+        if not begriffe:
+            # Stufe 1 hat NUR eine Kategorie genannt, und die trägt nicht:
+            # sie stand nicht in der Vorlage (gemessen: „Getränke" ->
+            # „Alkoholfreie Alternatives", „Milch" -> „Milch") oder der
+            # Katalog hat sie zwischen Vorlage und Nachschlagen verloren.
+            #
+            # **Dann wird nach dem gesucht, was DIE NUTZERIN getippt hat.**
+            # Das ist kein Raten: das Wort kommt nicht aus dem Modell, es
+            # steht im Satz. Eine Fehlermeldung wäre hier das schlechtere
+            # Ende — vor diesem Ticket hätte derselbe Satz eine ganz normale
+            # Suche ausgelöst, und genau die bekommt er auch jetzt.
+            begriffe = [{"suchbegriffe": [text], "menge": 1}]
 
         # **Hier wird das Gericht GEHOLT, nicht angefordert** (WB-367).
         # Stufe 1 hat gerade 20 bis 35 s gebraucht; der Abruf daneben kostet
@@ -634,7 +866,10 @@ class Chat:
         meldung = self._meldung_modell(begriffe, freitext, auswahl,
                                        choose_kaputt, erst.gericht, abruf)
         return (zeilen, meldung, begriffe, auswahl.verworfen, aufgaben,
-                {"gericht": erst.gericht, "abruf": abruf})
+                {"gericht": erst.gericht, "abruf": abruf,
+                 # Auch OHNE Auffächerung mitgeführt: eine erfundene Kategorie
+                 # ist genau dann interessant, wenn sie nicht durchkam.
+                 "sorten_verworfen": erst.kategorie_verworfen})
 
     def _gericht_holen(self, con, name: str) -> str | None:
         """Den Abruf anstossen und auf ihn warten — kurz (WB-367).
@@ -723,13 +958,21 @@ class Chat:
                                                              aufgehoben)})
         return aufgaben
 
-    def _waehlen(self, text: str, aufgaben: list[dict]):
-        """Stufe 3: das Modell wählt aus den VORGELEGTEN Kandidaten."""
+    def _waehlen(self, text: str, aufgaben: list[dict], system=None):
+        """Stufe 3: das Modell wählt aus den VORGELEGTEN Kandidaten.
+
+        `system` überschreibt den Prompt für DIESEN Aufruf — gebraucht wird
+        das genau einmal (WB-368): bei einer gewählten Sorte ist der Begriff
+        ein Regalname und kein Suchbegriff, und der gewöhnliche Prompt liess
+        das Modell deshalb gar nichts wählen (siehe
+        `plan.SYSTEM_CHOOSE_SORTE`). Die Stufe bleibt dieselbe, samt Span und
+        Prüfung gegen die Vorlage.
+        """
         try:
             with obs.stufe("plan.choose"):
                 auswahl = plan.choose(self.zugang, text, aufgaben,
                                       guided=self.guided, denken=self.denken,
-                                      system=self.system_choose)
+                                      system=system or self.system_choose)
             return auswahl, None
         except plan.PlanFehler as e:
             # Auch das kostet keinen Begriff: ohne Wahl wird JEDER Begriff zu
@@ -845,7 +1088,8 @@ class Chat:
                    zeilen: list[dict], meldung: str, span_id: str | None,
                    *, begriffe, verworfen, rezepte, gericht=None,
                    quelle_name=None, quelle_url=None, quelle_recipe_id=None,
-                   abruf=None) -> Ergebnis:
+                   abruf=None, faecher=None, kategorie=None,
+                   gewaehlte_sorten=None, sorten_verworfen=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -857,6 +1101,13 @@ class Chat:
         antwort_id = vorschlaege.nachricht(con, order_id,
                                            vorschlaege.ROLLE_AGENT, meldung,
                                            span_id)
+        if faecher is not None:
+            # Die angebotenen Sorten hängen an derselben Antwortzeile wie
+            # sonst die Vorschläge — und ausdrücklich NICHT in
+            # `chat_suggestion`: eine Sorte ist keine Entscheidung über ein
+            # Produkt und hätte in der Trefferquote aus Spec 8.1 nichts zu
+            # suchen (siehe `db.chat_sorte`).
+            oberbegriffe.merken(con, antwort_id, faecher)
         gesehen = set()
         for z in zeilen:
             schluessel = (z["product_id"], (z["free_text"] or "").casefold())
@@ -887,4 +1138,9 @@ class Chat:
             vorschlaege=vorschlaege.liste(con, antwort_id), begriffe=begriffe,
             verworfen=verworfen, rezepte=rezepte, meldung=meldung,
             gericht=gericht, quelle_name=quelle_name, quelle_url=quelle_url,
-            quelle_recipe_id=quelle_recipe_id, abruf=abruf)
+            quelle_recipe_id=quelle_recipe_id, abruf=abruf,
+            kategorie=(faecher.kategorie if faecher is not None else kategorie),
+            sorten=(list(faecher.sorten) if faecher is not None else []),
+            sorten_herkunft=(faecher.herkunft if faecher is not None else None),
+            sorten_verworfen=sorten_verworfen,
+            gewaehlte_sorten=list(gewaehlte_sorten or []))

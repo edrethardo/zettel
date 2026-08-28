@@ -69,6 +69,35 @@ stillschweigend fallengelassene Zutat merkt man erst im Laden.
 Dasselbe auf dem Rezeptweg: „alles für Spaghetti Bolognese, und Klopapier"
 trifft das Rezept, und „Klopapier" bleibt als Freitext daneben liegen.
 
+### Manche Wörter sind Oberbegriffe — erst die Sorte, dann das Produkt
+
+„Aufschnitt" ist kein Produktwunsch, sondern ein Regal. Vor WB-368 kamen
+darauf sechs Produkte, die zufällig das Wort im Namen tragen (Jagdwurst
+Aufschnitt, Kochschinken Aufschnitt); seither kommen die **Sorten des
+Katalogs** mit ihren echten Stückzahlen — Rohschinken & Bacon (58),
+Kochschinken (42), Brühwurst (40), Geflügelwurst (40), Salami (34), Sülze &
+Wurst in Aspik (13). Mehrere lassen sich ankreuzen, denn „Aufschnitt" heisst
+oft Salami UND Kochschinken.
+
+**Die Sorten kommen aus dem Kategoriebaum, nicht aus dem Modell.** Das ist der
+ganze Unterschied: sie sind vollständig, sie sind richtig geschrieben, und
+eine Sorte ohne Produkte kann in einem `GROUP BY` gar nicht erst auftauchen.
+Dasselbe mit Qwen erzeugt (gemessen) lieferte „SCHWEINEBRUST" mit null
+Treffern, „Bananen" doppelt und ein verstümmeltes „Birn". Ein Vektorindex
+wäre hier mehr Technik für ein Problem, das der Kategoriebaum schon löst.
+
+Das Modell wird trotzdem gebraucht, aber für die **Zuordnung, nicht die
+Erfindung**: „Nudeln" ist keine Kategorie, das steckt unter „Reis, Pasta &
+Getreide". Es wählt aus den 56 vorgelegten Kategorienamen — und was nicht in
+der Vorlage stand, wird verworfen, genau wie eine erfundene Produkt-ID. Ist
+das getippte Wort selbst ein Kategoriename, fällt auch dieser Aufruf weg: der
+Katalog antwortet in 0,0 s, und zwar auch bei schlafender Box.
+
+Ein Tipp auf „Salami" führt zurück in den gewöhnlichen Ablauf — Kandidaten,
+Auswahl, Ja/Nein, Alternativen. Kein zweiter Mechanismus daneben. Und wer die
+Rückfrage nicht will, überspringt sie mit einem Tipp und sucht direkt nach
+dem, was er getippt hat.
+
 ### Nichts landet ungefragt im Warenkorb
 
 Ein Chat-Zug erzeugt eine Liste in `chat_suggestion`, die zeilenweise mit „Ja"

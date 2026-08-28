@@ -19,6 +19,44 @@
       <p class="chatzeile ich">{{ m.content }}</p>
     {% else %}
       <p class="chatzeile agent">{{ m.content }}</p>
+      {# Ein Oberbegriff (WB-368): erst die Sorte, dann das Produkt. Die
+         Sorten kommen aus dem Kategoriebaum und tragen ihre echte Stückzahl —
+         angeboten wird nur, was wirklich im Katalog steht. Mehrere Kästchen
+         gehen, weil „Aufschnitt" oft Salami UND Kochschinken heisst. #}
+      {% if m.faecher %}
+      <form class="sorten" method="post"
+            action="/warenkorb/chat/{{ m.id }}/sorten"
+            hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+            hx-target="#chat" hx-swap="outerHTML"
+            hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+        <ul class="sortenliste">
+          {% for s in m.faecher.sorten %}
+          <li>
+            <label>
+              <input type="checkbox" name="sorte" value="{{ s.name }}">
+              <span class="name">{{ s.name }}</span>
+              <span class="anzahl">{{ s.anzahl }}</span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="sammel">
+          <button class="mini ja" type="submit">Ausgewählte Sorten zeigen</button>
+        </div>
+      </form>
+      {# Kein Kästchen angekreuzt heisst „überspringen": dann wird direkt nach
+         dem gesucht, was getippt wurde. Ein Oberbegriff darf keine Sackgasse
+         sein. Dieselbe Adresse, derselbe Ausgang — der Knopf spart nur das
+         Absenden eines leeren Formulars. #}
+      <form class="sorten-weiter" method="post"
+            action="/warenkorb/chat/{{ m.id }}/sorten"
+            hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+            hx-target="#chat" hx-swap="outerHTML"
+            hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+        <button class="mini" type="submit">Überspringen — direkt nach
+          „{{ m.faecher.wort }}“ suchen</button>
+      </form>
+      {% endif %}
       {% if m.vorschlaege %}
       <ul class="vorschlaege">
         {% for v in m.vorschlaege %}

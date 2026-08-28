@@ -35,6 +35,8 @@ import json
 import re
 from dataclasses import dataclass, field
 
+from picknick import db
+
 #: Höchstzahl Begriffe, die eine Anfrage ergeben darf. Wer „alles fürs
 #: Wochenende" schreibt, bekommt sonst eine Liste, die niemand mehr
 #: zeilenweise bestätigt — und jeder Begriff kostet eine Suche.
@@ -229,6 +231,58 @@ Antworte ausschliesslich als JSON:
 "Hackfleisch"], "menge": 1}, {"suchbegriffe": ["passierte Tomaten", \
 "Tomaten"], "menge": 2}]}"""
 
+#: Der ZUSATZ an Stufe 1 für kurze Sätze (WB-368): ist das ein Oberbegriff,
+#: und wenn ja, welche Kategorie des Katalogs ist gemeint?
+#:
+#: **Ein Aufruf, zwei Auskünfte** — dieselbe Bauart wie beim Gerichtsnamen
+#: (WB-338). Eine eigene Modellstufe davorzuhängen hiesse, dass JEDER kurze
+#: Satz eine Wartezeit mehr kostet, auch „Milch" und „Tomatenmark"; das Modell
+#: liest den Satz aber ohnehin gerade. Ein Zug, der auffächert, kostet damit
+#: sogar WENIGER als vorher: Stufe 3 entfällt, weil nichts zu wählen ist.
+#:
+#: **Das Modell erfindet hier nichts, es ordnet zu.** Die Kategorien stehen in
+#: der Vorlage; was nicht darin steht, wird verworfen (siehe `_kategorie`) —
+#: dieselbe Zusicherung wie bei den Produkt-IDs in `choose`. Nötig ist das,
+#: weil nicht jeder Oberbegriff auch ein Kategoriename ist: „Nudeln" steckt im
+#: Katalog unter „Reis, Pasta & Getreide", und diese Übersetzung kann keine
+#: Zeichenkettenregel.
+#:
+#: **Die Gegenbeispiele im Prompt sind gemessen und nicht Zierrat**
+#: (2026-08-28, echter Katalog, Qwen3.8-27B). Ohne sie fächerte das Modell
+#: fast jedes einzelne Wort auf — „Gouda" zu „Käse", „Klopapier" zu „Papier- &
+#: Hygieneartikel", „Spaghetti" zu „Reis, Pasta & Getreide", „Bierschinken" zu
+#: „Aufschnitt". Wer eine WARE tippt, bekäme dann statt des Produkts ein Menü.
+#: Mit der Unterscheidung Warengruppe/Ware und sieben Gegenbeispielen trafen
+#: dieselben 14 Wörter: Aufschnitt, Käse, Nudeln, Wurst, Obst -> Kategorie;
+#: Tomatenmark, Bierschinken, Landmilch, Gouda, Klopapier, Spaghetti, Butter
+#: -> Suchbegriffe. „Getränke" und „Milch" nannten eine Kategorie, die es
+#: nicht gibt — sie wird verworfen, und der Satz läuft als Suche weiter.
+SYSTEM_KATEGORIE = """
+
+Zusätzlich: der Satz besteht nur aus ein bis zwei Wörtern. Prüfe, ob er eine \
+WARENGRUPPE nennt statt einer Ware.
+
+Eine Warengruppe ist ein Sammelname, unter dem im Laden ganz verschiedene \
+Waren liegen und aus dem man erst eine Sorte aussuchen muss: „Aufschnitt", \
+„Käse", „Nudeln", „Getränke", „Obst".
+
+Eine WARE ist alles, was man so in den Wagen legen kann — auch wenn es zu \
+einer Warengruppe gehört: „Gouda", „Bierschinken", „Spaghetti", \
+„Tomatenmark", „Landmilch", „Klopapier", „Butter". Dafür setzt du \
+"kategorie" auf null und gibst wie sonst Suchbegriffe an.
+
+Ist es eine Warengruppe, schreibst du in "kategorie" die passende Kategorie \
+aus der folgenden Liste — WÖRTLICH so, wie sie dort steht — und lässt \
+"begriffe" leer. Steht keine passende in der Liste, ist "kategorie" null.
+
+Kategorien: {kategorien}"""
+
+
+def system_mit_kategorien(system: str, kategorien: list[str]) -> str:
+    """Hängt die Kategorienliste an den System-Prompt von Stufe 1."""
+    return system + SYSTEM_KATEGORIE.format(kategorien=", ".join(kategorien))
+
+
 SCHEMA_EXTRACT = {
     "type": "object",
     "properties": {
@@ -277,6 +331,24 @@ SCHEMA_EXTRACT = {
 }
 
 
+def schema_mit_kategorie(schema: dict = SCHEMA_EXTRACT) -> dict:
+    """Dasselbe Schema, um das Feld `kategorie` ergänzt (WB-368).
+
+    Aus dem vorhandenen abgeleitet und nicht danebengeschrieben: zwei
+    getrennte Schemata liefen beim nächsten Ticket auseinander, und die
+    Abweichung fiele erst auf, wenn Guided Decoding etwas anderes erzwingt,
+    als der Prompt verlangt.
+
+    `kategorie` steht MIT in `required` und darf `null` sein — genau wie
+    `gericht`: ohne `required` liess das Modell das Feld gemessen einfach weg,
+    und ohne `null` bliebe ihm nur, sich eine Kategorie auszudenken.
+    """
+    return {**schema,
+            "properties": {"kategorie": {"type": ["string", "null"]},
+                           **schema["properties"]},
+            "required": [*schema["required"], "kategorie"]}
+
+
 @dataclass(frozen=True)
 class Plan:
     """Was Stufe 1 aus dem Satz gemacht hat: Zutaten und — vielleicht — ein
@@ -289,6 +361,14 @@ class Plan:
     """
     zutaten: list[dict] = field(default_factory=list)
     gericht: str | None = None
+    #: Die Katalogkategorie, wenn der Satz einen OBERBEGRIFF nennt (WB-368).
+    #: Immer eine aus der VORGELEGTEN Liste — was das Modell sonst nennt,
+    #: steht in `kategorie_verworfen` und wird nicht benutzt.
+    kategorie: str | None = None
+    #: Was das Modell als Kategorie nannte, obwohl es sie nicht gibt. Die
+    #: Schwester von `Auswahl.verworfen`: nicht Protokollrest, sondern die
+    #: Zahl, an der sich messen lässt, ob das Modell erfindet.
+    kategorie_verworfen: str | None = None
 
 
 #: Grenzen für einen Gerichtsnamen aus dem Modell. Zwei Zeichen sind kein
@@ -370,25 +450,86 @@ def extract_plan(zugang, satz: str, *, guided: bool = True,
                  system: str = SYSTEM_EXTRACT,
                  temperatur: float = TEMPERATUR,
                  max_tokens: int = MAX_TOKENS,
-                 denken: bool = DENKEN) -> Plan:
+                 denken: bool = DENKEN,
+                 kategorien: list[str] | None = None) -> Plan:
     """Wie `extract()`, gibt aber auch den Gerichtsnamen zurück (WB-338).
 
     **Ein Aufruf, zwei Auskünfte.** Den Gerichtsnamen in einer eigenen Stufe
     zu erfragen wäre ein zweiter Modellaufruf je Satz — und das Modell hat
     den Satz ohnehin gerade gelesen. Kostet der Gerichtsname nichts extra,
     darf er auch dann dastehen, wenn ihn niemand braucht.
+
+    `kategorien` macht daraus drei Auskünfte (WB-368): die Liste der
+    Katalogkategorien geht mit in den Prompt, und das Modell darf eine davon
+    als Oberbegriff nennen. **Nur eine davon** — was nicht in der Liste steht,
+    landet in `Plan.kategorie_verworfen` und wird nicht benutzt. Ohne
+    `kategorien` ist der Aufruf Wort für Wort derselbe wie vorher, also auch
+    dasselbe Prompt-Budget: die 1.036 Zeichen Kategorienliste zahlt nur, wer
+    einen kurzen Satz schreibt (siehe `assistant.oberbegriffe.MAX_WOERTER`).
     """
     text = (satz or "").strip()
     if not text:
         raise PlanFehler("Leere Anfrage — dazu gibt es nichts zu suchen.")
-    antwort = _frage(zugang, system, text, SCHEMA_EXTRACT, "begriffe",
+    schema = SCHEMA_EXTRACT
+    if kategorien:
+        system = system_mit_kategorien(system, kategorien)
+        schema = schema_mit_kategorie(schema)
+    antwort = _frage(zugang, system, text, schema, "begriffe",
                      guided, temperatur, max_tokens, denken)
     roh = _eintraege(antwort, ("begriffe", "zutaten", "items", "liste"))
     zutaten = _zutaten_aus(roh)
-    if not zutaten:
+    gewaehlt, verworfen = _kategorie(antwort, kategorien or [])
+    if not zutaten and gewaehlt is None and verworfen is None:
+        # Ein Oberbegriff ist die AUSNAHME von „ohne Begriffe geht nichts":
+        # wer „Aufschnitt" tippt, bekommt die Sorten des Katalogs und keine
+        # Suche, und dafür braucht es keine einzige Zutat. Ohne diesen Zweig
+        # scheiterte ausgerechnet die knappste Antwort des Modells.
+        #
+        # Dasselbe gilt für eine VERWORFENE Kategorie: gemessen antwortete das
+        # Modell auf „Getränke" mit `kategorie: "Alkoholfreie Alternatives"`
+        # (so nicht im Katalog) und einer leeren Begriffsliste. Das ist keine
+        # kaputte Antwort, sondern eine, die auf die falsche Frage passt — der
+        # Aufrufer sucht dann nach dem, was getippt wurde (`chat._aus_modell`).
         raise PlanFehler(
             "Das Modell hat aus dem Satz keine Suchbegriffe gemacht.")
-    return Plan(zutaten=zutaten, gericht=_gericht(antwort))
+    return Plan(zutaten=zutaten, gericht=_gericht(antwort),
+                kategorie=gewaehlt, kategorie_verworfen=verworfen)
+
+
+def _kategorie(text: str, erlaubt: list[str]) -> tuple[str | None, str | None]:
+    """Die Kategorie aus der Antwort — geprüft gegen die VORLAGE (WB-368).
+
+    Gibt `(gewaehlt, verworfen)` zurück. **Hier endet der Halluzinationsweg,
+    genau wie bei den Produkt-IDs in `choose`:** nennt das Modell eine
+    Kategorie, die ihm nicht vorgelegt wurde, wird sie verworfen und NICHT auf
+    die ähnlichste gebogen. Eine erfundene Kategorie führte sonst in eine
+    Auffächerung ohne Sorten — eine leere Auswahl, die aussieht wie eine
+    echte.
+
+    Verglichen wird nachsichtig in der Schreibweise (Umlaute, Gross- und
+    Kleinschreibung, Leerzeichen) und unnachgiebig im Bestand: zurückgegeben
+    wird immer der Name, wie er im Katalog steht, denn mit ihm wird gleich
+    abgefragt.
+    """
+    if not erlaubt:
+        return None, None
+    try:
+        wert = _json_wert(text)
+    except PlanFehler:
+        return None, None
+    if not isinstance(wert, dict):
+        return None, None
+    roh = _text(wert, ("kategorie", "category", "oberbegriff", "warengruppe"))
+    if not roh:
+        return None, None
+    nach_form = {_form(name): name for name in erlaubt}
+    treffer = nach_form.get(_form(roh))
+    return (treffer, None) if treffer else (None, roh)
+
+
+def _form(text: str) -> str:
+    """Die Vergleichsform eines Kategorienamens: umlautfrei, klein, entrümpelt."""
+    return " ".join(db.normalisiere(text or "").split()).casefold()
 
 
 def _zutaten_aus(roh: list[dict]) -> list[dict]:
@@ -583,6 +724,40 @@ Eine ID, die dort nicht steht, wird verworfen.
 
 Antworte ausschliesslich als JSON:
 {"auswahl": [{"begriff": "Hackfleisch", "produkt_id": 123, "menge": 1}]}"""
+
+#: Dieselbe Stufe, andere Frage: aus einer SORTE ein Produkt (WB-368).
+#:
+#: **Gemessen, und deshalb überhaupt vorhanden** (2026-08-28, echter Katalog,
+#: Qwen3.8-27B): mit `SYSTEM_CHOOSE` wählte das Modell zu „Rohschinken &
+#: Bacon" NICHTS — in drei Formulierungen der Anfrage dreimal nichts. Kein
+#: Wunder: dort steht „das, was am ehesten gemeint ist … passt nichts davon,
+#: lässt du ihn weg", und kein einziges Produkt heisst „Rohschinken & Bacon".
+#: Der Begriff ist hier eben kein Suchbegriff, sondern ein REGALNAME, und die
+#: Kandidaten stehen alle wirklich darin. Mit diesem Prompt wählte dasselbe
+#: Modell in allen fünf Aufschnitt-Sorten ein Produkt, in 1,3 bis 1,8 s.
+#:
+#: Ein eigener Prompt und kein Zusatz am alten: die Regel „passt nichts, lass
+#: es weg" ist bei einer Suche richtig (der Katalog hat Lücken) und bei einer
+#: Sorte falsch (die Nutzerin hat das Regal selbst angetippt, und die Zahl
+#: daneben war echt).
+SYSTEM_CHOOSE_SORTE = """\
+Du wählst für eine Einkaufsliste aus vorgelegten Katalogprodukten aus.
+
+Der „begriff" ist der NAME EINER SORTE aus dem Kategoriebaum des Ladens \
+(zum Beispiel „Rohschinken & Bacon"), nicht der Name eines Produkts. Alle \
+vorgelegten Kandidaten stehen wirklich in dieser Sorte; die Nutzerin hat sie \
+selbst ausgewählt.
+
+Regeln:
+- Du darfst AUSSCHLIESSLICH IDs verwenden, die unten in der Liste stehen. \
+Eine ID, die dort nicht steht, wird verworfen.
+- Je Sorte GENAU EIN Produkt: das gewöhnlichste, das jemand meint, der diese \
+Sorte anklickt. Im Zweifel das erste.
+- Nur wenn die Liste zu einer Sorte leer ist, lässt du sie weg.
+- Die Menge ist 1, ausser die Anfrage nennt eine andere.
+
+Antworte ausschliesslich als JSON:
+{"auswahl": [{"begriff": "Salami", "produkt_id": 123, "menge": 1}]}"""
 
 SCHEMA_CHOOSE = {
     "type": "object",

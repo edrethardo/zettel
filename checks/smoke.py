@@ -128,6 +128,7 @@ from picknick import db, gerichte, obs, orders  # noqa: E402
 from picknick.gerichte import chefkoch  # noqa: E402
 from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
+from picknick.assistant import oberbegriffe  # noqa: E402
 from picknick.catalog import categories, search  # noqa: E402
 from picknick.llm import wake  # noqa: E402
 from picknick.llm.client import Modellzugang  # noqa: E402
@@ -935,7 +936,160 @@ def _zug_ohne_speicher(con) -> str:
 
 
 # --------------------------------------------------------------------------
-# 7. Die Bindung
+# 7. Oberbegriffe auffächern (WB-368)
+#
+# Ein eigener Katalog: ein Aufschnittregal mit vier Sorten und einer fünften,
+# die ausgemustert ist. Genau daran hängt die Zusage des Tickets — angeboten
+# wird nur, was wirklich im Katalog steht.
+
+SORTEN_KATALOG = [
+    # (external_id, name, l1, l2, aktiv)
+    ("sal1", "Levoni Salami Milano", "Aufschnitt", "Salami", 1),
+    ("sal2", "Simonini Salami Napoli", "Aufschnitt", "Salami", 1),
+    ("sal3", "Ferdi Fuchs Mini Salami", "Aufschnitt", "Salami", 1),
+    ("koc1", "Gutfried Kochschinken", "Aufschnitt", "Kochschinken", 1),
+    ("koc2", "Rügenwalder Kochschinken zart", "Aufschnitt", "Kochschinken", 1),
+    ("bru1", "Jagdwurst Aufschnitt", "Aufschnitt", "Brühwurst", 1),
+    ("gef1", "Hähnchenbrust Aufschnitt", "Aufschnitt", "Geflügelwurst", 1),
+    ("sue1", "Sülze mit Gurken", "Aufschnitt", "Sülze & Wurst in Aspik", 0),
+    ("tom1", "Mutti Tomatenmark", "Konserven & Eingelegtes", "Tomaten", 1),
+]
+
+
+def sorten_katalog_anlegen(pfad: Path) -> None:
+    con = db.connect(pfad)
+    try:
+        db.migrate(con)
+        for external_id, name, l1, l2, aktiv in SORTEN_KATALOG:
+            con.execute(
+                "INSERT INTO product (source, external_id, name, brand,"
+                " price_cents, unit_text, category_l1, category_l2, active)"
+                " VALUES ('knuspr', ?, ?, 'Testmarke', 249, '100 g', ?, ?, ?)",
+                (external_id, name, l1, l2, aktiv))
+        con.commit()
+    finally:
+        con.close()
+
+
+class _NieGefragt:
+    """Ein Modellzugang, der jeden Aufruf zum Fehler macht."""
+
+    def modell(self, **_):
+        raise AssertionError("Das Modell wurde nach dem Kürzel gefragt.")
+
+    def chat(self, *_, **__):
+        raise AssertionError("Das Modell wurde gefragt, obwohl der Katalog "
+                             "schon antwortet.")
+
+
+def checks_sorten(b: Bericht, db_datei: Path) -> None:
+    b.abschnitt("Oberbegriffe auffächern — erst die Sorte, dann das Produkt "
+                "(WB-368)")
+
+    con = db.connect(db_datei)
+    try:
+        b.pruefe("„Aufschnitt“ fächert auf: die Sorten des Katalogs mit "
+                 "echter Stückzahl, ohne einen Modellaufruf",
+                 lambda: _faechert_auf(con))
+        b.pruefe("eine ausgemusterte Sorte wird nicht angeboten",
+                 lambda: _keine_leere_sorte(con))
+        b.pruefe("„Tomatenmark“ fächert nicht auf — zwei Stufen wie immer",
+                 lambda: _keine_ware_faechert(con))
+        b.pruefe("das Modell kann keine Kategorie erfinden",
+                 lambda: _keine_erfundene_kategorie(con))
+        b.pruefe("eine gewählte Sorte führt in den normalen Kandidatenablauf",
+                 lambda: _sorte_fuehrt_weiter(con))
+        b.pruefe("mehrere Sorten lassen sich wählen, und die nicht "
+                 "angebotene fällt weg", lambda: _mehrere_sorten(con))
+    finally:
+        con.close()
+
+
+def _faechert_auf(con) -> str:
+    agent = chatmodul.Chat(_NieGefragt(), wecker=_Box())
+    ergebnis = agent.turn(con, "Aufschnitt")
+    gleich(ergebnis.weg, chatmodul.WEG_FAECHER, "path")
+    gleich([(s["name"], s["anzahl"]) for s in ergebnis.sorten],
+           [("Salami", 3), ("Kochschinken", 2), ("Brühwurst", 1),
+            ("Geflügelwurst", 1)], "sorten")
+    wahr(not ergebnis.vorschlaege,
+         "Es wurden Produkte vorgeschlagen, statt nach der Sorte zu fragen.")
+    return "4 Sorten, 7 Produkte, 0 Modellaufrufe"
+
+
+def _keine_leere_sorte(con) -> str:
+    sorten = [s["name"] for s in categories.sorten(con, "Aufschnitt")]
+    wahr("Sülze & Wurst in Aspik" not in sorten,
+         "Eine Sorte ohne aktive Produkte wurde angeboten.")
+    return "die ausgemusterte Sülze steht nicht in der Auswahl"
+
+
+def _keine_ware_faechert(con) -> str:
+    zugang = _mock_zugang(
+        json.dumps({"gericht": None, "kategorie": None,
+                    "begriffe": [{"suchbegriffe": ["Tomatenmark"],
+                                  "menge": 1}]}),
+        _choose(("Tomatenmark", pid(con, "Tomatenmark"), 1)))
+    ergebnis = chatmodul.Chat(zugang, wecker=_Box()).turn(con, "Tomatenmark")
+    gleich(ergebnis.weg, chatmodul.WEG_LLM, "path")
+    wahr(ergebnis.kategorie is None, "Eine Ware wurde als Warengruppe gelesen.")
+    gleich([v["name"] for v in ergebnis.vorschlaege], ["Mutti Tomatenmark"],
+           "vorschlaege")
+    return "unverändertes Verhalten, ein Vorschlag"
+
+
+def _keine_erfundene_kategorie(con) -> str:
+    """Dieselbe Zusicherung wie bei den Produkt-IDs — eine Ebene höher."""
+    zugang = _mock_zugang(
+        json.dumps({"gericht": None, "kategorie": "Wurstabteilung",
+                    "begriffe": [{"suchbegriffe": ["Aufschnitt"],
+                                  "menge": 1}]}),
+        _choose(("Aufschnitt", pid(con, "Jagdwurst"), 1)))
+    ergebnis = chatmodul.Chat(zugang, wecker=_Box()).turn(con, "Aufschnitt "
+                                                              "bitte")
+    wahr(ergebnis.kategorie is None,
+         "Eine erfundene Kategorie hat aufgefächert.")
+    gleich(ergebnis.sorten_verworfen, "Wurstabteilung", "fanout_rejected")
+    return "„Wurstabteilung“ verworfen und benannt, der Begriff bleibt"
+
+
+def _sorte_fuehrt_weiter(con) -> str:
+    ergebnis = chatmodul.Chat(_NieGefragt(), wecker=_Box()).turn(
+        con, "Aufschnitt")
+    gewaehlt = oberbegriffe.gewaehlte(con, ergebnis.chat_message_id,
+                                      ["Salami"])
+    zugang = _mock_zugang(_choose(("Salami", pid(con, "Levoni Salami"), 1)))
+    zweit = chatmodul.Chat(zugang, wecker=_Box()).turn(
+        con, "Salami", auffaechern=False, aus_sorten=("Aufschnitt", gewaehlt))
+    zeile = zweit.vorschlaege[0]
+    gleich(zeile["name"], "Levoni Salami Milano", "vorschlag")
+    gleich(zeile["search_term"], "Salami", "search_term")
+    # Die übrigen Salami sind aufgehoben — ein „Nein“ zeigt sie (WB-359).
+    gleich(zeile["n_alternativen"], 2, "alternativen")
+    gleich(zweit.kategorie, "Aufschnitt", "fanout_category")
+    return "ein Vorschlag, zwei Alternativen, dieselbe Ja/Nein-Zeile"
+
+
+def _mehrere_sorten(con) -> str:
+    ergebnis = chatmodul.Chat(_NieGefragt(), wecker=_Box()).turn(
+        con, "Aufschnitt")
+    gewaehlt = oberbegriffe.gewaehlte(
+        con, ergebnis.chat_message_id,
+        ["Salami", "Kochschinken", "Sülze & Wurst in Aspik"])
+    gleich(gewaehlt, ["Salami", "Kochschinken"], "gewaehlt")
+    zugang = _mock_zugang(_choose(("Salami", pid(con, "Levoni Salami"), 1),
+                                  ("Kochschinken", pid(con, "Gutfried"), 2)))
+    zweit = chatmodul.Chat(zugang, wecker=_Box()).turn(
+        con, "Salami, Kochschinken", auffaechern=False,
+        aus_sorten=("Aufschnitt", gewaehlt))
+    gleich([v["name"] for v in zweit.vorschlaege],
+           ["Levoni Salami Milano", "Gutfried Kochschinken"], "vorschlaege")
+    gleich([v["qty"] for v in zweit.vorschlaege], [1, 2], "mengen")
+    return "zwei Sorten, zwei Vorschläge; die ausgemusterte fiel weg"
+
+
+# --------------------------------------------------------------------------
+# 8. Die Bindung
 
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
@@ -1011,6 +1165,11 @@ def main() -> int:
         gerichte_db = ordner / "gerichte.db"
         katalog_anlegen(gerichte_db)
         checks_gerichte(b, gerichte_db)
+        # Und noch eine: die Auffächerung braucht eine Oberkategorie mit
+        # mehreren Sorten, und die Butter-Fall-Katalog hat keine.
+        sorten_db = ordner / "sorten.db"
+        sorten_katalog_anlegen(sorten_db)
+        checks_sorten(b, sorten_db)
     checks_bindung(b)
     return b.ende()
 
