@@ -1133,3 +1133,52 @@ def test_ein_treffer_ueber_den_genauen_begriff_gilt_als_sicher(con):
     """Die Gegenprobe: keine Marke, wo nichts ausgewichen wurde."""
     ergebnis, _ = _butter_zug(con)
     assert ergebnis.vorschlaege[0]["fallback_term"] is None
+
+
+# --------------------------------------------------------------------------
+# Abgeschnittene Antworten (WB-363)
+#
+# „alles für Pho" hat 20 Zutaten und brach an MAX_TOKENS ab — die Grenze stammte
+# aus der Zeit vor den Begriffsketten (WB-340), als je Zutat EIN Begriff
+# ausgegeben wurde. Ein Abbruch nach 18 von 20 Zutaten ist ein weiches Problem;
+# alles wegzuwerfen war eine harte Reaktion darauf.
+
+def test_gerettet_wird_was_vollstaendig_dasteht():
+    kaputt = ('{"begriffe": ['
+              '{"suchbegriffe": ["Reisnudeln", "Nudeln"], "menge": 1},'
+              '{"suchbegriffe": ["Rinderbrühe", "Brühe"], "menge": 1},'
+              '{"suchbegriffe": ["Sternan')
+    gerettet = plan._vollstaendige_eintraege(kaputt)
+    assert len(gerettet) == 2
+    assert gerettet[0]["suchbegriffe"] == ["Reisnudeln", "Nudeln"]
+
+
+def test_rettung_stolpert_nicht_ueber_klammern_im_produktnamen():
+    """Ein Produktname darf geschweifte Klammern und maskierte Anführungs-
+    zeichen enthalten. Deshalb wird über die Klammertiefe gelaufen und nicht
+    mit einem regulären Ausdruck gesucht."""
+    kaputt = r'[{"suchbegriffe": ["Käse \"alt\" {gereift}"], "menge": 1}, {"such'
+    gerettet = plan._vollstaendige_eintraege(kaputt)
+    assert len(gerettet) == 1
+    assert gerettet[0]["suchbegriffe"] == ['Käse "alt" {gereift}']
+
+
+def test_ohne_einen_ganzen_eintrag_bleibt_es_ein_fehler():
+    """Wo nichts zu retten ist, wird nichts erfunden."""
+    assert plan._vollstaendige_eintraege('{"begriffe": [{"suchbeg') == []
+
+
+def test_das_budget_ist_an_der_gemessenen_groesse_bemessen():
+    """34 Token je Zutat, gemessen am 2026-08-28. Wer das Antwortformat
+    ändert, muss diese Zahl mitziehen — sie ist einmal stillschweigend zu
+    klein geworden (WB-340 verdreifachte die Ausgabe, WB-363 fand es)."""
+    assert plan.MAX_TOKENS >= 34 * 30, "trägt keine 30 Zutaten mehr"
+
+
+def test_abgeschnitten_wird_nicht_stillschweigend_weniger(monkeypatch):
+    """Der gerettete Text sagt, dass er gerettet wurde. Ohne das bekäme die
+    Nutzerin eine kürzere Zutatenliste und keinen Hinweis darauf."""
+    text = plan._AbgeschnittenerText('[{"a": 1}]', 1, 800)
+    assert text == '[{"a": 1}]'          # bleibt ein str, Aufrufer merken nichts
+    assert text.abgeschnitten is True
+    assert text.gerettet == 1 and text.budget == 800

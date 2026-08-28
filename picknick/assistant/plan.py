@@ -130,10 +130,27 @@ MAX_KANDIDATEN_ANZEIGE = 2 * KANDIDATEN_ANZEIGE
 #: vergleichbar.
 TEMPERATUR = 0.0
 
-#: Reichlich Luft für zwanzig Begriffe, aber nicht unbegrenzt: läuft eine
-#: Antwort in die Länge, ist sie ohnehin kaputt, und das Warten kostet die
-#: Nutzerin Zeit.
-MAX_TOKENS = 800
+#: Gemessen, nicht geschätzt (2026-08-28, Qwen3.8-27B-Instruct, Denken aus):
+#:
+#:     alles für Pho                    677 Token, 20 Zutaten
+#:     alles für Gemüselasagne          377 Token,  9 Zutaten
+#:     alles für Spaghetti Bolognese    328 Token,  8 Zutaten
+#:     alles für Sushi                  267 Token,  8 Zutaten
+#:
+#: Das sind rund **34 Token je Zutat**, und daran hängt diese Zahl. Sie stand
+#: bei 800 und war damit zu klein: „alles für Pho" (20 Zutaten) brauchte 677
+#: und riss gelegentlich trotzdem — die Box ist bei Temperatur 0 nicht
+#: bitgenau deterministisch (WB-340), ein Gericht nahe der Grenze scheitert
+#: deshalb SPORADISCH, was schwerer zu finden ist als immer.
+#:
+#: Zu klein geworden ist sie durch WB-340: davor gab Stufe 1 je Zutat EINEN
+#: Begriff aus, seither mehrere, und die Ausgabe ist rund dreimal so lang.
+#: Niemand hat die Zahl mitgezogen. Wer das Antwortformat wieder ändert, muss
+#: hier nachrechnen — 34 Token je Zutat ist die Grösse, an der man es merkt.
+#:
+#: 1600 trägt gut 45 Zutaten. Der Kontext der Box ist 106.496 Token; knapp ist
+#: hier nichts ausser dieser einen Zahl.
+MAX_TOKENS = 1600
 
 #: Denkt das Modell vor der Antwort? Hier nicht — und das ist gemessen, nicht
 #: gemeint. Die Box läuft mit eingeschaltetem Denken; der erste Lauf von
@@ -513,14 +530,88 @@ def _frage(zugang, system: str, benutzer: str, schema: dict, wurzel: str,
         # Die teuerste Verwechslung dieses Moduls, einmal bezahlt: eine
         # abgeschnittene Antwort ist syntaktisch kein JSON und sieht deshalb
         # aus wie ein Modell, das sich nicht an das Format hält. Sie ist aber
-        # ein Budgetproblem — meist Denk-Token, die gegen `max_tokens` zählen
-        # (siehe DENKEN). Wer diese Meldung liest, sucht nicht am Prompt.
+        # ein Budgetproblem.
+        #
+        # ZWEI Ursachen, und die Meldung nennt beide. Früher stand hier nur
+        # „denkt das Modell mit?" — das war die Ursache in WB-327 und schickte
+        # bei WB-363 (Pho, 20 Zutaten) den Leser an die falsche Stelle: das
+        # Denken ist längst je Anfrage abgeschaltet, es waren schlicht viele
+        # Zutaten. Eine Fehlermeldung, die nur eine von zwei Ursachen nennt,
+        # kostet mehr Zeit als eine, die keine nennt.
+        gerettet = _vollstaendige_eintraege(inhalt)
+        if gerettet:
+            # Ein Abbruch nach 18 von 20 Zutaten ist ein weiches Problem; alles
+            # wegzuwerfen wäre eine harte Reaktion darauf. Was vollständig
+            # dasteht, wird verwendet — und der Aufrufer erfährt davon, damit
+            # aus „abgeschnitten" nicht stillschweigend „weniger Zutaten" wird.
+            return _AbgeschnittenerText(json.dumps(gerettet, ensure_ascii=False),
+                                        len(gerettet), max_tokens)
         raise PlanFehler(
             f"Die Antwort wurde nach {max_tokens} Token abgeschnitten "
-            "(finish_reason=length). Das Format ist damit nicht kaputt, "
-            "sondern unvollständig — denkt das Modell mit? Denk-Token zählen "
-            "gegen dasselbe Budget.")
+            "(finish_reason=length) und es stand noch kein vollständiger "
+            "Eintrag darin. Das Format ist nicht kaputt, sondern das Budget zu "
+            "klein — entweder hat das Gericht sehr viele Zutaten (siehe "
+            "MAX_TOKENS, rund 34 Token je Zutat), oder das Modell denkt mit "
+            "und die Denk-Token zählen gegen dasselbe Budget (siehe DENKEN).")
     return inhalt
+
+
+class _AbgeschnittenerText(str):
+    """Der gerettete Teil einer abgeschnittenen Antwort.
+
+    Ein `str`, damit alle Aufrufer unverändert weiterlesen können — mit zwei
+    Feldern daneben, damit der Abbruch nicht unsichtbar wird. Ein stiller
+    Verlust wäre schlimmer als der Abbruch: die Nutzerin bekäme eine kürzere
+    Zutatenliste und keinen Hinweis, dass etwas fehlt.
+    """
+
+    abgeschnitten = True
+
+    def __new__(cls, text: str, gerettet: int, budget: int):
+        selbst = super().__new__(cls, text)
+        selbst.gerettet = gerettet
+        selbst.budget = budget
+        return selbst
+
+
+def _vollstaendige_eintraege(text: str) -> list:
+    """Aus einer abgeschnittenen Antwort die Einträge, die noch ganz sind.
+
+    Zeichenweise über die Klammertiefe statt mit einem regulären Ausdruck: ein
+    Produktname darf geschweifte Klammern und Anführungszeichen enthalten, und
+    eine Zeichenkette mit `\\"` darin bringt jede naive Suche durcheinander.
+    """
+    sauber = _FENCE.sub("", text).strip()
+    anfang = sauber.find("[")
+    if anfang == -1:
+        return []
+    eintraege, tiefe, start = [], 0, None
+    in_text, maskiert = False, False
+    for i, z in enumerate(sauber[anfang:], anfang):
+        if maskiert:
+            maskiert = False
+            continue
+        if z == "\\":
+            maskiert = True
+            continue
+        if z == '"':
+            in_text = not in_text
+            continue
+        if in_text:
+            continue
+        if z == "{":
+            if tiefe == 0:
+                start = i
+            tiefe += 1
+        elif z == "}":
+            tiefe -= 1
+            if tiefe == 0 and start is not None:
+                try:
+                    eintraege.append(json.loads(sauber[start:i + 1]))
+                except ValueError:
+                    pass
+                start = None
+    return eintraege
 
 
 #: Ein Codefence um die Antwort. Modelle schreiben ihn auch dann, wenn im
@@ -555,7 +646,27 @@ def _eintraege(text: str, schluessel: tuple[str, ...]) -> list[dict]:
     Begriff passt nichts" ist eine gültige Aussage. Ob daraus eine leere
     Vorschlagsliste werden darf, entscheidet der Aufrufer.
     """
-    wert = _json_wert(text)
+    try:
+        wert = _json_wert(text)
+    except PlanFehler:
+        # WB-363: Eine unvollständige Antwort ist kein Formatfehler, sondern
+        # ein Abbruch — und der hat ZWEI Ursachen, die von aussen gleich
+        # aussehen:
+        #
+        #   * das Budget riss (finish_reason=length),
+        #   * oder das Modell hörte mitten in der Struktur von selbst auf
+        #     (finish_reason=stop!). Gemessen an „alles für Pho": das Modell
+        #     geriet in eine Schleife und erzeugte immer obskurere
+        #     Rindfleischteile bis zum „Rinderzungenkotelett", 1342 Token,
+        #     dann Ende mitten im Wort. Guided Decoding verhindert das NICHT.
+        #
+        # Deshalb wird hier gerettet und nicht erst bei `length`: was
+        # vollständig dasteht, ist brauchbar, egal warum der Rest fehlt.
+        # Achtzehn von zwanzig Zutaten sind besser als eine Fehlermeldung.
+        gerettet = _vollstaendige_eintraege(text)
+        if not gerettet:
+            raise
+        return [e for e in gerettet if isinstance(e, dict)]
     if isinstance(wert, dict):
         for k in schluessel:
             if k in wert:
