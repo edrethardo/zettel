@@ -273,3 +273,12 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
    für die Dauer der Anfrage ein. */
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }
+
+/* Statusseite (WB-331). Dieselbe Liste wie überall, nur ohne Bild: die
+   Zeilen sind Meldungen und keine Produkte. */
+.laeufe { list-style: none; margin: 0; padding: 0; }
+.lauf { display: flex; flex-direction: column; padding: 8px;
+        border-bottom: 1px solid var(--linie); }
+.lauf .name { font-weight: 600; }
+.lauf.verworfen { background: #fff8e8; }
+.lauf.error .name { color: #8c1414; }

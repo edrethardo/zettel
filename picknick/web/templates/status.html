@@ -1,0 +1,70 @@
+{% extends "basis.html" %}
+{% block titel %}Status — Picknick{% endblock %}
+{% block inhalt %}
+{# Spec 11: die Oberfläche schweigt nicht, wenn etwas fehlt. Diese Seite ist
+   der Ort, an dem ein nächtlicher Lauf Rechenschaft ablegt — vor allem einer,
+   der verworfen wurde. Ein Crawler, der still scheitert, lässt den Katalog
+   einfach altern, und niemand erfährt warum. #}
+<h1>Status</h1>
+
+<section class="gruppe">
+  <h2>Katalog</h2>
+  <p><strong>{{ produkte }}</strong> aktive Produkte.</p>
+  {% if letzter_ok %}
+  <p class="stand">Letzter erfolgreicher Lauf:
+    {{ letzter_ok.finished_at or letzter_ok.started_at }}
+    ({{ letzter_ok.n_products }} Produkte).</p>
+  {% else %}
+  <p class="leer">Es gibt noch keinen erfolgreichen Lauf — der Katalog ist nie
+    aktualisiert worden. Ein Lauf von Hand:
+    <code>.venv/bin/python -m picknick.scrapers.nachtlauf</code></p>
+  {% endif %}
+</section>
+
+<section class="gruppe">
+  <h2>Verworfene Läufe</h2>
+  {% if not verworfen %}
+  {# Auch das ist eine Aussage und kein leerer Block: „nichts da" heisst hier
+     ausdrücklich „nichts schiefgegangen", nicht „noch nicht nachgesehen". #}
+  <p class="leer">Kein Lauf wurde verworfen.</p>
+  {% else %}
+  <ul class="laeufe">
+    {% for l in verworfen %}
+    <li class="lauf verworfen">
+      <span class="name">{{ l.started_at }} — {{ l.status or 'ohne Abschluss' }}</span>
+      <span class="menge">{{ l.grund }}</span>
+      {% if l.n_products is not none %}
+      <span class="menge">{{ l.n_products }} Produkte im Lauf gefunden;
+        der Katalog blieb unverändert.</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section class="gruppe">
+  <h2>Letzte Läufe</h2>
+  {% if not laeufe %}
+  <p class="leer">Noch kein Lauf verzeichnet. Der Crawler läuft nachts über
+    <code>picknick-crawl.timer</code>; ist der Timer nicht eingeschaltet,
+    bleibt diese Liste leer.</p>
+  {% else %}
+  <ul class="laeufe">
+    {% for l in laeufe %}
+    <li class="lauf {{ l.status or 'offen' }}">
+      <span class="name">{{ l.started_at }} — {{ l.status or 'ohne Abschluss' }}</span>
+      <span class="menge">
+        {%- if l.n_products is not none %}{{ l.n_products }} Produkte{% else %}—{% endif -%}
+        {%- if l.finished_at %} · fertig {{ l.finished_at }}{% endif -%}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<p class="fussnote">Der Shop schläft mit dem Laptop. Ein Lauf, der in eine
+  zugeklappte Nacht fällt, wird beim nächsten Aufwachen nachgeholt
+  (<code>Persistent=true</code>) — er fehlt also nicht, er kommt spät.</p>
+{% endblock %}

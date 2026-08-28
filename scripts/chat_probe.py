@@ -40,7 +40,10 @@ from picknick.scrapers import knuspr  # noqa: E402
 SATZ = "alles für Spaghetti Bolognese, und Klopapier"
 
 #: Ein kleiner, aber ehrlicher Ausschnitt: die Zutaten aus dem Beispielsatz und
-#: ein paar Nachbarn, damit die Suche etwas zu unterscheiden hat.
+#: ein paar Nachbarn, damit die Suche etwas zu unterscheiden hat. Die Liste für
+#: den nächtlichen VOLLcrawl steht seit WB-331 nicht mehr hier, sondern in
+#: `picknick/scrapers/begriffe.py` — hier bleibt bewusst ein Ausschnitt, weil
+#: eine Handprobe nicht 20 Minuten crawlen soll.
 CRAWL_BEGRIFFE = [
     "hackfleisch", "tomaten", "nudeln", "spaghetti", "zwiebeln", "knoblauch",
     "toilettenpapier", "milch", "butter", "kaese", "spuelmittel", "moehren",

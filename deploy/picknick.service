@@ -1,0 +1,37 @@
+# Der Web-Prozess (Spec 12). Ein systemd-User-Service, kein System-Service:
+# der Shop läuft als Aaron, liest Aarons Datei und braucht kein root.
+#
+# Ohne `loginctl enable-linger user` endet dieser Dienst beim Abmelden —
+# siehe README, Abschnitt „Betrieb".
+
+[Unit]
+Description=Picknick — privater Bestell-Shop im Tailnet
+Documentation=file:///home/user/code/picknick_klon/README.md
+
+[Service]
+Type=exec
+WorkingDirectory=%h/code/picknick_klon
+
+# .venv/bin/python und NICHT python3: das System-Python bringt ein zu altes
+# `websockets` mit, uvicorns Auto-Erkennung importiert es und der Start
+# zerbricht an einem ImportError (gemessen 2026-08-28, siehe den Kommentar in
+# picknick/web/app.py:serve). Das venv hat `websockets` gar nicht — genau
+# deshalb lädt es sauber.
+ExecStart=%h/code/picknick_klon/.venv/bin/python -m picknick.web.app
+
+Environment=PICKNICK_DB=%h/code/picknick_klon/data/picknick.db
+Environment=PICKNICK_IMAGE_DIR=%h/code/picknick_klon/data/images
+# PICKNICK_HOST bleibt ungesetzt: die Vorgabe in app.py ist die
+# Tailscale-Adresse dieser Maschine plus localhost. Wer sie hier überschreibt,
+# kommt an `pruefe_host()` trotzdem nicht vorbei — 0.0.0.0 wird abgelehnt und
+# der Prozess startet nicht (Spec 10).
+
+# Beim Hochfahren steht tailscaled unter Umständen noch nicht, und dann
+# scheitert das Binden auf 100.64.0.1. Statt einer Ordnungsbeziehung auf
+# einen System-Dienst, die ein User-Manager gar nicht auflösen kann, wird hier
+# schlicht neu versucht.
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

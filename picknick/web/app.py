@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import db, obs, orders, recipes
+from picknick import betrieb, db, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
@@ -983,6 +983,25 @@ def create_app(db_path: str | Path | None = None,
                     **_rahmen(request, c), "bestellungen": liste,
                     "fehler": str(e)}, status_code=404)
             return RedirectResponse(f"/rezepte/{neu}", status_code=303)
+        finally:
+            c.close()
+
+    @app.get("/status")
+    def status(request: Request):
+        """Statusseite: was der nächtliche Lauf getan hat (Spec 11, Spec 12).
+
+        Die Seite ist absichtlich schlicht und absichtlich vollständig. Sie
+        zeigt vor allem die VERWORFENEN Läufe mit ihrer Begründung — ein
+        Crawler, der still scheitert, ist schlimmer als einer, der laut
+        scheitert: der Katalog altert dann weiter und niemand weiss, warum.
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "status.html", {
+                **_rahmen(request, c),
+                **betrieb.statusbericht(c),
+                "hinweis": katalog_hinweis(c),
+            })
         finally:
             c.close()
 
