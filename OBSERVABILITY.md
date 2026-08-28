@@ -200,6 +200,8 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
 | `picknick.dish_draft` | Text | der Name des Rezeptentwurfs, den dieser Zug angeboten hat (WB-337) — gesetzt heisst „daraus KANN ein Rezept werden“, nicht „es ist eines geworden“ |
 | `picknick.dish_items` | int | wie viele Vorschlagszeilen als Zutat des Gerichts erkannt wurden. Die Zeilen daneben (das Klopapier) zählen hier nicht mit |
+| `picknick.rest` | Text | **was neben dem Gericht im Satz stand** (WB-370): „alles für Spaghetti Bolognese, und Klopapier“ -> `Klopapier`. Die andere Hälfte des Satzes zu `dish`; fehlt, wenn nichts danebenstand |
+| `picknick.rest_added` | bool | ob dieser Zug eine eigene Zeile dafür angelegt hat. `False` heisst „stand schon auf dem Zettel“ — der Rest fiel mit einer Zutat des Rezepts zusammen |
 | `picknick.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |
 | `picknick.fanout_varieties` | int | wie viele Sorten angeboten wurden |
 | `picknick.fanout_source` | Text | `catalog` (das getippte Wort IST eine Kategorie — kein Modellaufruf) oder `model` (Stufe 1 hat zugeordnet) |
@@ -440,8 +442,64 @@ Rezept umbenennen oder es ganz sein lassen. Ein Attribut, das schon am Zug
 **Was diese Zahlen nicht sagen:** `dish_items` zählt, was `herkunft.zuordnen`
 einer Zutat des Rezepts zuordnen konnte. Ein Begriff, der seiner Zutat nicht
 sicher zuzuordnen ist, fehlt hier — gemessen in WB-369 eine von 38
-Zuordnungen. Die Zahl ist also eine Untergrenze und keine Zutatenzahl des
-Gerichts.
+Zuordnungen, in der breiteren Messung zu WB-370 zwölf von 333 (siehe unten).
+Die Zahl ist also eine Untergrenze und keine Zutatenzahl des Gerichts.
+
+### Der Artikel neben dem Gericht (WB-370)
+
+Der teuerste Fehler, den dieser Shop kennt, ist nicht ein falscher Vorschlag,
+sondern ein Artikel, der **gar nicht mehr vorkommt**. „alles für Spaghetti
+Bolognese, und Klopapier“ nimmt seit WB-367 den Chefkoch-Weg; das Klopapier
+ist dort keine Zutat des Rezepts, und bis WB-370 hing es allein daran, ob das
+Modell die Prompt-Zeile „Ausserdem gewünscht, nicht aus dem Rezept“ aufgriff.
+
+**Gemessen am 2026-08-28** gegen die echte Box (`Qwen3.8-27B-Instruct`) und
+35 Chefkoch-Gerichte, je einmal ohne und einmal mit einem Rest im Satz
+(`scripts/rest_probe.py --messen`):
+
+| | |
+|---|---|
+| Läufe mit mindestens einem Begriff **ohne** Herkunftszutat | 11 von 35 (31 %) |
+| Begriffe ohne Herkunftszutat | 12 von 333 (3,6 %) |
+| der Rest kam als Begriff zurück | 3 von 35 |
+| der Rest kam **übersetzt** zurück | 0 von 35 |
+| der Rest ging durch den blinden Fleck still verloren | 10 von 35 (29 %) |
+
+Ein zweiter Lauf am selben Tag ergab dieselben Zahlen bei 331 statt 333
+Begriffen — die Box ist bei Temperatur 0 nicht bitgenau deterministisch
+(siehe `plan.MAX_TOKENS`). Die Quoten sind also auf ein Prozent genau und
+nicht auf eine Nachkommastelle.
+
+Damit fielen beide Hälften der Begründung aus WB-337 auf einmal. Das
+Sicherheitsnetz („kein Begriff ohne Herkunftszutat -> der Rest wurde
+übergangen -> anhängen“) greift in jedem dritten Zug daneben, weil das Modell
+sehr wohl Begriffe liefert, die keiner Zutat zuzuordnen sind — sieben der
+zwölf sind „Eier“ gegen Chefkochs Schreibweise „Ei(er)“. Und die Übersetzung
+„Klopapier“ -> „Toilettenpapier“, für die die Prompt-Zeile dastand, lieferte
+die Box **kein einziges Mal**.
+
+Seit WB-370 steht der Rest nicht mehr im Prompt und wird im Code angehängt.
+Was im Trace zu sehen ist:
+
+```
+picknick.path        chefkoch
+picknick.dish        Quiche Lorraine
+picknick.rest        Klopapier          <- was daneben im Satz stand
+picknick.rest_added  true               <- dieser Zug hat die Zeile angelegt
+picknick.free_text   1                  <- und sie fand kein Katalogprodukt
+```
+
+**Der Preis steht in derselben Zeile.** Ohne Prompt-Zeile gibt es keine
+Übersetzung mehr; „Klopapier“ findet die Präfixsuche nicht (siehe unten), also
+bleibt eine Freitext-Zeile. Das ist der bewusste Handel: eine sichtbare
+Freitext-Zeile gegen einen Artikel, der still verschwindet. Die Antwort sagt
+es auch — „„Klopapier“ stand daneben im Satz und liegt als eigene Zeile dabei“
+—, weil ein Trace-Attribut niemandem im Laden hilft.
+
+`rest_added = false` heisst nicht „übergangen“, sondern „stand schon da“: der
+Rest fiel mit einer Zutat des Rezepts zusammen („alles für Lasagne und
+Tomaten“). Verglichen wird dafür mit demselben Wortvergleich wie bei der
+Herkunft (`herkunft.punkte`), nicht mit einer Vermutung über das Modell.
 
 ### Aus einem negativen Label wird ein positives (WB-359)
 
@@ -648,6 +706,21 @@ zeigte ins Leere.
   Begriffen ihre Zutat, **keiner die falsche**. Die Richtung ist Absicht: ein
   verlorener Bedarf kostet eine Packung zu viel, ein falsch zugeordneter
   Bedarf eine falsche Menge, die aussieht wie eine gerechnete.
+
+  **Breiter gemessen ist die Lücke grösser als diese eine Zuordnung** (WB-370,
+  2026-08-28, 35 Chefkoch-Gerichte, 333 Begriffe): 12 Begriffe fanden ihre
+  Zutat nicht, verteilt auf 11 der 35 Läufe. Sieben davon sind derselbe Fall
+  — **„Eier“ gegen Chefkochs „Ei(er)“**. `herkunft._woerter` faltet Umlaute
+  und trennt am Bindestrich, lässt Klammern und Kommas aber stehen; „ei(er)“
+  ist deshalb ein anderes Wort als „eier“, und dieselbe Klammer trifft
+  „Limette(n)“. Zwei weitere sind „rote/gelbe Paprika“ gegen
+  „Paprikaschote(n), rote“, einer ist „Porrée“ gegen „Porree“ (der Akzent
+  steht nicht in `db.UMLAUTE`), einer ist ein echter Zusatz des Modells
+  („Dose Tomaten“). Die Folge ist keine falsche Menge, sondern eine fehlende
+  — und eine Zeile, die im Rezeptentwurf fehlt, obwohl sie eine Zutat ist.
+  Das ist ein eigener Befund und kein Teil von WB-370; dort machte er nur
+  sichtbar, dass sich auf „kein Begriff ohne Herkunftszutat“ nichts bauen
+  lässt.
 * **Ein Rezept entsteht nur aus dem Chefkoch-Weg** (WB-337). Ein `llm`-Zug
   bekommt keinen Entwurf, auch wenn er ein Gericht erkannt hat: dort rät das
   Modell die Zutaten, und es gibt keine Liste, gegen die sich prüfen liesse.

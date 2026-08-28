@@ -459,7 +459,32 @@ def test_rezepttreffer_hat_keine_llm_spans(con, spans):
     # kein Attribut dafür. `None` wäre ein Wert, der behauptet, es hätte eine
     # Suche gegeben.
     assert "picknick.weakest_term" not in a
+    # Ohne Rest im Satz behauptet auch nichts einen (WB-370).
+    assert "picknick.rest" not in a
+    assert "picknick.rest_added" not in a
     assert a[SpanAttributes.OUTPUT_VALUE]
+
+
+def test_was_neben_dem_gericht_stand_steht_im_span(con, spans):
+    """Der Artikel neben dem Gericht ist im Trace wiederzufinden (WB-370).
+
+    Ohne diese zwei Attribute hinterlässt ein Artikel, der aus dem Satz
+    verschwindet, gar nichts — und die Messung, die zu WB-370 geführt hat,
+    liesse sich später nicht wiederholen. `rest` ist die andere Hälfte des
+    Satzes zu `dish`, `rest_added` sagt, ob dieser Zug eine Zeile dafür
+    angelegt hat.
+    """
+    recipes.anlegen(con, "Zwiebelkuchen", zutaten=[
+        {"product_id": _pid(con, "Zwiebeln"), "qty": 2}])
+    agent = chatmodul.Chat(_mock_zugang(), wecker=Box())
+
+    ergebnis = agent.turn(con, "Zwiebelkuchen und Klopapier")
+
+    a = _einer(spans, "chat.turn").attributes
+    assert a[obs.PFAD] == "recipe"
+    assert a["picknick.rest"] == "Klopapier"
+    assert a["picknick.rest_added"] is True
+    assert "Klopapier" in [v["name"] for v in ergebnis.vorschlaege]
 
 
 # --------------------------------------------------------------------------

@@ -484,13 +484,17 @@ def _haken_zurueck(client, con) -> str:
 TOKEN_PROMPT, TOKEN_COMPLETION = 137, 42
 
 
-def _mock_zugang(*inhalte: str) -> Modellzugang:
+def _mock_zugang(*inhalte: str, mitschrift: list | None = None) -> Modellzugang:
     """Ein echtes `openai`-SDK auf einem HTTP-Doppelgänger.
 
     Kein Socket, aber der ganze Weg durch das SDK — und damit durch den
     `OpenAIInstrumentor`, von dem die LLM-Spans kommen. Ein schlichter
     Fake-Client erzeugte gar keinen LLM-Span, und der Baum wäre genau an der
     Hälfte ungeprüft, die Tokenzahlen trägt.
+
+    `mitschrift` sammelt die Prompts, die wirklich rausgingen. Gebraucht wird
+    das seit WB-370 für die eine Zusicherung, die sich anders nicht prüfen
+    lässt: dass der Rest des Satzes im Prompt NICHT vorkommt.
     """
     antworten = list(inhalte)
 
@@ -501,6 +505,8 @@ def _mock_zugang(*inhalte: str) -> Modellzugang:
                 "data": [{"id": "Qwen3.8-27B-Instruct", "object": "model",
                           "created": 0, "owned_by": "vllm"}]})
         wahr(antworten, "Es wurde öfter gefragt als geantwortet.")
+        if mitschrift is not None:
+            mitschrift.append(request.content.decode("utf-8"))
         return httpx.Response(200, json={
             "id": "c1", "object": "chat.completion", "created": 0,
             "model": "Qwen3.8-27B-Instruct",
@@ -1585,6 +1591,92 @@ def _letzte_antwort(con) -> int:
                            " WHERE role = 'assistant'").fetchone()["id"])
 
 
+# --------------------------------------------------------------------------
+# Ein Artikel neben einem Gericht verschwindet nicht (WB-370)
+#
+# Derselbe Satz wie oben, aber mit dem Modell, das WB-337 zu Fall brachte:
+# es nennt einen Begriff, der zu KEINER Zutat des Rezepts gehört („Eier"
+# gegen Chefkochs „Ei(er)" — gemessen der häufigste Fall), und keinen für
+# das Klopapier. Bis WB-370 hielt das Sicherheitsnetz den Rest damit für
+# aufgegriffen, und das Klopapier verschwand still.
+
+def checks_rest_neben_dem_gericht(b: Bericht, db_datei: Path,
+                                  bild_dir: Path) -> None:
+    b.abschnitt("Ein Artikel neben einem Gericht verschwindet nicht (WB-370)")
+
+    con = db.connect(db_datei)
+    try:
+        gerichtelauf.hole_eines(con, _ChefkochBolo(), "Spaghetti Bolognese",
+                                pause_s=0, schreib=lambda _: None)
+        hack = pid(con, "Hackfleisch gemischt")
+    finally:
+        con.close()
+
+    prompts: list[str] = []
+    zugang = _mock_zugang(
+        _extract((("gemischtes Hackfleisch", "Hackfleisch"), 1),
+                 (("Eier",), 1)),
+        _choose(("gemischtes Hackfleisch", hack, 1)),
+        mitschrift=prompts)
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        con = db.connect(db_datei)
+        try:
+            antwort = client.post("/warenkorb/chat", data={"satz": SATZ_337},
+                                  headers={"HX-Request": "true"})
+            gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+            mid = _letzte_antwort(con)
+            b.pruefe("das Klopapier liegt im Korb, obwohl das Modell einen "
+                     "Begriff ohne Herkunftszutat lieferte",
+                     lambda: _klopapier_ist_da(con, mid))
+            b.pruefe("der Rest stand nicht im Prompt von Stufe 1 — übergehen "
+                     "kann das Modell nur, was es sieht",
+                     lambda: _rest_nicht_im_prompt(prompts))
+            b.pruefe("die Antwort sagt, dass er daneben im Satz stand",
+                     lambda: _rest_in_der_meldung(con, mid))
+        finally:
+            con.close()
+
+
+def _klopapier_ist_da(con, mid: int) -> str:
+    zeilen = vorschlaege.liste(con, mid)
+    namen = [z["name"] for z in zeilen]
+    wahr("Klopapier" in namen,
+         f"„Klopapier“ fehlt in den Vorschlägen: {namen}")
+    klo = next(z for z in zeilen if z["name"] == "Klopapier")
+    wahr(klo["ist_freitext"],
+         "„Klopapier“ steht als Produkt da — der Katalog kennt es nicht.")
+    wahr(klo["dish_item"] is None,
+         "„Klopapier“ wurde dem Gericht zugerechnet.")
+    return f"{namen} — Klopapier als Freitext, ohne Zugehörigkeit"
+
+
+def _rest_nicht_im_prompt(prompts: list[str]) -> str:
+    """Nur Stufe 1. Stufe 3 bekommt den Satz der Nutzerin und darf ihn sehen.
+
+    Dort ist er auch harmlos: Stufe 3 wählt aus VORGELEGTEN Kandidaten und
+    kann keine Zeile weglassen, die es nicht schon gibt. Übergangen werden
+    konnte der Rest nur in Stufe 1, wo die Zeilen erst entstehen.
+    """
+    wahr(prompts, "Es ging gar kein Prompt raus.")
+    wahr("Klopapier" not in prompts[0],
+         "„Klopapier“ steht doch im Prompt von Stufe 1 — dann darf das "
+         "Modell es wieder übergehen.")
+    wahr("Hackfleisch" in prompts[0],
+         "Der erste Prompt ist nicht die Zutatenliste.")
+    return "Stufe 1 sah die Zutatenliste und den Rest nicht"
+
+
+def _rest_in_der_meldung(con, mid: int) -> str:
+    meldung = con.execute("SELECT content FROM chat_message WHERE id = ?",
+                          (mid,)).fetchone()["content"]
+    wahr("Klopapier" in meldung and "stand daneben im Satz" in meldung,
+         f"Die Antwort sagt nichts zum Rest: {meldung!r}")
+    return "„Klopapier“ stand daneben im Satz und liegt als eigene Zeile dabei"
+
+
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
 
@@ -1685,6 +1777,12 @@ def main() -> int:
         entwurf_db = ordner / "entwurf.db"
         katalog_anlegen(entwurf_db)
         checks_rezeptentwurf(b, entwurf_db, bild_dir)
+        # Und noch eine: derselbe Satz, aber mit dem Modell, das WB-337 zu
+        # Fall brachte. Auf der Datei oben stünde das Rezept schon, und der
+        # Zug nähme den Rezeptweg statt des Chefkoch-Wegs.
+        rest_db = ordner / "rest_am_gericht.db"
+        katalog_anlegen(rest_db)
+        checks_rest_neben_dem_gericht(b, rest_db, bild_dir)
     checks_bindung(b)
     return b.ende()
 

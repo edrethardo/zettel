@@ -161,12 +161,18 @@ def _bolo_geholt(con):
 
 
 def _zug(con, satz="alles für Spaghetti Bolognese, und Klopapier",
-         mit_klopapier=True):
+         mit_klopapier=True, erfunden=None):
     """Ein Chefkoch-Zug: drei Zutaten aus dem Rezept, dazu der Rest im Satz.
 
-    Der Rest („Klopapier") kommt als vierter Begriff zurück — genau so, wie
-    das echte Modell ihn liefert, wenn `plan.zutatenliste` ihn als
-    „ausserdem gewünscht, nicht aus dem Rezept" mitgibt.
+    `mit_klopapier` lässt das Modell selbst einen Begriff für den Rest
+    nennen. **Seit WB-370 ist das der ZUFALL und nicht mehr der Normalfall:**
+    der Rest steht nicht mehr im Prompt von Stufe 1, das Modell sieht ihn
+    also gar nicht. Der Fall bleibt trotzdem geprüft — nennt irgendetwas den
+    Rest schon, darf er nicht ein zweites Mal danebengelegt werden.
+
+    `erfunden` hängt einen Begriff an, der zu KEINER Zutat des Rezepts
+    gehört. Das ist der blinde Fleck, an dem WB-337 scheiterte: das
+    Sicherheitsnetz hielt den Rest dann für aufgegriffen.
     """
     begriffe = [(("gemischtes Hackfleisch", "Hackfleisch"), 1),
                 (("passierte Tomaten", "Tomaten"), 1),
@@ -174,6 +180,8 @@ def _zug(con, satz="alles für Spaghetti Bolognese, und Klopapier",
     wahl = [("gemischtes Hackfleisch", _pid(con, "Rinderhackfleisch"), 1),
             ("passierte Tomaten", _pid(con, "Passierte Tomaten"), 1),
             ("Spaghetti", _pid(con, "Spaghetti No. 5"), 1)]
+    if erfunden:
+        begriffe.append(((erfunden,), 1))
     if mit_klopapier:
         begriffe.append((("Klopapier", "Toilettenpapier"), 1))
         wahl.append(("Klopapier", _pid(con, "Toilettenpapier"), 1))
@@ -265,12 +273,73 @@ def test_ein_vom_modell_uebergangener_rest_geht_nicht_verloren(con):
     assert all("Klopapier" != z["name"] for z in rezept["zutaten"])
 
 
-def test_ein_uebersetzter_rest_wird_nicht_verdoppelt(con):
-    """„Klopapier" -> „Toilettenpapier" ist die WERTVOLLE Übersetzung.
+def test_ein_erfundener_begriff_verschluckt_den_rest_nicht(con):
+    """Der blinde Fleck von WB-337, als Test (WB-370).
 
-    Die Präfixsuche findet den Weg vom einen zum anderen nie (siehe
-    OBSERVABILITY.md). Hat das Modell ihn gefunden, darf das Sicherheitsnetz
-    keine zweite, rohe Zeile danebenlegen.
+    Das Sicherheitsnetz von WB-337 hängte den Rest nur an, wenn KEIN
+    einziger Begriff ohne Herkunftszutat zurückkam. Nennt das Modell etwas,
+    das in keiner Zutat des Rezepts steht — „Eier" gegen Chefkochs „Ei(er)",
+    „Dose Tomaten" gegen „Tomaten, geschälte" —, hielt es den Rest für
+    aufgegriffen und liess ihn liegen.
+
+    **Gemessen am 2026-08-28** gegen die echte Box, 35 Chefkoch-Gerichte:
+    in 11 von 35 Zügen (31 %) kam mindestens ein Begriff ohne
+    Herkunftszutat zurück, und in 10 von 35 Zügen (29 %) verschwand der
+    Rest dadurch still. Das ist kein Randfall, sondern jeder dritte Zug.
+    """
+    _bolo_geholt(con)
+    ergebnis = _zug(con, mit_klopapier=False, erfunden="Eier")
+
+    freitexte = [v["name"] for v in ergebnis.vorschlaege if v["ist_freitext"]]
+    assert "Klopapier" in freitexte
+    _alles_ja(con, ergebnis)
+    assert any(z["free_text"] == "Klopapier" for z in orders.inhalt(con))
+
+
+def test_der_rest_steht_nicht_mehr_im_prompt_von_stufe_1(con):
+    """Was das Modell nicht sieht, kann es nicht übergehen (WB-370).
+
+    **Gemessen am 2026-08-28** gegen die echte Box: von 35 Chefkoch-Zügen
+    mit einem Rest im Satz griff das Modell ihn in 3 auf, und übersetzt hat
+    es ihn in keinem einzigen. Die Prompt-Zeile kostete also den stillen
+    Verlust und brachte die Übersetzung nicht, für die sie dastand.
+    """
+    _bolo_geholt(con)
+    begriffe = [(("gemischtes Hackfleisch", "Hackfleisch"), 1)]
+    llm = FakeLLM(_extract(*begriffe),
+                  _choose(("gemischtes Hackfleisch",
+                           _pid(con, "Rinderhackfleisch"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
+    ergebnis = agent.turn(con, "alles für Spaghetti Bolognese, und Klopapier")
+
+    prompt = llm.aufrufe[0]["nachrichten"][-1]["content"]
+    assert "Klopapier" not in prompt
+    assert "Klopapier" in [v["name"] for v in ergebnis.vorschlaege]
+
+
+def test_der_verlorene_rest_steht_in_der_meldung(con):
+    """Der Verlust muss sichtbar sein, nicht nur behoben (WB-370).
+
+    Ohne Prompt-Zeile gibt es keine Übersetzung mehr: „Klopapier" findet im
+    Katalog nichts, „Toilettenpapier" schon. Die Zeile liegt trotzdem im
+    Korb — und die Antwort sagt beides, statt es zu verschweigen.
+    """
+    _bolo_geholt(con)
+    ergebnis = _zug(con, mit_klopapier=False)
+    assert "Klopapier" in ergebnis.meldung
+    assert "stand daneben im Satz" in ergebnis.meldung
+    assert "Ohne Katalogtreffer" in ergebnis.meldung
+
+
+def test_ein_uebersetzter_rest_wird_nicht_verdoppelt(con):
+    """Steht der Rest schon auf dem Zettel, kommt er nicht zweimal.
+
+    Bis WB-370 war das der Normalfall, für den die Prompt-Zeile dastand
+    („Klopapier" -> „Toilettenpapier"); gemessen liefert die echte Box ihn
+    nie. Geprüft bleibt er trotzdem: der Rest kann mit einer Zutat des
+    Rezepts zusammenfallen („alles für Lasagne und Tomaten"), und dann darf
+    er nicht ein zweites Mal danebenstehen.
     """
     _bolo_geholt(con)
     ergebnis = _zug(con)

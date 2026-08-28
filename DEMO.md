@@ -247,6 +247,33 @@ im Korb und gehört in kein Rezept. Die Trennung kostet keinen Modellaufruf:
 was aus Chefkochs Zutatenliste stammt, findet seine Zutat wieder
 (`assistant.herkunft`), was daneben im Satz stand, nicht.
 
+### Und das Klopapier verschwindet nicht mehr (WB-370)
+
+Bei genau dieser Messung fiel auf, dass die zweite Hälfte des Satzes gar
+nicht auf dem Zettel stand: elf Begriffe kamen zurück, alle elf aus der
+Zutatenliste. Der Rest ging als Prompt-Zeile mit, und das Modell durfte ihn
+übergehen — 32 von 35 Gerichten taten das (gemessen am 2026-08-28, siehe
+OBSERVABILITY.md). Seit WB-370 steht er nicht mehr im Prompt, sondern wird im
+Code angehängt. Derselbe Satz mit einem anderen Gericht, gegen die echte Box,
+**vorher und nachher**:
+
+```
+vorher   alles für Quiche Lorraine, und Klopapier
+         -> 6 Produkte, 0 Freitext.  Klopapier kommt nirgends vor —
+            weder in der Liste noch in der Antwort.
+
+nachher  alles für Quiche Lorraine, und Klopapier
+         -> 6 Produkte, 1 Freitext: „Klopapier“.
+            „„Klopapier“ stand daneben im Satz und liegt als eigene
+             Zeile dabei — nicht im Rezept.“
+```
+
+Der Preis steht in derselben Zeile: ohne Prompt-Zeile übersetzt das Modell
+nichts mehr, und „Klopapier“ findet die Präfixsuche im Katalog nicht — es
+bleibt Freitext. Gemessen übersetzt hat die Box den Rest allerdings in **null
+von 35** Zügen; die Prompt-Zeile kostete den stillen Verlust und brachte
+nichts dafür.
+
 Beim **Abschicken** entsteht das Rezept, mit den bestätigten Zutaten und
 ihren Mengen (125 g Butter, 1000 g Hackfleisch, 600 ml Tomaten …). Danach:
 
