@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from picknick import betrieb, db
 from picknick.scrapers import begriffe as begriffsliste
-from picknick.scrapers import knuspr, nachtlauf
+from picknick.scrapers import nachtlauf
 from picknick.web import app as webapp
 
 WURZEL = Path(__file__).resolve().parent.parent
@@ -46,16 +46,6 @@ class _Antwort:
 
 def _payload():
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
-
-
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    knuspr.crawl(con, FakeHTTP([_payload()]), ["milch"], pause_s=0)
-    con.close()
-    return pfad
 
 
 @pytest.fixture

@@ -65,7 +65,8 @@ auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 45 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 657 Tests
+.venv/bin/python -m pytest -q        # 672 Tests, rund 20 s
+.venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 14 s
 ```
 
 Beides ohne Netz, ohne Modell, ohne Phoenix — und im Fall des Gates ist das

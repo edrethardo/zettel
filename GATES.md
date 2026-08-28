@@ -3,9 +3,14 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 40 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 582 Tests
+.venv/bin/python checks/smoke.py     # 45 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 672 Tests, rund 20 s
 ```
+
+Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
+auf alle Kerne und braucht rund 14 s (`pytest-xdist`, siehe
+`requirements.txt`). Das ist eine Abkürzung und keine zweite Wahrheit — beide
+Wege müssen grün sein, und die Zusicherungen sind dieselben.
 
 `checks/smoke.py` ist das Gate: eine Zeile je Frage, ein Rückgabewert.
 `pytest` ist die Suite darunter — feinkörniger, aber ohne die eine Zusicherung,

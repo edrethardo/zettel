@@ -14,19 +14,16 @@ vorgelegt wurde. Die zweite ist die gefährlichere, weil sie in der Datenbank
 gültig aussieht.
 """
 import json
-from pathlib import Path
 
 import pytest
 
-from picknick import db, orders, recipes
+from picknick import orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import plan, rezeptweg, vorschlaege
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import Antwort, ModellNichtErreichbar
-from picknick.scrapers import knuspr
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 
 
@@ -86,23 +83,6 @@ class Box:
         return wake.Zustand(wake.NICHT_ERREICHBAR, grund=self._grund)
 
 
-class FakeHTTP:
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
-
-
 # --------------------------------------------------------------------------
 # Katalog
 
@@ -148,19 +128,26 @@ def _vorgelegt(con, begriff, limit=plan.KANDIDATEN_MODELL):
     return search.search(con, begriff, limit=limit)
 
 
-@pytest.fixture
-def con():
-    c = db.connect(":memory:")
-    db.migrate(c)
-    knuspr.crawl(c, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
+def _zusatz(con):
     for external_id, name, l1, l2, l3 in ZUSATZ:
-        c.execute(
+        con.execute(
             "INSERT INTO product (source, external_id, name, price_cents,"
             " unit_text, category_l1, category_l2, category_l3)"
             " VALUES ('knuspr', ?, ?, 199, '1 Stk', ?, ?, ?)",
             (external_id, name, l1, l2, l3))
-    c.commit()
+    con.commit()
+
+
+@pytest.fixture
+def con(vorlagen):
+    """Katalog plus die Produkte von oben — einmal gebaut, hier kopiert.
+
+    Die Vorlage baut `conftest.py`; sie heisst `assistant_katalog`, weil sie
+    NICHT dieselbe ist wie der blosse Katalog: `ZUSATZ` gehört dazu, und ein
+    Test, der die Butter-Alternativen zählt, hinge sonst davon ab, welche
+    Datei zuerst lief.
+    """
+    c = vorlagen.con("assistant_katalog", vorlagen.katalog, _zusatz)
     yield c
     c.close()
 

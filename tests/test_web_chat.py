@@ -17,7 +17,6 @@ ausdrücklich geprüft:
 import json
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from picknick import db, orders, recipes
@@ -26,10 +25,8 @@ from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import Antwort
-from picknick.scrapers import knuspr
 from picknick.web import app as webapp
 
-FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HTMX = {"HX-Request": "true"}
 
@@ -61,34 +58,6 @@ class Box:
         if self._zustand == wake.BEDIENT:
             return wake.Zustand(wake.BEDIENT, modell="fake")
         return wake.Zustand(self._zustand, seit_s=12.0, grund=self._grund)
-
-
-class FakeHTTP:
-    def __init__(self, seiten):
-        self.seiten = list(seiten)
-
-    def get(self, url):
-        return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
-
-
-class _Antwort:
-    def __init__(self, payload):
-        self._payload = payload
-        self.content = b""
-
-    def json(self):
-        return self._payload
-
-
-@pytest.fixture
-def db_datei(tmp_path):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    knuspr.crawl(con, FakeHTTP([json.loads(FIXTURE.read_text(encoding="utf-8"))]),
-                 ["milch"], pause_s=0)
-    con.close()
-    return pfad
 
 
 def _pid(pfad, name):

@@ -65,18 +65,22 @@ PRODUKTE = [
 ]
 
 
-@pytest.fixture
-def con(tmp_path):
-    c = db.connect(tmp_path / "picknick.db")
-    db.migrate(c)
+def _produkte(con):
     for i, (name, kategorie, preis) in enumerate(PRODUKTE, start=1):
-        c.execute(
+        con.execute(
             "INSERT INTO product (source, external_id, name, brand,"
             "                     price_cents, unit_text, category_l1,"
             "                     category_l2, category_l3)"
             " VALUES ('knuspr', ?, ?, NULL, ?, '250 g', 'Molkerei', ?, ?)",
             (str(100 + i), name, preis, kategorie, kategorie))
-    c.commit()
+    con.commit()
+
+
+@pytest.fixture
+def con(vorlagen, tmp_path):
+    """Die vier Produkte von oben — einmal gebaut, hier kopiert (conftest.py)."""
+    c = db.connect(vorlagen.datei(tmp_path / "picknick.db", "bon_produkte",
+                                  _produkte))
     yield c
     c.close()
 

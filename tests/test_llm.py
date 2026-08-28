@@ -26,7 +26,6 @@ import httpx2
 import openai
 import pytest
 
-from picknick import db
 from picknick.llm import client as llm
 from picknick.llm import wake
 from picknick.web import app as webapp
@@ -481,7 +480,7 @@ def test_kaputter_endpunkt_graut_nur_den_chat_aus(monkeypatch):
 # Spec 11: ohne Modell bleibt alles ausser dem Chat benutzbar
 
 @pytest.fixture
-def shop(tmp_path, monkeypatch):
+def shop(leere_db_datei, tmp_path, monkeypatch):
     """Der Shop mit leerem Katalog — und einem Modell, das jeden Aufruf sprengt.
 
     Jeder Zugriff auf `wake.health` oder `Modellzugang.chat` wirft hier. Ein
@@ -497,14 +496,11 @@ def shop(tmp_path, monkeypatch):
     monkeypatch.setattr(llm.Modellzugang, "chat", verboten)
     monkeypatch.setenv(llm.ENV_ENDPUNKT, "http://127.0.0.1:8000/v1")
 
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    con.close()
     from fastapi.testclient import TestClient
     bilder = tmp_path / "bilder"
     bilder.mkdir()
-    with TestClient(webapp.create_app(db_path=pfad, image_dir=bilder)) as c:
+    with TestClient(webapp.create_app(db_path=leere_db_datei,
+                                      image_dir=bilder)) as c:
         yield c
 
 

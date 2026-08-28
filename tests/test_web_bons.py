@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import bons, db
+from picknick import bons
 from picknick.web import app as webapp
 
 # Kleinste gültige Rümpfe. Es geht um die ersten Bytes, nicht um Bildinhalt —
@@ -34,12 +34,8 @@ def bon_dir(tmp_path):
 
 
 @pytest.fixture
-def client(tmp_path, bon_dir):
-    pfad = tmp_path / "picknick.db"
-    con = db.connect(pfad)
-    db.migrate(con)
-    con.close()
-    with TestClient(webapp.create_app(db_path=pfad,
+def client(leere_db_datei, tmp_path, bon_dir):
+    with TestClient(webapp.create_app(db_path=leere_db_datei,
                                       image_dir=tmp_path / "bilder",
                                       bon_dir=bon_dir)) as c:
         yield c
