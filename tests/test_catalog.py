@@ -642,3 +642,72 @@ def test_by_category_zeigt_keine_inaktiven(con):
             active=0)
     assert categories.by_category(con, "Haushalt") == []
     assert categories.count_by_category(con, "Haushalt") == 0
+
+
+# --------------------------------------------------------------------------
+# Tierfutter bleibt draussen (WB-343)
+#
+# Der Haushalt hat keine Haustiere. Ohne diesen Filter verdrängt Tierfutter die
+# Lebensmittel, und zwar strukturell: Tierfutter nennt den Rohstoff als GANZES
+# Wort („Huhn", „Lachs"), Lebensmittel für Menschen als Kompositum
+# („Entenbrust", „Lachsfilet"). Die Wortstufe aus WB-339 hebt deshalb
+# ausgerechnet das Tierfutter — gemessen lieferten 5 von 8 Rohstoff-Begriffen
+# Katzen- oder Hundefutter auf Platz 1.
+
+@pytest.fixture
+def tierkatalog():
+    c = db.connect(":memory:")
+    db.migrate(c)
+    zeilen = [
+        # (external_id, name, brand, l1, l2)
+        ("t1", "Wildes Land Ragout Huhn & Lachs", "Wildes Land", "Katzen", "Nassfutter"),
+        ("t2", "Whiskas Knuspertaschen Lachs", "Whiskas", "Katzen", "Snacks & Belohnung"),
+        ("t3", "PURBELLO HundeRolle Ente", "PURBELLO", "Hunde", "Nassfutter"),
+        ("t4", "Katzenstreu Klumpend", "Bella", "Katzen", "Katzenzubehör"),
+        ("l1", "followfood BIO Lachs Burger", "followfood", "Fisch", "Tiefkühl"),
+        ("l2", "Deutsche See Forelle im Ganzen", "Deutsche See", "Fisch", "Frisch"),
+        # Der Fallstrick: heisst „tierisch", ist aber vegan. Ein Textfilter auf
+        # „tier" würde ausgerechnet das hier wegwerfen.
+        ("v1", "Alnatura Veganer Aufschnitt", "Alnatura",
+         "Pflanzenbasierter Vorratschrank", "Alternativen für tierische Produkte"),
+    ]
+    for eid, name, marke, l1, l2 in zeilen:
+        c.execute("INSERT INTO product (source, external_id, name, brand,"
+                  " category_l1, category_l2) VALUES ('knuspr',?,?,?,?,?)",
+                  (eid, name, marke, l1, l2))
+    c.commit()
+    yield c
+    c.close()
+
+
+def test_rohstoffbegriff_liefert_kein_tierfutter(tierkatalog):
+    for begriff in ("Lachs", "Huhn", "Ente"):
+        namen = [t["name"] for t in search.search(tierkatalog, begriff, limit=20)]
+        assert not any("Wildes Land" in n or "Whiskas" in n or "PURBELLO" in n
+                       for n in namen), f"Tierfutter bei „{begriff}“: {namen}"
+
+
+def test_lachs_findet_den_fisch(tierkatalog):
+    namen = [t["name"] for t in search.search(tierkatalog, "Lachs", limit=20)]
+    assert namen and "followfood BIO Lachs Burger" in namen[0]
+
+
+def test_veganes_bleibt_drin(tierkatalog):
+    """Ein Textfilter auf „tier" haette „Alternativen fuer tierische Produkte"
+    mitgeloescht — deshalb wird ueber die Oberkategorie gefiltert, nicht ueber
+    den Kategorietext."""
+    namen = [t["name"] for t in search.search(tierkatalog, "Aufschnitt", limit=20)]
+    assert "Alnatura Veganer Aufschnitt" in namen
+
+
+def test_tierfutter_taucht_auch_im_kategoriebaum_nicht_auf(tierkatalog):
+    namen = [k["name"] for k in categories.tree(tierkatalog)]
+    assert "Katzen" not in namen and "Hunde" not in namen
+    assert "Fisch" in namen
+
+
+def test_tierkategorie_ist_auch_direkt_nicht_erreichbar(tierkatalog):
+    """Der Baum bietet sie nicht an — eine von Hand gebaute Adresse darf sie
+    trotzdem nicht liefern."""
+    assert categories.by_category(tierkatalog, "Katzen") == []
+    assert categories.count_by_category(tierkatalog, "Hunde") == 0

@@ -37,6 +37,22 @@ _SUCHSPALTEN = "{norm_name norm_cat}"
 KANDIDATEN_FAKTOR = 5
 _MIN_POOL = 100
 
+#: Oberkategorien, die im Katalog gar nicht erscheinen (WB-343). Der Haushalt
+#: hat keine Haustiere — 295 der 10.361 Produkte sind Tierfutter, und sie
+#: verdrängten Lebensmittel systematisch: Tierfutter nennt den Rohstoff als
+#: GANZES WORT („Huhn", „Ente", „Lachs"), Lebensmittel für Menschen fast immer
+#: als Kompositum („Entenbrust", „Lachsfilet"). Die Wortgrenze aus WB-339 ist
+#: damit ausgerechnet dort am stärksten, wo sie am wenigsten helfen soll —
+#: gemessen lieferten 5 von 8 Rohstoff-Begriffen Tierfutter auf Platz 1.
+#:
+#: Gefiltert wird über die Kategorie und NICHT über einen Textabgleich auf
+#: „tier": „Pflanzenbasierter Vorratschrank > Alternativen für tierische
+#: Produkte" heisst so und würde mitfliegen — ausgerechnet die veganen
+#: Produkte. Die Liste ist die Pflegestelle: benennt Knuspr die Oberkategorie
+#: um, taucht das Tierfutter wieder auf. Das ist der Preis für einen Filter,
+#: der ohne Modell und ohne Rateregel auskommt.
+AUSGESCHLOSSENE_KATEGORIEN = ("Katzen", "Hunde")
+
 #: Deutsche Endungen, die aus dem Suchbegriff dieselbe Sache in einer anderen
 #: Form machen. „Zwiebel" soll „Zwiebeln" als vollen Wortreffer zählen dürfen —
 #: sonst hilft die ganze Wortgrenze bei genau dem Fall nicht, der sie ausgelöst
@@ -226,15 +242,18 @@ def search(con: sqlite3.Connection, begriff: str,
     if query is None:
         return []
     spalten = ", ".join(f"p.{s}" for s in _PRODUKT_SPALTEN)
+    platzhalter = ", ".join("?" for _ in AUSGESCHLOSSENE_KATEGORIEN)
     rows = con.execute(
         f"SELECT {spalten}, -{_bm25()} AS rang"
         "  FROM product_fts f JOIN product p ON p.id = f.rowid"
         " WHERE product_fts MATCH ? AND p.active = 1"
+        f"   AND coalesce(p.category_l1, '') NOT IN ({platzhalter})"
         # Der Name als zweites Kriterium: bei gleichem Rang sonst die Reihen-
         # folge der rowids, und die ändert sich mit jedem Crawl.
         " ORDER BY rang DESC, p.name ASC"
         " LIMIT ?",
-        (query, max(limit * KANDIDATEN_FAKTOR, _MIN_POOL))).fetchall()
+        (query, *AUSGESCHLOSSENE_KATEGORIEN,
+         max(limit * KANDIDATEN_FAKTOR, _MIN_POOL))).fetchall()
 
     treffer = [dict(r) for r in rows]
     for p in treffer:

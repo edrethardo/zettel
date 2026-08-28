@@ -25,6 +25,17 @@ _PRODUKT_SPALTEN = (
 )
 
 
+#: Dieselbe Ausschlussliste wie in der Suche (WB-343) — der Kategoriebaum darf
+#: nicht anbieten, was die Suche nicht findet, sonst führt die Oberfläche in
+#: eine leere Kategorie.
+from picknick.catalog.search import AUSGESCHLOSSENE_KATEGORIEN
+
+
+def _platzhalter() -> str:
+    """Fragezeichen für die Ausschlussliste — nie die Werte in SQL einsetzen."""
+    return ", ".join("?" for _ in AUSGESCHLOSSENE_KATEGORIEN)
+
+
 def tree(con: sqlite3.Connection) -> list[dict]:
     """Der dreistufige Kategoriebaum der aktiven Produkte.
 
@@ -41,7 +52,8 @@ def tree(con: sqlite3.Connection) -> list[dict]:
         "SELECT category_l1 AS l1, category_l2 AS l2, category_l3 AS l3,"
         "       count(*) AS n"
         "  FROM product WHERE active = 1"
-        " GROUP BY l1, l2, l3").fetchall()
+        f"   AND coalesce(category_l1, '') NOT IN ({_platzhalter()})"
+        " GROUP BY l1, l2, l3", AUSGESCHLOSSENE_KATEGORIEN).fetchall()
 
     baum: dict = {}
     for r in rows:
@@ -75,8 +87,12 @@ def by_category(con: sqlite3.Connection,
     alles darunter. Ohne jede Angabe kommt der ganze Katalog — das ist die
     Startansicht, kein Sonderfall.
     """
-    bedingungen = ["active = 1"]
-    werte: list = []
+    # WB-343: dieselbe Ausschlussliste wie in der Suche. Auch hier, damit
+    # niemand über eine von Hand gebaute Adresse in eine Kategorie gerät, die
+    # der Baum gar nicht mehr anbietet.
+    bedingungen = ["active = 1",
+                   f"coalesce(category_l1, '') NOT IN ({_platzhalter()})"]
+    werte: list = list(AUSGESCHLOSSENE_KATEGORIEN)
     for spalte, wert in zip(EBENEN, (category_l1, category_l2, category_l3)):
         if wert is not None:
             bedingungen.append(f"{spalte} = ?")
@@ -102,8 +118,12 @@ def count_by_category(con: sqlite3.Connection,
     Die Oberfläche braucht das für „Seite 2 von 5"; ohne die Gesamtzahl weiss
     sie erst nach der letzten leeren Seite, dass Schluss ist.
     """
-    bedingungen = ["active = 1"]
-    werte: list = []
+    # WB-343: dieselbe Ausschlussliste wie in der Suche. Auch hier, damit
+    # niemand über eine von Hand gebaute Adresse in eine Kategorie gerät, die
+    # der Baum gar nicht mehr anbietet.
+    bedingungen = ["active = 1",
+                   f"coalesce(category_l1, '') NOT IN ({_platzhalter()})"]
+    werte: list = list(AUSGESCHLOSSENE_KATEGORIEN)
     for spalte, wert in zip(EBENEN, (category_l1, category_l2, category_l3)):
         if wert is not None:
             bedingungen.append(f"{spalte} = ?")
