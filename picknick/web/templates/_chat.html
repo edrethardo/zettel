@@ -69,7 +69,7 @@
             <span class="bild bild-fehlt" aria-hidden="true"></span>
           {% endif %}
           <span class="text">
-            <span class="name">{{ v.qty }} × {{ v.name }}</span>
+            <span class="name">{{ v.packungen }} × {{ v.name }}</span>
             <span class="menge">
               {% if v.ist_freitext %}
                 Freitext — im Katalog nicht gefunden
@@ -77,6 +77,14 @@
                 {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
               {% endif %}
             </span>
+            {% if v.mengensatz %}
+            {# Die benötigte Menge aus dem Rezept (WB-369). Sie steht hier,
+               weil die blosse Packungszahl nicht erklärt, WARUM sie so
+               ausfällt — und weil der Fall „nicht ausrechenbar" einen Grund
+               braucht, den man lesen kann. Im Korb steht derselbe Satz noch
+               einmal, dann mit der Summe über alle Rezepte. #}
+            <span class="hinweis">{{ v.mengensatz }}</span>
+            {% endif %}
             <span class="woher">
               {{ v.search_term or "—" }}
               {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}

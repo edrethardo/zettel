@@ -296,7 +296,25 @@ SCHEMA = [
                             REFERENCES chat_message(id) ON DELETE CASCADE,
         product_id      INTEGER REFERENCES product(id),
         free_text       TEXT,
+        -- Die PACKUNGSZAHL, und auf diesem Weg lange die einzige Zahl: eine
+        -- vom Modell GERATENE Menge. Sie bleibt es für alles ohne
+        -- Mengenangabe („Klopapier"); wo `need_amount` steht, ist sie 1 und
+        -- die Packungszahl entsteht im Korb aus der Rechnung (WB-369).
         qty             INTEGER NOT NULL DEFAULT 1,
+        -- Die benötigte MENGE aus der Zutatenliste des Rezepts (WB-369),
+        -- schon in der Grundeinheit (`g`, `ml`, `Stk`, oder eine eigene wie
+        -- `bund`). Sie ist der Grund, warum die Rechnung aus WB-362 auf dem
+        -- Chat-Weg überhaupt anspringt: beim „Ja" geht sie als
+        -- `korb.einlegen(menge=…)` weiter, wird dort je Produkt
+        -- zusammengezählt und erst danach gegen die Packungsgrösse
+        -- aufgerundet.
+        --
+        -- Nullable, und das ist der Normalfall: ein Vorschlag aus
+        -- „Klopapier" hat keine benötigte Menge, und eine 0 wäre die
+        -- Behauptung, es werde nichts davon gebraucht. Dasselbe gilt für
+        -- jede Zeile, die vor WB-369 entstanden ist.
+        need_amount     REAL,
+        need_unit       TEXT,
         search_term     TEXT,
         rank            REAL,
         decision        TEXT NOT NULL DEFAULT 'offen'
@@ -672,6 +690,16 @@ NACHGETRAGENE_SPALTEN = (
     ("order_item", "hand_qty", "INTEGER"),
     ("recipe_item", "amount", "REAL"),
     ("recipe_item", "unit", "TEXT"),
+    # WB-369: die benötigte Menge auch am CHAT-Vorschlag. Ohne sie blieb der
+    # produktive Weg (Chat -> Chefkoch -> Korb) bei der geratenen
+    # Packungszahl, und die Rechnung aus WB-362 lief dort leer.
+    #
+    # Ohne Nachtrag für den Altbestand, und das ist die richtige Antwort:
+    # eine Zeile aus der Zeit davor HAT keine benötigte Menge — ihre `qty`
+    # war eine Vermutung des Modells und lässt sich nicht in Gramm
+    # zurückrechnen. NULL heisst hier „unbekannt" und nicht „null Gramm".
+    ("chat_suggestion", "need_amount", "REAL"),
+    ("chat_suggestion", "need_unit", "TEXT"),
 )
 
 

@@ -36,6 +36,7 @@ import re
 from dataclasses import dataclass, field
 
 from picknick import db
+from picknick.assistant import herkunft
 
 #: Höchstzahl Begriffe, die eine Anfrage ergeben darf. Wer „alles fürs
 #: Wochenende" schreibt, bekommt sonst eine Liste, die niemand mehr
@@ -683,11 +684,19 @@ def zutatenbegriffe(zugang, zutaten: list[dict], *, gericht: str | None = None,
                     temperatur: float = TEMPERATUR,
                     max_tokens: int = MAX_TOKENS,
                     denken: bool = DENKEN) -> list[dict]:
-    """Zutatenliste einer Quelle -> `[{"suchbegriffe": […], "menge": …}, …]`.
+    """Zutatenliste einer Quelle -> Begriffsketten MIT ihrer Herkunftszutat.
 
-    Dieselbe Form wie `extract()`, damit Stufe 2 und Stufe 3 unverändert
+    Fast dieselbe Form wie `extract()`, damit Stufe 2 und Stufe 3 unverändert
     weiterlaufen: was sich ändert, ist die HERKUNFT der Zutaten, nicht der
-    Weg durch den Shop.
+    Weg durch den Shop. Dazu kommen seit WB-369 `bedarf`, `einheit` und
+    `zutat` je Zeile — die Menge, die im Rezept steht.
+
+    **Diese Zuordnung kostet keinen Modellaufruf und keine Prompt-Zeile.**
+    Sie entsteht im Code aus den Namen (`assistant.herkunft`), weil der
+    Begriff aus einer bekannten Zutat gebildet wurde und deren Wörter noch
+    darin stehen. Das Modell wird hier nicht gefragt — und darf deshalb auch
+    keine Menge erfinden: eine Zahl, die nicht aus Chefkochs Zutatenliste
+    stammt, gibt es an dieser Stelle gar nicht.
 
     Wirft `PlanFehler` wie `extract()`. Der Aufrufer hat dann immer noch die
     Zutaten der Quelle und kann sich daraus selbst Ketten bauen
@@ -706,7 +715,7 @@ def zutatenbegriffe(zugang, zutaten: list[dict], *, gericht: str | None = None,
     if not begriffe:
         raise PlanFehler(
             "Das Modell hat aus der Zutatenliste keine Suchbegriffe gemacht.")
-    return begriffe
+    return herkunft.zuordnen(zutaten, begriffe)
 
 
 # --------------------------------------------------------------------------

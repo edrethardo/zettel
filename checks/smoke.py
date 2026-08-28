@@ -1292,6 +1292,105 @@ def _zwiebeltest(client, con, zwiebel: int) -> str:
     return "2 Stk gebraucht, gegen „1 kg“ nicht ausrechenbar -> 1 Netz"
 
 
+# --------------------------------------------------------------------------
+# Der Chat-Weg trägt Mengen (WB-369)
+#
+# WB-362 hat das Rechnen gebaut, und es griff nur am gespeicherten Rezept.
+# Der produktive Weg ist Chat -> Chefkoch -> `chat_suggestion` -> Korb; der
+# Abschnitt hier klickt genau ihn, am HTTP-Rand und mit zwei Gerichten, die
+# sich eine Zutat teilen.
+
+#: Zwei erfundene Chefkoch-Rezepte mit gemeinsamem Hackfleisch. Die
+#: aufgezeichnete Pho-Fixture taugt dafür nicht: sie ist EIN Rezept, und
+#: zwei Rezepte mit derselben Zutat sind genau der Fall des Tickets.
+MENGEN_REZEPTE = {
+    "111": {"id": "111", "title": "Bolognese", "servings": 4,
+            "siteUrl": "https://www.chefkoch.de/rezepte/111/",
+            "instructions": "Alles kochen.",
+            "ingredientGroups": [{"header": None, "ingredients": [
+                {"name": "Hackfleisch, gemischtes", "amount": 200.0,
+                 "unit": "g"},
+                {"name": "Zwiebel(n)", "amount": 2.0, "unit": None}]}]},
+    "222": {"id": "222", "title": "Chili con Carne", "servings": 4,
+            "siteUrl": "https://www.chefkoch.de/rezepte/222/",
+            "instructions": "Alles kochen.",
+            "ingredientGroups": [{"header": None, "ingredients": [
+                {"name": "Hackfleisch, gemischtes", "amount": 300.0,
+                 "unit": "g"}]}]},
+}
+
+
+class _ChefkochZwei:
+    """Die beiden Rezepte oben, über dieselben URLs wie die echte API."""
+
+    def get(self, url):
+        if "?query=" in url:
+            rid = "111" if "olognese" in url else "222"
+            r = MENGEN_REZEPTE[rid]
+            return _JSON({"count": 1, "results": [
+                {"recipe": {"id": rid, "title": r["title"],
+                            "rating": {"rating": 4.5, "numVotes": 100},
+                            "siteUrl": r["siteUrl"]}}]})
+        return _JSON(MENGEN_REZEPTE[url.rsplit("/", 1)[-1]])
+
+
+def checks_mengen_im_chat(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    """Zwei Chat-Züge, zwei Rezepte, eine Packung — über „Ja", nicht über
+    `recipes.in_den_korb`."""
+    b.abschnitt("Der Chat-Weg trägt Mengen (WB-369)")
+
+    con = db.connect(db_datei)
+    try:
+        for gericht in ("Bolognese", "Chili con Carne"):
+            gerichtelauf.hole_eines(con, _ChefkochZwei(), gericht, pause_s=0,
+                                    schreib=lambda _: None)
+        hack = pid(con, "Hackfleisch gemischt")
+    finally:
+        con.close()
+
+    # Je Zug zwei Modellantworten: Stufe 1b übersetzt die Zutatenliste,
+    # Stufe 3 wählt. Stufe 1 entfällt, weil der Gerichtsname im Satz steht.
+    zugang = _mock_zugang(
+        _extract((("gemischtes Hackfleisch", "Hackfleisch"), 2)),
+        _choose(("gemischtes Hackfleisch", hack, 2)),
+        _extract((("gemischtes Hackfleisch", "Hackfleisch"), 2)),
+        _choose(("gemischtes Hackfleisch", hack, 2)))
+    agent = chatmodul.Chat(zugang, wecker=_Box(),
+                           quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        con = db.connect(db_datei)
+        try:
+            b.pruefe("ein Chat-Zug legt die Menge des Rezepts in den Korb, "
+                     "nicht die geratene Packungszahl",
+                     lambda: _chat_menge(client, con, hack,
+                                         "alles für Bolognese", 200.0))
+            b.pruefe("zwei Rezepte über den Chat teilen sich EINE Packung — "
+                     "200 g + 300 g gegen „500 g“",
+                     lambda: _chat_menge(client, con, hack,
+                                         "alles für Chili con Carne", 500.0))
+        finally:
+            con.close()
+
+
+def _chat_menge(client, con, product_id: int, satz: str, erwartet) -> str:
+    antwort = client.post("/warenkorb/chat", data={"satz": satz},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+    sid = int(con.execute(
+        "SELECT id FROM chat_suggestion WHERE product_id = ?"
+        " ORDER BY id DESC LIMIT 1", (product_id,)).fetchone()["id"])
+    stueck = _entscheiden(client, sid, "kept")
+    wahr("gebraucht" in stueck,
+         "Die Zeile sagt nicht, welche Menge gebraucht wird.")
+    zeile = next(z for z in orders.inhalt(con)
+                 if z["product_id"] == product_id)
+    gleich((zeile["need_amount"], zeile["need_unit"]), (erwartet, "g"),
+           "Bedarf im Korb")
+    gleich(zeile["qty"], 1, "Packungen")
+    return f"{erwartet:.0f} g gebraucht, {zeile['qty']} × 500 g im Korb"
+
+
 def checks_bindung(b: Bericht) -> None:
     b.abschnitt("Bindung — der Prozess lauscht nicht auf 0.0.0.0")
 
@@ -1382,6 +1481,11 @@ def main() -> int:
         portionen_db = ordner / "portionen.db"
         katalog_anlegen(portionen_db)
         checks_portionen(b, portionen_db, bild_dir)
+        # Und noch eine: der Chat-Weg holt zwei Gerichte und füllt den Korb
+        # über „Ja" — beides hat in den Warenkörben oben nichts verloren.
+        mengen_db = ordner / "mengen_im_chat.db"
+        katalog_anlegen(mengen_db)
+        checks_mengen_im_chat(b, mengen_db, bild_dir)
     checks_bindung(b)
     return b.ende()
 

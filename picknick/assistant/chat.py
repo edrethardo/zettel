@@ -78,8 +78,9 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass, field
 
-from picknick import gerichte, obs, orders
-from picknick.assistant import oberbegriffe, plan, rezeptweg, vorschlaege
+from picknick import gerichte, mengen, obs, orders
+from picknick.assistant import (herkunft, oberbegriffe, plan, rezeptweg,
+                                vorschlaege)
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import ModellNichtErreichbar
@@ -169,6 +170,40 @@ class Ergebnis:
     @property
     def n_freitext(self) -> int:
         return sum(1 for v in self.vorschlaege if v["ist_freitext"])
+
+
+def _zusammengefasst(zeilen: list[dict]) -> list[dict]:
+    """Zwei Begriffe auf DASSELBE Produkt — eine Zeile, aber beide Mengen.
+
+    Der Sonderfall aus WB-369 zu einer Regel, die es seit WB-327 gibt: zwei
+    Suchbegriffe können auf dasselbe Produkt zeigen („Nudeln" und
+    „Spaghetti"), und daraus wird eine Vorschlagszeile, weil zwei gleiche
+    Zeilen zweimal dieselbe Entscheidung wären. Seit die Zeile eine Menge
+    trägt, ist das Wegwerfen der zweiten aber ein verlorener Bedarf — 250 g
+    und 250 g wären danach 250 g.
+
+    Zusammengezählt wird mit `mengen.summiere`, also genau wie im Korb: was
+    sich nicht zusammenzählen lässt (Stück und Gramm), bleibt bei der ersten
+    Menge, und die zweite Zeile verschwindet wie bisher. Eine addierte Zahl
+    aus zwei Einheiten wäre schlimmer als eine fehlende.
+    """
+    zusammen: list[dict] = []
+    nach_schluessel: dict[tuple, dict] = {}
+    for z in zeilen:
+        schluessel = (z["product_id"], (z.get("free_text") or "").casefold())
+        erste = nach_schluessel.get(schluessel)
+        if erste is None:
+            kopie = dict(z)
+            nach_schluessel[schluessel] = kopie
+            zusammen.append(kopie)
+            continue
+        if z.get("bedarf") is None:
+            continue
+        summe = mengen.summiere(erste.get("bedarf"), erste.get("einheit"),
+                                z["bedarf"], z["einheit"])
+        if summe is not None:
+            erste["bedarf"], erste["einheit"] = summe
+    return zusammen
 
 
 def _nur_allgemein(kette: list[str], kandidaten: list[dict]) -> str | None:
@@ -532,16 +567,28 @@ class Chat:
         """
         zeilen = []
         for z in rezeptweg.zutaten(con, treffer):
+            # Die Menge des gespeicherten Rezepts geht mit (WB-369). Sie steht
+            # dort seit WB-362 (`recipe_item.amount`) und wurde auf diesem Weg
+            # bisher weggeworfen — „alles in den Warenkorb" rechnete damit,
+            # derselbe Weg über den Chat nicht.
+            #
+            # `qty` bleibt dabei die des Rezepts und wird NICHT auf 1
+            # gesetzt: sie ist keine geratene Zahl wie beim Modell, sondern
+            # von Hand eingetragen, und sie ist die Rückfallebene, wo sich
+            # nichts ausrechnen lässt. Genau so hält es auch
+            # `recipes.in_den_korb` (WB-362).
             zeilen.append({"product_id": z["product_id"],
-                           "free_text": z["free_text"],
-                           "qty": z["qty"], "search_term": z["rezept"],
+                           "free_text": z["free_text"], "qty": z["qty"],
+                           "bedarf": z.get("amount"), "einheit": z.get("unit"),
+                           "search_term": z["rezept"],
                            "rang": None})
         namen = ", ".join(r["name"] for r in treffer.rezepte)
         teile = [f"„{namen}“ — {len(zeilen)} Zutaten aus dem Rezept, "
                  "ohne Modell."]
         if treffer.rest:
             zeilen.append({"product_id": None, "free_text": treffer.rest,
-                           "qty": 1, "search_term": treffer.rest, "rang": None})
+                           "qty": 1, "bedarf": None, "einheit": None,
+                           "search_term": treffer.rest, "rang": None})
             teile.append(f"„{treffer.rest}“ steht nicht im Rezept und liegt "
                          "als Freitext dabei.")
         return zeilen, " ".join(teile)
@@ -663,7 +710,12 @@ class Chat:
                 break
         if rest:
             begriffe.append({"suchbegriffe": [rest], "menge": 1})
-        return begriffe
+        # Auch der Notbehelf trägt die Mengen (WB-369). Er hat es sogar
+        # leichter als der Modellweg: die Kette ist hier BUCHSTÄBLICH aus dem
+        # Zutatennamen gebaut, die Zuordnung kann also gar nicht danebenliegen
+        # — und sie läuft trotzdem durch dieselbe Funktion, damit es nicht
+        # zwei Zuordnungen im Projekt gibt, die auseinanderlaufen können.
+        return herkunft.zuordnen(zutaten, begriffe)
 
     # -- Die gewählten Sorten (WB-368) ------------------------------------
 
@@ -984,14 +1036,27 @@ class Chat:
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
 
     def _zeilen(self, aufgaben: list[dict], auswahl):
-        """Aus Aufgaben und Wahl die Vorschlagszeilen. Kein Begriff fällt weg."""
+        """Aus Aufgaben und Wahl die Vorschlagszeilen. Kein Begriff fällt weg.
+
+        **Seit WB-369 trägt jede Zeile die benötigte Menge, wo es eine gibt**
+        (`bedarf`, `einheit`) — sie kommt aus der Zutatenliste der Quelle und
+        wandert beim „Ja" in `korb.einlegen(menge=…)`. Damit greift die
+        Rechnung aus WB-362 auch auf dem Chat-Weg, und zwar erst NACH dem
+        Zusammenzählen über alle Rezepte.
+
+        `_qty` sagt, was daneben mit der geratenen Packungszahl des Modells
+        geschieht.
+        """
         gewaehlt = {w["begriff"]: w for w in auswahl.gewaehlt}
         zeilen, freitext = [], []
         for b in aufgaben:
             wahl = gewaehlt.get(b["begriff"])
             if wahl is not None:
                 zeilen.append({"product_id": wahl["produkt"]["id"],
-                               "free_text": None, "qty": wahl["menge"],
+                               "free_text": None,
+                               "qty": self._qty(b, wahl["menge"]),
+                               "bedarf": b.get("bedarf"),
+                               "einheit": b.get("einheit"),
                                # Die aufgehobenen Kandidaten gehen mit an die
                                # Zeile (WB-359) — sie sind das, was „Nein"
                                # zeigt. Und `fallback`: kam ALLES nur über den
@@ -1013,7 +1078,10 @@ class Chat:
             # Kein Treffer, keine Wahl oder eine verworfene ID — in allen drei
             # Fällen bleibt der Begriff stehen, als Freitext.
             zeilen.append({"product_id": None, "free_text": b["begriff"],
-                           "qty": b["menge"], "search_term": b["begriff"],
+                           "qty": self._qty(b, b["menge"]),
+                           "bedarf": b.get("bedarf"),
+                           "einheit": b.get("einheit"),
+                           "search_term": b["begriff"],
                            "rang": None,
                            # Auch an einer Freitextzeile: hat die Suche etwas
                            # vorgelegt und das Modell nur nichts gewählt, ist
@@ -1024,6 +1092,26 @@ class Chat:
                            "fallback": None})
             freitext.append(b["begriff"])
         return zeilen, freitext
+
+    @staticmethod
+    def _qty(aufgabe: dict, geraten: int) -> int:
+        """Die Packungszahl an der Vorschlagszeile — Regel 4 aus WB-369.
+
+        **Wo eine echte Menge dasteht, wird die geratene Zahl nicht benutzt.**
+        Das Modell kennt die Packungsgrösse nicht; seine „2" ist eine
+        Vermutung darüber, wie viel in eine Packung passt, und daneben steht
+        eine gemessene Zahl aus dem Rezept. Die Packungszahl entsteht dann in
+        `korb.einlegen` aus der Summe über alle Rezepte.
+
+        Die 1 ist dabei keine zweite Vermutung, sondern die Rückfallebene für
+        den Fall, dass sich nichts ausrechnen lässt („4 Zehen" gegen
+        „100 g"): dann liegt genau eine Packung im Korb, und die Zeile sagt
+        warum (`mengen.Rechnung.grund`).
+
+        Ohne Menge bleibt die geratene Zahl — sie ist dann das Einzige, was
+        dasteht, und das ist seit WB-327 so.
+        """
+        return 1 if aufgabe.get("bedarf") is not None else geraten
 
     def _meldung_auswahl(self, auswahl, choose_kaputt) -> list[str]:
         """Was an Stufe 3 schiefging — auf beiden Modellwegen derselbe Satz."""
@@ -1108,8 +1196,8 @@ class Chat:
             # Produkt und hätte in der Trefferquote aus Spec 8.1 nichts zu
             # suchen (siehe `db.chat_sorte`).
             oberbegriffe.merken(con, antwort_id, faecher)
-        gesehen = set()
-        for z in zeilen:
+        gesehen: set[tuple] = set()
+        for z in _zusammengefasst(zeilen):
             schluessel = (z["product_id"], (z["free_text"] or "").casefold())
             if schluessel in gesehen:
                 # Zwei Begriffe, dasselbe Produkt („Nudeln" und „Spaghetti").
@@ -1121,7 +1209,10 @@ class Chat:
                     con, antwort_id, product_id=z["product_id"],
                     free_text=z["free_text"], qty=z["qty"],
                     search_term=z["search_term"], rang=z["rang"],
-                    fallback_term=z.get("fallback"))
+                    fallback_term=z.get("fallback"),
+                    # Die benötigte Menge (WB-369) — von hier an trägt sie
+                    # die Zeile, bis das „Ja" sie an `korb.einlegen` gibt.
+                    menge=z.get("bedarf"), einheit=z.get("einheit"))
                 # Und hier werden die Kandidaten aufgehoben statt weggeworfen
                 # (WB-359). Bis zu diesem Ticket endeten sie im Prompt von
                 # Stufe 3 und im RETRIEVER-Span — die Nutzerin bekam sie nie
