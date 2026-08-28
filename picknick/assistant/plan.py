@@ -648,12 +648,28 @@ Antworte ausschliesslich als JSON:
 
 
 def zutatenliste(zutaten: list[dict], *, gericht: str | None = None,
-                 servings=None, rest: str | None = None) -> str:
+                 servings=None) -> str:
     """Die Zutaten der Quelle als Prompt — so, wie sie auf der Seite stehen.
 
     Menge und Einheit gehen mit, obwohl gekauft wird und nicht gekocht: „500
     ml passierte Tomaten" ist eine Packung, „3 Liter Wasser" ist keine, und
     ohne die Menge kann das Modell den Unterschied nicht sehen.
+
+    **Was neben dem Gericht im Satz stand, steht hier NICHT** (WB-370). Bis
+    dahin ging es als Zeile „Ausserdem gewünscht, nicht aus dem Rezept:
+    Klopapier" mit, in der Hoffnung auf die Übersetzung „Klopapier" ->
+    „Toilettenpapier", die die Präfixsuche nie findet. Gemessen am
+    2026-08-28 gegen die echte Box (Qwen3.8-27B) an 35 Chefkoch-Gerichten
+    mit je einem Rest im Satz:
+
+        der Rest kam als Begriff zurück      3 von 35
+        der Rest kam ÜBERSETZT zurück        0 von 35
+        der Rest kam gar nicht zurück       32 von 35
+
+    Die Zeile brachte die Übersetzung also nicht — und sie kostete den
+    stillen Verlust, um den es in WB-370 geht. Der Rest wird seither im Code
+    angehängt (`chat._rest_sichern`), wo das Modell ihn nicht übergehen
+    kann.
     """
     zeilen = []
     if gericht:
@@ -670,16 +686,11 @@ def zutatenliste(zutaten: list[dict], *, gericht: str | None = None,
                  (z.get("unit") or "").strip(),
                  (z.get("raw_name") or z.get("name") or "").strip()]
         zeilen.append("- " + " ".join(t for t in teile if t))
-    if rest:
-        # Was neben dem Gericht im Satz stand („… und Klopapier"). Es hier
-        # mitzugeben kostet eine Zeile im Prompt und erspart der Nutzerin
-        # einen Freitext-Vorschlag für etwas, das der Katalog kennt.
-        zeilen.append(f"Ausserdem gewünscht, nicht aus dem Rezept: {rest}")
     return "\n".join(zeilen)
 
 
 def zutatenbegriffe(zugang, zutaten: list[dict], *, gericht: str | None = None,
-                    servings=None, rest: str | None = None,
+                    servings=None,
                     guided: bool = True, system: str = SYSTEM_ZUTATEN,
                     temperatur: float = TEMPERATUR,
                     max_tokens: int = MAX_TOKENS,
@@ -702,12 +713,16 @@ def zutatenbegriffe(zugang, zutaten: list[dict], *, gericht: str | None = None,
     Zutaten der Quelle und kann sich daraus selbst Ketten bauen
     (`gerichte.chefkoch.zutat_kette`) — schlechter als das Modell, aber
     besser als nichts.
+
+    **Was neben dem Gericht im Satz stand, geht hier nicht mit** (WB-370,
+    siehe `zutatenliste`). Diese Stufe bekommt eine Zutatenliste und macht
+    Suchbegriffe daraus; der Rest des Satzes ist keine Zutat, und ihn
+    trotzdem beizulegen hiess, ihn dem Ermessen des Modells zu überlassen.
     """
     if not zutaten:
         raise PlanFehler("Die Quelle hat keine Zutaten geliefert.")
     antwort = _frage(zugang, system,
-                     zutatenliste(zutaten, gericht=gericht, servings=servings,
-                                  rest=rest),
+                     zutatenliste(zutaten, gericht=gericht, servings=servings),
                      SCHEMA_EXTRACT, "begriffe", guided, temperatur,
                      max_tokens, denken)
     begriffe = _zutaten_aus(

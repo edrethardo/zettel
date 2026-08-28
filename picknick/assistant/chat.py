@@ -40,7 +40,10 @@ Drei Regeln halten diesen Ablauf zusammen:
    Modell nichts oder erfindet es etwas — der Begriff wird zum
    **Freitext-Vorschlag**. Der Katalog hat Lücken (die Suche kennt nur
    Wortanfänge, WB-322), und eine stillschweigend fallengelassene Zutat merkt
-   man erst im Laden.
+   man erst im Laden. **Auch das, was neben einem Gericht im Satz stand**
+   („… und Klopapier"), fällt darunter: es kommt seit WB-370 im Code auf den
+   Zettel (`_rest_sichern`) und nicht über eine Bitte an das Modell — die
+   schlug in 32 von 35 gemessenen Zügen fehl.
 3. **Nichts landet ungefragt im Warenkorb.** Ergebnis ist eine Liste in
    `chat_suggestion`, die zeilenweise bestätigt oder verworfen wird
    (`vorschlaege.entscheiden`). Seit WB-359 werden dabei auch die übrigen
@@ -167,6 +170,14 @@ class Ergebnis:
     #: dem Quellenweg gefüllt — die Begründung steht in `assistant.entwurf`.
     entwurf: str | None = None
     entwurf_zutaten: int = 0
+    #: Was neben dem Gericht im Satz stand (WB-370): „alles für Spaghetti
+    #: Bolognese, und Klopapier" -> „Klopapier". `rest_angehaengt` sagt, ob
+    #: dieser Zug eine eigene Zeile dafür angelegt hat (`True`) oder ob der
+    #: Rest schon auf dem Zettel stand (`False`). Ohne Rest bleibt beides
+    #: leer. Auf dem Rezept- wie auf dem Chefkoch-Weg gefüllt — auf beiden
+    #: kann ein Artikel neben dem Gericht stehen.
+    rest: str | None = None
+    rest_angehaengt: bool | None = None
 
     @property
     def n_produkte(self) -> int:
@@ -446,6 +457,12 @@ class Chat:
             if treffer:
                 plan_zeilen, meldung = self._aus_rezept(con, treffer)
                 weg, begriffe, verworfen, aufgaben = WEG_REZEPT, [], [], []
+                # Der Rezeptweg hängt den Rest schon immer im Code an und
+                # sagt es auch. Seit WB-370 steht dasselbe im Span, damit
+                # sich die beiden Wege in Phoenix vergleichen lassen: `rest`
+                # heisst auf beiden dasselbe.
+                zusatz = {"rest": treffer.rest,
+                          "rest_angehaengt": True if treffer.rest else None}
             elif faecher is not None:
                 # Ein Oberbegriff, aus dem Katalog erkannt: keine Suche, kein
                 # Modell, keine Vorschläge — die Sorten und die Frage, welche
@@ -566,6 +583,14 @@ class Chat:
             # `path = recipe` nimmt und gar kein Modell mehr kostet.
             "picknick.dish_draft": ergebnis.entwurf,
             "picknick.dish_items": ergebnis.entwurf_zutaten or None,
+            # Was NEBEN dem Gericht im Satz stand (WB-370) — dasselbe
+            # Vokabular wie `dish`, nur die andere Hälfte des Satzes.
+            # `rest_added` sagt, ob dieser Zug eine Zeile dafür angelegt hat;
+            # `False` heisst „stand schon auf dem Zettel". Ohne die beiden
+            # ist der Fall des Tickets im Trace nicht wiederzufinden: ein
+            # Artikel, der still verschwindet, hinterlässt sonst nichts.
+            "picknick.rest": ergebnis.rest,
+            "picknick.rest_added": ergebnis.rest_angehaengt,
         })
         obs.setze_ausgabe(span, [
             {"product_id": v["product_id"], "name": v["name"],
@@ -659,8 +684,7 @@ class Chat:
                 begriffe = plan.zutatenbegriffe(
                     self.zugang, zutaten, gericht=titel,
                     servings=quellen[0].get("servings"),
-                    rest=gefunden.rest, guided=self.guided,
-                    denken=self.denken)
+                    guided=self.guided, denken=self.denken)
             notbehelf = None
         except plan.PlanFehler as e:
             # **Hier wird nicht abgebrochen, und das ist der Unterschied zum
@@ -670,7 +694,7 @@ class Chat:
             # schlechter — gemessen 10 von 14 statt 12 von 12 — aber sie ist
             # da, und eine Liste, in der zwei Zeilen als Freitext stehen, ist
             # besser als eine Fehlermeldung.
-            begriffe = self._ketten_ohne_modell(zutaten, gefunden.rest)
+            begriffe = self._ketten_ohne_modell(zutaten)
             notbehelf = str(e)
             if not begriffe:
                 raise
@@ -680,10 +704,11 @@ class Chat:
 
         # **Hier entsteht die Trennung, um die es in WB-337 geht** — ohne
         # Modell und ohne ein Feld im Prompt. Sie steht vor der Suche, weil
-        # sie nur die Begriffe und die Zutatenliste braucht. Davor das
-        # Sicherheitsnetz für den Rest des Satzes, das dieselbe Zuordnung
-        # benutzt.
-        begriffe = self._rest_sichern(begriffe, gefunden.rest)
+        # sie nur die Begriffe und die Zutatenliste braucht. Davor der Rest
+        # des Satzes, der seit WB-370 im Code angehängt wird und nicht mehr
+        # im Prompt steht.
+        begriffe, rest_angehaengt = self._rest_sichern(begriffe,
+                                                       gefunden.rest)
         begriffe = self._zum_gericht(begriffe, gerichte_daten)
 
         aufgaben = self._suchen(con, begriffe)
@@ -701,6 +726,8 @@ class Chat:
         if freitext:
             teile.append("Ohne Katalogtreffer und deshalb als Freitext: "
                          + ", ".join(f"„{f}“" for f in freitext) + ".")
+        if gefunden.rest:
+            teile.append(self._meldung_rest(gefunden.rest, rest_angehaengt))
         if notbehelf:
             teile.append(f"Das Modell hat die Zutatenliste nicht zerlegt "
                          f"({notbehelf}) — die Begriffe kommen roh aus dem "
@@ -717,42 +744,78 @@ class Chat:
                   # Der Entwurf hängt am ERSTEN Gericht (WB-337) und an dessen
                   # Rezept — dort steht die Zubereitung, dort kommen die
                   # Produkte dazu.
-                  "entwurf_name": gericht if n_zutaten else None}
+                  "entwurf_name": gericht if n_zutaten else None,
+                  # Was neben dem Gericht im Satz stand, und ob dieser Zug
+                  # eine Zeile dafür angelegt hat (WB-370).
+                  "rest": gefunden.rest,
+                  "rest_angehaengt": rest_angehaengt}
         return (zeilen, " ".join(teile), begriffe, auswahl.verworfen, aufgaben,
                 zusatz)
 
+    def _meldung_rest(self, rest: str, angehaengt: bool) -> str:
+        """Was mit dem Rest des Satzes geschah — in der ANTWORT (WB-370).
+
+        Der Rest kommt seit WB-370 aus dem Code und nicht mehr aus dem
+        Modell. Damit ist er nie mehr still weg — aber er ist auch nicht mehr
+        übersetzt, und „Klopapier" findet im Katalog nichts. Diese eine Zeile
+        ist der Preis, den die Nutzerin sehen muss: sie steht neben der
+        Freitext-Zeile und sagt, warum sie da ist.
+        """
+        if angehaengt:
+            return (f"„{rest}“ stand daneben im Satz und liegt als eigene "
+                    "Zeile dabei — nicht im Rezept.")
+        return (f"„{rest}“ stand daneben im Satz und steht schon auf dem "
+                "Zettel.")
+
     def _rest_sichern(self, begriffe: list[dict],
-                      rest: str | None) -> list[dict]:
-        """Der Rest des Satzes darf nicht am Modell hängenbleiben (Regel 2).
+                      rest: str | None) -> tuple[list[dict], bool | None]:
+        """Der Rest des Satzes kommt im CODE auf den Zettel (WB-370).
 
-        Was neben dem Gericht stand („… und Klopapier"), geht als eigene
-        Zeile in den Prompt von Stufe 1 — und das Modell darf sie übergehen.
-        **Gemessen am 2026-08-28** gegen die echte Box und den echten Katalog:
-        aus „alles für Spaghetti Bolognese, und Klopapier" kamen elf
-        Begriffe zurück, alle elf aus der Zutatenliste, keiner für das
-        Klopapier. Es verschwand still — genau der Ausgang, den Regel 2 des
-        Chats ausschliesst („kein Begriff verschwindet still"), und genau der
-        Fall, um den es in WB-337 geht: es soll im Korb liegen und nie im
-        Rezept.
+        Gibt `(begriffe, angehaengt)` zurück; `angehaengt` ist `None`, wenn
+        es gar keinen Rest gab.
 
-        Ob das Modell den Rest aufgegriffen hat, sagt dieselbe Zuordnung, die
-        auch die Zugehörigkeit entscheidet: ein Begriff OHNE Herkunftszutat
-        stammt aus keiner Zutatenliste, also aus dem Rest. Gibt es keinen
-        solchen, wird der Rest angehängt.
+        Was neben dem Gericht stand („… und Klopapier"), ging bis WB-370 als
+        Zeile in den Prompt von Stufe 1 — und das Modell durfte sie
+        übergehen. WB-337 hängte den Rest deshalb an, wenn KEIN einziger
+        Begriff ohne Herkunftszutat zurückkam. Das Netz hatte einen blinden
+        Fleck: nannte das Modell irgendetwas, das zu keiner Zutat gehört,
+        galt der Rest als aufgegriffen.
 
-        Das ist absichtlich zurückhaltend. Das Modell übersetzt den Rest oft
-        („Klopapier" -> „Toilettenpapier"), und diese Übersetzung ist WERTVOLL
-        — die Präfixsuche findet den Weg vom einen zum anderen nie. Sie darf
-        also nicht durch eine zweite, rohe Zeile verdoppelt werden. Der Preis
-        der Zurückhaltung: erfindet das Modell einen Begriff, der zu nichts
-        gehört, gilt der Rest als aufgegriffen. Eine Zeile zu viel wäre
-        schlimmer — sie stünde bei JEDEM Zug mit Rest da.
+        **Gemessen am 2026-08-28** gegen die echte Box (Qwen3.8-27B) und 35
+        Chefkoch-Gerichte, je einmal mit einem Rest im Satz:
+
+            mindestens ein Begriff ohne Herkunftszutat   11 von 35 (31 %)
+            der Rest kam als Begriff zurück               3 von 35
+            der Rest kam ÜBERSETZT zurück                 0 von 35
+            der Rest ging dadurch still verloren         10 von 35 (29 %)
+
+        Beide Hälften der Rechtfertigung von WB-337 fielen damit: das Netz
+        greift in jedem dritten Zug daneben, und die Übersetzung
+        („Klopapier" -> „Toilettenpapier"), für die die Prompt-Zeile dastand,
+        liefert die Box kein einziges Mal. Der Rest steht seither nicht mehr
+        im Prompt und wird hier angehängt — deterministisch, ohne Ermessen.
+
+        **Der Preis steht in der Meldung.** Ohne Prompt-Zeile gibt es keine
+        Übersetzung mehr: „Klopapier" findet im Katalog nichts,
+        „Toilettenpapier" schon. Die Zeile liegt trotzdem im Korb, als
+        Freitext, und der Zug sagt es (`_aus_quelle`). Ein Artikel, der
+        sichtbar als Freitext dasteht, ist besser als einer, der still
+        verschwindet.
+
+        Verdoppelt wird nichts: steht der Rest schon auf dem Zettel, kommt er
+        nicht ein zweites Mal. Das ist keine Vermutung über das Modell,
+        sondern ein Wortvergleich mit denselben Regeln wie die
+        Herkunftszuordnung (`herkunft.punkte`) — und er greift auch dort, wo
+        der Rest mit einer Zutat des Rezepts zusammenfällt („alles für
+        Lasagne und Tomaten").
         """
         if not rest:
-            return begriffe
-        if any(not b.get("zutat") for b in begriffe):
-            return begriffe
-        return [*begriffe, {"suchbegriffe": [rest], "menge": 1}]
+            return begriffe, None
+        if any(herkunft.punkte(b, rest) >= herkunft.SCHWELLE
+               for eintrag in begriffe
+               for b in (eintrag.get("suchbegriffe") or [])):
+            return begriffe, False
+        return [*begriffe, {"suchbegriffe": [rest], "menge": 1}], True
 
     def _zum_gericht(self, begriffe: list[dict],
                      gerichte_daten: list[dict]) -> list[dict]:
@@ -805,13 +868,19 @@ class Chat:
                      f"für „{gericht}“.")
         return satz
 
-    def _ketten_ohne_modell(self, zutaten, rest=None) -> list[dict]:
+    def _ketten_ohne_modell(self, zutaten) -> list[dict]:
         """Begriffsketten direkt aus der Zutatenliste — der Notbehelf.
 
         Nur für den Fall, dass Stufe 1 die Liste nicht zerlegen konnte. Was
         in jedem Haushalt steht, fällt weg; alles andere kommt so, wie die
         Quelle es schreibt (mit umgedrehter Komma-Form, siehe
         `chefkoch.zutat_kette`).
+
+        Der Rest des Satzes gehört seit WB-370 nicht mehr hierher: er wird an
+        genau EINER Stelle angehängt (`_rest_sichern`), gleich ob Stufe 1
+        geantwortet hat oder nicht. Zwei Stellen, die dasselbe anhängen,
+        laufen irgendwann auseinander — und die eine legte dann eine Zeile
+        doppelt hin.
         """
         begriffe, gesehen = [], set()
         for z in zutaten:
@@ -826,8 +895,6 @@ class Chat:
                              "menge": 1})
             if len(begriffe) >= plan.MAX_BEGRIFFE:
                 break
-        if rest:
-            begriffe.append({"suchbegriffe": [rest], "menge": 1})
         # Auch der Notbehelf trägt die Mengen (WB-369). Er hat es sogar
         # leichter als der Modellweg: die Kette ist hier BUCHSTÄBLICH aus dem
         # Zutatennamen gebaut, die Zuordnung kann also gar nicht danebenliegen
@@ -1302,7 +1369,8 @@ class Chat:
                    quelle_name=None, quelle_url=None, quelle_recipe_id=None,
                    abruf=None, faecher=None, kategorie=None,
                    gewaehlte_sorten=None, sorten_verworfen=None,
-                   entwurf_name=None) -> Ergebnis:
+                   entwurf_name=None, rest=None,
+                   rest_angehaengt=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -1377,4 +1445,5 @@ class Chat:
             sorten=(list(faecher.sorten) if faecher is not None else []),
             sorten_herkunft=(faecher.herkunft if faecher is not None else None),
             sorten_verworfen=sorten_verworfen,
-            gewaehlte_sorten=list(gewaehlte_sorten or []))
+            gewaehlte_sorten=list(gewaehlte_sorten or []),
+            rest=rest, rest_angehaengt=rest_angehaengt)

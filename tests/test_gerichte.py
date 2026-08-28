@@ -418,19 +418,28 @@ def test_der_zug_nimmt_die_zutaten_aus_der_quelle(con):
 
 
 def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
+    """„Klopapier" kommt aus dem CODE auf den Zettel, nicht aus dem Modell.
+
+    Seit WB-370 steht der Rest nicht mehr im Prompt von Stufe 1 — das Modell
+    sieht ihn gar nicht und kann ihn deshalb auch nicht übergehen. Gemessen
+    am 2026-08-28 gegen die echte Box griff es ihn in 3 von 35 Zügen auf und
+    übersetzte ihn in keinem; die Prompt-Zeile kostete den stillen Verlust
+    und brachte nichts dafür.
+    """
     lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
                     schreib=lambda _: None)
-    llm = FakeLLM(_extract((("Rinderfilet",), 1), (("Toilettenpapier",), 1)),
-                  _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
-                          ("Toilettenpapier", _pid(con, "Toilettenpapier"), 1)))
+    llm = FakeLLM(_extract((("Rinderfilet",), 1)),
+                  _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho und Klopapier")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     prompt = llm.aufrufe[0]["nachrichten"][-1]["content"]
-    assert "Klopapier" in prompt
-    assert any("Toilettenpapier" in v["name"] for v in ergebnis.vorschlaege)
+    assert "Klopapier" not in prompt
+    assert "Klopapier" in [v["name"] for v in ergebnis.vorschlaege]
+    assert ergebnis.rest == "Klopapier"
+    assert ergebnis.rest_angehaengt is True
 
 
 def _erster_zug(con, holer, satz="alles für Pho", *, gericht="Pho",
@@ -647,16 +656,17 @@ def test_was_neben_dem_gericht_stand_ueberlebt_den_wechsel(con):
     holer = FakeHoler()
     llm = FakeLLM(
         _extract((("Rinderhack",), 1), gericht="Pho Suppe"),
-        _extract((("Rinderfilet",), 1), (("Toilettenpapier",), 1)),
-        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
-                ("Toilettenpapier", _pid(con, "Toilettenpapier"), 1)))
+        _extract((("Rinderfilet",), 1)),
+        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Pho und Klopapier")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
-    assert "Klopapier" in llm.aufrufe[1]["nachrichten"][-1]["content"]
-    assert any("Toilettenpapier" in v["name"] for v in ergebnis.vorschlaege)
+    # Der Rest steht seit WB-370 in keinem der beiden Prompts — und trotzdem
+    # (gerade deshalb) auf dem Zettel.
+    assert "Klopapier" not in llm.aufrufe[1]["nachrichten"][-1]["content"]
+    assert "Klopapier" in [v["name"] for v in ergebnis.vorschlaege]
 
 
 def test_ein_gescheitertes_stufe_1_faellt_auf_die_rohe_zutatenliste_zurueck(con):
