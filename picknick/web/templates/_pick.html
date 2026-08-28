@@ -13,7 +13,11 @@
   <h2>{{ g.titel }} <span class="anzahl">{{ g.n_offen }} offen</span></h2>
   <ul class="pickliste">
     {% for i in g.posten %}
-    <li class="pickzeile{% if i.gepickt %} ab{% endif %}">
+    {# Der Hinweis hängt an der ZEILE und nicht in einem Band am Seitenkopf:
+       hier steht jemand im Laden vor dem Regal und scrollt, und ein Band ganz
+       oben ist genau dann nicht mehr im Bild. Er muss es lesen, BEVOR er
+       sucht — sonst ist die vergebliche Suche schon passiert. #}
+    <li class="pickzeile{% if i.gepickt %} ab{% endif %}{% if i.nicht_im_katalog %} fehlt-im-katalog{% endif %}">
       {# Das Ziel trägt den GEWÜNSCHTEN Zustand, nicht den aktuellen: so ist
          der Klick auch dann eindeutig, wenn zwei Handys dieselbe Liste offen
          haben. Ohne JavaScript schickt derselbe Knopf dasselbe ab. #}
@@ -32,6 +36,10 @@
             <span class="menge">
               {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}{% endif %}
             </span>
+            {% if i.nicht_im_katalog %}
+            <span class="ausgemustert">Nicht mehr im Katalog — such nicht
+              lange, nimm etwas Ähnliches oder lass es weg.</span>
+            {% endif %}
           </span>
         </label>
         <noscript><button class="mini" type="submit">ok</button></noscript>

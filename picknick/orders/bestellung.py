@@ -104,6 +104,31 @@ def bestellungen(con: sqlite3.Connection, state: str | None = None) -> list[dict
     return bestellungen(con, "offen") + bestellungen(con, "erledigt")
 
 
+def markiere_katalogstand(eintrag: dict) -> dict:
+    """Setzt `ist_freitext` und `nicht_im_katalog` an einer Zeile mit Produkt.
+
+    Die EINE Stelle im Projekt, an der dieses Feld entsteht. Bestellposten,
+    Rezeptzutat und Chat-Vorschlag sind dieselbe Sache — eine Zeile, die
+    entweder auf ein Produkt zeigt oder Freitext ist, per `LEFT JOIN` mit
+    `product.active` daneben. Drei Kopien der Regel hätten irgendwann drei
+    Namen und zwei Bedeutungen; wer den Namen ändert, ändert ihn hier und
+    damit überall.
+
+    Freitext ist NIE „nicht mehr im Katalog": er war nie darin und behauptet
+    das auch nicht. Ohne diese Unterscheidung bekäme jede Freitext-Zeile eine
+    Warnung, die nicht stimmt — und eine Warnung, die überall steht, liest
+    im Laden niemand mehr.
+
+    `active` kommt aus dem JOIN. Fehlt die Spalte oder ist sie `NULL` (die
+    Produktzeile ist ganz verschwunden), gilt die Zeile als nicht mehr im
+    Katalog: lieber ein Hinweis zu viel als eine verschwiegene Lücke.
+    """
+    eintrag["ist_freitext"] = eintrag.get("product_id") is None
+    eintrag["nicht_im_katalog"] = (
+        not eintrag["ist_freitext"] and (eintrag.get("active") or 0) != 1)
+    return eintrag
+
+
 def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     """Alle Posten einer Bestellung, mit den Produktdaten daneben.
 
@@ -112,12 +137,20 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     aber überall — Warenkorb, Bestellung, Pick-Ansicht — eine Zeile mit Namen
     ergeben. Mit einem INNER JOIN wäre er stillschweigend verschwunden, und
     zwar genau in der Ansicht, in der er gebraucht wird: im Laden.
+
+    `p.active` steht aus demselben Grund mit im SELECT. Produkte werden beim
+    Crawl nie gelöscht, sondern auf `active = 0` gesetzt (Spec 5.3) — ein
+    Posten aus einer älteren Bestellung zeigt also irgendwann auf ein Produkt,
+    das es im Laden womöglich nicht mehr gibt. Die Rezeptansicht sagt das
+    längst; solange diese Abfrage `active` nicht mitlas, war die Information
+    ab dem Warenkorb weg, und der Schaden fiel dort an, wo er am teuersten
+    ist: vor dem Regal.
     """
     rows = con.execute(
         "SELECT i.id, i.order_id, i.product_id, i.free_text, i.qty, i.store,"
         "       i.picked_at,"
         "       coalesce(p.name, i.free_text) AS name,"
-        "       p.unit_text, p.price_cents, p.image_path"
+        "       p.unit_text, p.price_cents, p.image_path, p.active"
         "  FROM order_item i LEFT JOIN product p ON p.id = i.product_id"
         " WHERE i.order_id = ?"
         # Nach id: die Reihenfolge des Einlegens ist die einzige, die die
@@ -125,8 +158,7 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
         " ORDER BY i.id", (order_id,)).fetchall()
     eintraege = []
     for r in rows:
-        e = dict(r)
-        e["ist_freitext"] = e["product_id"] is None
+        e = markiere_katalogstand(dict(r))
         e["gepickt"] = e["picked_at"] is not None
         eintraege.append(e)
     return eintraege

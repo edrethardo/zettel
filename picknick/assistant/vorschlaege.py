@@ -108,10 +108,9 @@ _VORSCHLAG_SQL = (
 
 
 def _auf(row: sqlite3.Row) -> dict:
-    v = dict(row)
-    v["ist_freitext"] = v["product_id"] is None
-    v["nicht_im_katalog"] = (not v["ist_freitext"]
-                             and (v.get("active") or 0) != 1)
+    # Derselbe Ableiter wie beim Bestellposten und bei der Rezeptzutat
+    # (WB-335): ein Vorschlag ist dieselbe Zeile mit demselben LEFT JOIN.
+    v = orders.markiere_katalogstand(dict(row))
     v["offen"] = v["decision"] == OFFEN
     v["behalten"] = v["decision"] == BEHALTEN
     if v["name"] is None:

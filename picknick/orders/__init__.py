@@ -14,7 +14,8 @@ Importreihenfolge etwas anderes lieferte.
 """
 from picknick.orders.bestellung import (  # noqa: F401
     UEBERGAENGE, BestellFehler, FalscherZustand, LeererWarenkorb,
-    UngueltigerPosten, bestellung, bestellungen, jetzt, posten, wechsle)
+    UngueltigerPosten, bestellung, bestellungen, jetzt,
+    markiere_katalogstand, posten, wechsle)
 from picknick.orders.pick import (  # noqa: F401
     LADEN_TITEL, abhaken, naechste, nach_laden, offene)
 from picknick.orders.korb import (  # noqa: F401
@@ -27,6 +28,7 @@ __all__ = [
     "UngueltigerPosten", "LADEN_TITEL", "LADEN_VORGABE",
     "abhaken", "abschicken", "bestellung", "bestellungen", "einlegen",
     "entfernen", "genau_eines", "inhalt", "jetzt", "korb_anzahl", "laden_setzen",
-    "menge_setzen", "nach_laden", "naechste", "offene", "posten",
+    "markiere_katalogstand", "menge_setzen", "nach_laden", "naechste", "offene",
+    "posten",
     "vorbelegter_laden", "warenkorb", "warenkorb_id", "wechsle",
 ]

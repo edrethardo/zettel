@@ -205,6 +205,22 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 .ausgemustert { color: #8a5a00; font-weight: 600; }
 .fehlt-im-katalog { background: #fff8e8; }
 
+/* Dasselbe im Warenkorb und auf der Pickliste (WB-335). Bewusst KEINE eigenen
+   Klassen: es ist dieselbe Sache wie im Rezept und darf nicht wie zwei
+   aussehen. Neu ist nur, dass hier ein ganzer Satz steht statt zweier Wörter —
+   der Hinweis soll sagen, was zu tun ist, und muss deshalb umbrechen dürfen.
+
+   Er hängt an der Zeile und nicht an einem Band am Seitenkopf: im Laden wird
+   gescrollt, und ein Band ist dann nicht mehr im Bild — gelesen werden muss
+   der Satz aber, BEVOR jemand vor dem Regal steht und sucht. */
+.zeile .ausgemustert, .pickzeile .ausgemustert {
+  font-size: 14px; line-height: 1.3; white-space: normal;
+}
+/* Abgehakt schlägt Warnung: was schon im Einkaufswagen liegt, muss niemand
+   mehr suchen. Der Hintergrund erledigt `.pickzeile.ab` ohnehin (zwei Klassen
+   schlagen eine); hier geht es um den Text daneben. */
+.pickzeile.ab .ausgemustert { color: var(--gedaempft); font-weight: 400; }
+
 /* Kopfdaten und die beiden grossen Knöpfe. Tap-Ziel 44 px wie überall — hier
    steht niemand im Laden, aber eine Eingabe, die man dreimal antippen muss,
    ist auf dem Sofa genauso ärgerlich. */

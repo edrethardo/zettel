@@ -12,7 +12,12 @@
 {% else %}
 <ul class="korb">
   {% for i in posten %}
-  <li class="zeile">
+  {# Dieselbe Sprache wie in der Rezeptansicht: `.fehlt-im-katalog` an der
+     Zeile, `.ausgemustert` am Text. Ein Posten aus einem Rezept oder aus einer
+     Bestellung von letztem Herbst kann auf ein Produkt zeigen, das der Crawler
+     inzwischen auf `active = 0` gesetzt hat (Spec 5.3) — er bleibt liegen,
+     aber er sagt es. Freitext trifft das nie: er war nie im Katalog. #}
+  <li class="zeile{% if i.nicht_im_katalog %} fehlt-im-katalog{% endif %}">
     {% if i.bild_url %}
       <img class="bild" src="{{ i.bild_url }}" alt="" loading="lazy" width="56" height="56">
     {% else %}
@@ -24,6 +29,10 @@
         {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}
         · {{ i.price_cents | euro }}{% endif %}
       </span>
+      {% if i.nicht_im_katalog %}
+      <span class="ausgemustert">Nicht mehr im Katalog — bleibt im Korb, aber
+        der Preis kann alt sein und im Laden musst du selbst schauen.</span>
+      {% endif %}
     </span>
     <span class="stellen">
       <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"

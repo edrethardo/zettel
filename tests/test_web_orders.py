@@ -442,3 +442,102 @@ def test_kein_cdn_verweis_in_den_neuen_ansichten(client, offene_bestellung, pfad
     assert "cdn." not in text
     assert "//" not in re.sub(r"<!--.*?-->", "", text, flags=re.S).replace(
         "<!doctype html>", "")
+
+
+# --------------------------------------------------------------------------
+# Ausgemusterte Produkte sind auch im Korb und im Laden zu sehen (WB-335)
+#
+# Die Rezeptansicht sagt es an vier Stellen; ab dem Warenkorb war die
+# Information bisher weg. Der Schaden fällt nicht am Bildschirm an, sondern
+# vor dem Regal: jemand sucht ein Produkt, das seit dem letzten Crawl
+# `active = 0` ist (Spec 5.3), und findet es nicht.
+
+def _ausmustern(con, name):
+    con.execute("UPDATE product SET active = 0 WHERE name = ?", (name,))
+    con.commit()
+
+
+def _zeile(text: str, name: str) -> str:
+    """Das `<li>`-Stück, in dem dieser Name steht.
+
+    Damit ein Treffer wirklich AN DIESER Zeile hängt und nicht irgendwo sonst
+    auf der Seite — ein Band am Seitenkopf würde die Suche nach dem blossen
+    Wort ebenso bestehen, hülfe im Laden beim Scrollen aber nicht.
+    """
+    stuecke = [st for st in text.split("<li") if name in st]
+    assert len(stuecke) == 1, f"{name} kommt {len(stuecke)}× als Zeile vor"
+    return stuecke[0]
+
+
+def test_warenkorb_kennzeichnet_einen_ausgemusterten_posten(client, con):
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    _ausmustern(con, MILCH)
+
+    zeile = _zeile(client.get("/warenkorb").text, MILCH)
+    assert "fehlt-im-katalog" in zeile
+    assert "Nicht mehr im Katalog" in zeile
+    # Der Satz sagt, was zu tun ist — nicht bloss, dass etwas ist.
+    assert "im Laden musst du selbst schauen" in zeile
+
+
+def test_pickzeile_kennzeichnet_einen_ausgemusterten_posten(
+        client, con, offene_bestellung):
+    _ausmustern(con, MILCH)
+    text = client.get("/pick").text
+
+    zeile = _zeile(text, MILCH)
+    assert "fehlt-im-katalog" in zeile
+    assert "Nicht mehr im Katalog" in zeile
+    assert "nimm etwas Ähnliches" in zeile
+    # Und der Hinweis steht an der Zeile, nicht in einem Band am Seitenkopf,
+    # das beim Scrollen aus dem Bild ist.
+    assert "Nicht mehr im Katalog" not in text.split("<li", 1)[0]
+
+
+def test_der_hinweis_ueberlebt_den_htmx_austausch(client, con,
+                                                  offene_bestellung):
+    """Nach jedem Haken wird die Liste getauscht — der Hinweis muss bleiben."""
+    _ausmustern(con, MILCH)
+    zeilen = orders.posten(con, offene_bestellung)
+    frisch = client.post(
+        f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}?gepickt=1",
+        headers=HTMX)
+    assert "Nicht mehr im Katalog" in _zeile(frisch.text, MILCH)
+
+
+def test_freitext_bekommt_keine_katalogwarnung(client, con, offene_bestellung):
+    """„Klopapier" hat kein Produkt und kann deshalb nicht ausgelistet sein."""
+    _ausmustern(con, MILCH)
+    for pfad in ("/pick", "/warenkorb"):
+        if pfad == "/warenkorb":
+            client.post("/warenkorb/einlegen", data={"free_text": "Klopapier"},
+                        headers=HTMX)
+        zeile = _zeile(client.get(pfad).text, "Klopapier")
+        assert "fehlt-im-katalog" not in zeile
+        assert "Nicht mehr im Katalog" not in zeile
+
+
+def test_ein_aktiver_posten_bleibt_unmarkiert(client, con, offene_bestellung):
+    """Der Haferdrink ist noch im Katalog und bekommt nichts ab.
+
+    In beiden Ansichten: eine Warnung, die auch an den Zeilen steht, mit denen
+    alles in Ordnung ist, ist keine Warnung mehr.
+    """
+    _ausmustern(con, MILCH)
+    client.post(f"/katalog/einlegen?product_id={_pid(con, HAFER)}", headers=HTMX)
+    for pfad in ("/pick", "/warenkorb"):
+        zeile = _zeile(client.get(pfad).text, HAFER)
+        assert "fehlt-im-katalog" not in zeile
+        assert "Nicht mehr im Katalog" not in zeile
+
+
+def test_die_kennzeichnung_ist_im_stil_wirklich_sichtbar(client, con):
+    """Eine Klasse ohne Regel im Stylesheet ist keine Kennzeichnung.
+
+    Dieselben zwei Klassen wie in der Rezeptansicht (WB-325) — es ist
+    dieselbe Sache und soll nicht wie zwei aussehen.
+    """
+    stil = STIL.read_text(encoding="utf-8")
+    assert ".fehlt-im-katalog {" in stil
+    assert ".ausgemustert {" in stil
+    assert ".pickzeile .ausgemustert" in stil

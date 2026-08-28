@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from picknick import db, orders
+from picknick import db, orders, recipes
 from picknick.orders import korb as korb_modul
 
 FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
@@ -501,3 +501,81 @@ def test_freitext_laeuft_von_einlegen_bis_abhaken_durch(con):
     stand = orders.abhaken(con, zeile["id"])
     assert stand["state"] == "erledigt"
     assert stand["done_at"]
+
+
+# --------------------------------------------------------------------------
+# Ausgemusterte Produkte reichen bis zum Posten durch (WB-335)
+#
+# Produkte werden beim Crawl nie gelöscht, sondern auf `active = 0` gesetzt
+# (Spec 5.3). Ein Posten, der auf so ein Produkt zeigt, bleibt liegen — aber
+# er muss es sagen können, sonst steht jemand im Laden vor einem Regal und
+# sucht etwas, das es dort nicht mehr gibt.
+
+def _ausmustern(con, name):
+    con.execute("UPDATE product SET active = 0 WHERE name = ?", (name,))
+    con.commit()
+
+
+def test_ein_ausgemustertes_produkt_faellt_am_posten_auf(con):
+    orders.einlegen(con, product_id=_pid(con, MILCH))
+    _ausmustern(con, MILCH)
+    zeile = orders.inhalt(con)[0]
+    assert zeile["nicht_im_katalog"] is True
+    # Der Posten verschwindet dabei NICHT — das wäre der schlimmste Ausgang.
+    assert zeile["name"] == MILCH
+
+
+def test_ein_aktives_produkt_wird_nicht_markiert(con):
+    orders.einlegen(con, product_id=_pid(con, MILCH))
+    assert orders.inhalt(con)[0]["nicht_im_katalog"] is False
+
+
+def test_freitext_ist_nie_nicht_im_katalog(con):
+    """Freitext war nie im Katalog und behauptet das auch nicht.
+
+    Ohne diese Unterscheidung bekäme jede Freitext-Zeile eine Warnung, die
+    nicht stimmt — und eine Warnung, die an allem steht, liest im Laden
+    niemand mehr.
+    """
+    orders.einlegen(con, free_text="Brötchen vom Bäcker")
+    zeile = orders.inhalt(con)[0]
+    assert zeile["ist_freitext"] is True
+    assert zeile["nicht_im_katalog"] is False
+
+
+def test_die_markierung_haelt_bis_in_die_pick_ansicht(con):
+    orders.einlegen(con, product_id=_pid(con, MILCH))
+    orders.einlegen(con, free_text="Klopapier")
+    _ausmustern(con, MILCH)
+    b = orders.abschicken(con)
+
+    zeilen = [z for g in orders.nach_laden(con, b["id"]) for z in g["posten"]]
+    nach_namen = {z["name"]: z["nicht_im_katalog"] for z in zeilen}
+    assert nach_namen == {MILCH: True, "Klopapier": False}
+
+
+def _katalogfelder(eintrag: dict) -> set:
+    """Die Felder eines Eintrags, die vom Katalogstand sprechen."""
+    return {k for k in eintrag if "katalog" in k}
+
+
+def test_posten_und_zutat_benutzen_denselben_feldnamen(con):
+    """Ein Produkt, zwei Wege, EIN Name für dieselbe Sache.
+
+    Geprüft wird gegen die echten Rückgaben von `recipes.zutaten()` und
+    `orders.posten()`, nicht gegen die Zeichenkette „nicht_im_katalog": ein
+    Test, der den Namen selbst noch einmal hinschreibt, merkt gerade dann
+    nichts, wenn eine der beiden Seiten ihn ändert — und zwei Namen für
+    dieselbe Sache laufen irgendwann auseinander.
+    """
+    pid = _pid(con, MILCH)
+    _ausmustern(con, MILCH)
+    rid = recipes.anlegen(con, "Milchreis", zutaten=[{"product_id": pid}])
+    zutat = recipes.zutaten(con, rid)[0]
+    orders.einlegen(con, product_id=pid)
+    posten = orders.inhalt(con)[0]
+
+    assert _katalogfelder(zutat), "die Rezeptzutat kennt gar kein solches Feld"
+    assert _katalogfelder(zutat) == _katalogfelder(posten)
+    for feld in _katalogfelder(zutat):
+        assert zutat[feld] is True and posten[feld] is True

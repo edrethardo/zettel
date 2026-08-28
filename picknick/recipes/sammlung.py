@@ -21,6 +21,7 @@ import sqlite3
 
 from picknick.orders import UngueltigerPosten
 from picknick.orders import korb
+from picknick.orders.bestellung import markiere_katalogstand
 
 #: Sentinel für `aendern()`: „dieses Feld wurde nicht mitgegeben". Nötig, weil
 #: `None` dort eine gültige Eingabe ist (Portionen wieder leeren).
@@ -155,14 +156,13 @@ def _muss_geben(con: sqlite3.Connection, recipe_id: int) -> sqlite3.Row:
 def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
     """Eine Zeile aus `recipe_item` in das, was die Oberfläche braucht.
 
-    `nicht_im_katalog` ist das Feld, um das es in diesem Ticket geht. Es ist
-    für Freitext immer falsch — Freitext war nie im Katalog und behauptet das
-    auch nicht.
+    `nicht_im_katalog` entsteht nicht hier, sondern in
+    `orders.markiere_katalogstand()` — es ist buchstäblich dieselbe Regel wie
+    beim Bestellposten, und zwei Kopien liefen irgendwann auseinander (WB-335).
+    Für Freitext ist es immer falsch: Freitext war nie im Katalog und
+    behauptet das auch nicht.
     """
-    z = dict(row)
-    z["ist_freitext"] = z["product_id"] is None
-    fehlt = (not z["ist_freitext"]) and (z.get("active") or 0) != 1
-    z["nicht_im_katalog"] = fehlt
+    z = markiere_katalogstand(dict(row))
     if z["name"] is None:
         # Kann nur passieren, wenn eine Produktzeile trotz Fremdschlüssel
         # verschwunden ist. Dann ist der Name weg — aber die Zeile bleibt
