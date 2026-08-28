@@ -115,6 +115,21 @@ Absicht ein eigener `path`-Wert und kein Nebensatz: **die Frage, ob die
 Quelle wirklich besser ist als das Raten, wird an genau diesem Attribut
 gemessen.**
 
+Der **Auffächerungsweg** (`picknick.path = "fanout"`, WB-368) ist der
+kürzeste von allen: kein `catalog.search`, kein `plan.choose`, oft nicht
+einmal ein `plan.extract` — nur der `CHAIN`-Span. Er hat **null Vorschläge**,
+und das ist kein Fehlgriff, sondern eine Rückfrage: „Aufschnitt" ist ein
+Regal, keine Ware. Ohne den eigenen `path` sähe dieser Zug in jeder
+Auswertung aus wie einer, der nichts gefunden hat.
+
+Der Umweg lässt sich messen, weil `picknick.fanout_category` auf BEIDEN
+Hälften steht: der `fanout`-Zug bietet die Sorten an, der `llm`-Zug daneben
+trägt `picknick.varieties_chosen` und die Vorschläge dazu. Wer die beiden
+nebeneinanderlegt, sieht, ob aus der Rückfrage ein bestätigter Posten wurde —
+und `picknick.fanout_source` sagt, ob dafür überhaupt ein Modell nötig war
+(`catalog` heisst: das getippte Wort war selbst eine Kategorie, der Zug lief
+in 0,0 s).
+
 **Seit WB-367 ist ein `llm`-Zug MIT gesetztem `picknick.dish` ein Befund und
 kein Normalfall.** Vorher war er die Regel: der erste Satz zu einem neuen
 Gericht riet, der Abruf lief daneben, und dasselbe Gericht tauchte zweimal
@@ -159,7 +174,7 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `output.value` | JSON | die Vorschlagsliste: `product_id`, `name`, `menge`, `begriff`, `rang`, `freitext` |
 | `session.id` | Text | `korb-<order_id>` — mehrere Sätze zu **einem** Einkauf liegen in Phoenix als eine Sitzung zusammen. Ohne das steht jeder Zug für sich und „sie hat nachgebessert" ist nicht mehr zu sehen. |
 | `picknick.order_id` | int | die Bestellung, an der der Zug hängt |
-| `picknick.path` | Text | `llm`, `recipe` oder `chefkoch` |
+| `picknick.path` | Text | `llm`, `recipe`, `chefkoch` oder `fanout` |
 | `picknick.chat_message_id` | int | die Antwortzeile in `chat_message` |
 | `picknick.terms` | int | Begriffe aus Stufe 1 |
 | `picknick.products` | int | Vorschläge mit echtem Produkt |
@@ -173,6 +188,11 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
 | `picknick.dish_requested` | bool | dieser Zug hat das Gericht selbst bei Chefkoch geholt, statt es im Speicher zu finden (WB-367) |
 | `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
+| `picknick.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |
+| `picknick.fanout_varieties` | int | wie viele Sorten angeboten wurden |
+| `picknick.fanout_source` | Text | `catalog` (das getippte Wort IST eine Kategorie — kein Modellaufruf) oder `model` (Stufe 1 hat zugeordnet) |
+| `picknick.fanout_rejected` | Text | **die Kategorie, die das Modell nannte, obwohl es sie nicht gibt** — dieselbe Zahl wie `rejected`, eine Ebene höher |
+| `picknick.varieties_chosen` | Text | welche Sorten angekreuzt wurden: `Salami, Kochschinken` |
 
 `picknick.rejected` ist die härteste Zusicherung des Projekts, als Zahl. Das
 Modell sieht in Stufe 1 keinen Katalog und darf in Stufe 3 nur nennen, was ihm

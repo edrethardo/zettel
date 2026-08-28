@@ -317,6 +317,43 @@ SCHEMA = [
         UNIQUE (suggestion_id, product_id)
     )
     """,
+    # Die Sorten, die eine Auffächerung angeboten hat (WB-368).
+    #
+    # **Eine eigene Tabelle und ausdrücklich KEINE Zeile in
+    # `chat_suggestion`.** Eine Sorte ist kein Vorschlag: sie hat kein
+    # Produkt, sie kommt nicht in den Korb, und ein „Ja" dazu wäre keine
+    # Entscheidung über einen Fehlgriff des Modells. In `chat_suggestion`
+    # zählte sie in `decision` mit und verfälschte damit genau die
+    # Trefferquote aus Spec 8.1, um die es im ganzen Projekt geht.
+    #
+    # Gespeichert wird, was ANGEBOTEN wurde — mit der Stückzahl von damals.
+    # Sie wird beim Anzeigen nicht neu gezählt: die Nutzerin hat „Salami (34)"
+    # gesehen und soll dieselbe Zeile wiederfinden, auch wenn der Nachtlauf
+    # inzwischen zwei Salami ausgemustert hat. Was der Katalog HEUTE hergibt,
+    # entscheidet sich beim Tippen auf die Sorte.
+    """
+    CREATE TABLE IF NOT EXISTS chat_sorte (
+        id              INTEGER PRIMARY KEY,
+        chat_message_id INTEGER NOT NULL
+                            REFERENCES chat_message(id) ON DELETE CASCADE,
+        -- Das getippte Wort („Aufschnitt"). Es steht an jeder Zeile, obwohl
+        -- es sich innerhalb einer Auffächerung nicht ändert: ohne es wäre
+        -- der Weg zurück zum Freitext („such doch direkt danach") auf die
+        -- vorige Chatzeile angewiesen, und die kann anders lauten als das
+        -- Wort, das die Kategorie getroffen hat.
+        wort            TEXT NOT NULL,
+        category_l1     TEXT NOT NULL,
+        -- Die Sorte: eine `category_l2` des Katalogs. Kein Fremdschlüssel —
+        -- der Kategoriebaum ist eine Ableitung aus `product` und keine
+        -- Tabelle (siehe catalog/categories.py).
+        name            TEXT NOT NULL,
+        anzahl          INTEGER NOT NULL,
+        pos             INTEGER NOT NULL,
+        -- Dieselbe Sorte zweimal an derselben Zeile wäre dasselbe Kästchen
+        -- zweimal auf dem Handy.
+        UNIQUE (chat_message_id, name)
+    )
+    """,
     # ----------------------------------------------------------------------
     # Kassenbons (WB-358). Eigene Tabellen, ausdrücklich NICHT `orders`:
     #
@@ -482,7 +519,7 @@ FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
 TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
     "recipe_ingredient", "dish",
-    "chat_message", "chat_suggestion", "chat_kandidat",
+    "chat_message", "chat_suggestion", "chat_kandidat", "chat_sorte",
     "receipt", "receipt_item",
     "scrape_run", "product_fts",
 )

@@ -17,6 +17,7 @@ ausdrücklich geprüft:
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from picknick import db, orders, recipes
@@ -432,3 +433,132 @@ def test_die_tap_ziele_der_alternativen_sind_gross_genug(db_datei, tmp_path):
         block = stil.split(regel)[1].split("}")[0]
         assert "min-height: var(--tap)" in block
     assert "max-height: 60vh" in stil.split(".altliste")[1].split("}")[0]
+
+
+# --------------------------------------------------------------------------
+# Oberbegriffe auffächern (WB-368)
+#
+# Ein eigener Katalog: die Milch-Vorlage der übrigen Tests hat keine
+# L1-Kategorie mit genug Sorten, und eine Auffächerung braucht genau das.
+
+AUFSCHNITT = [
+    ("sal1", "Levoni Salami Milano", "Aufschnitt", "Salami"),
+    ("sal2", "Simonini Salami Napoli", "Aufschnitt", "Salami"),
+    ("koc1", "Gutfried Kochschinken", "Aufschnitt", "Kochschinken"),
+    ("bru1", "Jagdwurst Aufschnitt", "Aufschnitt", "Brühwurst"),
+    ("gef1", "Hähnchenbrust Aufschnitt", "Aufschnitt", "Geflügelwurst"),
+]
+
+
+def _aufschnitt(con):
+    for external_id, name, l1, l2 in AUFSCHNITT:
+        con.execute(
+            "INSERT INTO product (source, external_id, name, price_cents,"
+            " unit_text, category_l1, category_l2)"
+            " VALUES ('knuspr', ?, ?, 249, '100 g', ?, ?)",
+            (external_id, name, l1, l2))
+    con.commit()
+
+
+@pytest.fixture
+def aufschnitt_db(vorlagen, tmp_path):
+    return vorlagen.datei(tmp_path / "aufschnitt.db", "web_aufschnitt",
+                          _aufschnitt)
+
+
+def _sorten_zug(aufschnitt_db, tmp_path, *antworten):
+    """Der Zug, der „Aufschnitt" auffächert — ohne einen Modellaufruf."""
+    client, _ = _client(aufschnitt_db, tmp_path, *antworten)
+    seite = client.post("/warenkorb/chat", data={"satz": "Aufschnitt"},
+                        headers=HTMX).text
+    con = db.connect(aufschnitt_db)
+    mid = con.execute("SELECT max(id) AS id FROM chat_message"
+                      " WHERE role = 'assistant'").fetchone()["id"]
+    con.close()
+    return client, mid, seite
+
+
+def test_aufschnitt_zeigt_die_sorten_als_kaestchen(aufschnitt_db, tmp_path):
+    """Vier Sorten mit echter Stückzahl — und ein Weg daran vorbei."""
+    _, mid, seite = _sorten_zug(aufschnitt_db, tmp_path)
+
+    assert "ist ein Oberbegriff" in seite
+    for sorte in ("Salami", "Kochschinken", "Brühwurst", "Geflügelwurst"):
+        assert f'name="sorte" value="{sorte}"' in seite
+    assert f'hx-post="/warenkorb/chat/{mid}/sorten"' in seite
+    # Punkt 5 des Tickets: keine Sackgasse.
+    assert "Überspringen" in seite
+
+
+def test_mehrere_sorten_kommen_als_mehrere_werte_an(aufschnitt_db, tmp_path):
+    """Zwei Kästchen, zwei Vorschläge. Ein Wörterbuch behielte nur eines."""
+    client, mid, _ = _sorten_zug(aufschnitt_db, tmp_path)
+    con = db.connect(aufschnitt_db)
+    salami = con.execute("SELECT id FROM product WHERE external_id = 'sal1'"
+                         ).fetchone()["id"]
+    schinken = con.execute("SELECT id FROM product WHERE external_id = 'koc1'"
+                           ).fetchone()["id"]
+    con.close()
+    client.app.state.chat = chatmodul.Chat(
+        FakeLLM(_choose(("Salami", salami, 1), ("Kochschinken", schinken, 1))),
+        wecker=Box())
+
+    seite = client.post(f"/warenkorb/chat/{mid}/sorten",
+                        data={"sorte": ["Salami", "Kochschinken"]},
+                        headers=HTMX).text
+
+    assert "Levoni Salami Milano" in seite
+    assert "Gutfried Kochschinken" in seite
+    assert "2 Sorten aus „Aufschnitt“" in seite
+
+
+def test_ohne_kreuz_wird_direkt_gesucht(aufschnitt_db, tmp_path):
+    """Überspringen heisst: die Suche nach dem Wort, wie vor dem Ticket."""
+    client, mid, _ = _sorten_zug(aufschnitt_db, tmp_path)
+    con = db.connect(aufschnitt_db)
+    jagdwurst = con.execute("SELECT id FROM product WHERE external_id = 'bru1'"
+                            ).fetchone()["id"]
+    con.close()
+    client.app.state.chat = chatmodul.Chat(
+        FakeLLM(json.dumps({"gericht": None,
+                            "begriffe": [{"suchbegriffe": ["Aufschnitt"],
+                                          "menge": 1}]}),
+                _choose(("Aufschnitt", jagdwurst, 1))),
+        wecker=Box())
+
+    seite = client.post(f"/warenkorb/chat/{mid}/sorten", headers=HTMX).text
+
+    assert "Jagdwurst Aufschnitt" in seite
+    # Und nicht noch einmal dieselbe Frage.
+    assert seite.count("ist ein Oberbegriff") == 1
+
+
+def test_eine_nicht_angebotene_sorte_kommt_nicht_durch(aufschnitt_db, tmp_path):
+    """Von Hand gebaute Formularwerte werden verworfen, nicht abgefragt."""
+    client, mid, _ = _sorten_zug(aufschnitt_db, tmp_path)
+    con = db.connect(aufschnitt_db)
+    jagdwurst = con.execute("SELECT id FROM product WHERE external_id = 'bru1'"
+                            ).fetchone()["id"]
+    con.close()
+    client.app.state.chat = chatmodul.Chat(
+        FakeLLM(json.dumps({"gericht": None,
+                            "begriffe": [{"suchbegriffe": ["Aufschnitt"],
+                                          "menge": 1}]}),
+                _choose(("Aufschnitt", jagdwurst, 1))),
+        wecker=Box())
+
+    seite = client.post(f"/warenkorb/chat/{mid}/sorten",
+                        data={"sorte": "Kaviar"}, headers=HTMX).text
+
+    # Kein „1 Sorte aus …": die erfundene Sorte fiel weg, und übrig blieb der
+    # Weg für „nichts ausgewählt" — die direkte Suche.
+    assert "Kaviar" not in seite
+    assert "Jagdwurst Aufschnitt" in seite
+
+
+def test_die_tap_ziele_der_sortenliste_sind_gross_genug(db_datei, tmp_path):
+    """Die Kästchen werden mit dem Daumen getroffen, nicht mit der Maus."""
+    stil = (Path(webapp.__file__).parent / "static" / "stil.css").read_text(
+        encoding="utf-8")
+    block = stil.split(".sortenliste label")[1].split("}")[0]
+    assert "min-height: var(--tap)" in block

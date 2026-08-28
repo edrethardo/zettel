@@ -64,8 +64,8 @@ auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
 ## Prüfen
 
 ```bash
-.venv/bin/python checks/smoke.py     # das Gate: 45 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 672 Tests, rund 20 s
+.venv/bin/python checks/smoke.py     # das Gate: 51 Checks, exit 0 / 1
+.venv/bin/python -m pytest -q        # 709 Tests, rund 22 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 14 s
 ```
 

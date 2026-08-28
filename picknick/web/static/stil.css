@@ -545,6 +545,26 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
+/* Die Sorten eines Oberbegriffs (WB-368): Kästchen, die mit dem Daumen zu
+   treffen sind — eine Zeile je Sorte, das ganze Feld ist das Ziel, und die
+   echte Stückzahl steht als Pille daneben. Mehrere gehen: „Aufschnitt"
+   heisst oft Salami UND Kochschinken. */
+.sortenliste { list-style: none; margin: 0 0 8px; padding: 0; }
+.sortenliste > li { margin: 8px 0; }
+.sortenliste label {
+  display: flex; align-items: center; gap: 12px; min-height: var(--tap);
+  padding: 4px 12px; background: var(--karte);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  box-shadow: var(--schatten); cursor: pointer;
+}
+.sortenliste input { width: 22px; height: 22px; flex: none; }
+.sortenliste .name { flex: 1 1 auto; font-weight: 600; }
+.sortenliste .anzahl {
+  font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: var(--karte-tief); color: var(--gedaempft);
+}
+.sorten-weiter { margin: 0 0 var(--rand); }
+
 .chatform { display: flex; gap: 8px; margin-top: var(--rand); }
 .chatform input {
   flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;

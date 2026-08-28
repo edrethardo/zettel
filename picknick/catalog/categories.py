@@ -131,3 +131,87 @@ def count_by_category(con: sqlite3.Connection,
     return int(con.execute(
         f"SELECT count(*) AS n FROM product WHERE {' AND '.join(bedingungen)}",
         werte).fetchone()["n"])
+
+
+# --------------------------------------------------------------------------
+# Oberbegriffe und ihre Sorten (WB-368)
+#
+# Wer „Aufschnitt" tippt, meint kein Produkt, sondern eine Warengruppe — und
+# die Auswahl dazu muss nicht erfunden werden, sie steht bereits im Baum:
+#
+#     Aufschnitt -> Rohschinken & Bacon (58)  Kochschinken (42)
+#                   Geflügelwurst (40)        Brühwurst (40)
+#                   Salami (34)               Sülze & Wurst in Aspik (13)
+#
+# **Das ist besser als eine Modellantwort, und zwar aus einem Grund: die
+# Zahlen sind echt.** Angeboten wird nur, was wirklich im Katalog steht.
+# Dasselbe mit Qwen erzeugt (gemessen 2026-08-28) lieferte „SCHWEINEBRUST"
+# (null Treffer), „Bananen" doppelt und ein verstümmeltes „Birn". Der Katalog
+# tut das nicht — eine Sorte ohne aktive Produkte taucht in einem GROUP BY
+# gar nicht erst auf.
+
+#: Ab wie vielen Unterkategorien eine L1-Kategorie ein OBERBEGRIFF ist.
+#:
+#: Vier, und das ist eine Abwägung mit zwei Seiten. Nach unten: eine Kategorie
+#: mit zwei Sorten ist keine Auswahl, sondern ein Umweg — wer „Kräuter" tippt,
+#: soll nicht erst zwischen zwei Kästchen wählen, um dorthin zu kommen, wo er
+#: ohne Auffächerung sofort gewesen wäre. Nach oben: die Liste, die dem Modell
+#: vorgelegt wird, soll überschaubar bleiben. Gemessen am echten Katalog
+#: (2026-08-28, 10.361 Produkte): von 139 L1-Kategorien haben 56 mindestens
+#: vier Sorten, das sind 1.036 Zeichen Vorlage. Mit drei wären es 78.
+MIN_SORTEN = 4
+
+
+def sorten(con: sqlite3.Connection, category_l1: str) -> list[dict]:
+    """Die Unterkategorien einer L1-Kategorie, mit ihrer echten Produktzahl.
+
+    `[{"name": "Salami", "anzahl": 34}, …]`, nach Anzahl absteigend — die
+    grösste Sorte zuerst, weil sie die wahrscheinlichste ist.
+
+    **Eine Sorte ohne aktive Produkte kommt hier nicht vor.** Das ist keine
+    Prüfung, sondern die Bauart der Abfrage: gezählt werden Produktzeilen, und
+    wo keine steht, entsteht auch keine Gruppe. Genau deshalb kann diese Liste
+    nichts anbieten, was es nicht gibt.
+    """
+    rows = con.execute(
+        "SELECT category_l2 AS name, count(*) AS anzahl"
+        "  FROM product WHERE active = 1 AND category_l1 = ?"
+        "   AND coalesce(category_l2, '') <> ''"
+        f"   AND coalesce(category_l1, '') NOT IN ({_platzhalter()})"
+        " GROUP BY category_l2"
+        # Anzahl absteigend, bei Gleichstand der Name — ohne die zweite
+        # Spalte hinge die Reihenfolge zweier gleich grosser Sorten an der
+        # Speicherreihenfolge und änderte sich mit jedem Crawl.
+        " ORDER BY anzahl DESC, name COLLATE NOCASE ASC",
+        (category_l1, *AUSGESCHLOSSENE_KATEGORIEN)).fetchall()
+    return [{"name": r["name"], "anzahl": int(r["anzahl"])} for r in rows]
+
+
+def oberbegriffe(con: sqlite3.Connection, *,
+                 min_sorten: int = MIN_SORTEN) -> list[dict]:
+    """Alle L1-Kategorien mit genug Sorten, um eine Auswahl zu sein.
+
+    `[{"name", "anzahl", "sorten": [{"name", "anzahl"}, …]}, …]`,
+    alphabetisch. Eine Abfrage für den ganzen Katalog: die Namen daraus sind
+    die Vorlage für das Modell (`assistant.plan.extract_plan`), die Sorten
+    darunter sind das, was der Nutzerin angeboten wird.
+    """
+    rows = con.execute(
+        "SELECT category_l1 AS l1, category_l2 AS l2, count(*) AS anzahl"
+        "  FROM product WHERE active = 1"
+        "   AND coalesce(category_l1, '') <> ''"
+        "   AND coalesce(category_l2, '') <> ''"
+        f"   AND coalesce(category_l1, '') NOT IN ({_platzhalter()})"
+        " GROUP BY l1, l2"
+        " ORDER BY l1 COLLATE NOCASE ASC, anzahl DESC, l2 COLLATE NOCASE ASC",
+        AUSGESCHLOSSENE_KATEGORIEN).fetchall()
+
+    nach_l1: dict[str, list[dict]] = {}
+    for r in rows:
+        nach_l1.setdefault(r["l1"], []).append(
+            {"name": r["l2"], "anzahl": int(r["anzahl"])})
+    return [{"name": name,
+             "anzahl": sum(s["anzahl"] for s in liste),
+             "sorten": liste}
+            for name, liste in nach_l1.items()
+            if len(liste) >= min_sorten]

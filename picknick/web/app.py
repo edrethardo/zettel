@@ -28,6 +28,7 @@ from fastapi.templating import Jinja2Templates
 
 from picknick import betrieb, bons as bonmodul, db, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
+from picknick.assistant import oberbegriffe
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
 from picknick.web import multipart
@@ -338,6 +339,23 @@ async def eingaben(request: Request) -> dict[str, str]:
         rumpf = (await request.body()).decode("utf-8", "replace")
         if rumpf:
             werte.update(dict(parse_qsl(rumpf, keep_blank_values=True)))
+    return werte
+
+
+async def mehrfach(request: Request, name: str) -> list[str]:
+    """Alle Werte eines Feldes, das mehrfach vorkommen darf (Kästchen).
+
+    `eingaben()` faltet den Rumpf in ein Wörterbuch und behält bei doppelten
+    Namen den letzten Wert — für ein Formular mit einem Wert je Feld genau
+    richtig, für die Sortenauswahl aus WB-368 genau falsch: dort ist „mehrere
+    gehen" der Sinn der Sache, und von fünf angekreuzten Sorten käme sonst
+    eine an.
+    """
+    werte = [v for k, v in request.query_params.multi_items() if k == name]
+    if request.method in ("POST", "PUT", "PATCH"):
+        rumpf = (await request.body()).decode("utf-8", "replace")
+        werte += [v for k, v in parse_qsl(rumpf, keep_blank_values=True)
+                  if k == name and v]
     return werte
 
 
@@ -684,6 +702,11 @@ def create_app(db_path: str | Path | None = None,
             _posten_mit_bild(zeile["vorschlaege"], app.state.image_dir)
             for v in zeile["vorschlaege"]:
                 v["alternativen"] = _alternativen(c, v)
+            # Die Sorten einer Auffächerung (WB-368). Sie stehen an der
+            # Antwortzeile und bleiben im Verlauf stehen: wer erst Salami
+            # gewählt hat und zwei Sätze später doch noch Kochschinken will,
+            # findet die Liste noch vor.
+            zeile["faecher"] = oberbegriffe.zu_nachricht(c, zeile["id"])
         return {"verlauf": verlauf, "chat_fehler": fehler,
                 "chat_zustand": zustand, "satz": satz,
                 "aufklappen": aufklappen}
@@ -741,6 +764,49 @@ def create_app(db_path: str | Path | None = None,
                 return _chat_antwort(request, c, zustand=e.zustand, satz=satz)
             except chatmodul.ChatFehler as e:
                 return _chat_antwort(request, c, fehler=str(e), satz=satz)
+            return _chat_antwort(request, c)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/chat/{mid}/sorten")
+    async def chat_sorten(request: Request, mid: int):
+        """Die angekreuzten Sorten einer Auffächerung (WB-368).
+
+        Zwei Ausgänge, und beide führen in den NORMALEN Ablauf:
+
+        * **Sorten angekreuzt** — sie werden zum Satz des nächsten Zugs, und
+          die Kandidaten kommen aus ihren Kategorien. Danach ist alles wie
+          immer: Stufe 3 wählt, Ja/Nein entscheidet, ein „Nein" klappt die
+          Alternativen auf (WB-359).
+        * **nichts angekreuzt** — dann ist der Oberbegriff übersprungen und es
+          wird direkt nach dem gesucht, was getippt wurde. **Ein Oberbegriff
+          darf keine Sackgasse sein**; wer die Rückfrage nicht will, kommt mit
+          einem Tipp an ihr vorbei.
+
+        In beiden Fällen wird NICHT noch einmal aufgefächert — dieselbe Frage
+        zweimal wäre eine Schleife statt einer Auswahl.
+        """
+        gewuenscht = await mehrfach(request, "sorte")
+        c = con()
+        try:
+            faecher = oberbegriffe.zu_nachricht(c, mid)
+            if faecher is None:
+                return _chat_antwort(
+                    request, c, fehler="Zu dieser Antwort gibt es keine "
+                                       "Sortenauswahl (mehr).")
+            # Gewählt werden kann nur, was angeboten wurde — dieselbe Regel
+            # wie bei den Produkt-IDs in `plan.choose`, nur für das Formular.
+            gewaehlt = oberbegriffe.gewaehlte(c, mid, gewuenscht)
+            satz = ", ".join(gewaehlt) if gewaehlt else faecher["wort"]
+            try:
+                app.state.chat.turn(
+                    c, satz, auffaechern=False,
+                    aus_sorten=((faecher["kategorie"], gewaehlt)
+                                if gewaehlt else None))
+            except chatmodul.ChatNichtVerfuegbar as e:
+                return _chat_antwort(request, c, zustand=e.zustand)
+            except chatmodul.ChatFehler as e:
+                return _chat_antwort(request, c, fehler=str(e))
             return _chat_antwort(request, c)
         finally:
             c.close()
