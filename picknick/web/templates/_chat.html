@@ -42,7 +42,16 @@
             <span class="woher">
               {{ v.search_term or "—" }}
               {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}
+              {%- if v.ist_korrektur %} · statt „{{ v.statt_name }}“{% endif %}
             </span>
+            {% if v.fallback_term %}
+            {# Der Befund aus WB-358: findet kein genauer Begriff etwas, greift
+               der allgemeinste — und der findet immer irgendetwas („OLD
+               AMSTERDAM" -> „Bier" -> Singha Bier). Ein solcher Treffer ist
+               kein sicherer, und die Zeile sagt es, statt es zu verschweigen. #}
+            <span class="schwach">Nur über den allgemeinen Begriff
+              „{{ v.fallback_term }}“ gefunden — sieh die Alternativen an.</span>
+            {% endif %}
             {% if v.nicht_im_katalog %}
             <span class="ausgemustert">Nicht mehr im Katalog.</span>
             {% endif %}
@@ -71,6 +80,78 @@
               <span class="marke nein">verworfen</span>
             {% endif %}
           </span>
+          {# Ein „Nein" ist seit WB-359 keine Sackgasse: die Kandidaten, die
+             die Suche zu dieser Zutat vorgelegt hat, stehen schon in der
+             Datenbank (`chat_kandidat`) — hier werden sie gezeigt, ohne ein
+             zweites Mal zu suchen. Aufgeklappt ist genau die Zeile, die gerade
+             verworfen wurde; ältere bleiben zu, damit die Seite nicht
+             zuwächst. #}
+          {# Eine Korrekturzeile selbst bekommt keinen Aufklapper: ihre
+             Alternativen sind die der Zeile, die sie korrigiert, und ein
+             zweites „nichts davon" darunter wäre eine Kette ohne Ende. #}
+          {% if v.decision == "removed" and not v.korrektur
+                and not v.ist_korrektur %}
+          <details class="alternativen" {{ "open" if aufklappen == v.id }}>
+            <summary>
+              {% if v.alternativen %}
+                {{ v.alternativen | length }} Alternative{{ "n" if v.alternativen | length != 1 }}
+                aus derselben Suche
+              {% else %}
+                Nichts gefunden — selbst schreiben
+              {% endif %}
+            </summary>
+
+            {% if v.alternativen %}
+            <ul class="vorschlaege altliste">
+              {% for a in v.alternativen %}
+              <li class="zeile">
+                {% if a.bild_url %}
+                  <img class="bild" src="{{ a.bild_url }}" alt="" loading="lazy"
+                       width="56" height="56">
+                {% else %}
+                  <span class="bild bild-fehlt" aria-hidden="true"></span>
+                {% endif %}
+                <span class="text">
+                  <span class="name">{{ a.name }}</span>
+                  <span class="menge">{{ a.unit_text or "" }} · {{ a.price_cents | euro }}</span>
+                  <span class="woher">{{ a.search_term or "—" }}</span>
+                </span>
+                <span class="stellen">
+                  <form method="post"
+                        action="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                        hx-post="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                        hx-target="#chat" hx-swap="outerHTML">
+                    <button class="mini ja" type="submit"
+                            aria-label="{{ a.name }} statt {{ v.name }} in den Korb">Das</button>
+                  </form>
+                </span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% if v.alternativen | length < 5 %}
+            {# Gibt der Katalog weniger her, wird das gesagt statt verschwiegen:
+               bei „Sellerie" sind es zwei, und mehr anzufragen ändert daran
+               nichts. Dann ist der Freitext unten der richtige Ausgang. #}
+            <p class="fussnote">Mehr hat der Katalog zu
+              „{{ v.search_term or v.name }}“ nicht hergegeben.</p>
+            {% endif %}
+            {% else %}
+            <p class="fussnote">Zu „{{ v.search_term or v.name }}“ hat die
+              Suche nichts vorgelegt — eine Lücke im Katalog. Schreib es
+              selbst, dann steht es im Laden auf der Liste.</p>
+            {% endif %}
+
+            <form class="selbst" method="post"
+                  action="/warenkorb/vorschlag/{{ v.id }}/freitext"
+                  hx-post="/warenkorb/vorschlag/{{ v.id }}/freitext"
+                  hx-target="#chat" hx-swap="outerHTML">
+              <input type="text" name="text" autocomplete="off"
+                     value="{{ v.search_term or v.name }}"
+                     aria-label="Stattdessen als Freitext">
+              <button class="mini" type="submit">Nichts davon</button>
+            </form>
+          </details>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>

@@ -177,9 +177,10 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--db", default=db.DEFAULT_DB)
     p.add_argument("--satz", default=SATZ)
-    p.add_argument("--kandidaten", type=int, default=plan.KANDIDATEN,
+    p.add_argument("--kandidaten", type=int, default=plan.KANDIDATEN_MODELL,
                    help="Treffer je Suchbegriff")
-    p.add_argument("--obergrenze", type=int, default=plan.MAX_KANDIDATEN,
+    p.add_argument("--obergrenze", type=int,
+                   default=plan.MAX_KANDIDATEN_MODELL,
                    help="Kandidaten je Zutat nach der Vereinigung (WB-340)")
     p.add_argument("--crawl", action="store_true",
                    help="vorher einen kleinen Katalog von knuspr.de holen")

@@ -516,12 +516,12 @@ def test_die_obergrenze_laesst_den_ersten_beiden_begriffen_alles(con):
 
     _kette_katalog(con)
     treffer = search.suche_kette(con, ["milch", "Aubergine", "Gemüse"],
-                                 limit=plan.KANDIDATEN,
-                                 obergrenze=plan.MAX_KANDIDATEN)
+                                 limit=plan.KANDIDATEN_MODELL,
+                                 obergrenze=plan.MAX_KANDIDATEN_MODELL)
     via = [t["via"] for t in treffer]
-    assert via.count("milch") == plan.KANDIDATEN
+    assert via.count("milch") == plan.KANDIDATEN_MODELL
     assert via.count("Aubergine") == 3
-    assert len(treffer) <= plan.MAX_KANDIDATEN
+    assert len(treffer) <= plan.MAX_KANDIDATEN_MODELL
 
 
 def test_ohne_obergrenze_kommt_alles_mit(con):
@@ -711,3 +711,62 @@ def test_tierkategorie_ist_auch_direkt_nicht_erreichbar(tierkatalog):
     trotzdem nicht liefern."""
     assert categories.by_category(tierkatalog, "Katzen") == []
     assert categories.count_by_category(tierkatalog, "Hunde") == 0
+
+
+# --------------------------------------------------------------------------
+# Zwei Grenzen, eine Suche (WB-359)
+
+def test_kuerzen_ergibt_dasselbe_wie_gleich_klein_suchen(con):
+    """Der Grund, warum nur EINMAL gesucht werden muss.
+
+    Die Modellvorlage entsteht aus der aufgehobenen Liste, statt dieselben
+    Begriffe ein zweites Mal durch die Suche zu schicken. Das darf nichts
+    anderes ergeben als eine eigene, kleinere Suche — sonst hätte sich die
+    Vorlage für Stufe 3 hinter dem Rücken der Modellgrenze verändert.
+    """
+    _kette_katalog(con)
+    kette = ["milch", "Aubergine", "Gemüse"]
+    gross = search.suche_kette(con, kette, limit=15, obergrenze=30)
+    gekuerzt = search.kuerze_kette(gross, limit=3, obergrenze=10)
+    klein = search.suche_kette(con, kette, limit=3, obergrenze=10)
+    assert [(t["id"], t["via"]) for t in gekuerzt] == [
+        (t["id"], t["via"]) for t in klein]
+
+
+def test_das_gekuerzte_ist_eine_teilmenge_und_behaelt_die_reihenfolge(con):
+    _kette_katalog(con)
+    gross = search.suche_kette(con, ["milch", "Aubergine"], limit=15,
+                              obergrenze=30)
+    gekuerzt = search.kuerze_kette(gross, limit=2)
+    ids = [t["id"] for t in gross]
+    assert {t["id"] for t in gekuerzt} <= set(ids)
+    # Die Reihenfolge der Kette bleibt — nicht der rohe bm25 über die
+    # Vereinigung hinweg (siehe `suche_kette`).
+    assert [ids.index(t["id"]) for t in gekuerzt] == sorted(
+        ids.index(t["id"]) for t in gekuerzt)
+    assert [t["via"] for t in gekuerzt] == ["milch", "milch",
+                                            "Aubergine", "Aubergine"]
+
+
+def test_ein_schon_vorgelegtes_produkt_verbraucht_keinen_platz_doppelt(con):
+    """Gekürzt wird nach dem Platz im EIGENEN Begriff, nicht nach „übrig".
+
+    Sonst wüchse die Modellgrenze stillschweigend: ein Produkt, das ein
+    genauerer Begriff schon gebracht hat, gäbe dem allgemeineren einen Platz
+    zusätzlich. Im Rauchtest (Kette [Salzbutter, Butter]) waren das aus fünf
+    Kandidaten sechs.
+    """
+    _kette_katalog(con)
+    # Der genaue Begriff bringt genau ein Produkt, und der allgemeine bringt
+    # DASSELBE auf seinem ersten Platz.
+    kette = ["Aubergine 1 Stk", "Aubergine"]
+    gross = search.suche_kette(con, kette, limit=15, obergrenze=30)
+    assert gross[0]["name"] == "Aubergine, 1 Stk."
+
+    gekuerzt = search.kuerze_kette(gross, limit=1)
+    klein = search.suche_kette(con, kette, limit=1)
+    # Eins, nicht zwei: der erste Platz des allgemeinen Begriffs war schon
+    # vergeben, und das kostet ihn seinen Platz — genau wie bei einer eigenen
+    # Suche mit `limit=1`.
+    assert [t["name"] for t in gekuerzt] == [t["name"] for t in klein]
+    assert len(gekuerzt) == 1

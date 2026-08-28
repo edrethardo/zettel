@@ -44,10 +44,18 @@ MAX_BEGRIFFE = 20
 #: keine Bestellung.
 MAX_MENGE = 99
 
-#: Wie viele Kandidaten je Begriff vorgelegt werden. Spec 8.3 will genau diese
-#: Zahl später als Stellschraube gegen 20 vergleichen — sie steht deshalb hier
-#: als Vorgabe und nicht als Literal im Code.
-KANDIDATEN = 5
+#: Wie viele Kandidaten je Begriff STUFE 3 VORGELEGT bekommt. Spec 8.3 will
+#: genau diese Zahl später als Stellschraube gegen 20 vergleichen — sie
+#: steht deshalb hier als Vorgabe und nicht als Literal im Code.
+#:
+#: **Das ist die MODELLGRENZE, und sie ist klein, weil sie Token kostet.**
+#: Gemessen in WB-340 an „alles für Gemüselasagne" (echter Katalog): 63
+#: Kandidaten waren 8.115 Zeichen Vorlage, rund 130 Zeichen je Kandidat. Sie
+#: hat seit WB-359 einen sprechenden Namen, weil daneben eine zweite Grenze
+#: steht, die etwas ganz anderes begrenzt (`KANDIDATEN_ANZEIGE`) — vorher
+#: bediente diese eine Zahl beide Zwecke, und die Anzeige war deshalb bei
+#: einbegriffigen Zutaten auf vier Alternativen beschränkt.
+KANDIDATEN_MODELL = 5
 
 #: Wie viele Suchbegriffe eine Zutat haben darf (WB-340). Drei, und das ist
 #: gemessen: der Prompt bittet um zwei bis drei, und **der letzte Begriff einer
@@ -67,24 +75,55 @@ MAX_KETTE = 3
 #: würde hier wegfallen; er steht in jedem Rezept ohnehin als „Eier".
 MIN_BEGRIFF = 3
 
-#: Obergrenze der VEREINIGTEN Kandidaten je Zutat (WB-340).
+#: Obergrenze der VEREINIGTEN Kandidaten je Zutat FÜR DAS MODELL (WB-340).
 #:
-#: Drei Begriffe à `KANDIDATEN` Treffer sind 15 Kandidaten für eine Zutat; neun
-#: Zutaten wären 135. Gemessen an der Handprobe „alles für Gemüselasagne"
-#: (2026-08-28, echter Katalog): 9 Zutaten, 63 Kandidaten, 8.115 Zeichen
-#: Vorlage für Stufe 3 — rund 130 Zeichen je Kandidat, also gut 40 Token. In
-#: diesem Lauf hat die Grenze nicht gegriffen (die längste Kette kam auf genau
-#: 10); ohne sie wüchse dieselbe Anfrage bei drei ergiebigen Begriffen je Zutat
-#: auf gut das Anderthalbfache, und das für eine Wahl, bei der das Modell je
-#: Zutat ohnehin nur eine Zeile ausgibt.
+#: Drei Begriffe à `KANDIDATEN_MODELL` Treffer sind 15 Kandidaten für eine
+#: Zutat; neun Zutaten wären 135. Gemessen an der Handprobe „alles für
+#: Gemüselasagne" (2026-08-28, echter Katalog): 9 Zutaten, 63 Kandidaten,
+#: 8.115 Zeichen Vorlage für Stufe 3 — rund 130 Zeichen je Kandidat, also
+#: gut 40 Token. In diesem Lauf hat die Grenze nicht gegriffen (die längste
+#: Kette kam auf genau 10); ohne sie wüchse dieselbe Anfrage bei drei
+#: ergiebigen Begriffen je Zutat auf gut das Anderthalbfache, und das für
+#: eine Wahl, bei der das Modell je Zutat ohnehin nur eine Zeile ausgibt.
 #:
-#: 10 = 2 × `KANDIDATEN` ist bewusst so gewählt: die Vereinigung darf doppelt
-#: so lang werden wie die alte Einzelsuche, und die Treffer der ERSTEN BEIDEN
-#: (genauesten) Begriffe passen immer vollständig hinein. Damit kann die
-#: Obergrenze nie etwas wegnehmen, was der Agent vor WB-340 gesehen hätte —
-#: sie kürzt nur den Zugewinn, und zwar am allgemeinen Ende der Kette, wo das
-#: Modell entgleist (siehe `MAX_KETTE`).
-MAX_KANDIDATEN = 2 * KANDIDATEN
+#: 10 = 2 × `KANDIDATEN_MODELL` ist bewusst so gewählt: die Vereinigung darf
+#: doppelt so lang werden wie die alte Einzelsuche, und die Treffer der
+#: ERSTEN BEIDEN (genauesten) Begriffe passen immer vollständig hinein.
+#: Damit kann die Obergrenze nie etwas wegnehmen, was der Agent vor WB-340
+#: gesehen hätte — sie kürzt nur den Zugewinn, und zwar am allgemeinen Ende
+#: der Kette, wo das Modell entgleist (siehe `MAX_KETTE`).
+MAX_KANDIDATEN_MODELL = 2 * KANDIDATEN_MODELL
+
+#: Wie viele Kandidaten je Begriff AUFGEHOBEN und der Nutzerin gezeigt werden
+#: (WB-359).
+#:
+#: **Das ist die ANZEIGEGRENZE, und sie darf gross sein, weil sie keine Token
+#: kostet.** Sie kostet Zeilen in `chat_kandidat` und sonst nichts; die
+#: FTS-Abfrage holt intern ohnehin `max(limit × 5, 100)` Zeilen und sortiert
+#: nach (`catalog.search.KANDIDATEN_FAKTOR`), 15 statt 5 ist dort dieselbe
+#: Abfrage.
+#:
+#: 15 ist gemessen, nicht geraten (2026-08-28, 10.361 Produkte): mit `limit=15`
+#: liefert der echte Katalog Butter 15, Schmand 15, Zucchini 15,
+#: Lasagneplatten 12, Tomatenmark 11 — mit der Modellgrenze waren es je 5,
+#: und bei einer EINBEGRIFFIGEN Kette blieben nach Abzug des gewählten
+#: Produkts genau vier Alternativen. Ausgerechnet die einfachen Zutaten
+#: (Butter, Schmand, Tomatenmark) sind einbegriffig, dort war die Auswahl
+#: also am kleinsten und wird am ehesten gebraucht.
+#:
+#: Nach oben endet es nicht an der Technik, sondern am Daumen: die Liste wird
+#: auf dem Handy durchgescrollt. Eine Katalog-Lücke schliesst auch eine
+#: grössere Zahl nicht — „Sellerie" bleibt bei 2, und dann ist der
+#: Freitext der richtige Ausgang und nicht ein längerer Vorrat an
+#: Beinahe-Treffern.
+KANDIDATEN_ANZEIGE = 15
+
+#: Obergrenze der VEREINIGTEN aufgehobenen Kandidaten je Zutat (WB-359).
+#: Dasselbe Verhältnis wie bei der Modellgrenze und aus demselben Grund: die
+#: Treffer der beiden GENAUESTEN Begriffe passen immer vollständig hinein,
+#: gekürzt wird nur am allgemeinen Ende der Kette, wo das Modell entgleist
+#: (siehe `MAX_KETTE`). 30 Zeilen je Zutat sind für SQLite nichts.
+MAX_KANDIDATEN_ANZEIGE = 2 * KANDIDATEN_ANZEIGE
 
 #: Temperatur 0: derselbe Satz soll dieselben Begriffe ergeben. Ein Agent, der
 #: bei jedem Aufruf etwas anderes tut, ist in Experiments (Spec 8.3) nicht

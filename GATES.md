@@ -161,6 +161,20 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   * **Der Hintergrundlauf überlebt keinen Neustart.** `bons.lauf` lebt im
     Prozess. Wird der Web-Prozess mitten in einem Lauf neu gestartet, steht
     der Bon wieder als „noch nicht ausgelesen" da.
+* **Die Korrektur an einem Vorschlag (WB-359).** `tests/test_assistant.py`,
+  `test_web_chat.py` und `test_labels.py` decken sie ab — aufgehobene
+  Kandidaten, „Nein" klappt sie auf, ein Tipp legt eine statt des Vorschlags
+  ein, der Freitext-Ausgang, die `correction`-Annotation. **Das Gate selbst
+  fasst nichts davon an**: es fährt einen Chat-Zug, entscheidet aber keine
+  Zeile. Ungemessen bleibt dabei:
+  * **Wie viele Alternativen der echte Katalog hergibt, hängt am Katalog.**
+    Der Rauchtest-Katalog hat fünf Butter; die Zahlen aus `DESIGN.md` (Butter
+    15, Schmand 26, Sellerie 2) stammen aus einer Handprobe am 2026-08-28
+    gegen die 10.361 echten Produkte und sind nirgends festgeschrieben. Ein
+    Crawl kann sie verschieben.
+  * **Die aufgeklappte Liste ist nie auf einem Handy gesehen worden.** Geprüft
+    sind die Regeln (44 px Tap-Ziele, `max-height: 60vh` mit eigenem Scroll)
+    und das gerenderte HTML — nicht der Daumen auf 360 px.
 * **WB-335 ist offen.** Warenkorb und Pick-Ansicht zeigen nicht, dass ein
   Produkt aus dem Katalog verschwunden ist. Nur die Rezeptansicht tut es. Das
   Gate deckt diesen Fall nicht ab, weil es ihn im Produkt nicht gibt.

@@ -76,6 +76,66 @@ oder „Nein" entschieden wird. Erst „Ja" legt ein. Diese Entscheidung ist
 zugleich das Eval-Label (siehe `OBSERVABILITY.md`) — das Label fällt aus dem
 Produkt heraus, weil die Nutzerin die Liste ohnehin durchgehen muss.
 
+### „Nein" verwirft nicht bloss, es zeigt die Alternativen
+
+Die Alternativen gibt es längst: `suche_kette()` legt sie vor, Stufe 3 wählt
+aus ihnen, der RETRIEVER-Span kennt sie. Bis WB-359 endete ihr Weg dort — nur
+der gewählte Kandidat wurde gespeichert, der Rest weggeworfen, bevor ein
+Mensch ihn sehen konnte. Seither liegen sie in `chat_kandidat` (eine eigene
+Tabelle und kein JSON in einer Spalte: es sind Verweise auf `product`, und
+Name, Preis und Bild sollen beim Anzeigen aus dem Katalog kommen und nicht aus
+einer eingefrorenen Kopie von gestern). Ein „Nein" klappt sie auf, ein Tipp
+legt eine davon statt des Vorschlags in den Korb — **ohne eine zweite Suche**,
+denn eine zweite Suche liefe gegen einen veränderten Katalog und zeigte im
+Zweifel etwas anderes, als das Modell vorgelegt bekam.
+
+Die Korrekturzeile trägt `corrected_from` und ist damit als **Korrektur**
+erkennbar und nicht als zweite, unabhängige Entscheidung. Ohne diesen Verweis
+wäre hinterher nicht zu unterscheiden, ob die Nutzerin einen Fehlgriff
+geradegezogen oder einfach etwas dazugelegt hat — und genau dieser Unterschied
+ist der Eval-Wert des Ganzen.
+
+Passt nichts, bleibt der Weg zum **Freitext** offen. Bei einer echten
+Katalog-Lücke ist das nicht der Notausgang, sondern der richtige Ausgang: zu
+„Sellerie" kennt der Katalog einen Geflügelsalat und ein Hühnerfrikassee, und
+daran ändert auch eine grössere Kandidatenzahl nichts.
+
+### Zwei Grenzen, weil zwei verschiedene Dinge knapp sind
+
+Bis WB-359 bediente eine Zahl beide Zwecke, und deshalb sah eine einbegriffige
+Zutat wie „Butter" genau **vier** Alternativen.
+
+| Grenze | je Begriff | wofür | was sie kostet |
+|---|---|---|---|
+| `plan.KANDIDATEN_MODELL` | 5 | was Stufe 3 im Prompt sieht | Token: 63 Kandidaten waren 8.115 Zeichen (WB-340) |
+| `plan.KANDIDATEN_ANZEIGE` | 15 | was aufgehoben und der Nutzerin gezeigt wird | Datenbankzeilen; die FTS-Abfrage holt intern ohnehin `max(limit × 5, 100)` |
+
+Gemessen am echten Katalog (10.361 Produkte, 2026-08-28) — Alternativen sind
+die Kandidaten ohne den vorgeschlagenen:
+
+```
+Kette                          Kandidaten alt (5/10)   neu (15/30)
+[Butter]                                 5                 15
+[Schmand]                                5                 15
+[Schmand, Sahne]                        10                 26
+[Lasagneplatten, Lasagne]                5                 12
+[Tomatenmark]                            5                 11
+[Zucchini]                               5                 15
+[Sellerie, Sellerieknolle]               2                  2
+```
+
+Der einbegriffige Fall ist der, um den es geht: dort waren es 5 Kandidaten und
+damit **4 Alternativen**, jetzt 15 und damit 14. Bei „Sellerie" ändert die
+grössere Grenze nichts, und das ist kein Fehler, sondern der Katalog — mehr als
+einen Geflügelsalat und ein Hühnerfrikassee gibt es dort nicht. Die Oberfläche
+sagt das hin („Mehr hat der Katalog zu ‚Sellerie' nicht hergegeben.") statt es
+zu verschweigen, und daneben steht das Freitextfeld.
+
+Gesucht wird trotzdem nur EINMAL: die Modellvorlage entsteht aus der
+aufgehobenen Liste (`catalog.search.kuerze_kette`) und ist damit garantiert
+eine Teilmenge davon. Liefe sie auseinander, zeigte „Nein" nicht mehr die
+Liste, aus der gewählt wurde.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist

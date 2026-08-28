@@ -22,6 +22,8 @@ from fastapi.testclient import TestClient
 
 from picknick import db, orders, recipes
 from picknick.assistant import chat as chatmodul
+from picknick.assistant import vorschlaege as vorschlagsliste
+from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import Antwort
 from picknick.scrapers import knuspr
@@ -302,3 +304,162 @@ def test_alles_uebernehmen_legt_alle_offenen_ein(db_datei, tmp_path):
     client.post(f"/warenkorb/chat/{mid}/alle?decision=kept", headers=HTMX)
     namen = sorted(z["name"] for z in _inhalt(db_datei))
     assert namen == sorted([MILCH, "Zahnstocher"])
+
+
+# --------------------------------------------------------------------------
+# „Nein" klappt die Alternativen auf (WB-359)
+#
+# Der Katalog dieses Moduls ist die Milch-Fixture: „Milch" legt ein gutes
+# Dutzend Kandidaten vor, und genau die sollen beim „Nein" erscheinen — ohne
+# eine zweite Suche und ohne einen Umweg über den Katalog.
+
+def _milch_zug(db_datei, tmp_path):
+    """Ein Zug über „Milch", bei dem das Modell den ERSTEN Kandidaten nimmt.
+
+    Die id kommt aus der Suche und nicht aus einem festen Namen: welches
+    Produkt bei „Milch" oben steht, entscheidet die Wortstufe und bm25 — wer
+    das festschreibt, prüft irgendwann die Rangfolge statt der Korrektur.
+    """
+    con = db.connect(db_datei)
+    pid = search.search(con, "Milch", limit=1)[0]["id"]
+    con.close()
+    client, _ = _client(db_datei, tmp_path, _extract(("Milch", 1)),
+                        _choose(("Milch", pid, 1)))
+    client.post("/warenkorb/chat", data={"satz": "Milch"}, headers=HTMX)
+    con = db.connect(db_datei)
+    sid = con.execute("SELECT id FROM chat_suggestion ORDER BY id"
+                      ).fetchone()["id"]
+    con.close()
+    return client, sid, pid
+
+
+def _alternativen(db_datei, sid):
+    con = db.connect(db_datei)
+    try:
+        return vorschlagsliste.alternativen(con, sid)
+    finally:
+        con.close()
+
+
+def test_nein_klappt_die_alternativen_auf(db_datei, tmp_path):
+    """Und zwar aufgeklappt: die Zeile, die gerade verworfen wurde."""
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+
+    stueck = client.post(
+        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        headers=HTMX).text
+
+    assert "<details class=\"alternativen\" open>" in stueck
+    namen = [a["name"] for a in _alternativen(db_datei, sid)]
+    assert len(namen) >= 5
+    for name in namen:
+        assert name in stueck
+    # Bild, Menge, Preis — wie im Katalog. Und ein Tipp je Alternative.
+    assert f'/warenkorb/vorschlag/{sid}/statt?produkt_id=' in stueck
+    assert "Nichts davon" in stueck
+
+
+def test_die_alternativen_kosten_keine_zweite_suche(db_datei, tmp_path,
+                                                   monkeypatch):
+    """Sie kommen aus `chat_kandidat`, nicht aus dem Katalog.
+
+    Die Suche wird nach dem Zug scharf geschaltet: rührt das Aufklappen sie
+    an, fliegt der Test.
+    """
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+
+    def verboten(*a, **k):
+        raise AssertionError("Es wurde ein zweites Mal gesucht.")
+
+    monkeypatch.setattr(webapp.search, "search", verboten)
+    monkeypatch.setattr(webapp.search, "suche_kette", verboten)
+    antwort = client.post(
+        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        headers=HTMX)
+    assert antwort.status_code == 200
+    assert "alternativen" in antwort.text
+
+
+def test_ein_tipp_auf_die_alternative_legt_sie_statt_des_vorschlags_ein(
+        db_datei, tmp_path):
+    client, sid, vorgeschlagen = _milch_zug(db_datei, tmp_path)
+    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+                headers=HTMX)
+    andere = _alternativen(db_datei, sid)[0]
+
+    antwort = client.post(
+        f"/warenkorb/vorschlag/{sid}/statt?produkt_id={andere['id']}",
+        headers=HTMX)
+
+    assert antwort.status_code == 200
+    # Der Korb kommt out-of-band mit, sonst sieht sie ihre Zeile nicht.
+    assert 'id="korb" hx-swap-oob="true"' in antwort.text
+    assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == [
+        (andere["id"], 1)]
+    # Und die Korrektur steht als Korrektur da, nicht als zweiter Vorschlag.
+    assert "statt" in antwort.text
+    con = db.connect(db_datei)
+    try:
+        zeilen = con.execute(
+            "SELECT product_id, decision, corrected_from FROM chat_suggestion"
+            " ORDER BY id").fetchall()
+    finally:
+        con.close()
+    assert [tuple(z) for z in zeilen] == [
+        (vorgeschlagen, "removed", None), (andere["id"], "kept", sid)]
+
+
+def test_ein_produkt_ausserhalb_der_vorlage_kommt_nicht_durch(db_datei,
+                                                              tmp_path):
+    """Dieselbe Regel wie gegen erfundene IDs des Modells, hier am HTTP-Rand."""
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+                headers=HTMX)
+
+    antwort = client.post(
+        f"/warenkorb/vorschlag/{sid}/statt?produkt_id=987654", headers=HTMX)
+
+    assert antwort.status_code == 200
+    assert "stand nicht in der Vorlage" in antwort.text
+    assert _inhalt(db_datei) == []
+
+
+def test_nichts_davon_fuehrt_zu_einer_freitextzeile(db_datei, tmp_path):
+    """Der Ausgang bei einer Katalog-Lücke — im echten Katalog „Sellerie"."""
+    client, sid, _ = _milch_zug(db_datei, tmp_path)
+    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+                headers=HTMX)
+
+    antwort = client.post(f"/warenkorb/vorschlag/{sid}/freitext",
+                          data={"text": "Rohmilch vom Hof"}, headers=HTMX)
+
+    assert antwort.status_code == 200
+    assert "Rohmilch vom Hof" in antwort.text
+    assert [z["free_text"] for z in _inhalt(db_datei)] == ["Rohmilch vom Hof"]
+
+
+def test_ohne_alternativen_bricht_die_ansicht_nicht(db_datei, tmp_path):
+    """Ein Begriff ohne einen einzigen Treffer — der Weg bleibt trotzdem offen."""
+    client, _ = _client(db_datei, tmp_path, _extract(("Zahnstocher", 1)),
+                        _choose())
+    client.post("/warenkorb/chat", data={"satz": "Zahnstocher"}, headers=HTMX)
+    con = db.connect(db_datei)
+    sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
+    con.close()
+
+    stueck = client.post(
+        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        headers=HTMX).text
+    assert "eine Lücke im Katalog" in stueck
+    assert "Nichts davon" in stueck
+
+
+def test_die_tap_ziele_der_alternativen_sind_gross_genug(db_datei, tmp_path):
+    """44 px, und die Liste scrollt in sich, statt die Seite zu sprengen."""
+    stil = (Path(webapp.__file__).parent / "static" / "stil.css").read_text(
+        encoding="utf-8")
+    assert "--tap: 44px" in stil
+    for regel in (".alternativen > summary", ".selbst input"):
+        block = stil.split(regel)[1].split("}")[0]
+        assert "min-height: var(--tap)" in block
+    assert "max-height: 60vh" in stil.split(".altliste")[1].split("}")[0]

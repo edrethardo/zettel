@@ -21,6 +21,7 @@ import pytest
 from picknick import db, orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import plan, rezeptweg, vorschlaege
+from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import Antwort, ModellNichtErreichbar
 from picknick.scrapers import knuspr
@@ -110,6 +111,24 @@ ZUSATZ = [
     ("toma1", "Passierte Tomaten 500 g", "Konserven", "Tomaten", "Passata"),
     ("nude1", "Spaghetti No. 5 500 g", "Nudeln", "Pasta", "Spaghetti"),
     ("klo1", "Toilettenpapier 10 Rollen", "Haushalt", "Papier", "Toilettenpapier"),
+    # Acht Butter (WB-359). Der Fall, der es vor diesem Ticket NICHT tat:
+    # „Butter" ist einbegriffig, und mit einer Grenze von 5 je Begriff blieben
+    # nach Abzug des gewählten Produkts genau vier Alternativen. Die Namen sind
+    # dem echten Katalog nachgebildet (siehe OBSERVABILITY.md).
+    ("but1", "Weihenstephan Butter", "Molkerei", "Butter & Fette", "Butter"),
+    ("but2", "Landliebe Butter rahmig-frisch", "Molkerei", "Butter & Fette",
+     "Butter"),
+    ("but3", "Kerrygold irische Butter", "Molkerei", "Butter & Fette",
+     "Butter"),
+    ("but4", "Minus L Butter laktosefrei", "Molkerei", "Butter & Fette",
+     "Butter"),
+    ("but5", "Isigny Butter AOP", "Molkerei", "Butter & Fette", "Butter"),
+    ("but6", "Lindner Butter mit Salz", "Molkerei", "Butter & Fette",
+     "Butter"),
+    ("but7", "ButterBoyz Chili & Röstzwiebel", "Molkerei", "Butter & Fette",
+     "Markenbutter"),
+    ("but8", "Neuvic Périgord Trüffel Butter", "Molkerei", "Butter & Fette",
+     "Markenbutter"),
 ]
 
 
@@ -118,7 +137,7 @@ def _pid(con, name):
                        (name,)).fetchone()["id"]
 
 
-def _vorgelegt(con, begriff, limit=plan.KANDIDATEN):
+def _vorgelegt(con, begriff, limit=plan.KANDIDATEN_MODELL):
     """Was die Suche zu diesem Begriff tatsächlich vorlegt.
 
     Die Tests nehmen ihre ids daher und nicht aus einem festen Namen: welches
@@ -755,7 +774,7 @@ def test_die_obergrenze_nimmt_den_ersten_beiden_begriffen_nichts_weg(con):
     """Die Vorgabe ist so gewählt, dass die Treffer der beiden genauesten
     Begriffe immer vollständig hineinpassen: die Obergrenze kürzt nur den
     Zugewinn, und zwar am allgemeinen Ende."""
-    assert plan.MAX_KANDIDATEN >= plan.KANDIDATEN * 2
+    assert plan.MAX_KANDIDATEN_MODELL >= plan.KANDIDATEN_MODELL * 2
 
 
 # --------------------------------------------------------------------------
@@ -824,3 +843,293 @@ def test_die_kette_bleibt_kurz(con):
     assert plan.MAX_KETTE == 3
     assert plan.SCHEMA_EXTRACT["properties"]["begriffe"]["items"][
         "properties"]["suchbegriffe"]["maxItems"] == 3
+
+
+# --------------------------------------------------------------------------
+# Die Kandidaten werden aufgehoben, „Nein" zeigt sie, ein Tipp übernimmt eine
+# davon (WB-359)
+#
+# Der Kern dieses Abschnitts ist eine Zusicherung, keine Bequemlichkeit:
+# gezeigt wird, was Stufe 3 vorlag — **ohne ein zweites Mal zu suchen**. Eine
+# zweite Suche liefe gegen einen inzwischen veränderten Katalog und zeigte im
+# Zweifel etwas anderes, als das Modell vor sich hatte.
+
+def _butter_zug(con, gewaehlt: str = "Isigny Butter AOP"):
+    """Ein Zug über die EINBEGRIFFIGE Zutat „Butter" — der schwierige Fall.
+
+    Das Modell greift zur teuren Spezialbutter; die Weihenstephan lag mit in
+    der Vorlage. Genau der Fall aus OBSERVABILITY.md, nur klein.
+    """
+    pid = _pid(con, gewaehlt)
+    agent, llm = _chat(con, _extract(("Butter", 1)),
+                       _choose(("Butter", pid, 1)))
+    return agent.turn(con, "Butter"), pid
+
+
+def test_die_kandidaten_ueberleben_den_chat_zug(con):
+    """Sie liegen nach dem Zug in `chat_kandidat` und sind abrufbar."""
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+
+    gemerkt = con.execute(
+        "SELECT product_id, pos, search_term FROM chat_kandidat"
+        " WHERE suggestion_id = ? ORDER BY pos", (sid,)).fetchall()
+    assert gemerkt, "Die Kandidaten wurden weggeworfen statt aufgehoben."
+    # Genau das, was die Suche mit der ANZEIGEGRENZE vorlegt — und in ihrer
+    # Reihenfolge (Kette, dann Wortstufe/Rang), nicht nach roher id.
+    erwartet = search.suche_kette(con, ["Butter"],
+                                  limit=plan.KANDIDATEN_ANZEIGE,
+                                  obergrenze=plan.MAX_KANDIDATEN_ANZEIGE)
+    assert [r["product_id"] for r in gemerkt] == [p["id"] for p in erwartet]
+    assert [r["search_term"] for r in gemerkt] == ["Butter"] * len(erwartet)
+
+
+def test_nein_zeigt_die_aufgehobenen_kandidaten_ohne_neue_suche(con,
+                                                                monkeypatch):
+    """Keine zweite Suche — die Liste kommt aus der Datenbank.
+
+    Die Suche wird nach dem Zug scharf geschaltet: ruft sie noch jemand,
+    fliegt der Test. Das ist der einzige Weg, „keine neue Suche" zu prüfen,
+    ohne die Absicht zu glauben.
+    """
+    ergebnis, gewaehlt = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+
+    def verboten(*a, **k):
+        raise AssertionError("Es wurde ein zweites Mal gesucht.")
+
+    monkeypatch.setattr(search, "search", verboten)
+    monkeypatch.setattr(search, "suche_kette", verboten)
+
+    alternativen = vorschlaege.alternativen(con, sid)
+    assert alternativen, "Kein einziger Kandidat aufgehoben."
+    # Der vorgeschlagene selbst steht nicht als Alternative zu sich da.
+    assert gewaehlt not in [a["id"] for a in alternativen]
+    # Bild, Name, Menge, Preis — was die Katalogkachel auch zeigt.
+    for a in alternativen:
+        assert a["name"] and "price_cents" in a and "unit_text" in a
+        assert "image_path" in a
+
+
+def test_butter_hat_mindestens_fuenf_alternativen(con):
+    """Der Fall, der es vor WB-359 nicht tat.
+
+    „Butter" ist einbegriffig; mit der Modellgrenze von 5 je Begriff blieben
+    nach Abzug des gewählten Produkts genau vier Alternativen. Getrennte
+    Grenzen machen daraus so viele, wie der Katalog hergibt.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    assert len(vorschlaege.alternativen(con, sid)) >= 5
+
+
+def test_die_modellgrenze_bleibt_klein(con):
+    """Die zweite Grenze wächst, die erste nicht: Stufe 3 sieht weiter fünf.
+
+    Das ist die Hälfte des Tickets, die man leicht mitwachsen lässt — und
+    jeder Kandidat mehr kostet dort Token (gemessen in WB-340: rund 130
+    Zeichen je Kandidat).
+    """
+    pid = _pid(con, "Isigny Butter AOP")
+    agent, llm = _chat(con, _extract(("Butter", 1)),
+                       _choose(("Butter", pid, 1)))
+    agent.turn(con, "Butter")
+
+    zweiter = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    vorgelegt = json.loads(zweiter[zweiter.index("["):])
+    assert len(vorgelegt[0]["kandidaten"]) == plan.KANDIDATEN_MODELL == 5
+
+
+def test_die_zwei_grenzen_sind_getrennt_und_die_anzeige_ist_groesser():
+    """Zwei Zahlen, zwei Zwecke — und die Anzeigegrenze ist die grössere.
+
+    Token gegen Datenbankzeilen: Stufe 3 bezahlt jeden Kandidaten im Prompt,
+    die aufgehobene Liste bezahlt ihn mit einer Zeile in `chat_kandidat`.
+    """
+    assert plan.KANDIDATEN_ANZEIGE > plan.KANDIDATEN_MODELL
+    assert plan.MAX_KANDIDATEN_ANZEIGE == 2 * plan.KANDIDATEN_ANZEIGE
+    assert plan.MAX_KANDIDATEN_MODELL == 2 * plan.KANDIDATEN_MODELL
+
+
+def test_die_modellvorlage_ist_eine_teilmenge_des_aufgehobenen(con):
+    """Sonst zeigte „Nein" nicht die Liste, aus der gewählt wurde."""
+    pid = _pid(con, "Isigny Butter AOP")
+    agent, llm = _chat(con, _extract((("Buttermilch", "Butter"), 1)),
+                       _choose(("Buttermilch", pid, 1)))
+    ergebnis = agent.turn(con, "Butter")
+
+    zweiter = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    vorgelegt = json.loads(zweiter[zweiter.index("["):])
+    modell = {k["id"] for k in vorgelegt[0]["kandidaten"]}
+    sid = ergebnis.vorschlaege[0]["id"]
+    aufgehoben = {r["product_id"] for r in con.execute(
+        "SELECT product_id FROM chat_kandidat WHERE suggestion_id = ?",
+        (sid,))}
+    assert modell <= aufgehoben
+
+
+def test_die_wahl_einer_alternative_legt_sie_ein_und_den_vorschlag_nicht(con):
+    ergebnis, gewaehlt = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    weihenstephan = _pid(con, "Weihenstephan Butter")
+
+    korrektur = vorschlaege.korrigieren(con, sid, weihenstephan)
+
+    korb = [(z["product_id"], z["qty"]) for z in orders.inhalt(con)]
+    assert korb == [(weihenstephan, 1)]
+    assert gewaehlt not in [p for p, _ in korb]
+    assert korrektur["behalten"] and korrektur["product_id"] == weihenstephan
+    # Der ursprüngliche Vorschlag bleibt stehen — er IST das Label „so nicht".
+    assert vorschlaege.eine(con, sid)["decision"] == vorschlaege.VERWORFEN
+
+
+def test_die_korrektur_ist_als_bezug_erkennbar(con):
+    """Nicht zwei lose Entscheidungen, sondern eine Korrektur.
+
+    Ohne den Verweis wäre hinterher nicht zu unterscheiden, ob sie den
+    Fehlgriff geradegezogen oder einfach etwas dazugelegt hat — und genau
+    dieser Unterschied ist der Eval-Wert des Ganzen.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+
+    zeilen = vorschlaege.liste(con, ergebnis.chat_message_id)
+    neu = [z for z in zeilen if z["ist_korrektur"]]
+    assert len(neu) == 1
+    assert neu[0]["corrected_from"] == sid
+    assert neu[0]["statt_name"] == "Isigny Butter AOP"
+    # Und von der anderen Seite: die verworfene Zeile kennt ihre Korrektur.
+    quelle = [z for z in zeilen if z["id"] == sid][0]
+    assert quelle["korrektur"]["name"] == "Weihenstephan Butter"
+
+
+def test_die_korrektur_schoent_die_trefferquote_nicht(con):
+    """Sie ist kein Vorschlag des Modells, sondern die Handbewegung danach.
+
+    Mitgezählt hübe ausgerechnet ein Fehlgriff die Quote, sobald ihn jemand
+    korrigiert.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+
+    q = vorschlaege.quote(con, ergebnis.chat_message_id)
+    assert q == {"vorgeschlagen": 1, "behalten": 0, "verworfen": 1,
+                 "offen": 0, "quote": 0.0}
+
+
+def test_zweimal_dieselbe_korrektur_legt_nicht_zweimal_ein(con):
+    """Auf dem Handy ist ein Doppeltipp schnell passiert."""
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    weihenstephan = _pid(con, "Weihenstephan Butter")
+
+    erste = vorschlaege.korrigieren(con, sid, weihenstephan)
+    zweite = vorschlaege.korrigieren(con, sid, weihenstephan)
+
+    assert erste["id"] == zweite["id"]
+    assert [(z["product_id"], z["qty"]) for z in orders.inhalt(con)] == [
+        (weihenstephan, 1)]
+
+
+def test_eine_zweite_andere_korrektur_wird_abgewiesen(con):
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.korrigieren(con, sid, _pid(con, "Kerrygold irische Butter"))
+
+
+def test_nur_was_vorgelegt_war_kann_gewaehlt_werden(con):
+    """Dieselbe Regel wie in `plan.choose` — hier für die Oberfläche.
+
+    Eine ID von aussen ist keine Alternative aus der Vorlage; sonst hiesse die
+    Korrektur später fälschlich „aus derselben Liste hätte das Modell das
+    Richtige nehmen können".
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.korrigieren(con, sid, _pid(con, "Toilettenpapier 10 Rollen"))
+    assert orders.inhalt(con) == []
+
+
+def test_nichts_davon_fuehrt_zu_einer_freitextzeile(con):
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+
+    neu = vorschlaege.stattdessen_freitext(con, sid, "gute Butter vom Hof")
+
+    assert neu["ist_freitext"] and neu["free_text"] == "gute Butter vom Hof"
+    assert neu["corrected_from"] == sid and neu["behalten"]
+    assert [z["free_text"] for z in orders.inhalt(con)] == [
+        "gute Butter vom Hof"]
+
+
+def test_nichts_davon_nimmt_ohne_text_den_suchbegriff(con):
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    assert vorschlaege.stattdessen_freitext(con, sid)["free_text"] == "Butter"
+
+
+def test_ohne_alternativen_bricht_nichts(con):
+    """Die echte Katalog-Lücke: die Suche hat nichts vorgelegt.
+
+    Der Vorschlag steht dann ohnehin als Freitext da — und der Weg zum
+    selbstgeschriebenen Text bleibt trotzdem offen, statt in einer leeren
+    Liste zu enden.
+    """
+    agent, _ = _chat(con, _extract(("Staudensellerie", 1)), _choose())
+    ergebnis = agent.turn(con, "Staudensellerie")
+    sid = ergebnis.vorschlaege[0]["id"]
+
+    assert vorschlaege.alternativen(con, sid) == []
+    assert vorschlaege.liste(con, ergebnis.chat_message_id)[0][
+        "n_alternativen"] == 0
+    neu = vorschlaege.stattdessen_freitext(con, sid, "Staudensellerie")
+    assert neu["free_text"] == "Staudensellerie"
+
+
+def test_eine_ausgemusterte_alternative_wird_nicht_angeboten(con):
+    """Was es nicht mehr gibt, soll man nicht neu wählen können.
+
+    Anders als bei einer Zeile, die schon im Korb liegt (WB-335, dort wird sie
+    markiert statt verschwiegen): hier wird GEWÄHLT, und was hier gewählt
+    wird, soll es im Laden geben.
+    """
+    ergebnis, _ = _butter_zug(con)
+    sid = ergebnis.vorschlaege[0]["id"]
+    weg = _pid(con, "Weihenstephan Butter")
+    vorher = len(vorschlaege.alternativen(con, sid))
+    con.execute("UPDATE product SET active = 0 WHERE id = ?", (weg,))
+    con.commit()
+
+    ids = [a["id"] for a in vorschlaege.alternativen(con, sid)]
+    assert weg not in ids and len(ids) == vorher - 1
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.korrigieren(con, sid, weg)
+
+
+def test_nur_ueber_den_allgemeinen_begriff_gefunden_wird_benannt(con):
+    """Der Querschnittsbefund aus WB-358.
+
+    Findet kein genauer Begriff etwas, greift der allgemeinste — und der
+    findet immer irgendetwas („OLD AMSTERDAM" -> „Bier" -> Singha Bier). Die
+    Zeile sagt es, statt einen unsicheren Treffer als sicheren auszugeben.
+    """
+    pid = _pid(con, "Weihenstephan Butter")
+    agent, _ = _chat(con, _extract((("Gouda am Stück", "Butter"), 1)),
+                     _choose(("Gouda am Stück", pid, 1)))
+    ergebnis = agent.turn(con, "Gouda")
+
+    zeile = ergebnis.vorschlaege[0]
+    assert zeile["fallback_term"] == "Butter"
+
+
+def test_ein_treffer_ueber_den_genauen_begriff_gilt_als_sicher(con):
+    """Die Gegenprobe: keine Marke, wo nichts ausgewichen wurde."""
+    ergebnis, _ = _butter_zug(con)
+    assert ergebnis.vorschlaege[0]["fallback_term"] is None

@@ -464,3 +464,124 @@ def test_ohne_umgebung_gilt_der_endpunkt_aus_der_spec(monkeypatch):
     monkeypatch.delenv(obs.otel.ENV_ENDPUNKT, raising=False)
 
     assert labels.basis_url() == "http://localhost:6006"
+
+
+# --------------------------------------------------------------------------
+# Die Korrektur in Phoenix (WB-359)
+#
+# Hier wird aus einem negativen Label ein positives. `suggestion=removed` sagt
+# „das war falsch"; die `correction`-Annotation sagt, WAS statt dessen richtig
+# war — und zwar mit einer Produkt-ID, die in derselben Vorlage stand. Für
+# eine Eval ist das der Unterschied zwischen einer Fehlerquote und einer
+# Fehleranalyse.
+
+def _zug_mit_korrektur(con, span_id: str = SPAN):
+    """Ein Vorschlag, verworfen, und eine Alternative statt seiner."""
+    order_id = orders.warenkorb(con)
+    msg = vorschlaege.nachricht(con, order_id, vorschlaege.ROLLE_AGENT,
+                                "Vorschläge", span_id)
+    falsch, richtig = [r["id"] for r in con.execute(
+        "SELECT id FROM product ORDER BY id LIMIT 2")]
+    sid = vorschlaege.vorschlag(con, msg, product_id=falsch,
+                                search_term="Butter", rang=4.01)
+    vorschlaege.kandidaten_merken(con, sid, [
+        {"id": falsch, "via": "Butter", "rang": 4.01},
+        {"id": richtig, "via": "Butter", "rang": 3.9}])
+    return msg, sid, falsch, richtig
+
+
+def test_die_korrektur_wird_als_eigene_annotation_geschrieben(con):
+    msg, sid, falsch, richtig = _zug_mit_korrektur(con)
+    vorschlaege.korrigieren(con, sid, richtig)
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+    k = [a for a in annos if a["name"] == labels.NAME_KORREKTUR]
+    assert len(k) == 1
+    assert k[0]["result"]["label"] == labels.LABEL_KORRIGIERT
+    # Beide Seiten stehen dran: was verworfen wurde und was statt dessen kam.
+    m = k[0]["metadata"]
+    assert m["product_id"] == richtig
+    assert m["corrected_suggestion_id"] == sid
+    assert m["search_term"] == "Butter"
+    assert m["rejected_product"] == _name(con, falsch)
+    assert _name(con, richtig) in k[0]["result"]["explanation"]
+    assert k[0]["annotator_kind"] == labels.MENSCH
+
+
+def test_die_korrektur_faellt_nicht_in_die_mapping_praezision(con):
+    """Sonst hübe ausgerechnet ein Fehlgriff die Quote, sobald er korrigiert
+    wird — und die Zahl, um die es im Projekt geht, wäre nach oben verbogen."""
+    msg, sid, _, richtig = _zug_mit_korrektur(con)
+    vorschlaege.korrigieren(con, sid, richtig)
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+    quote = [a for a in annos if a["name"] == labels.NAME_QUOTE][0]
+    assert quote["result"]["score"] == 0.0
+    entscheidungen = [a for a in annos
+                      if a["name"] == labels.NAME_ENTSCHEIDUNG]
+    assert [a["result"]["label"] for a in entscheidungen] == ["removed"]
+
+
+def test_das_negative_label_traegt_die_richtige_antwort_bei_sich(con):
+    """Wer nach `removed` filtert, sieht direkt, was richtig gewesen wäre."""
+    msg, sid, _, richtig = _zug_mit_korrektur(con)
+    vorschlaege.korrigieren(con, sid, richtig)
+
+    anno = [a for a in labels.annotationen(con, orders.warenkorb(con))
+            if a["name"] == labels.NAME_ENTSCHEIDUNG][0]
+    assert anno["metadata"]["corrected_to_product_id"] == richtig
+    assert anno["metadata"]["corrected_to"] == _name(con, richtig)
+    assert "stattdessen" in anno["result"]["explanation"]
+
+
+def test_ein_freitext_statt_der_vorlage_heisst_katalog_luecke(con):
+    """Ein anderes Label als eine Korrektur — und das ist der Punkt.
+
+    „Aus der Vorlage hätte das Modell das Richtige nehmen können" ist ein
+    Modellfehler. „In der Vorlage stand es gar nicht" ist eine Katalog-Lücke
+    und keinem Modell anzulasten. Unter einem Label wären die beiden nicht
+    mehr zu trennen.
+    """
+    msg, sid, _, _ = _zug_mit_korrektur(con)
+    vorschlaege.stattdessen_freitext(con, sid, "Staudensellerie")
+
+    k = [a for a in labels.annotationen(con, orders.warenkorb(con))
+         if a["name"] == labels.NAME_KORREKTUR][0]
+    assert k["result"]["label"] == labels.LABEL_FREITEXT
+    assert k["metadata"]["free_text"] == "Staudensellerie"
+    assert "Staudensellerie" in k["result"]["explanation"]
+
+
+def test_eine_zurueckgenommene_korrektur_behauptet_nichts(con):
+    """Sie hat auch bei der Alternative „Nein" gesagt — dann weiss niemand,
+    was richtig gewesen wäre, und es wird auch nichts geschrieben."""
+    msg, sid, _, richtig = _zug_mit_korrektur(con)
+    neu = vorschlaege.korrigieren(con, sid, richtig)
+    vorschlaege.entscheiden(con, neu["id"], VERWORFEN)
+
+    annos = labels.annotationen(con, orders.warenkorb(con))
+    assert [a for a in annos if a["name"] == labels.NAME_KORREKTUR] == []
+
+
+def test_nur_ueber_den_allgemeinen_begriff_steht_an_der_annotation(con):
+    """Der Befund aus WB-358: ein Treffer, der nur über den allgemeinsten
+    Kettenbegriff kam, ist kein sicherer — und die Eval soll das sehen."""
+    order_id = orders.warenkorb(con)
+    msg = vorschlaege.nachricht(con, order_id, vorschlaege.ROLLE_AGENT,
+                                "Vorschläge", SPAN)
+    pid = con.execute("SELECT id FROM product ORDER BY id LIMIT 1"
+                      ).fetchone()["id"]
+    sid = vorschlaege.vorschlag(con, msg, product_id=pid,
+                                search_term="Old Amsterdam", rang=2.0,
+                                fallback_term="Bier")
+    vorschlaege.entscheiden(con, sid, VERWORFEN)
+
+    anno = [a for a in labels.annotationen(con, order_id)
+            if a["name"] == labels.NAME_ENTSCHEIDUNG][0]
+    assert anno["metadata"]["fallback_term"] == "Bier"
+    assert "allgemeinen Begriff" in anno["result"]["explanation"]
+
+
+def _name(con, product_id: int) -> str:
+    return con.execute("SELECT name FROM product WHERE id = ?",
+                       (product_id,)).fetchone()["name"]

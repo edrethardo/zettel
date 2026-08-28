@@ -181,7 +181,58 @@ SCHEMA = [
         decision        TEXT NOT NULL DEFAULT 'offen'
                             CHECK (decision IN ('offen', 'kept', 'removed')),
         decided_at      TEXT,
+        -- Diese Zeile ist die KORREKTUR eines anderen Vorschlags (WB-359):
+        -- die Nutzerin hat „Nein" gesagt und aus den aufgehobenen Kandidaten
+        -- etwas anderes gewählt. Ohne diesen Verweis stünden hinterher zwei
+        -- lose Entscheidungen da — ein `removed` und ein `kept` —, und es
+        -- wäre nicht mehr zu unterscheiden, ob sie korrigiert oder einfach
+        -- etwas dazugelegt hat. Genau dieser Unterschied ist das wertvolle
+        -- Eval-Signal: „das war falsch UND das wäre richtig gewesen".
+        corrected_from  INTEGER REFERENCES chat_suggestion(id)
+                            ON DELETE CASCADE,
+        -- Gesetzt, wenn ALLE Kandidaten dieser Zutat nur über den
+        -- ALLGEMEINSTEN Begriff der Kette hereinkamen (WB-359, Befund aus
+        -- WB-358): „OLD AMSTERDAM" -> Kette endete auf „Bier" ->
+        -- Singha Bier.
+        -- Findet kein genauer Begriff etwas, greift der allgemeinste, und der
+        -- findet immer irgendetwas. Ein solcher Vorschlag ist kein sicherer
+        -- Treffer, und die Zeile soll das sagen statt es zu verschweigen.
+        fallback_term   TEXT,
         CHECK ((product_id IS NULL) <> (free_text IS NULL))
+    )
+    """,
+    # Die Kandidaten, die Stufe 2 zu einer Zutat vorgelegt hat (WB-359).
+    #
+    # **Eine eigene Tabelle und kein JSON in einer Spalte an
+    # `chat_suggestion`.** Die Kandidaten sind eine Liste von Verweisen auf
+    # `product`, und drei Dinge kann eine Spalte mit JSON nicht: ein
+    # Fremdschlüssel darauf (ein Kandidat, den ein Crawl entfernt hat, fiele
+    # sonst erst beim Anzeigen auf), ein JOIN auf `product` (Name, Preis und
+    # Bild kämen sonst aus einer eingefrorenen Kopie von gestern) und eine
+    # Auswertung über Züge hinweg („wie oft stand das Richtige in der Liste
+    # und wurde nicht gewählt?"). Der Preis dafür ist eine Tabelle mehr; der
+    # Preis für JSON wäre ein Parser von Hand in jedem Folgeticket.
+    #
+    # Aufgehoben wird die ANZEIGE-Liste (`plan.KANDIDATEN_ANZEIGE`), nicht die
+    # kürzere Vorlage für Stufe 3: was der Mensch zu sehen bekommt, kostet
+    # Datenbankzeilen und keine Token. Die Modellvorlage ist eine Teilmenge
+    # davon (`catalog.search.kuerze_kette`).
+    """
+    CREATE TABLE IF NOT EXISTS chat_kandidat (
+        id            INTEGER PRIMARY KEY,
+        suggestion_id INTEGER NOT NULL
+                          REFERENCES chat_suggestion(id) ON DELETE CASCADE,
+        product_id    INTEGER NOT NULL REFERENCES product(id),
+        -- Die Stelle in der Vorlage: die Reihenfolge der KETTE (WB-340) und
+        -- der Wortstufe (WB-339), nicht der rohe bm25 über die Vereinigung
+        -- hinweg. Sie wird beim Anzeigen genau so wiederhergestellt.
+        pos           INTEGER NOT NULL,
+        -- Der Begriff der Kette, der diesen Kandidaten gebracht hat (`via`).
+        search_term   TEXT,
+        rank          REAL,
+        -- Derselbe Kandidat zweimal an derselben Zeile wäre dieselbe
+        -- Alternative zweimal auf dem Handy.
+        UNIQUE (suggestion_id, product_id)
     )
     """,
     # ----------------------------------------------------------------------
@@ -345,7 +396,8 @@ FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
 #: damit eine vergessene Tabelle auffällt und nicht erst im Betrieb.
 TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
-    "chat_message", "chat_suggestion", "receipt", "receipt_item",
+    "chat_message", "chat_suggestion", "chat_kandidat",
+    "receipt", "receipt_item",
     "scrape_run", "product_fts",
 )
 
@@ -393,6 +445,33 @@ def _norm_spalten_nachziehen(con: sqlite3.Connection) -> None:
                         f" GENERATED ALWAYS AS ({ausdruck}) VIRTUAL")
 
 
+
+#: Spalten, die zu einer bestehenden Tabelle nachgetragen werden müssen.
+#: `CREATE TABLE IF NOT EXISTS` sieht eine vorhandene Tabelle gar nicht an —
+#: eine Datenbank aus der Zeit vor dem Ticket bekäme die Spalte sonst nie und
+#: fiele erst im Betrieb mit „no such column" auf.
+NACHGETRAGENE_SPALTEN = (
+    # WB-359: die Korrektur und der Hinweis, dass nur der allgemeinste
+    # Kettenbegriff etwas gefunden hat.
+    ("chat_suggestion", "corrected_from",
+     "INTEGER REFERENCES chat_suggestion(id) ON DELETE CASCADE"),
+    ("chat_suggestion", "fallback_term", "TEXT"),
+)
+
+
+def _spalten_nachziehen(con: sqlite3.Connection) -> None:
+    """Trägt fehlende Spalten an bestehenden Tabellen nach.
+
+    Nur ADD COLUMN, und nur mit `NULL` als Vorgabe: das ist die einzige
+    Änderung, die SQLite ohne Tabellenkopie beherrscht, und die einzige, die
+    ein älterer Prozess auf derselben Datei überlebt — der laufende Shop
+    schreibt seine Spalten weiter namentlich und merkt von der neuen nichts.
+    """
+    for tabelle, name, typ in NACHGETRAGENE_SPALTEN:
+        if name not in _spalten(con, tabelle):
+            con.execute(f"ALTER TABLE {tabelle} ADD COLUMN {name} {typ}")
+
+
 def _fts_nachziehen(con: sqlite3.Connection) -> bool:
     """Wirft einen veralteten FTS-Index weg. Gibt zurück, ob neu gebaut wurde.
 
@@ -417,6 +496,7 @@ def migrate(con: sqlite3.Connection) -> None:
     for stmt in SCHEMA:
         con.execute(stmt)
     _norm_spalten_nachziehen(con)
+    _spalten_nachziehen(con)
     neu_gebaut = _fts_nachziehen(con)
     for stmt in FTS_SCHEMA:
         con.execute(stmt)

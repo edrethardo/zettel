@@ -18,15 +18,19 @@ die Oberfläche braucht.
 from picknick.assistant.chat import (  # noqa: F401
     WEG_LLM, WEG_REZEPT, Chat, ChatFehler, ChatNichtVerfuegbar, Ergebnis)
 from picknick.assistant.plan import (  # noqa: F401
-    KANDIDATEN, Auswahl, PlanFehler, choose, extract)
+    KANDIDATEN_ANZEIGE, KANDIDATEN_MODELL, Auswahl, PlanFehler, choose,
+    extract)
 from picknick.assistant.rezeptweg import Rezeptweg, erkenne  # noqa: F401
 from picknick.assistant.vorschlaege import (  # noqa: F401
-    BEHALTEN, OFFEN, VERWORFEN, VorschlagFehler, alle_entscheiden, entscheiden,
-    quote, span_setzen, verlauf)
+    BEHALTEN, OFFEN, VERWORFEN, VorschlagFehler, alle_entscheiden,
+    alternativen, entscheiden, korrigieren, quote, span_setzen,
+    stattdessen_freitext, verlauf)
 
 __all__ = [
     "Auswahl", "BEHALTEN", "Chat", "ChatFehler", "ChatNichtVerfuegbar",
-    "Ergebnis", "KANDIDATEN", "OFFEN", "PlanFehler", "Rezeptweg", "VERWORFEN",
-    "VorschlagFehler", "WEG_LLM", "WEG_REZEPT", "alle_entscheiden", "choose",
-    "entscheiden", "erkenne", "extract", "quote", "span_setzen", "verlauf",
+    "Ergebnis", "KANDIDATEN_ANZEIGE", "KANDIDATEN_MODELL", "OFFEN",
+    "PlanFehler", "Rezeptweg", "VERWORFEN",
+    "VorschlagFehler", "WEG_LLM", "WEG_REZEPT", "alle_entscheiden",
+    "alternativen", "choose", "entscheiden", "erkenne", "extract",
+    "korrigieren", "quote", "span_setzen", "stattdessen_freitext", "verlauf",
 ]

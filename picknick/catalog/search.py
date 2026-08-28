@@ -312,12 +312,12 @@ def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
     `obergrenze` begrenzt die Zahl der Kandidaten je Zutat, und das Budget wird
     **vom genauen Ende der Kette her ausgegeben**: der erste Begriff bekommt
     seine Treffer ganz, dann der zweite, und der letzte bekommt, was übrig ist.
-    Mit der Vorgabe (`plan.MAX_KANDIDATEN` = 2 × `plan.KANDIDATEN`) passen die
-    ersten beiden Begriffe immer vollständig hinein; gekürzt wird nur am
-    allgemeinen Ende. Das ist auch das Ende, an dem das Modell entgleist —
-    gemessen wurden als letzte Begriffe „Körnig", „Papikra", „Konzenzrat". Ein
-    solcher Begriff findet irgendetwas, und was er findet, soll als Letztes
-    stehen und als Erstes wegfallen.
+    Mit der Vorgabe (`plan.MAX_KANDIDATEN_MODELL` = 2 ×
+    `plan.KANDIDATEN_MODELL`) passen die ersten beiden Begriffe immer
+    vollständig hinein; gekürzt wird nur am allgemeinen Ende. Das ist auch das
+    Ende, an dem das Modell entgleist — gemessen wurden als letzte Begriffe
+    „Körnig", „Papikra", „Konzenzrat". Ein solcher Begriff findet irgendetwas,
+    und was er findet, soll als Letztes stehen und als Erstes wegfallen.
 
     Gesucht wird trotzdem jeder Begriff: was die Kette gebracht hat, steht
     dadurch vollständig im RETRIEVER-Span, auch wenn die Obergrenze das Ende
@@ -326,7 +326,7 @@ def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
     gewaehlt: list[dict] = []
     gesehen: set[int] = set()
     for begriff in suchbegriffe:
-        for p in search(con, begriff, limit=limit):
+        for platz, p in enumerate(search(con, begriff, limit=limit)):
             pid = int(p["id"])
             if pid in gesehen:
                 # Schon über einen genaueren Begriff vorgelegt. Die Herkunft
@@ -335,5 +335,54 @@ def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
             gesehen.add(pid)
             if obergrenze is not None and len(gewaehlt) >= obergrenze:
                 continue
-            gewaehlt.append({**p, "via": begriff})
+            # `via_platz` ist der Platz INNERHALB der Trefferliste des eigenen
+            # Begriffs — vor der Entdopplung, also unabhängig davon, was ein
+            # früherer Begriff schon weggenommen hat. Nur damit lässt sich die
+            # Liste hinterher auf eine kleinere Grenze kürzen und dasselbe
+            # herausbekommen, als hätte man gleich mit ihr gesucht
+            # (`kuerze_kette`, WB-359).
+            gewaehlt.append({**p, "via": begriff, "via_platz": platz})
+    return gewaehlt
+
+
+def kuerze_kette(kandidaten: list[dict], *, limit: int,
+                 obergrenze: int | None = None) -> list[dict]:
+    """Kürzt eine bereits gesuchte Kettenvorlage auf eine kleinere Grenze.
+
+    Seit WB-359 gibt es zwei Grenzen mit verschiedenen Zwecken: was AUFGEHOBEN
+    und der Nutzerin gezeigt wird (`plan.KANDIDATEN_ANZEIGE`, gross — es
+    kostet Datenbankzeilen) und was STUFE 3 im Prompt sieht
+    (`plan.KANDIDATEN_MODELL`, klein — es kostet Token). Gesucht wird trotzdem
+    **genau einmal**: die Modellvorlage entsteht hier aus der Anzeigeliste,
+    statt dieselben Begriffe ein zweites Mal durch die Suche zu schicken.
+
+    Damit ist die Modellvorlage eine **Teilmenge** der aufgehobenen Liste, und
+    das ist die Zusicherung, auf der WB-359 steht: was das Modell zur Auswahl
+    hatte, bekommt die Nutzerin beim „Nein" auch zu sehen — es kann gar
+    nicht auseinanderlaufen, weil es dieselben Zeilen sind.
+
+    Gekürzt wird nach `via_platz` — dem Platz eines Kandidaten in der
+    Trefferliste SEINES Begriffs — und dann auf `obergrenze` je Zutat. Nicht
+    nach „die ersten `limit` je Begriff, die übrig geblieben sind": das wäre
+    grosszügiger als eine echte Suche mit `limit`, weil ein von einem
+    genaueren Begriff schon vorgelegtes Produkt keinen Platz mehr verbrauchte.
+    Gemessen im Rauchtest (Kette [Salzbutter, Butter], fünf Butter im Katalog)
+    machte das aus fünf Kandidaten sechs — die Modellgrenze wäre stillschwei-
+    gend gewachsen, obwohl sie ihren Wert behalten soll.
+
+    **Ein Rest bleibt ehrlicherweise:** ein Produkt, das beim genauesten
+    Begriff auf Platz 8 steht und beim zweiten auf Platz 2, kommt hier über
+    den ERSTEN Begriff herein und fällt mit ihm weg — bei einer eigenen Suche
+    mit `limit=5` hätte der zweite Begriff es gebracht. Im Einzelfall kann
+    also ein Kandidat fehlen, den es vor WB-359 gegeben hätte; er steht dann
+    in der AUFGEHOBENEN Liste, die die Nutzerin sieht. Die Reihenfolge nach
+    Kette und Wortstufe bleibt unberührt.
+    """
+    gewaehlt: list[dict] = []
+    for p in kandidaten:
+        if obergrenze is not None and len(gewaehlt) >= obergrenze:
+            break
+        if p.get("via_platz", 0) >= limit:
+            continue
+        gewaehlt.append(p)
     return gewaehlt

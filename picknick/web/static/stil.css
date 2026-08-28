@@ -272,6 +272,40 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 .mini.nein { color: #8c1414; }
 .marke { font-size: 13px; color: var(--gedaempft); white-space: nowrap; }
 
+/* Die Alternativen zu einer verworfenen Zeile (WB-359). Sie klappen UNTER der
+   Zeile auf und schieben sie nicht auseinander — `flex-basis: 100%` in der
+   umgebenden `.zeile`, wie schon bei der Bon-Korrektur aus WB-358.
+
+   `<details>` und kein JavaScript: das Aufklappen entscheidet der Server (die
+   gerade verworfene Zeile bekommt `open`), das Zuklappen der Daumen. Ohne
+   Zutun steht die Liste offen genau einmal da.
+
+   Die Höhenbegrenzung ist der Grund, warum die Anzeigegrenze gross sein darf:
+   fünfzehn Alternativen sprengen die Seite nicht, wenn die Liste selbst
+   scrollt. 60vh lässt die Zeile darüber und das Freitextfeld darunter
+   sichtbar — man sieht immer noch, WOZU man gerade auswählt. */
+.alternativen { flex-basis: 100%; margin-top: 8px; }
+.alternativen > summary {
+  min-height: var(--tap); display: flex; align-items: center;
+  padding: 0 4px; font-size: 15px; color: var(--gedaempft); cursor: pointer;
+}
+.altliste { max-height: 60vh; overflow-y: auto; margin: 0; }
+.altliste .zeile { padding: 6px 0; }
+
+/* „Nichts davon, ich schreibe es selbst" — bei einer Katalog-Lücke der
+   richtige Ausgang und nicht der Notausgang. */
+.selbst { display: flex; gap: 8px; margin: 8px 0 4px; }
+.selbst input {
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}
+.selbst button { white-space: nowrap; }
+
+/* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359, Befund aus
+   WB-358). Kein Fehler, aber auch kein sicherer Treffer — gelb wie die
+   Ausgemustert-Marke, nicht rot wie ein Fehler. */
+.vorschlag .schwach { font-size: 13px; color: #7a5b00; }
+
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
 .chatform { display: flex; gap: 8px; margin-top: var(--rand); }

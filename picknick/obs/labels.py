@@ -18,6 +18,12 @@ gefüllt in WB-328). Zwei Sorten:
   Zeile, welcher Begriff schlecht gemappt hat; zusammen mit dem
   `catalog.search`-Span desselben Begriffs (WB-328) ist die Frage „Modell
   oder Suche?" ohne Zusatzarbeit beantwortet.
+* `correction` — eine Annotation je Korrektur (WB-359): **welcher Kandidat
+  statt welchem**. Das macht aus einem negativen Label ein positives — nicht
+  nur „das war falsch", sondern „das wäre richtig gewesen", und zwar mit einer
+  ID, die in derselben Vorlage stand. Für die Evals aus WB-330 ist das der
+  wertvollste Datenpunkt überhaupt, weil er die richtige Antwort benennt statt
+  nur die falsche zu zählen.
 
 Vier Entscheidungen, die die Zahlen ehrlich halten:
 
@@ -79,6 +85,29 @@ NAME_QUOTE = "mapping_precision"
 #: eine Auswertung nicht übersetzen muss.
 NAME_ENTSCHEIDUNG = "suggestion"
 
+#: Die Korrektur (WB-359) — und das ist die wertvollste Annotation, die dieses
+#: Projekt erzeugt. `suggestion=removed` sagt „das war falsch". Diese hier sagt
+#: **welcher Kandidat statt welchem**, und damit sagt sie, was richtig gewesen
+#: wäre. Für eine Eval ist der Unterschied qualitativ: aus „Trefferquote 0,75"
+#: wird „bei ‚Butter‘ wurde konsequent auf Weihenstephan korrigiert" — eine
+#: Fehleranalyse mit der richtigen Antwort daneben, ohne einen einzigen
+#: Annotationsauftrag.
+#:
+#: Ein EIGENER Name und nicht `suggestion` mit Label `kept`: unter demselben
+#: Namen ginge die Korrektur in den Mittelwert der Mapping-Präzision ein und
+#: hübe ausgerechnet die Zahl, die den Fehlgriff misst. Sie steht deshalb
+#: daneben, und der Mittelwert über `suggestion` bleibt, was er war.
+NAME_KORREKTUR = "correction"
+
+#: Die beiden Ausgänge einer Korrektur. `corrected` heisst „aus der Vorlage
+#: hätte das Modell das Richtige nehmen können" — ein Modellfehler. `free_text`
+#: heisst „in der Vorlage stand es gar nicht" — eine Katalog-Lücke, und die ist
+#: keinem Modell anzulasten. Die beiden auseinanderzuhalten ist der ganze Sinn
+#: des Labels; als eine Sorte wäre die Lücke von einem Fehlgriff nicht mehr zu
+#: unterscheiden.
+LABEL_KORRIGIERT = "corrected"
+LABEL_FREITEXT = "free_text"
+
 #: Kein LLM-Judge. Siehe Modul-Docstring.
 MENSCH = "HUMAN"
 
@@ -138,12 +167,30 @@ def annotationen(con, order_id: int) -> list[dict]:
                           "open": q["offen"]}))
 
         for v in vorschlaege.liste(con, msg_id):
+            if v["ist_korrektur"]:
+                # Eine Korrekturzeile ist kein Vorschlag des Modells, sondern
+                # die Handbewegung danach (WB-359). Sie bekommt ihre eigene
+                # Annotation — unter `suggestion` mitgezählt hübe sie die
+                # Mapping-Präzision genau dann, wenn die Nutzerin einen
+                # Fehlgriff geradezieht.
+                #
+                # Eine zurückgenommene Korrektur (sie hat auch bei der
+                # Alternative „Nein" gesagt) sagt nichts darüber, was richtig
+                # gewesen wäre — sie bekommt gar keine Annotation, statt eine
+                # Behauptung zu schreiben, die die Nutzerin widerrufen hat.
+                if v["decision"] == vorschlaege.BEHALTEN:
+                    raus.append(_korrektur_anno(v, span_id, order_id, msg_id))
+                continue
             if v["decision"] == vorschlaege.OFFEN:
                 # Nie entschieden heisst nie beurteilt. Eine Annotation dafür
                 # wäre eine Behauptung über etwas, das die Nutzerin gar nicht
                 # angesehen hat.
                 continue
             behalten = v["decision"] == vorschlaege.BEHALTEN
+            # Nur eine Korrektur, die auch im Korb liegt, sagt etwas darüber,
+            # was richtig gewesen wäre. Eine zurückgenommene sagt nichts.
+            k = v["korrektur"] if (v["korrektur"]
+                                   and v["korrektur"]["behalten"]) else None
             raus.append(_anno(
                 span_id, NAME_ENTSCHEIDUNG,
                 label=v["decision"],
@@ -164,8 +211,62 @@ def annotationen(con, order_id: int) -> list[dict]:
                           # schwachen Suchen kommen — die Frage aus WB-328,
                           # jetzt mit menschlichem Urteil daneben.
                           "rank": v["rang"],
+                          # Nur über den allgemeinsten Kettenbegriff gefunden
+                          # (WB-359)? Dann ist ein Fehlgriff kein Rätsel,
+                          # sondern eine Katalog-Lücke mit einem Auffangbegriff
+                          # dahinter — und er gehört an die Annotation, nicht
+                          # in eine spätere Vermutung.
+                          "fallback_term": v["fallback_term"],
+                          # Und wenn korrigiert wurde: WAS statt dessen. Damit
+                          # trägt schon das negative Label die richtige
+                          # Antwort bei sich, ohne dass eine Auswertung zwei
+                          # Annotationen zusammensuchen muss.
+                          "corrected_to": _name(k),
+                          "corrected_to_product_id": (
+                              k["product_id"] if k else None),
+                          "corrected_to_suggestion_id": k["id"] if k else None,
                           "free_text": bool(v["ist_freitext"])}))
     return raus
+
+
+def _korrektur_anno(v: dict, span_id: str, order_id: int,
+                    msg_id: int) -> dict:
+    """Die Annotation zu einer Korrektur — „X statt Y", nicht nur „nicht Y".
+
+    Sie steht auf demselben `chat.turn`-Span wie alles andere und trägt beide
+    Seiten: das verworfene Produkt und das gewählte, mit dem Suchbegriff
+    dazwischen. Das ist der Datenpunkt, für den sonst jemand annotieren
+    müsste.
+    """
+    freitext = bool(v["ist_freitext"])
+    label = LABEL_FREITEXT if freitext else LABEL_KORRIGIERT
+    verworfen = v["statt_name"] or "der Vorschlag"
+    if freitext:
+        satz = (f"„{verworfen}“ war falsch; nichts aus der Vorlage passte — "
+                f"von Hand: „{v['name']}“")
+    else:
+        satz = (f"„{v['search_term'] or v['name']}“: statt „{verworfen}“ -> "
+                f"„{v['name']}“")
+    return _anno(
+        span_id, NAME_KORREKTUR,
+        label=label,
+        explanation=satz,
+        identifier=f"picknick-correction-{v['id']}",
+        metadata={"order_id": order_id, "chat_message_id": msg_id,
+                  "suggestion_id": v["id"],
+                  # Die Zeile, die falsch war. Über sie hängt die Korrektur an
+                  # ihrer `suggestion`-Annotation (`removed`).
+                  "corrected_suggestion_id": v["corrected_from"],
+                  "rejected_product": v["statt_name"],
+                  "search_term": v["search_term"],
+                  "product_id": v["product_id"],
+                  "product": None if freitext else v["name"],
+                  "free_text": v["free_text"],
+                  "rank": v["rang"]})
+
+
+def _name(v: dict | None) -> str | None:
+    return None if v is None else v["name"]
 
 
 def _quote_satz(q: dict) -> str:
@@ -183,8 +284,20 @@ def _begriff(v: dict) -> str:
     zählt. Fehlt er (alte Zeile, Rezeptweg ohne Begriff), steht der Name da —
     eine leere Erklärung würde der Phoenix-Client stillschweigend weglassen,
     und dann wäre im Trace nicht zu sehen, worum es ging.
+
+    Seit WB-359 stehen zwei Zusätze mit dran, wenn es sie gibt: worauf
+    korrigiert wurde, und ob überhaupt nur der allgemeinste Kettenbegriff
+    etwas gefunden hat. Beides gehört in die Erklärung und nicht nur in die
+    Metadaten — in der Spanliste von Phoenix sieht man zuerst den Satz.
     """
-    return v["search_term"] or f"ohne Suchbegriff: {v['name']}"
+    satz = v["search_term"] or f"ohne Suchbegriff: {v['name']}"
+    if v.get("fallback_term"):
+        satz += (f" — nur über den allgemeinen Begriff "
+                 f"„{v['fallback_term']}“ gefunden")
+    k = v.get("korrektur")
+    if k is not None and k["behalten"]:
+        satz += f" — stattdessen: „{k['name']}“"
+    return satz
 
 
 def _anno(span_id: str, name: str, *, label: str | None = None,

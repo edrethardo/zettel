@@ -72,11 +72,11 @@ from picknick.llm.client import ModellNichtErreichbar
 BLOCK = 40
 
 #: Wie viele Treffer je Suchbegriff und wie viele je Bon-Zeile insgesamt. Die
-#: Begründung der Zahlen steht an `plan.KANDIDATEN` und `plan.MAX_KANDIDATEN`;
-#: sie werden hier übernommen und nicht neu erfunden, damit die Suche im Bon
-#: dieselbe ist wie im Chat.
-KANDIDATEN = plan.KANDIDATEN
-OBERGRENZE = plan.MAX_KANDIDATEN
+#: Begründung der Zahlen steht an `plan.KANDIDATEN_MODELL` und
+#: `plan.MAX_KANDIDATEN_MODELL`; sie werden hier übernommen und nicht neu
+#: erfunden, damit die Suche im Bon dieselbe ist wie im Chat.
+KANDIDATEN = plan.KANDIDATEN_MODELL
+OBERGRENZE = plan.MAX_KANDIDATEN_MODELL
 
 #: Temperatur 0 wie in `assistant.plan`: derselbe Bon soll dieselbe Zuordnung
 #: ergeben, sonst ist nichts vergleichbar.

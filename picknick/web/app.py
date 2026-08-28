@@ -52,9 +52,9 @@ DEFAULT_BON_DIR = "data/bons"
 MULTIPART_ZUSCHLAG = 64 * 1024
 
 #: Wie viele Produkte zur Korrektur einer Bon-Zeile vorgelegt werden (WB-358).
-#: Fünf, wie `plan.KANDIDATEN`: die Liste steht auf dem Handy neben einer
-#: einzigen Zeile, und wer nach fünf Treffern nichts Passendes sieht, tippt
-#: einen anderen Begriff — er scrollt nicht.
+#: Fünf, wie `plan.KANDIDATEN_MODELL`: die Liste steht auf dem Handy neben
+#: einer einzigen Zeile, und wer nach fünf Treffern nichts Passendes sieht,
+#: tippt einen anderen Begriff — er scrollt nicht.
 KORREKTUREN = 5
 
 #: Wie viele Kacheln eine Liste höchstens zeigt. Auf dem Handy scrollt niemand
@@ -653,7 +653,8 @@ def create_app(db_path: str | Path | None = None,
     #   sähe die Nutzerin ihre Zeile im Korb erst nach dem nächsten Laden.
 
     def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
-                      zustand=None, satz: str = "") -> dict:
+                      zustand=None, satz: str = "",
+                      aufklappen: int | None = None) -> dict:
         """Alles, was `_chat.html` braucht — für Vollseite und Bruchstück."""
         # Nur nachsehen, nicht anlegen: ein Blick in den Warenkorb darf keine
         # Bestellung erzeugen. Angelegt wird er erst im Chat-Zug selbst.
@@ -661,14 +662,33 @@ def create_app(db_path: str | Path | None = None,
         verlauf = vorschlagsliste.verlauf(c, korb_id) if korb_id else []
         for zeile in verlauf:
             _posten_mit_bild(zeile["vorschlaege"], app.state.image_dir)
+            for v in zeile["vorschlaege"]:
+                v["alternativen"] = _alternativen(c, v)
         return {"verlauf": verlauf, "chat_fehler": fehler,
-                "chat_zustand": zustand, "satz": satz}
+                "chat_zustand": zustand, "satz": satz,
+                "aufklappen": aufklappen}
+
+    def _alternativen(c: sqlite3.Connection, v: dict) -> list[dict]:
+        """Die aufgehobenen Kandidaten einer verworfenen Zeile (WB-359).
+
+        **Keine neue Suche** — sie stehen seit dem Chat-Zug in
+        `chat_kandidat`. Geholt werden sie nur für die Zeilen, an denen sie
+        auch angeboten werden: verworfen und noch nicht korrigiert. Für jede
+        Zeile des ganzen Verlaufs wäre es eine Abfrage je Vorschlag, und der
+        Verlauf wächst mit jedem Satz.
+        """
+        if v["decision"] != vorschlagsliste.VERWORFEN or v["korrektur"]:
+            return []
+        if not v["n_alternativen"]:
+            return []
+        return _mit_bild(vorschlagsliste.alternativen(c, v["id"]),
+                         app.state.image_dir)
 
     def _chat_antwort(request: Request, c: sqlite3.Connection,
                       fehler: str | None = None, zustand=None,
-                      satz: str = ""):
+                      satz: str = "", aufklappen: int | None = None):
         """HTMX bekommt Chat + Korb, ein Formular ohne JavaScript die Seite."""
-        kontext = {**_chat_kontext(c, fehler, zustand, satz),
+        kontext = {**_chat_kontext(c, fehler, zustand, satz, aufklappen),
                    **_korb_kontext(c)}
         if ist_htmx(request):
             return vorlagen.TemplateResponse(request, "_chat_antwort.html",
@@ -707,13 +727,63 @@ def create_app(db_path: str | Path | None = None,
 
     @app.post("/warenkorb/vorschlag/{sid}/entscheiden")
     async def vorschlag_entscheiden(request: Request, sid: int):
-        """„Ja" oder „Nein" zu einer Zeile — das Eval-Label (Spec 8.1)."""
+        """„Ja" oder „Nein" zu einer Zeile — das Eval-Label (Spec 8.1).
+
+        Ein „Nein" verwirft nicht mehr bloss, es **klappt die Alternativen
+        auf** (WB-359): die Kandidaten, die die Suche zu dieser Zutat ohnehin
+        vorgelegt hat. Aufgeklappt wird genau die eine Zeile, die gerade
+        verworfen wurde — ältere bleiben eingeklappt, sonst stünde nach fünf
+        „Nein" eine Seite voller Listen.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = None
+            entscheidung = werte.get("decision", "")
+            try:
+                vorschlagsliste.entscheiden(c, sid, entscheidung)
+            except vorschlagsliste.VorschlagFehler as e:
+                fehler = str(e)
+            auf = sid if entscheidung == vorschlagsliste.VERWORFEN else None
+            return _chat_antwort(request, c, fehler=fehler, aufklappen=auf)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/vorschlag/{sid}/statt")
+    async def vorschlag_korrigieren(request: Request, sid: int,
+                                    produkt_id: int = 0):
+        """Eine Alternative statt des Vorschlags in den Korb (WB-359).
+
+        Der ursprüngliche Vorschlag bleibt als `removed` stehen und die neue
+        Zeile verweist auf ihn — die Korrektur ist dadurch als Korrektur
+        erkennbar und nicht als zwei lose Entscheidungen.
+        """
+        c = con()
+        try:
+            fehler = None
+            try:
+                vorschlagsliste.korrigieren(c, sid, produkt_id)
+            except vorschlagsliste.VorschlagFehler as e:
+                fehler = str(e)
+            return _chat_antwort(request, c, fehler=fehler)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/vorschlag/{sid}/freitext")
+    async def vorschlag_freitext(request: Request, sid: int):
+        """„Nichts davon" — die Zutat kommt als Freitext in den Korb.
+
+        Bei einer echten Katalog-Lücke (das gemessene Beispiel ist „Sellerie"
+        mit zwei unbrauchbaren Treffern) ist das der richtige Ausgang und
+        nicht der Notausgang.
+        """
         werte = await eingaben(request)
         c = con()
         try:
             fehler = None
             try:
-                vorschlagsliste.entscheiden(c, sid, werte.get("decision", ""))
+                vorschlagsliste.stattdessen_freitext(c, sid,
+                                                     werte.get("text", ""))
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
             return _chat_antwort(request, c, fehler=fehler)

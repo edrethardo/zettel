@@ -116,6 +116,30 @@ Drei Dinge stehen hier auf dem Schirm und sind je einen Satz wert:
 * **An jeder Zeile steht, woraus sie entstand**: der Suchbegriff und der Rang
   der Suche. Das ist die Vorbereitung auf Schritt 4.
 
+### 3a. „Nein" — und die Alternativen sind schon da (WB-359)
+
+Auf **Nein** an der Butterzeile tippen. Die Zeile verschwindet nicht, sie
+klappt auf:
+
+```
+14 Alternativen aus derselben Suche
+  Weihenstephan Butter          250 g · 2,89 €   [Das]
+  Kerrygold irische Butter      250 g · 3,59 €   [Das]
+  …
+  [Butter                    ]  [Nichts davon]
+```
+
+**Prüfung:** dieselben Kandidaten, die Stufe 3 vorlagen — **es wird nicht neu
+gesucht**. Ein Tipp auf *Das* legt die Alternative in den Korb, und die
+Butterzeile bleibt als `removed` stehen, mit „statt …" an der neuen Zeile.
+Damit ist die Korrektur als Korrektur erkennbar und nicht als zwei lose
+Entscheidungen — in Schritt 5 wird daraus eine `correction`-Annotation, die
+sagt, **was richtig gewesen wäre**.
+
+Zum Gegenstück: an einer Zutat, die der Katalog nicht hat („Sellerie"), steht
+statt der Liste „Mehr hat der Katalog dazu nicht hergegeben" und daneben das
+Freitextfeld. Das ist dort der richtige Ausgang und nicht der Notausgang.
+
 ## 4. Der Trace — die Schuldfrage
 
 `http://localhost:6006` öffnen, Projekt **`Picknick Agent`**, obersten Trace

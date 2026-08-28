@@ -172,7 +172,7 @@ class Variante:
     name: str
     beschreibung: str
     system_extract: str = plan.SYSTEM_EXTRACT
-    kandidaten: int = plan.KANDIDATEN
+    kandidaten: int = plan.KANDIDATEN_MODELL
     guided: bool = True
 
     def als_metadaten(self) -> dict:

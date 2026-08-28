@@ -24,7 +24,9 @@ Drei Regeln halten diesen Ablauf zusammen:
    man erst im Laden.
 3. **Nichts landet ungefragt im Warenkorb.** Ergebnis ist eine Liste in
    `chat_suggestion`, die zeilenweise bestätigt oder verworfen wird
-   (`vorschlaege.entscheiden`).
+   (`vorschlaege.entscheiden`). Seit WB-359 werden dabei auch die übrigen
+   Kandidaten aufgehoben (`chat_kandidat`): ein „Nein" klappt sie auf, statt
+   sie wegzuwerfen — gesucht waren sie ohnehin längst.
 
 Fällt das Modell aus, ist nur der Chat betroffen (Spec 11): `turn()` wirft
 `ChatNichtVerfuegbar` mit dem Zustand des Weckers, und der Rest des Shops
@@ -98,6 +100,34 @@ class Ergebnis:
         return sum(1 for v in self.vorschlaege if v["ist_freitext"])
 
 
+def _nur_allgemein(kette: list[str], kandidaten: list[dict]) -> str | None:
+    """Kam ALLES nur über den allgemeinsten Begriff der Kette? Dann dieser.
+
+    Der Querschnittsbefund aus WB-358, hierher übernommen: beim Zuordnen der
+    Kassenbons entgleiste die Kette genau dort, wo der Katalog eine Lücke hat.
+
+        OLD AMSTERDAM   -> Kette endete auf „Bier"  -> Singha Bier
+        GEFLUEGELROLLE  -> Kette endete auf „Rolle" -> Prinzen Rolle Choco
+
+    Findet kein genauer Begriff etwas, greift der allgemeinste — und der
+    findet **immer irgendetwas**. Ein Vorschlag, dessen sämtliche Kandidaten
+    nur von dort kommen, ist deshalb kein sicherer Treffer, sondern der Fall,
+    in dem die Alternativenliste am meisten wert ist. Er wird an der Zeile
+    benannt (`chat_suggestion.fallback_term`) statt verschwiegen.
+
+    `None` heisst „unauffällig": eine Kette der Länge eins hat gar keinen
+    allgemeineren Begriff, auf den sie hätte ausweichen können, und eine
+    Zutat, zu der auch ein genauer Begriff Treffer brachte, ist nicht
+    ausgewichen.
+    """
+    if len(kette) < 2 or not kandidaten:
+        return None
+    allgemeinster = kette[-1]
+    if all(p.get("via") == allgemeinster for p in kandidaten):
+        return allgemeinster
+    return None
+
+
 class Chat:
     """Ein Chat-Zug, mit allem Injizierbaren an einer Stelle.
 
@@ -118,8 +148,11 @@ class Chat:
     """
 
     def __init__(self, zugang=None, *, wecker=None,
-                 kandidaten: int = plan.KANDIDATEN,
-                 obergrenze: int = plan.MAX_KANDIDATEN, guided: bool = True,
+                 kandidaten: int = plan.KANDIDATEN_MODELL,
+                 obergrenze: int = plan.MAX_KANDIDATEN_MODELL,
+                 anzeige: int = plan.KANDIDATEN_ANZEIGE,
+                 anzeige_obergrenze: int = plan.MAX_KANDIDATEN_ANZEIGE,
+                 guided: bool = True,
                  denken: bool = plan.DENKEN,
                  system_extract: str = plan.SYSTEM_EXTRACT,
                  system_choose: str = plan.SYSTEM_CHOOSE):
@@ -128,9 +161,23 @@ class Chat:
         # `kandidaten` gilt je BEGRIFF, `obergrenze` je ZUTAT: die Vereinigung
         # über eine Begriffskette (WB-340) wäre sonst so lang, dass drei
         # Begriffe mal fünf Treffer mal acht Zutaten den Prompt von Stufe 3
-        # füllen. Die Begründung der Zahl steht an `plan.MAX_KANDIDATEN`.
+        # füllen. Die Begründung steht an `plan.MAX_KANDIDATEN_MODELL`.
         self.kandidaten = kandidaten
         self.obergrenze = obergrenze
+        # Und daneben die ZWEITE Grenze (WB-359): wie viele Kandidaten
+        # aufgehoben und der Nutzerin beim „Nein" gezeigt werden. Sie ist
+        # grösser, weil sie etwas anderes kostet — Datenbankzeilen statt
+        # Token (Begründung an `plan.KANDIDATEN_ANZEIGE`). Vorher bediente EINE
+        # Zahl beide Zwecke, und deshalb gab es bei einer einbegriffigen Zutat
+        # wie „Butter" genau vier Alternativen.
+        #
+        # `max(...)`: wer die Modellgrenze hochdreht (Spec 8.3 vergleicht 5
+        # gegen 20), soll nicht versehentlich weniger aufheben, als das Modell
+        # gesehen hat — die Modellvorlage MUSS eine Teilmenge des
+        # Aufgehobenen bleiben, sonst zeigt „Nein" nicht mehr, woraus
+        # gewählt wurde.
+        self.anzeige = max(anzeige, kandidaten)
+        self.anzeige_obergrenze = max(anzeige_obergrenze, obergrenze)
         self.guided = guided
         self.denken = denken
         self.system_extract = system_extract
@@ -313,16 +360,35 @@ class Chat:
         for b in begriffe:
             kette = b["suchbegriffe"]
             with obs.retriever("catalog.search", suchbegriffe=kette) as such:
-                kandidaten = search.suche_kette(
-                    con, kette, limit=self.kandidaten,
+                # EINE Suche, zwei Listen (WB-359). Gesucht wird mit der
+                # Anzeigegrenze, weil das die grössere ist; die Vorlage für
+                # Stufe 3 wird daraus gekürzt, statt dieselben Begriffe ein
+                # zweites Mal durch die Suche zu schicken. Damit ist die
+                # Modellvorlage garantiert eine Teilmenge dessen, was
+                # aufgehoben wird — „Nein" zeigt genau die Liste, aus der
+                # gewählt wurde, und nicht eine zweite, neu gesuchte.
+                aufgehoben = search.suche_kette(
+                    con, kette, limit=self.anzeige,
+                    obergrenze=self.anzeige_obergrenze)
+                kandidaten = search.kuerze_kette(
+                    aufgehoben, limit=self.kandidaten,
                     obergrenze=self.obergrenze)
+                # In den Span gehen die Kandidaten des MODELLS: der
+                # RETRIEVER-Span beantwortet die Frage „woraus hat Stufe 3
+                # gewählt", und eine dreimal so lange Dokumentliste je Zutat
+                # machte aus jedem Trace eine Wand. Wie viele aufgehoben
+                # wurden, steht als Zahl daneben.
                 obs.dokumente(such, kandidaten)
-                obs.setze(such, {"picknick.qty": b["menge"]})
+                obs.setze(such, {"picknick.qty": b["menge"],
+                                 "picknick.candidates_kept": len(aufgehoben)})
             # `begriff` ist der genaueste Begriff der Kette und steht für die
             # Zutat: unter ihm wählt Stufe 3, und als Freitext steht er da,
             # wenn nichts gefunden wurde.
             aufgaben.append({**b, "begriff": kette[0],
-                             "kandidaten": kandidaten})
+                             "kandidaten": kandidaten,
+                             "aufgehoben": aufgehoben,
+                             "nur_allgemein": _nur_allgemein(kette,
+                                                             aufgehoben)})
 
         try:
             with obs.stufe("plan.choose"):
@@ -346,6 +412,13 @@ class Chat:
             if wahl is not None:
                 zeilen.append({"product_id": wahl["produkt"]["id"],
                                "free_text": None, "qty": wahl["menge"],
+                               # Die aufgehobenen Kandidaten gehen mit an die
+                               # Zeile (WB-359) — sie sind das, was „Nein"
+                               # zeigt. Und `fallback`: kam ALLES nur über den
+                               # allgemeinsten Kettenbegriff, ist dieser
+                               # Vorschlag kein sicherer Treffer.
+                               "kandidaten": b["aufgehoben"],
+                               "fallback": b["nur_allgemein"],
                                # NICHT die Zutat, sondern der Begriff der
                                # Kette, der DIESEN Kandidaten gebracht hat
                                # (WB-340). „Möhren" und „Karotten" führen zu
@@ -361,7 +434,14 @@ class Chat:
             # Fällen bleibt der Begriff stehen, als Freitext.
             zeilen.append({"product_id": None, "free_text": b["begriff"],
                            "qty": b["menge"], "search_term": b["begriff"],
-                           "rang": None})
+                           "rang": None,
+                           # Auch an einer Freitextzeile: hat die Suche etwas
+                           # vorgelegt und das Modell nur nichts gewählt, ist
+                           # die Liste da und einen Blick wert. Fand die Suche
+                           # nichts (die echte Katalog-Lücke), ist sie
+                           # leer — und die Zeile steht als Freitext da.
+                           "kandidaten": b["aufgehoben"],
+                           "fallback": None})
             freitext.append(b["begriff"])
 
         meldung = self._meldung_modell(begriffe, freitext, auswahl,
@@ -413,10 +493,17 @@ class Chat:
                 continue
             gesehen.add(schluessel)
             try:
-                vorschlaege.vorschlag(
+                sid = vorschlaege.vorschlag(
                     con, antwort_id, product_id=z["product_id"],
                     free_text=z["free_text"], qty=z["qty"],
-                    search_term=z["search_term"], rang=z["rang"])
+                    search_term=z["search_term"], rang=z["rang"],
+                    fallback_term=z.get("fallback"))
+                # Und hier werden die Kandidaten aufgehoben statt weggeworfen
+                # (WB-359). Bis zu diesem Ticket endeten sie im Prompt von
+                # Stufe 3 und im RETRIEVER-Span — die Nutzerin bekam sie nie
+                # zu sehen, obwohl der Shop sie längst gesucht hatte.
+                vorschlaege.kandidaten_merken(con, sid,
+                                              z.get("kandidaten") or [])
             except (vorschlaege.VorschlagFehler, orders.UngueltigerPosten):
                 # Ein Produkt, das zwischen Suche und Schreiben verschwunden
                 # ist, oder ein leerer Begriff. Kostet eine Zeile, nicht den

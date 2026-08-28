@@ -237,7 +237,8 @@ Annotationen auf den `chat.turn`-Span dieses Zugs:
 | Annotation | Form |
 |---|---|
 | `mapping_precision` | ein Score je Zug: behaltene / entschiedene Vorschläge. Kein Label — „0,75" ist die Aussage, eine Textmarke daneben wäre eine Schwelle, die niemand festgelegt hat. |
-| `suggestion` | eine je Vorschlag. Label `kept`/`removed`, Score `1.0`/`0.0`, **Erklärung = der Suchbegriff**, Metadaten mit `search_term`, `product_id`, `rank`, `free_text`. |
+| `suggestion` | eine je Vorschlag. Label `kept`/`removed`, Score `1.0`/`0.0`, **Erklärung = der Suchbegriff**, Metadaten mit `search_term`, `product_id`, `rank`, `free_text` — und seit WB-359 `fallback_term` sowie, wenn korrigiert wurde, `corrected_to`. |
+| `correction` | eine je Korrektur (WB-359). Label `corrected` (aus der Vorlage gewählt) oder `free_text` (nichts passte, Katalog-Lücke), **Erklärung = „X statt Y“**, Metadaten mit beiden Produkten. Kein Score, und ein eigener Name: unter `suggestion` hübe die Korrektur den Mittelwert, den sie erklären soll. |
 
 An jeder steht `annotator_kind = "HUMAN"`. Das ist kein Formfeld, sondern der
 ganze Wert dieser Daten: wer in Phoenix danach filtert, bekommt echtes
@@ -263,6 +264,58 @@ Zusatzarbeit beantwortet.
 Der `rank` in den Metadaten schliesst den Kreis zum Butter-Fall: damit lässt
 sich fragen, ob verworfene Vorschläge **systematisch** aus schwachen Suchen
 kommen — dieselbe Frage wie oben, jetzt mit menschlichem Urteil daneben.
+
+### Aus einem negativen Label wird ein positives (WB-359)
+
+`removed` sagt „das war falsch“. Das ist die halbe Auskunft. Seit „Nein“ die
+aufgehobenen Kandidaten aufklappt und ein Tipp einen davon statt des
+Vorschlags in den Korb legt, steht die andere Hälfte daneben — **welcher
+Kandidat statt welchem**. Handprobe vom 2026-08-28 gegen die echte Box
+(`Qwen3.8-27B-Instruct`) und den echten Katalog (10.361 Produkte), Satz „ich
+brauche Butter, Schmand und Sellerie“, zurückgelesen aus Phoenix:
+
+```
+name               identifier                label      explanation
+suggestion         picknick-suggestion-98    removed    Butter — stattdessen: „Kerrygold irische Butter gesalzen“
+suggestion         picknick-suggestion-99    kept       Schmand
+suggestion         picknick-suggestion-100   removed    Sellerie — stattdessen: „Sellerie“
+correction         picknick-correction-101   corrected  „Butter“: statt „Weihenstephan Butter“ -> „Kerrygold irische Butter gesalzen“
+correction         picknick-correction-102   free_text  „Sellerie“ war falsch; nichts aus der Vorlage passte — von Hand: „Sellerie“
+mapping_precision  picknick-turn-34          —          1 von 3 entschiedenen Vorschlägen behalten.
+```
+
+Zwei Dinge daran sind Absicht und keine Kosmetik:
+
+* **Die Korrektur zählt nicht in `mapping_precision`.** Die Quote steht auf
+  0,33 und nicht auf 0,5 — die Korrekturzeile ist kein Vorschlag des Modells,
+  sondern die Handbewegung danach. Mitgezählt hübe ausgerechnet ein Fehlgriff
+  die Zahl, sobald ihn jemand geradezieht.
+* **`corrected` und `free_text` sind zwei verschiedene Befunde.** Das erste
+  heisst „aus der Vorlage hätte das Modell das Richtige nehmen können“ — ein
+  Modellfehler. Das zweite heisst „in der Vorlage stand es gar nicht“ — eine
+  Katalog-Lücke, und die ist keinem Modell anzulasten. Unter einem Label wären
+  die beiden nicht mehr zu trennen.
+
+### Ein Treffer, der nur über den allgemeinsten Begriff kam
+
+Der Befund stammt aus WB-358 (Kassenbons) und gilt im Chat genauso: findet
+kein genauer Begriff etwas, greift der allgemeinste — und der findet **immer
+irgendetwas**. Nachgemessen am echten Katalog:
+
+```
+Kette                                     Kandidaten          erster Treffer
+[Old Amsterdam, Amsterdamer Käse, Bier]   15 × via „Bier“     Singha Bier (EINWEG)
+[Geflügelrolle, Rolle]                     8 × via „Rolle“    Prinzen Rolle Choco Duo
+```
+
+Kommen ALLE Kandidaten einer Zutat vom letzten Kettenglied, steht das als
+`chat_suggestion.fallback_term` an der Zeile: in der Oberfläche als „nur über
+den allgemeinen Begriff ‚Bier‘ gefunden“, in der Annotation als Metadatum und
+in der Erklärung. Das ist bewusst die enge Regel. „Der GEWÄHLTE Kandidat kam
+über das letzte Glied“ wäre zu laut, weil das letzte Glied oft ein legitimes
+Synonym ist („Möhren“, „Karotten“) — die Kette [Geflügelrolle, Geflügel,
+Rolle] wird deshalb NICHT markiert, denn „Geflügel“ hat selbst Treffer
+geliefert. Die enge Regel meldet weniger, aber was sie meldet, stimmt.
 
 Drei Regeln halten die Zahlen ehrlich:
 

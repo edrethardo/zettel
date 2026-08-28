@@ -144,3 +144,43 @@ def test_produkt_ist_je_quelle_eindeutig(con):
         con.execute(
             "INSERT INTO product (source, external_id, name) "
             "VALUES ('knuspr', '95793', 'Milch nochmal')")
+
+
+def test_eine_alte_datenbank_bekommt_die_neuen_spalten(tmp_path):
+    """`CREATE TABLE IF NOT EXISTS` sieht eine vorhandene Tabelle nicht an.
+
+    Die Datenbank auf diesem Rechner ist gewachsen und nicht frisch — ohne
+    diesen Pfad fiele die neue Spalte erst im Betrieb auf, mit „no such
+    column" mitten in einem Chat-Zug. Geprüft wird beides: die Spalte kommt
+    dazu, und die vorhandenen Zeilen überleben es.
+    """
+    pfad = tmp_path / "alt.db"
+    alt = sqlite3.connect(pfad)
+    alt.executescript("""
+        CREATE TABLE orders (id INTEGER PRIMARY KEY, state TEXT, created_at TEXT);
+        CREATE TABLE chat_message (id INTEGER PRIMARY KEY, order_id INTEGER,
+                                   role TEXT, content TEXT, span_id TEXT,
+                                   created_at TEXT);
+        CREATE TABLE chat_suggestion (
+            id INTEGER PRIMARY KEY, chat_message_id INTEGER, product_id INTEGER,
+            free_text TEXT, qty INTEGER NOT NULL DEFAULT 1, search_term TEXT,
+            rank REAL, decision TEXT NOT NULL DEFAULT 'offen', decided_at TEXT);
+        INSERT INTO chat_message (id, order_id, role, content, created_at)
+             VALUES (1, 1, 'assistant', 'Vorschläge', 'x');
+        INSERT INTO chat_suggestion (chat_message_id, free_text, search_term)
+             VALUES (1, 'Butter', 'Butter');
+    """)
+    alt.commit()
+    alt.close()
+
+    con = db.connect(pfad)
+    try:
+        db.migrate(con)
+        spalten = [r[1] for r in con.execute("PRAGMA table_info(chat_suggestion)")]
+        assert "corrected_from" in spalten and "fallback_term" in spalten
+        assert con.execute("SELECT free_text FROM chat_suggestion"
+                           ).fetchone()[0] == "Butter"
+        assert con.execute("SELECT count(*) FROM chat_kandidat").fetchone()[0] == 0
+        db.migrate(con)          # und noch einmal, ohne „duplicate column"
+    finally:
+        con.close()
