@@ -29,6 +29,14 @@ Menge im Korb ist schlimmer als gar keine, weil sie aussieht wie eine
 gerechnete. Dieselbe Zusicherung wie bei den Produkt-IDs in `plan.choose` —
 nur dass hier nichts vom Modell kommt, was zu prüfen wäre.
 
+**Nachtrag WB-371.** Die Zuordnung hing daran, dass beide Seiten dieselben
+Wörter schreiben — und Chefkoch schreibt die Mehrzahl in Klammern („Ei(er)",
+„Zwiebel(n)"). Bis WB-371 stand das als ein Wort da und traf den Begriff
+„Eier" des Modells nicht. Über 35 Chefkoch-Gerichte gemessen (2026-08-29):
+Begriffe ohne Herkunftszutat 11 von 331 -> 8 von 335, auf eingefrorener
+Modellausgabe 13 -> 8 bei sechs neuen und keiner falschen Zuordnung. Siehe
+`_woerter` und OBSERVABILITY.md.
+
 Was die Reihenfolge NICHT leistet und deshalb nicht benutzt wird: das Modell
 lässt Vorratszutaten weg, zieht dieselbe Zutat zu einer Zeile zusammen und
 nennt Synonyme („Möhren" -> „Karotten"). Nach Position zugeordnet würde
@@ -36,6 +44,8 @@ spätestens ab der ersten weggelassenen Zeile alles um eins verrutschen — und
 zwar unbemerkt, weil das Ergebnis weiter plausibel aussieht.
 """
 from __future__ import annotations
+
+import unicodedata
 
 from picknick import db, mengen
 
@@ -54,15 +64,55 @@ PRAEFIX = 0.6
 SCHWELLE = PRAEFIX
 
 
+#: Zeichen, die zwischen zwei Wörtern stehen, ohne zu einem davon zu gehören.
+#: Bindestrich und Schrägstrich standen schon hier; Komma und Semikolon kamen
+#: mit WB-371 dazu, weil „Hackfleisch, gemischt" sonst als ein Wort
+#: „hackfleisch," verglichen wurde und nur noch über den Wortanfang traf.
+_TRENNER = "-/,;"
+
+#: Klammern fallen WEG, sie trennen NICHT. Chefkoch schreibt die Mehrzahl als
+#: „Ei(er)", „Zwiebel(n)", „Limette(n)" — ohne die beiden Zeichen steht dort
+#: genau das Wort, das das Modell benutzt („eier", „zwiebeln"). Getrennt
+#: ergäbe es „ei" und „er", und beides träfe „Eier" nicht: „ei" ist kürzer
+#: als `MIN_WORT` und „er" ist ein anderes Wort. Die EINZAHL geht dabei nicht
+#: verloren — sie steht schon im zweiten Namen der Zutat, den
+#: `chefkoch.zutat_kette` ohne den Klammerteil bildet (siehe `_namen`).
+_WEG = "()"
+
+
+def _falte(text: str) -> str:
+    """Umlaute wie die Suche, Akzente zusätzlich.
+
+    `db.normalisiere` faltet Ä/Ö/Ü/ß, mehr kann es nicht: seine Ersetzungen
+    stehen als geschachteltes SQL in den Suchspalten und in einem
+    materialisierten FTS-Index. Dort etwas hinzuzufügen hiesse, den Index neu
+    zu bauen — sonst faltet die Suche alte und neue Zeilen verschieden und
+    findet stillschweigend weniger. Diese Zuordnung sucht aber gar nicht im
+    Katalog, sie vergleicht zwei Namen desselben Rezepts; deshalb wird der
+    Rest hier gefaltet und nicht dort.
+
+    Erst NFC, damit ein zerlegt geschriebenes „ä" als Umlaut ankommt und zu
+    „ae" wird statt zu „a" — danach fallen die übrigen Akzente weg und aus
+    „Porrée" wird „porree".
+    """
+    zerlegt = unicodedata.normalize("NFD", db.normalisiere(text))
+    return "".join(z for z in zerlegt if not unicodedata.combining(z))
+
+
 def _woerter(text) -> list[str]:
-    """Vergleichsform: umlautfrei, klein, am Bindestrich getrennt.
+    """Vergleichsform: umlaut- und akzentfrei, klein, in Wörter zerlegt.
 
     Dieselbe Faltung wie die Suche (`db.normalisiere`) — „Käse" und „Kaese"
     sind dasselbe Wort, sonst hinge die Zuordnung an der Schreibweise der
-    Rezeptseite.
+    Rezeptseite. Aus demselben Grund fallen Klammern und Satzzeichen weg:
+    Chefkochs „Ei(er)" und Qwens „Eier" meinen dasselbe (WB-371).
     """
-    roh = db.normalisiere((text or "").casefold())
-    return [w for w in roh.replace("-", " ").replace("/", " ").split() if w]
+    roh = _falte(unicodedata.normalize("NFC", text or "").casefold())
+    for zeichen in _TRENNER:
+        roh = roh.replace(zeichen, " ")
+    for zeichen in _WEG:
+        roh = roh.replace(zeichen, "")
+    return [w for w in roh.split() if w]
 
 
 def _wort_punkte(begriffswort: str, zutatenwort: str) -> float:

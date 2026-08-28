@@ -442,8 +442,9 @@ Rezept umbenennen oder es ganz sein lassen. Ein Attribut, das schon am Zug
 **Was diese Zahlen nicht sagen:** `dish_items` zählt, was `herkunft.zuordnen`
 einer Zutat des Rezepts zuordnen konnte. Ein Begriff, der seiner Zutat nicht
 sicher zuzuordnen ist, fehlt hier — gemessen in WB-369 eine von 38
-Zuordnungen, in der breiteren Messung zu WB-370 zwölf von 333 (siehe unten).
-Die Zahl ist also eine Untergrenze und keine Zutatenzahl des Gerichts.
+Zuordnungen, in der breiteren Messung zu WB-370 zwölf von 333, nach WB-371
+acht von 335 (siehe unten). Die Zahl ist also eine Untergrenze und keine
+Zutatenzahl des Gerichts.
 
 ### Der Artikel neben dem Gericht (WB-370)
 
@@ -500,6 +501,86 @@ es auch — „„Klopapier“ stand daneben im Satz und liegt als eigene Zeile 
 Rest fiel mit einer Zutat des Rezepts zusammen („alles für Lasagne und
 Tomaten“). Verglichen wird dafür mit demselben Wortvergleich wie bei der
 Herkunft (`herkunft.punkte`), nicht mit einer Vermutung über das Modell.
+
+### „Eier“ findet „Ei(er)“ (WB-371)
+
+Sieben der zwölf Begriffe ohne Herkunftszutat oben waren derselbe Fehler, und
+er saß in einer Zeile: `herkunft._woerter` faltete Umlaute und trennte am
+Bindestrich, ließ aber **Klammern, Kommas und Akzente stehen**. Chefkoch
+schreibt die Mehrzahl aber genau so — „Ei(er)“, „Zwiebel(n)“, „Limette(n)“ —,
+und damit stand dort ein einziges Wort „ei(er)“, das den Begriff „Eier“ des
+Modells nicht traf:
+
+    punkte('Eier',     'Ei(er)')     = 0.0     _woerter('Ei(er)') = ['ei(er)']
+    punkte('Porree',   'Porrée')     = 0.0
+    punkte('Limetten', 'Limette(n)') = 0.0
+
+Seit WB-371 fallen die Klammerzeichen weg (statt zu trennen: „ei“ und „er“
+träfe „Eier“ ebenso wenig, „ei“ ist kürzer als `herkunft.MIN_WORT`), Komma
+und Semikolon trennen wie der Bindestrich, und die Akzente fallen wie die
+Umlaute. Alle drei Zeilen stehen jetzt auf `1.0`.
+
+**Gemessen am 2026-08-29**, wieder gegen die echte Box
+(`Qwen3.8-27B-Instruct`) und dieselben 35 Gerichte, `rest_probe.py --messen`
+vorher und nachher:
+
+| | vorher | nachher |
+|---|---|---|
+| Läufe mit mindestens einem Begriff ohne Herkunftszutat | 10 von 35 (29 %) | **6 von 35 (17 %)** |
+| Begriffe ohne Herkunftszutat | 11 von 331 (3 %) | **8 von 335 (2 %)** |
+
+Die Begriffszahl schwankt zwischen zwei Läufen (331 gegen 335), weil die Box
+bei Temperatur 0 nicht bitgenau ist — dieselbe Einschränkung wie oben. Damit
+sind zwei Läufe kein Beleg dafür, **was genau** sich geändert hat. Deshalb
+wurde Stufe 1 einmal eingefangen und die Zuordnung auf **derselben**
+Modellausgabe zweimal gerechnet, mit und ohne den Fix:
+
+    Begriffe 328   ohne Herkunftszutat: 13  ->  8
+
+    + Apfelkuchen       Eier -> Ei(er)   4 Stk
+    + Bibimbap          Eier -> Ei(er)   2 Stk
+    + Griesbrei         Eier -> Ei(er)   1 Stk
+    + Moussaka          Eier -> Ei(er)   4 Stk
+    + Quiche Lorraine   Eier -> Ei(er)   4 Stk   (1 + 3, zusammengezählt)
+    + Zwiebelkuchen     Eier -> Ei(er)   2 Stk
+    - Chili con Carne   „Tomaten > Tomate“ -> jetzt Gleichstand, keine Menge
+
+Sechs neue Zuordnungen, jede von Hand gegen das Rezept geprüft, **keine
+falsche**. Die eine verlorene ist kein Rückschritt, sondern die Zusicherung
+aus WB-369 bei der Arbeit: das Rezept nennt „Tomate(n)“ zweimal (2 Dosen und
+100 ml), das Modell macht daraus zwei Ketten („Dose Tomaten“ und „Tomaten“),
+und beide passen nun gleich gut. Vorher gewann eine davon nur deshalb, weil
+die Klammer die andere aussperrte — eine Zuordnung, die aus einem Fehler kam.
+Eine Menge trug die Zeile in beiden Fällen nicht: Dosen und Milliliter lassen
+sich nicht zusammenzählen.
+
+**Was übrig bleibt, ist nicht mehr diese Ursache.** Die verbleibenden acht
+sind Gleichstände und Synonyme: „Eier“ gegen ein Rezept, das nur Eigelb und
+Eiweiß kennt (Kaiserschmarrn); „Zwiebel“ neben der Kette
+„Frühlingszwiebel > Zwiebel“, deren allgemeines Glied dieselbe Zutat trifft;
+„rote Paprika“ und „gelbe Paprika“, die beide über „Paprikaschote“ auf beide
+Schoten zeigen. Alle drei sind der Preis der Regel „bei Gleichstand keine
+Menge“ und keine Schreibweise.
+
+**Fehlzuordnungen wurden getrennt gezählt**, ohne Modell und damit
+wiederholbar: jede Zutat der 35 Rezepte liefert über `chefkoch.zutat_kette`
+ihre eigene Begriffskette, und jede Kette muss wieder auf genau die Zutat
+zeigen, aus der sie stammt.
+
+    441 Ketten   richtig 434   FALSCH 0   ohne Zuordnung 7
+
+Vor und nach dem Fix dieselbe Zahl. Der Fix macht diese Messung nicht besser
+— die Ketten kommen aus `zutat_kette`, das die Klammer ohnehin schon abwirft
+— aber er macht sie auch nicht schlechter, und das war die Frage.
+
+**`db.UMLAUTE` wurde bewusst nicht angefasst.** Dort zu falten wäre die
+naheliegende Stelle, aber die Ersetzungen stehen als geschachteltes SQL in
+`norm_name`/`norm_cat` und damit in einem **materialisierten** FTS-Index
+(`product_fts`, `content='product'`). Ein Zeichen mehr, und alte Zeilen sind
+anders gefaltet als neue — die Suche fände stillschweigend weniger, bis der
+Index neu gebaut ist. Die Herkunftszuordnung sucht gar nicht im Katalog, sie
+vergleicht zwei Namen desselben Rezepts; deshalb faltet sie selbst
+(`herkunft._falte`).
 
 ### Aus einem negativen Label wird ein positives (WB-359)
 
