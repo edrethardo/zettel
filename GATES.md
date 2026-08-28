@@ -141,6 +141,13 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
 * **Die Kosten in Phoenix.** Die Token-Zahlen sind geprüft, die Kostenzahl
   nicht. `Qwen3.8-27B-Instruct` dürfte in Phoenix' Preistabelle fehlen; es ist
   nie nachgesehen worden.
+* **Der Bon-Upload (WB-344).** `tests/test_web_bons.py` prüft ihn am
+  HTTP-Rand — Magic Bytes, Ausbruchsversuche, Grössengrenze, Liste, Löschen.
+  Das Gate selbst fasst ihn nicht an. Und der Weg, der wirklich zählt, ist
+  ungemessen: **kein Bon aus der Rewe- oder der Lidl-App wurde je hochgeladen.**
+  Welches Format die Apps liefern, wie gross die Dateien sind und ob die
+  Grenze von 25 MB passt, weiss niemand — die Zahl ist begründet, nicht
+  gemessen.
 * **WB-335 ist offen.** Warenkorb und Pick-Ansicht zeigen nicht, dass ein
   Produkt aus dem Katalog verschwunden ist. Nur die Rezeptansicht tut es. Das
   Gate deckt diesen Fall nicht ab, weil es ihn im Produkt nicht gibt.

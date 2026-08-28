@@ -5,3 +5,7 @@ __pycache__/
 data/images/
 *.db-wal
 *.db-shm
+
+# Hochgeladene Kassenbons (WB-344). Wie data/images/: Nutzdaten, keine
+# Quelle. Sie gehoeren dem Haushalt und nicht dem Repo.
+data/bons/

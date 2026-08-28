@@ -19,17 +19,18 @@ import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, quote, urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import betrieb, db, obs, orders, recipes
+from picknick import betrieb, bons as bonmodul, db, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
+from picknick.web import multipart
 
 HIER = Path(__file__).parent
 TEMPLATE_DIR = HIER / "templates"
@@ -37,6 +38,18 @@ STATIC_DIR = HIER / "static"
 
 #: Wo die Bilder liegen, die der Crawler heruntergeladen hat (Spec 5.2).
 DEFAULT_IMAGE_DIR = "data/images"
+
+#: Wo die hochgeladenen Kassenbons landen (WB-344). Unter `data/`, wie die
+#: Bilder — das ist der Ort für alles, was Nutzdaten sind und nicht Quelle,
+#: und `.gitignore` hält es aus dem Repo. Die nächtliche Sicherung fasst
+#: allerdings nur die Datenbank an: ein Bon, der hier gelöscht wird, ist weg.
+DEFAULT_BON_DIR = "data/bons"
+
+#: Wieviel ein `multipart/form-data`-Rumpf über die Datei hinaus wiegen darf:
+#: Grenzzeichenketten, Feldköpfe, das zweite Formularfeld. 64 KB sind dafür
+#: reichlich. Der Zuschlag existiert, damit die Grenze aus `Content-Length`
+#: eine Datei von exakt zulässiger Grösse nicht doch noch abweist.
+MULTIPART_ZUSCHLAG = 64 * 1024
 
 #: Wie viele Kacheln eine Liste höchstens zeigt. Auf dem Handy scrollt niemand
 #: durch 900 Produkte; wer mehr will, sucht oder steigt eine Ebene tiefer.
@@ -64,6 +77,7 @@ ENV_HOST = "PICKNICK_HOST"
 ENV_PORT = "PICKNICK_PORT"
 ENV_DB = "PICKNICK_DB"
 ENV_IMAGE_DIR = "PICKNICK_IMAGE_DIR"
+ENV_BON_DIR = "PICKNICK_BON_DIR"
 
 #: Vorgabe: die Tailscale-Adresse dieser Maschine und localhost. Beides steht
 #: in der Umgebung und nicht als einzige Wahrheit im Code, weil die Adresse
@@ -357,6 +371,7 @@ async def _lifespan(app: FastAPI):
 
 def create_app(db_path: str | Path | None = None,
                image_dir: str | Path | None = None,
+               bon_dir: str | Path | None = None,
                chat=None) -> FastAPI:
     """Baut die Anwendung. Pfade als Argument, damit Tests sie umlenken können.
 
@@ -377,6 +392,8 @@ def create_app(db_path: str | Path | None = None,
     app.state.db_path = str(db_path or os.environ.get(ENV_DB) or db.DEFAULT_DB)
     app.state.image_dir = Path(image_dir or os.environ.get(ENV_IMAGE_DIR)
                                or DEFAULT_IMAGE_DIR)
+    app.state.bon_dir = Path(bon_dir or os.environ.get(ENV_BON_DIR)
+                             or DEFAULT_BON_DIR)
     app.state.chat = chat if chat is not None else chatmodul.Chat()
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -1004,6 +1021,103 @@ def create_app(db_path: str | Path | None = None,
             })
         finally:
             c.close()
+
+    # ----------------------------------------------------------------------
+    # Kassenbons (WB-344)
+    #
+    # Nur der Transport: hochladen, ablegen, auflisten, löschen. Ausgelesen
+    # wird hier nichts — dafür braucht es erst einen echten Bon als Muster.
+    #
+    # Kein Passwort, wie überall sonst im Shop: der Rahmen ist das Tailnet
+    # (Spec 10). Eine Anmeldung ausgerechnet auf dieser Seite wäre ein zweites
+    # Zugangsmodell neben dem, das die Bindung durchsetzt — und zwei Modelle
+    # heissen am Ende, dass keines gilt.
+
+    def _bon_kontext(request: Request, c: sqlite3.Connection,
+                     fehler: str | None = None, neu: str | None = None) -> dict:
+        return {**_rahmen(request, c),
+                "bons": bonmodul.liste(app.state.bon_dir),
+                "max_mb": bonmodul.MAX_BYTES // (1024 * 1024),
+                "erlaubt": bonmodul.ERLAUBT,
+                "fehler": fehler,
+                "neu": neu}
+
+    def _bon_seite(request: Request, fehler: str | None = None,
+                   neu: str | None = None, code: int = 200):
+        """Die ganze Seite — auch im Fehlerfall.
+
+        Eine Weiterleitung nach einem abgelehnten Upload verlöre die
+        Begründung, und die Nutzerin sähe nur, dass nichts passiert ist.
+        Dasselbe Muster wie beim Warenkorb (`_korb_antwort`).
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(
+                request, "bons.html", _bon_kontext(request, c, fehler, neu),
+                status_code=code)
+        finally:
+            c.close()
+
+    @app.get("/bons")
+    def bonliste(request: Request, neu: str = ""):
+        return _bon_seite(request, neu=neu or None)
+
+    @app.post("/bons")
+    async def bon_hochladen(request: Request):
+        """Nimmt eine Datei entgegen — oder sagt in einem Satz, warum nicht.
+
+        Jeder Abbruch hat hier einen sichtbaren Grund. Das ist der Anlass des
+        Tickets: auf der Werkbank-Seite stand am Telefon nur „Load failed",
+        und dahinter steckte ein 401. Wer hier scheitert, soll lesen können,
+        woran — und was zu tun ist.
+        """
+        # Die Länge steht im Kopf, bevor ein einziges Byte des Rumpfs gelesen
+        # ist. Ein 300-MB-Video hier abzuweisen kostet nichts; es erst in den
+        # Speicher zu holen, um dann „zu gross" zu sagen, wäre die teuerste
+        # Art, dasselbe zu antworten. Der Zuschlag deckt Grenzen und Köpfe des
+        # Formulars, die mitzählen, aber nicht zur Datei gehören.
+        angekuendigt = zahl(request.headers.get("content-length"), 0)
+        if angekuendigt > bonmodul.MAX_BYTES + MULTIPART_ZUSCHLAG:
+            return _bon_seite(request, code=413, fehler=(
+                f"Die Datei ist mit rund {angekuendigt // (1024 * 1024)} MB zu"
+                f" gross, erlaubt sind {bonmodul.MAX_BYTES // (1024 * 1024)} MB."
+                " Als PDF aus der Rewe- oder Lidl-App ist ein Bon deutlich"
+                " kleiner als ein Foto davon."))
+
+        teil = multipart.datei(await request.body(),
+                               request.headers.get("content-type"))
+        if teil is None or not teil.dateiname:
+            # Ein Formular ohne gewählte Datei schickt trotzdem ein Feld, nur
+            # ohne Namen und ohne Inhalt. Das ist kein Fehler der Nutzerin,
+            # sondern ein vergessener Handgriff — und die Meldung sagt genau
+            # das statt „ungültige Anfrage".
+            return _bon_seite(request, code=400, fehler=(
+                "Es war keine Datei ausgewählt. Bitte auf „Bon auswählen"
+                "\u201c tippen und ein Bild oder PDF aussuchen."))
+        try:
+            name = bonmodul.speichern(app.state.bon_dir, teil.dateiname,
+                                      teil.inhalt)
+        except bonmodul.BonFehler as fehler:
+            return _bon_seite(request, code=400, fehler=str(fehler))
+        # Weiterleitung statt direkt gerenderter Seite: sonst lädt ein
+        # Neuladen im Browser denselben Bon ein zweites Mal hoch, und weil der
+        # Zeitstempel im Namen steckt, fällt das niemandem auf.
+        return RedirectResponse(f"/bons?neu={quote(name)}", status_code=303)
+
+    @app.post("/bons/{name}/loeschen")
+    def bon_loeschen(request: Request, name: str):
+        """Löscht einen Bon.
+
+        Der Name kommt aus der URL und ist damit beliebig. Er wird NICHT
+        bereinigt, sondern geprüft und im Zweifel abgelehnt (siehe
+        `bons.pfad_im_verzeichnis`): bereinigen hiesse raten, was gemeint war,
+        und beim Löschen ist Raten die falsche Antwort.
+        """
+        if not bonmodul.loeschen(app.state.bon_dir, name):
+            return _bon_seite(request, code=404, fehler=(
+                "Diesen Bon gibt es nicht (mehr). Die Liste unten ist der"
+                " aktuelle Stand."))
+        return RedirectResponse("/bons", status_code=303)
 
     @app.get("/bild/{produkt_id}")
     def bild(produkt_id: int):

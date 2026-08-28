@@ -1,0 +1,57 @@
+{% extends "basis.html" %}
+{% block titel %}Bons — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Kassenbons</h1>
+
+{# Kein hx-post: ein Datei-Upload über HTMX braucht JavaScript-Konfiguration
+   und bringt hier nichts — das Formular schickt eine Datei und lädt danach
+   ohnehin eine neue Liste. Ohne JavaScript funktioniert es genauso. #}
+<form class="bonupload" method="post" action="/bons"
+      enctype="multipart/form-data">
+  {# accept ist eine Bequemlichkeit für den Dateidialog des Telefons und
+     ausdrücklich KEINE Prüfung — die passiert am Inhalt, im Server. #}
+  <input type="file" name="datei" id="bondatei"
+         accept="image/png,image/jpeg,image/heic,image/heif,application/pdf,image/*"
+         aria-label="Bon auswählen">
+  <button type="submit">Hochladen</button>
+</form>
+
+<p class="fussnote">
+  {{ erlaubt }}, bis {{ max_mb }} MB. Ein eBon als PDF aus der Rewe- oder
+  Lidl-App ist besser lesbar als ein Foto.
+</p>
+
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
+
+{% if neu %}
+<p class="fertig" role="status">Gespeichert als {{ neu }}.</p>
+{% endif %}
+
+{% if not bons %}
+  <p class="leer">Noch kein Bon hochgeladen.</p>
+{% else %}
+<ul class="bons">
+  {% for b in bons %}
+  <li class="bonzeile">
+    <span class="text">
+      <span class="name">{{ b.name }}</span>
+      <span class="menge">{{ b.datum_text }} · {{ b.groesse_text }}</span>
+    </span>
+    {# Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
+       gelöscht wird, dessen Knopf getroffen wurde. #}
+    <form method="post" action="/bons/{{ b.name | urlencode }}/loeschen">
+      <button type="submit" class="mini loeschen"
+              aria-label="{{ b.name }} löschen">×</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p class="fussnote">
+  Ausgelesen wird hier nichts — die Bons liegen erst einmal nur auf dem
+  Rechner.
+</p>
+{% endblock %}

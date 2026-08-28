@@ -298,3 +298,22 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 .lauf .name { font-weight: 600; }
 .lauf.verworfen { background: #fff8e8; }
 .lauf.error .name { color: #8c1414; }
+
+/* Bons (WB-344). Eine Spalte wie überall: der Upload passiert auf dem Handy,
+   und die Dateiauswahl des Telefons braucht die volle Breite — als Flex-Zeile
+   neben dem Knopf schneidet iOS den Dateinamen ab. */
+.bonupload { display: flex; flex-direction: column; gap: 10px;
+             margin-bottom: var(--rand); }
+.bonupload input[type="file"] {
+  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 17px;
+  border: 1px solid var(--linie); border-radius: 8px; background: #fff;
+}
+.bonupload button { width: 100%; min-height: 52px; font-size: 17px;
+                    font-weight: 600; border: 1px solid #8ab4e8;
+                    border-radius: 8px; background: #e2eefc; color: inherit;
+                    cursor: pointer; }
+.bons { list-style: none; margin: 0; padding: 0; }
+.bonzeile { display: flex; align-items: center; gap: 8px;
+            padding: 8px 0; border-bottom: 1px solid var(--linie);
+            min-height: var(--tap); }
+.bonzeile form { margin: 0; margin-left: auto; }
