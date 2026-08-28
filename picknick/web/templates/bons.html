@@ -18,8 +18,15 @@
 
 <p class="fussnote">
   {{ erlaubt }}, bis {{ max_mb }} MB. Ein eBon als PDF aus der Rewe- oder
-  Lidl-App ist besser lesbar als ein Foto.
+  Lidl-App ist besser lesbar als ein Foto — und er lässt sich hier auslesen.
 </p>
+
+{% if not ocr_da %}
+{# Keine Fehlermeldung, sondern eine Auskunft: ein Bild-Bon ist nicht kaputt,
+   er wartet auf eine Installation. Sie gehört dem Nutzer und nicht diesem
+   Prozess. #}
+<p class="fussnote" role="status">{{ ocr_fehlt_text }}</p>
+{% endif %}
 
 {% if fehler %}
 <p class="fehler" role="status">{{ fehler }}</p>
@@ -36,22 +43,50 @@
   {% for b in bons %}
   <li class="bonzeile">
     <span class="text">
-      <span class="name">{{ b.name }}</span>
+      <span class="name">
+        {% if b.beleg or b.lauf %}<a href="/bons/{{ b.name | urlencode }}">{{ b.name }}</a>
+        {% else %}{{ b.name }}{% endif %}
+      </span>
       <span class="menge">{{ b.datum_text }} · {{ b.groesse_text }}</span>
+      <span class="woher">
+        {% if b.lauf and b.lauf.laeuft %}
+          wird ausgelesen — {{ b.lauf.schritt }}
+        {% elif b.lauf and b.lauf.fehler %}
+          nicht gelesen: {{ b.lauf.meldung }}
+        {% elif b.beleg %}
+          {{ laden_titel[b.beleg.store] }} · {{ b.beleg.bought_on or "ohne Datum" }} ·
+          {{ b.beleg.n_posten }} Posten, {{ b.beleg.n_bestaetigt }} bestätigt,
+          {{ b.beleg.n_offen }} offen
+        {% elif not b.lesbar %}
+          Bild — dafür fehlt OCR auf dieser Maschine
+        {% else %}
+          noch nicht ausgelesen
+        {% endif %}
+      </span>
     </span>
-    {# Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
-       gelöscht wird, dessen Knopf getroffen wurde. #}
-    <form method="post" action="/bons/{{ b.name | urlencode }}/loeschen">
-      <button type="submit" class="mini loeschen"
-              aria-label="{{ b.name }} löschen">×</button>
-    </form>
+    <span class="stellen">
+      {% if b.lesbar and not (b.lauf and b.lauf.laeuft) %}
+      {# Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
+         gemeint ist, dessen Knopf getroffen wurde. #}
+      <form method="post" action="/bons/{{ b.name | urlencode }}/auslesen">
+        <button type="submit" class="mini"
+                aria-label="{{ b.name }} auslesen">
+          {% if b.beleg %}neu lesen{% else %}Auslesen{% endif %}</button>
+      </form>
+      {% endif %}
+      <form method="post" action="/bons/{{ b.name | urlencode }}/loeschen">
+        <button type="submit" class="mini loeschen"
+                aria-label="{{ b.name }} löschen">×</button>
+      </form>
+    </span>
   </li>
   {% endfor %}
 </ul>
 {% endif %}
 
 <p class="fussnote">
-  Ausgelesen wird hier nichts — die Bons liegen erst einmal nur auf dem
-  Rechner.
+  Ausgelesen werden Laden, Datum, Artikel, Menge und Preis — und sonst nichts.
+  Kartennummer, Terminal-ID und Belegnummern stehen auf dem Bon und bleiben
+  dort.
 </p>
 {% endblock %}

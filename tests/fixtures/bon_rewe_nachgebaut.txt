@@ -1,0 +1,45 @@
+                Musterweg 8
+               12345 Musterstadt
+               0000 / 1234567
+            UID Nr.: DE000000000
+                                   EUR
+KRAEUTERQUARK                    1,29 B
+BROTZEIT KAESE                   2,49 B
+SCHOKO-KEKSE                     2,00 B
+              2 Stk x   1,00
+ZWIEBELRINGE TK                  2,19 B
+GURKENSALAT MIN.                 0,99 B
+APFELSAFT NATUR                  1,49 A
+PFAND 0,25 EURO                  0,50 A *
+RABATT AKTION                   -0,30 B
+ --------------------------------------
+ SUMME                   EUR     10,65
+ ======================================
+ Geg. Mastercard         EUR     10,65
+
+                * *   Kundenbeleg      * *
+Datum:                                   04.03.2026
+Uhrzeit:                               11:22:33 Uhr
+Beleg-Nr.                                   3877011
+Trace-Nr.                                    998877
+                 Bezahlung
+                Contactless
+              DEBIT MASTERCARD
+Nr.                 ############4242 0000
+VU-Nr.                         1234509876
+Terminal-ID                       55443322
+Pos-Info                        00 075 00
+AS-Zeit 04.03.                  11:22 Uhr
+                 APPROVED
+Betrag EUR                           10,65
+              Zahlung erfolgt
+ Steuer %             Netto        Steuer        Brutto
+ A= 19,0%              1,67          0,31          1,98
+ B=   7,0%             8,10          0,56          8,67
+ Gesamtbetrag          9,77          0,88         10,65
+   Seriennnummer Kasse: REWE:00:11:22:33:44:55
+  04.03.2026         11:22         Bon-Nr.:4321
+  Markt:0001         Kasse:2       Bed.:222222
+
+ ****************************************
+     Vielen Dank fuer Ihren Einkauf

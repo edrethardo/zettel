@@ -3,8 +3,8 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 37 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 433 Tests
+.venv/bin/python checks/smoke.py     # 40 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q        # 582 Tests
 ```
 
 `checks/smoke.py` ist das Gate: eine Zeile je Frage, ein Rückgabewert.
@@ -141,13 +141,26 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
 * **Die Kosten in Phoenix.** Die Token-Zahlen sind geprüft, die Kostenzahl
   nicht. `Qwen3.8-27B-Instruct` dürfte in Phoenix' Preistabelle fehlen; es ist
   nie nachgesehen worden.
-* **Der Bon-Upload (WB-344).** `tests/test_web_bons.py` prüft ihn am
-  HTTP-Rand — Magic Bytes, Ausbruchsversuche, Grössengrenze, Liste, Löschen.
-  Das Gate selbst fasst ihn nicht an. Und der Weg, der wirklich zählt, ist
-  ungemessen: **kein Bon aus der Rewe- oder der Lidl-App wurde je hochgeladen.**
-  Welches Format die Apps liefern, wie gross die Dateien sind und ob die
-  Grenze von 25 MB passt, weiss niemand — die Zahl ist begründet, nicht
-  gemessen.
+* **Die Kassenbons (WB-344 und WB-358).** `tests/test_web_bons.py`,
+  `test_bons_lesen.py`, `test_bons_kaeufe.py`, `test_bons_lauf.py` und
+  `test_web_bonlesen.py` prüfen Upload, Zerlegung, Ablage und Zuordnung —
+  **das Gate selbst fasst nichts davon an.** Was dort ungemessen bleibt:
+  * **Der Lidl-Weg ist gebaut, aber nie gelaufen.** `tesseract` ist auf dieser
+    Maschine nicht installiert. Der Bild-Weg sagt das sauber und macht die
+    Seite nicht kaputt (geprüft), aber ob OCR auf dem Screenshot wirklich
+    brauchbaren Text liefert, weiss niemand. Der Screenshot ist gerenderter
+    Text und kein Foto von Papier, die Erkennung SOLLTE also gut sein — das
+    ist eine Erwartung, keine Messung.
+  * **Nur ein einziger echter Bon.** Gemessen wurde an genau einem Rewe-eBon
+    (18 Posten). Eine zweite Filiale, ein Bon mit Rabattzeile, ein Bon über
+    zwei Seiten — nichts davon ist je durch dieses Modul gelaufen.
+  * **Die Zuordnung braucht die Box.** Die Tests fahren gegen einen Fake-LLM.
+    Wie gut `Qwen3.8-27B-Instruct` die Abkürzungen wirklich auflöst, steht in
+    der Handprobe im Docstring von `picknick/bons/zuordnung.py`: 18 von 18
+    Zeilen fanden ein Produkt, **14 davon das richtige**.
+  * **Der Hintergrundlauf überlebt keinen Neustart.** `bons.lauf` lebt im
+    Prozess. Wird der Web-Prozess mitten in einem Lauf neu gestartet, steht
+    der Bon wieder als „noch nicht ausgelesen" da.
 * **WB-335 ist offen.** Warenkorb und Pick-Ansicht zeigen nicht, dass ein
   Produkt aus dem Katalog verschwunden ist. Nur die Rezeptansicht tut es. Das
   Gate deckt diesen Fall nicht ab, weil es ihn im Produkt nicht gibt.

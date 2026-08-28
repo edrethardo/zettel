@@ -51,6 +51,12 @@ DEFAULT_BON_DIR = "data/bons"
 #: eine Datei von exakt zulässiger Grösse nicht doch noch abweist.
 MULTIPART_ZUSCHLAG = 64 * 1024
 
+#: Wie viele Produkte zur Korrektur einer Bon-Zeile vorgelegt werden (WB-358).
+#: Fünf, wie `plan.KANDIDATEN`: die Liste steht auf dem Handy neben einer
+#: einzigen Zeile, und wer nach fünf Treffern nichts Passendes sieht, tippt
+#: einen anderen Begriff — er scrollt nicht.
+KORREKTUREN = 5
+
 #: Wie viele Kacheln eine Liste höchstens zeigt. Auf dem Handy scrollt niemand
 #: durch 900 Produkte; wer mehr will, sucht oder steigt eine Ebene tiefer.
 SEITE = 60
@@ -372,7 +378,7 @@ async def _lifespan(app: FastAPI):
 def create_app(db_path: str | Path | None = None,
                image_dir: str | Path | None = None,
                bon_dir: str | Path | None = None,
-               chat=None) -> FastAPI:
+               chat=None, zuordner=None, bonlaeufe=None) -> FastAPI:
     """Baut die Anwendung. Pfade als Argument, damit Tests sie umlenken können.
 
     `chat` ist der Agent aus Spec 6. Er wird hier nur GEBAUT und nicht
@@ -395,6 +401,15 @@ def create_app(db_path: str | Path | None = None,
     app.state.bon_dir = Path(bon_dir or os.environ.get(ENV_BON_DIR)
                              or DEFAULT_BON_DIR)
     app.state.chat = chat if chat is not None else chatmodul.Chat()
+    # Beide wie `chat`: hier nur GEBAUT, nicht benutzt. `Zuordner()` legt keine
+    # Verbindung an und fragt die Box nicht, `Laeufe()` startet keinen Thread.
+    # Tests schieben einen Zuordner mit Fake-LLM unter und ein `Laeufe`, das
+    # synchron arbeitet (`bons.sofort`) — kein Test darf ins Netz oder die Box
+    # wecken (Spec 13).
+    app.state.bonzuordner = (zuordner if zuordner is not None
+                             else bonmodul.Zuordner())
+    app.state.bonlaeufe = (bonlaeufe if bonlaeufe is not None
+                           else bonmodul.Laeufe())
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR))
@@ -1023,22 +1038,54 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     # ----------------------------------------------------------------------
-    # Kassenbons (WB-344)
+    # Kassenbons (WB-344 hochladen, WB-358 auslesen)
     #
-    # Nur der Transport: hochladen, ablegen, auflisten, löschen. Ausgelesen
-    # wird hier nichts — dafür braucht es erst einen echten Bon als Muster.
+    # Zwei Schritte, und die Trennung ist keine Kosmetik:
+    #
+    # * **Hochladen** ist Transport und passiert im Request. Es kennt nur
+    #   Bytes.
+    # * **Auslesen** startet einen Lauf im Hintergrund (`bons.lauf`) und kehrt
+    #   sofort zurück. `pdftotext` ist zwar schnell (gemessen: Millisekunden),
+    #   OCR und der Modellaufruf sind es nicht, und eine schlafende Box
+    #   braucht 96 s. Nichts davon gehört in einen Request — die Seite fragt
+    #   den Stand nach, wie beim Wecken des Modells.
     #
     # Kein Passwort, wie überall sonst im Shop: der Rahmen ist das Tailnet
     # (Spec 10). Eine Anmeldung ausgerechnet auf dieser Seite wäre ein zweites
     # Zugangsmodell neben dem, das die Bindung durchsetzt — und zwei Modelle
     # heissen am Ende, dass keines gilt.
+    #
+    # **Was hier NICHT passiert:** der Text des Bons wird nirgends abgelegt. Er
+    # entsteht im Lauf, wird zerlegt und fällt weg. In die Datenbank gehen nur
+    # Laden, Datum, Artikelname, Menge und Preis (siehe `picknick.bons`).
+
+    def _bon_pfad(name: str) -> Path | None:
+        return bonmodul.pfad_im_verzeichnis(app.state.bon_dir, name)
 
     def _bon_kontext(request: Request, c: sqlite3.Connection,
                      fehler: str | None = None, neu: str | None = None) -> dict:
+        """Die Bon-Liste, jede Datei mit ihrem Auslesestand.
+
+        Der Stand kommt aus zwei Quellen, und beide werden gebraucht: ein
+        laufender Lauf steht nur im Prozess (`bons.lauf`), ein fertiger Beleg
+        nur in der Datenbank. Nach einem Neustart des Web-Prozesses ist der
+        Lauf vergessen, der Beleg aber nicht — und genau dann muss die Seite
+        „ausgelesen" sagen und nicht „läuft".
+        """
+        eintraege = bonmodul.liste(app.state.bon_dir)
+        for e in eintraege:
+            e["beleg"] = bonmodul.beleg_zu_datei(c, e["name"])
+            e["lauf"] = app.state.bonlaeufe.stand(e["name"])
+            # Ein Bild ohne OCR bekommt gar keinen Knopf, statt einen, der
+            # verlässlich scheitert. Die Begründung steht direkt daneben.
+            e["lesbar"] = e["name"].lower().endswith(".pdf") or bonmodul.ocr_da()
         return {**_rahmen(request, c),
-                "bons": bonmodul.liste(app.state.bon_dir),
+                "bons": eintraege,
                 "max_mb": bonmodul.MAX_BYTES // (1024 * 1024),
                 "erlaubt": bonmodul.ERLAUBT,
+                "laden_titel": bonmodul.LADEN_TITEL,
+                "ocr_da": bonmodul.ocr_da(),
+                "ocr_fehlt_text": bonmodul.OCR_FEHLT_TEXT,
                 "fehler": fehler,
                 "neu": neu}
 
@@ -1093,7 +1140,7 @@ def create_app(db_path: str | Path | None = None,
             # das statt „ungültige Anfrage".
             return _bon_seite(request, code=400, fehler=(
                 "Es war keine Datei ausgewählt. Bitte auf „Bon auswählen"
-                "\u201c tippen und ein Bild oder PDF aussuchen."))
+                "“ tippen und ein Bild oder PDF aussuchen."))
         try:
             name = bonmodul.speichern(app.state.bon_dir, teil.dateiname,
                                       teil.inhalt)
@@ -1112,12 +1159,203 @@ def create_app(db_path: str | Path | None = None,
         bereinigt, sondern geprüft und im Zweifel abgelehnt (siehe
         `bons.pfad_im_verzeichnis`): bereinigen hiesse raten, was gemeint war,
         und beim Löschen ist Raten die falsche Antwort.
+
+        Der Beleg bleibt stehen. Das ist Absicht: die Datei ist die Quelle,
+        die bestätigten Käufe sind das Ergebnis — wer den Zettel wegwirft,
+        will nicht seine Einkaufshistorie löschen.
         """
         if not bonmodul.loeschen(app.state.bon_dir, name):
             return _bon_seite(request, code=404, fehler=(
                 "Diesen Bon gibt es nicht (mehr). Die Liste unten ist der"
                 " aktuelle Stand."))
+        app.state.bonlaeufe.vergiss(name)
         return RedirectResponse("/bons", status_code=303)
+
+    # -- Auslesen ---------------------------------------------------------
+
+    def _auslesen(name: str):
+        """Die Arbeit eines Laufs: Datei -> Text -> Posten -> Zuordnung.
+
+        Läuft in einem eigenen Thread und braucht deshalb eine eigene
+        Datenbankverbindung — eine sqlite3-Verbindung gehört dem Thread, der
+        sie geöffnet hat.
+
+        Die Zuordnung darf scheitern, ohne den Lauf zu verlieren: schläft die
+        Box, ist der Beleg trotzdem vollständig eingelesen und die Verbindung
+        zum Katalog wird später nachgeholt. Umgekehrt geht es nicht — ohne
+        Posten gibt es nichts zuzuordnen.
+        """
+        def arbeit(melde):
+            pfad = _bon_pfad(name)
+            if pfad is None or not pfad.is_file():
+                raise bonmodul.LeseFehler(
+                    f"„{name}“ liegt nicht (mehr) im Bon-Verzeichnis.")
+            melde("liest die Datei")
+            bon = bonmodul.zerlege(bonmodul.text_aus_datei(pfad))
+            c = con()
+            try:
+                # `ersetzen=True`: ein zweiter Lauf über dieselbe Datei ist
+                # ein NEUES Einlesen und keine Verdopplung. Die Entscheidungen
+                # des vorigen Laufs gehen dabei verloren — sie gehören zu
+                # Zeilen, die es danach nicht mehr gibt.
+                receipt_id = bonmodul.anlegen(c, bon, datei=name,
+                                              ersetzen=True)
+                melde("ordnet dem Katalog zu — das Modell überlegt")
+                try:
+                    ergebnis = app.state.bonzuordner.zuordnen(c, receipt_id)
+                    meldung = ergebnis.meldung
+                except bonmodul.ZuordnungFehler as e:
+                    meldung = (
+                        f"{len(bon.posten)} Posten eingelesen, mit Preis und "
+                        f"Datum. Die Zuordnung zum Katalog fehlt noch: {e}")
+                return receipt_id, meldung
+            finally:
+                c.close()
+        return arbeit
+
+    @app.post("/bons/{name}/auslesen")
+    def bon_auslesen(request: Request, name: str):
+        """Startet den Lauf und leitet zur Bon-Ansicht weiter.
+
+        Kehrt sofort zurück, auch wenn der Lauf Minuten dauert (siehe
+        `bons.lauf`). Zweimal Tippen startet nicht zweimal.
+        """
+        pfad = _bon_pfad(name)
+        if pfad is None or not pfad.is_file():
+            return _bon_seite(request, code=404, fehler=(
+                "Diesen Bon gibt es nicht (mehr). Die Liste unten ist der"
+                " aktuelle Stand."))
+        app.state.bonlaeufe.starte(name, _auslesen(name))
+        return RedirectResponse(f"/bons/{quote(name)}", status_code=303)
+
+    def _bonstand_kontext(c: sqlite3.Connection, name: str,
+                          fehler: str | None = None) -> dict:
+        """Alles, was `_bonstand.html` braucht — für Vollseite und Bruchstück.
+
+        Eine Funktion für beide Wege, aus demselben Grund wie beim Warenkorb:
+        sonst entwickelt sich das Bruchstück von der ersten Ansicht weg und
+        niemand merkt es.
+        """
+        beleg = bonmodul.beleg_zu_datei(c, name)
+        zeilen = (_posten_mit_bild(bonmodul.posten(c, beleg["id"]),
+                                   app.state.image_dir) if beleg else [])
+        return {
+            "name": name,
+            "lauf": app.state.bonlaeufe.stand(name),
+            "nachfrage_s": bonmodul.NACHFRAGE_S,
+            "beleg": beleg,
+            "zeilen": zeilen,
+            "bilanz": bonmodul.bilanz(c, beleg["id"]) if beleg else None,
+            "laden_titel": bonmodul.LADEN_TITEL,
+            "fehler": fehler,
+        }
+
+    def _bonstand_antwort(request: Request, c: sqlite3.Connection, name: str,
+                          fehler: str | None = None, code: int = 200):
+        """HTMX bekommt das Bruchstück, ein Formular ohne JavaScript die Seite."""
+        kontext = _bonstand_kontext(c, name, fehler)
+        if ist_htmx(request):
+            return vorlagen.TemplateResponse(request, "_bonstand.html",
+                                             kontext, status_code=code)
+        return vorlagen.TemplateResponse(
+            request, "bon.html", {**_rahmen(request, c), **kontext},
+            status_code=code)
+
+    @app.get("/bons/{name}")
+    def bon_ansicht(request: Request, name: str):
+        c = con()
+        try:
+            if _bon_pfad(name) is None:
+                return _bon_seite(request, code=404, fehler=(
+                    f"„{name}“ ist kein Bon-Name."))
+            return _bonstand_antwort(request, c, name)
+        finally:
+            c.close()
+
+    @app.get("/bons/{name}/stand")
+    def bon_stand(request: Request, name: str):
+        """Das Bruchstück, das die Seite alle paar Sekunden nachlädt.
+
+        Solange der Lauf läuft, trägt die Antwort ihren eigenen nächsten
+        Auslöser (`hx-trigger` in `_bonstand.html`) — ist er fertig, trägt sie
+        keinen mehr und das Nachfragen hört von selbst auf.
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "_bonstand.html",
+                                             _bonstand_kontext(c, name))
+        finally:
+            c.close()
+
+    # -- Zuordnung bestätigen oder korrigieren ----------------------------
+    #
+    # Dieselbe Ja/Nein-Geste wie beim Chat, und aus demselben Grund: nichts
+    # gilt, was nicht bestätigt wurde. Ein falsch zugeordneter Kauf verfälscht
+    # die Vorlieben dauerhaft, und man sieht es ihm später nicht an.
+
+    def _posten_aktion(request: Request, c: sqlite3.Connection, item_id: int,
+                       tun):
+        """Eine Entscheidung an einer Bon-Zeile, mit den zwei Fehlerwegen.
+
+        Sie sind verschieden und dürfen nicht zusammenfallen: eine Zeile, die
+        es nicht gibt, hat auch keine Bon-Ansicht, in der eine Meldung stehen
+        könnte (404 auf der Bon-Liste). Eine Zeile, die es gibt, deren
+        Entscheidung aber abgelehnt wird — „Ja" zu einer Zeile ohne Produkt —,
+        bekommt ihre Ansicht mitsamt Begründung zurück (400). Eine
+        Weiterleitung verlöre die Begründung, wie überall sonst im Shop.
+        """
+        try:
+            zeile = bonmodul.posten_zeile(c, item_id)
+            datei = bonmodul.beleg(c, zeile["receipt_id"])["file_name"] or ""
+        except bonmodul.KaufFehler as e:
+            return _bon_seite(request, code=404, fehler=str(e))
+        try:
+            tun()
+        except bonmodul.KaufFehler as e:
+            return _bonstand_antwort(request, c, datei, fehler=str(e), code=400)
+        return _bonstand_antwort(request, c, datei)
+
+    @app.post("/bons/posten/{item_id}/entscheiden")
+    def bon_entscheiden(request: Request, item_id: int, decision: str = ""):
+        c = con()
+        try:
+            return _posten_aktion(
+                request, c, item_id,
+                lambda: bonmodul.entscheiden(c, item_id, decision))
+        finally:
+            c.close()
+
+    @app.post("/bons/posten/{item_id}/korrigieren")
+    def bon_korrigieren(request: Request, item_id: int, produkt_id: int = 0):
+        """Setzt von Hand ein anderes Produkt an die Zeile und bestätigt sie."""
+        c = con()
+        try:
+            return _posten_aktion(
+                request, c, item_id,
+                lambda: bonmodul.korrigieren(c, item_id, produkt_id))
+        finally:
+            c.close()
+
+    @app.get("/bons/posten/{item_id}/suche")
+    def bon_suche(request: Request, item_id: int, q: str = ""):
+        """Kandidaten zum Korrigieren — dieselbe Suche wie überall sonst.
+
+        Ohne Modell und ohne Wartezeit: das hier ist die Handbewegung, mit der
+        die Nutzerin einen Fehlgriff des Modells geradezieht, und sie soll
+        sofort antworten.
+        """
+        c = con()
+        try:
+            zeile = bonmodul.posten_zeile(c, item_id)
+            begriff = q.strip() or zeile["note"] or zeile["bon_text"]
+            treffer = _mit_bild(search.search(c, begriff, limit=KORREKTUREN),
+                                app.state.image_dir)
+            return vorlagen.TemplateResponse(request, "_bonsuche.html", {
+                "zeile": zeile, "q": q or begriff, "treffer": treffer})
+        except bonmodul.KaufFehler as e:
+            return _bon_seite(request, code=404, fehler=str(e))
+        finally:
+            c.close()
 
     @app.get("/bild/{produkt_id}")
     def bild(produkt_id: int):

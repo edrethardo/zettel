@@ -21,6 +21,12 @@ DEFAULT_DB = "data/picknick.db"
 #: (Spec 5.1) — die Wahl hängt am Posten, nicht am Produkt.
 STORES = ("rewe", "lidl", "egal")
 
+#: Läden, aus denen ein KASSENBON stammt (WB-358). Bewusst nicht `STORES`:
+#: dort heisst der dritte Wert `egal` und ist ein WUNSCH („hol es, wo du
+#: willst"). Ein Bon kommt immer aus genau einem Laden; wenn er sich nicht
+#: nennt, ist das `unbekannt` und keine Freiheit.
+BON_STORES = ("rewe", "lidl", "unbekannt")
+
 #: Zustände einer Bestellung. Mehr gibt es bewusst nicht: "unterwegs" fehlt,
 #: weil der Einkaufende selbst sieht, dass er im Laden steht (Spec 4).
 ORDER_STATES = ("draft", "offen", "erledigt")
@@ -178,6 +184,70 @@ SCHEMA = [
         CHECK ((product_id IS NULL) <> (free_text IS NULL))
     )
     """,
+    # ----------------------------------------------------------------------
+    # Kassenbons (WB-358). Eigene Tabellen, ausdrücklich NICHT `orders`:
+    #
+    # Eine Bestellung ist ein PLAN — was gekauft werden soll, aus dem
+    # Knuspr-Katalog, mit Ladenwunsch und einem Zustand, der von `draft` nach
+    # `erledigt` läuft. Ein Kassenbon ist eine TATSACHE — was gekauft wurde,
+    # in welchem Laden, an welchem Tag, zu welchem Preis. Beides in dieselbe
+    # Tabelle zu legen hiesse: `orders`-Zeilen, die nie geplant wurden, ein
+    # `state`, der für einen Bon nichts bedeutet, und eine Preisspalte an
+    # `order_item`, die bei jeder anderen Zeile leer stünde.
+    #
+    # `receipt` trägt AUSSCHLIESSLICH Laden, Datum, Datei und Summe. Es gibt
+    # hier keine Spalte für Kartennummer, VU-Nummer, Terminal-ID, Trace- oder
+    # Belegnummer — nicht „die füllen wir nicht", sondern es gibt sie nicht.
+    # Das ist die strukturelle Hälfte der Zusage aus WB-358; die andere ist
+    # `bons.zerlegen`, das den Zahlungsteil des Bons gar nicht erst ansieht.
+    """
+    CREATE TABLE IF NOT EXISTS receipt (
+        id          INTEGER PRIMARY KEY,
+        store       TEXT NOT NULL
+                        CHECK (store IN ('rewe', 'lidl', 'unbekannt')),
+        -- Der Einkaufstag vom Bon (ISO), nicht der Tag des Einlesens.
+        bought_on   TEXT,
+        -- Der Dateiname unter data/bons/, damit ein zweites Einlesen
+        -- derselben Datei nicht eine zweite Kaufhistorie erzeugt. Nur der
+        -- NAME, nie der Inhalt.
+        file_name   TEXT UNIQUE,
+        total_cents INTEGER,
+        created_at  TEXT NOT NULL
+    )
+    """,
+    # `receipt_item` ist zugleich die Preisbeobachtung: Produkt, Laden, Datum
+    # und bezahlter Betrag stehen nach dem Verbund mit `receipt` vollständig
+    # da. Eine zweite Tabelle „echte Preise" wäre eine Kopie derselben Zeilen
+    # und könnte auseinanderlaufen, sobald jemand eine Zuordnung korrigiert.
+    #
+    # `decision` ist dieselbe Spalte mit derselben Bedeutung wie an
+    # `chat_suggestion`: die Zuordnung ist ein VORSCHLAG, bis ein Mensch sie
+    # bestätigt. Nur `kept` zählt als echter Preis und als Kaufhistorie — ein
+    # falsch zugeordneter Kauf verfälscht die Vorlieben dauerhaft.
+    """
+    CREATE TABLE IF NOT EXISTS receipt_item (
+        id          INTEGER PRIMARY KEY,
+        receipt_id  INTEGER NOT NULL REFERENCES receipt(id) ON DELETE CASCADE,
+        line_no     INTEGER NOT NULL,
+        -- Wie es auf dem Bon steht: „SCHIN.-KAE. CRO.". Bleibt unverändert,
+        -- weil ein gewachsener Katalog später einen zweiten Versuch erlaubt.
+        bon_text    TEXT NOT NULL,
+        qty         INTEGER NOT NULL DEFAULT 1,
+        unit_cents  INTEGER,
+        -- Der Zeilenbetrag vom Bon. Das ist der echte bezahlte Preis.
+        total_cents INTEGER NOT NULL,
+        product_id  INTEGER REFERENCES product(id),
+        -- Was das Modell aus der Abkürzung gemacht hat („Schinken-Käse-
+        -- Croissant"). Erklärt die Zuordnung an der Zeile und überlebt einen
+        -- Phoenix, der gerade nicht lief.
+        note        TEXT,
+        search_term TEXT,
+        rank        REAL,
+        decision    TEXT NOT NULL DEFAULT 'offen'
+                        CHECK (decision IN ('offen', 'kept', 'removed')),
+        decided_at  TEXT
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS scrape_run (
         id          INTEGER PRIMARY KEY,
@@ -203,6 +273,13 @@ SCHEMA = [
     "CREATE INDEX IF NOT EXISTS ix_chat_message_order ON chat_message(order_id)",
     "CREATE INDEX IF NOT EXISTS ix_chat_sugg_message ON chat_suggestion(chat_message_id)",
     "CREATE INDEX IF NOT EXISTS ix_product_active ON product(active)",
+    "CREATE INDEX IF NOT EXISTS ix_receipt_item_receipt"
+    " ON receipt_item(receipt_id)",
+    # Die Frage, die dieser Index beantwortet: „was hat DIESES Produkt in
+    # Wirklichkeit gekostet?" Sie wird je Produktkachel gestellt, nicht einmal
+    # im Nachtlauf.
+    "CREATE INDEX IF NOT EXISTS ix_receipt_item_product"
+    " ON receipt_item(product_id) WHERE product_id IS NOT NULL",
 ]
 
 # Volltextsuche über die Felder, nach denen im Katalog gesucht wird. `external
@@ -268,7 +345,8 @@ FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
 #: damit eine vergessene Tabelle auffällt und nicht erst im Betrieb.
 TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
-    "chat_message", "chat_suggestion", "scrape_run", "product_fts",
+    "chat_message", "chat_suggestion", "receipt", "receipt_item",
+    "scrape_run", "product_fts",
 )
 
 

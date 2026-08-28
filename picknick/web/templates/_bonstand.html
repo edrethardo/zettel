@@ -1,0 +1,123 @@
+{# Der Stand eines Bons: was der Lauf gerade tut, und was er ergeben hat.
+
+   **Nichts hier ist bestätigt, bis jemand „Ja" tippt.** Das ist dieselbe
+   Geste wie beim Chat (`_chat.html`) und derselbe Grund: ein falsch
+   zugeordneter Kauf verfälscht die Vorlieben dauerhaft, und man sieht es ihm
+   später nicht an. Deshalb steht an jeder Zeile, WORAUS die Zuordnung
+   entstanden ist — was das Modell gelesen hat, mit welchem Begriff gesucht
+   wurde und mit welchem Rang. Ohne das lässt sich ein Fehlgriff des Modells
+   nicht von einer Lücke im Katalog unterscheiden. #}
+
+{% if fehler %}
+<p class="fehler" role="status">{{ fehler }}</p>
+{% endif %}
+
+{% if lauf and lauf.laeuft %}
+{# Das Bruchstück trägt seinen eigenen nächsten Auslöser. Ist der Lauf fertig,
+   liefert der Server ein Stück ohne `hx-trigger` — und das Nachfragen hört
+   von selbst auf, ohne Zähler und ohne JavaScript. #}
+<p class="fertig" role="status"
+   hx-get="/bons/{{ name | urlencode }}/stand"
+   hx-trigger="load delay:{{ nachfrage_s }}s"
+   hx-target="#beleg" hx-swap="innerHTML">
+  Wird ausgelesen — {{ lauf.schritt }} … ({{ "%.0f" | format(lauf.seit_s) }} s)
+</p>
+{% elif lauf and lauf.fehler %}
+<p class="fehler" role="status">{{ lauf.meldung }}</p>
+{% elif lauf and lauf.meldung %}
+<p class="fertig" role="status">{{ lauf.meldung }}</p>
+{% endif %}
+
+{% if not beleg %}
+  {% if not (lauf and lauf.laeuft) %}
+  <p class="leer">Dieser Bon ist noch nicht ausgelesen.
+    <form method="post" action="/bons/{{ name | urlencode }}/auslesen">
+      <button type="submit" class="mini">Auslesen</button>
+    </form>
+  </p>
+  {% endif %}
+{% else %}
+
+<p class="fussnote">
+  {{ laden_titel[beleg.store] or beleg.store }}
+  · Einkauf am {{ beleg.bought_on or "unbekannt" }}
+  · Bon-Summe {{ beleg.total_cents | euro }}
+  · erkannte Posten {{ bilanz.summe_posten_cents | euro }}
+  {# Die Differenz ist Pfand und alles, was die Zerlegung übersehen hat. Sie
+     wird gezeigt und nicht weggerechnet: eine einzelne Zahl könnte nicht
+     sagen, welches von beidem es war. #}
+</p>
+<p class="fussnote">
+  {{ bilanz.bestaetigt }} bestätigt · {{ bilanz.verworfen }} verworfen ·
+  {{ bilanz.offen }} offen
+</p>
+
+<ul class="vorschlaege">
+  {% for z in zeilen %}
+  <li class="zeile vorschlag {{ 'entschieden' if not z.offen }}
+             {{ 'fehlt-im-katalog' if z.nicht_im_katalog }}">
+    {% if z.bild_url %}
+      <img class="bild" src="{{ z.bild_url }}" alt="" loading="lazy"
+           width="56" height="56">
+    {% else %}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      {# Der Bon-Text steht oben und wird NICHT durch den Produktnamen
+         ersetzt: bestätigt wird die Verbindung zwischen beiden, und dafür
+         muss man beide sehen. #}
+      <span class="name">{{ z.qty }} × {{ z.bon_text }}
+        — {{ z.total_cents | euro }}</span>
+      <span class="menge">
+        {% if z.produkt_fehlt %}
+          keinem Katalogprodukt zugeordnet
+        {% else %}
+          → {{ z.produkt_name }}{% if z.unit_text %} · {{ z.unit_text }}{% endif %}
+          · Katalogpreis {{ z.price_cents | euro }}
+        {% endif %}
+        {% if z.unit_cents %} · Einzelpreis {{ z.unit_cents | euro }}{% endif %}
+      </span>
+      <span class="woher">
+        {{ z.note or "—" }}
+        {%- if z.search_term %} · gesucht „{{ z.search_term }}“{% endif %}
+        {%- if z.rang is not none %} · Rang {{ "%.1f" | format(z.rang) }}{% endif %}
+      </span>
+      {% if z.nicht_im_katalog %}
+      <span class="ausgemustert">Nicht mehr im Katalog — der Kauf gilt
+        trotzdem.</span>
+      {% endif %}
+    </span>
+    <span class="stellen">
+      {% if z.offen %}
+        {% if not z.produkt_fehlt %}
+        <form method="post" action="/bons/posten/{{ z.id }}/entscheiden?decision=kept"
+              hx-post="/bons/posten/{{ z.id }}/entscheiden?decision=kept"
+              hx-target="#beleg" hx-swap="innerHTML">
+          <button class="mini ja" type="submit"
+                  aria-label="{{ z.bon_text }} bestätigen">Ja</button>
+        </form>
+        {% endif %}
+        <form method="post" action="/bons/posten/{{ z.id }}/entscheiden?decision=removed"
+              hx-post="/bons/posten/{{ z.id }}/entscheiden?decision=removed"
+              hx-target="#beleg" hx-swap="innerHTML">
+          <button class="mini nein" type="submit"
+                  aria-label="{{ z.bon_text }} verwerfen">Nein</button>
+        </form>
+      {% elif z.bestaetigt %}
+        <span class="marke ja">bestätigt</span>
+      {% else %}
+        <span class="marke nein">verworfen</span>
+      {% endif %}
+      {# „Anders zuordnen" steht auch an einer entschiedenen Zeile: eine
+         Korrektur muss möglich bleiben, nachdem man zu schnell „Ja" getippt
+         hat. #}
+      <button class="mini" type="button"
+              hx-get="/bons/posten/{{ z.id }}/suche"
+              hx-target="#korrektur-{{ z.id }}" hx-swap="innerHTML"
+              aria-label="{{ z.bon_text }} anders zuordnen">anders</button>
+    </span>
+    <div class="korrektur" id="korrektur-{{ z.id }}"></div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

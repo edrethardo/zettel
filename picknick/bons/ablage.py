@@ -1,7 +1,8 @@
 """Kassenbons vom Handy entgegennehmen, ablegen, auflisten, löschen (WB-344).
 
-Nur der Transport. Was auf dem Bon steht, liest hier niemand aus — das ist ein
-eigenes Ticket und braucht erst ein echtes Muster.
+Nur der Transport. Was auf dem Bon steht, liest `bons.lesen` und `bons.zerlegen`
+aus (WB-358) — dieses Modul fasst den Inhalt nie an, es kennt nur Bytes und
+Dateinamen.
 
 **Warum nach Inhalt geprüft wird und nicht nach Endung.** Der Dateiname kommt
 vom Telefon und ist damit im Prinzip von aussen bestimmt; `.png` am Ende ist

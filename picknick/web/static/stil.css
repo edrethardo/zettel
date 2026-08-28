@@ -316,4 +316,23 @@ main { padding: var(--rand); max-width: 680px; margin: 0 auto; }
 .bonzeile { display: flex; align-items: center; gap: 8px;
             padding: 8px 0; border-bottom: 1px solid var(--linie);
             min-height: var(--tap); }
-.bonzeile form { margin: 0; margin-left: auto; }
+/* Zwei Knöpfe je Zeile seit WB-358 (auslesen, löschen). Der Abstand kommt
+   deshalb an den Behälter und nicht mehr an jedes Formular — sonst schöbe
+   `margin-left: auto` beide einzeln nach rechts und der Löschknopf klebte am
+   Auslesen-Knopf. */
+.bonzeile .text { display: flex; flex-direction: column; min-width: 0; }
+.bonzeile .stellen { display: flex; align-items: center; gap: 6px;
+                     margin-left: auto; }
+.bonzeile form { margin: 0; }
+.bonzeile .woher { font-size: 13px; color: var(--gedaempft); }
+
+/* Eine Bon-Zeile korrigieren (WB-358): das Suchfeld und die Kandidaten
+   klappen UNTER der Zeile auf und schieben sie nicht auseinander. */
+.korrektur:empty { display: none; }
+.korrektur { flex-basis: 100%; margin-top: 8px; }
+.bonsuche { display: flex; gap: 8px; margin-bottom: 8px; }
+.bonsuche input {
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--linie); border-radius: 8px;
+}
+.vorschlag { flex-wrap: wrap; }

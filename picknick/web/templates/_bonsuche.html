@@ -1,0 +1,44 @@
+{# Kandidaten zum Korrigieren einer Bon-Zeile.
+
+   Dieselbe Suche wie im Katalog (`catalog.search`), ohne Modell und ohne
+   Wartezeit: das hier ist die Handbewegung, mit der ein Fehlgriff des Modells
+   geradegezogen wird. Ein Tipp auf ein Produkt setzt es an die Zeile UND
+   bestätigt sie — wer hier auswählt, hat sich entschieden. #}
+<form class="bonsuche" hx-get="/bons/posten/{{ zeile.id }}/suche"
+      hx-target="#korrektur-{{ zeile.id }}" hx-swap="innerHTML">
+  <input type="text" name="q" value="{{ q }}" autocomplete="off"
+         aria-label="Produkt suchen für {{ zeile.bon_text }}">
+  <button type="submit" class="mini">Suchen</button>
+</form>
+
+{% if not treffer %}
+  <p class="leer">Nichts gefunden zu „{{ q }}“. Das ist eine Lücke im
+    Katalog — die Zeile darf offen bleiben, der Kauf steht trotzdem mit
+    Preis und Datum da.</p>
+{% else %}
+<ul class="vorschlaege">
+  {% for p in treffer %}
+  <li class="zeile">
+    {% if p.bild_url %}
+      <img class="bild" src="{{ p.bild_url }}" alt="" loading="lazy"
+           width="56" height="56">
+    {% else %}
+      <span class="bild bild-fehlt" aria-hidden="true"></span>
+    {% endif %}
+    <span class="text">
+      <span class="name">{{ p.name }}</span>
+      <span class="menge">{{ p.unit_text or "" }} · {{ p.price_cents | euro }}</span>
+    </span>
+    <span class="stellen">
+      <form method="post"
+            action="/bons/posten/{{ zeile.id }}/korrigieren?produkt_id={{ p.id }}"
+            hx-post="/bons/posten/{{ zeile.id }}/korrigieren?produkt_id={{ p.id }}"
+            hx-target="#beleg" hx-swap="innerHTML">
+        <button class="mini ja" type="submit"
+                aria-label="{{ zeile.bon_text }} ist {{ p.name }}">Das</button>
+      </form>
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

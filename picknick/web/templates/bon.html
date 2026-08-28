@@ -1,0 +1,12 @@
+{% extends "basis.html" %}
+{% block titel %}{{ name }} — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Bon {{ name }}</h1>
+<p class="fussnote"><a href="/bons">← alle Bons</a></p>
+
+{# Das gesamte Innenleben steckt im Bruchstück, damit HTMX genau dieses Stück
+   austauschen kann — beim Nachfragen während des Laufs und nach jedem „Ja".
+   Dieselbe Vorlage für Vollbild und Bruchstück, damit sich die beiden nicht
+   auseinanderentwickeln. #}
+<div id="beleg">{% include "_bonstand.html" %}</div>
+{% endblock %}
