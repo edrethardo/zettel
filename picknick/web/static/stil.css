@@ -601,6 +601,44 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
+/* Der Rezeptentwurf (WB-337): eine ruhige Karte unter den Vorschlägen. Er ist
+   keine zweite Vorschlagsliste und sieht deshalb auch nicht so aus — hier
+   wird nichts entschieden, hier wird nur beschrieben, was beim Abschicken
+   entsteht. Eine herausgenommene Zeile bleibt stehen und wird blass: sie
+   muss zurückholbar sein, und eine Liste, aus der Zeilen verschwinden,
+   erklärt nicht, warum sie kürzer wurde. */
+.entwurf {
+  margin: 0 0 var(--rand); padding: 12px; background: var(--karte-tief);
+  border-radius: var(--radius);
+}
+.entwurf h3 { margin: 0 0 8px; font-size: 16px; }
+.entwurf-name { display: flex; gap: 8px; margin-bottom: 8px; }
+.entwurf-name input {
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  font-size: 17px; font-weight: 600; color: var(--tinte);
+  background: var(--karte); border: 1.5px solid var(--linie);
+  border-radius: 999px;
+}
+.entwurfsliste { list-style: none; margin: 0 0 8px; padding: 0; }
+.entwurfsliste > li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--linie);
+}
+.entwurfsliste > li:last-child { border-bottom: none; }
+.entwurfsliste .text { flex: 1 1 140px; min-width: 0; }
+.entwurfsliste .name { font-weight: 600; }
+.entwurfsliste .menge { display: block; font-size: 13px;
+                        color: var(--gedaempft); }
+.entwurfsliste > li.raus { opacity: 0.55; }
+.entwurf-menge { display: flex; gap: 4px; }
+.entwurf-menge input {
+  min-height: var(--tap); padding: 0 10px; font-size: 15px;
+  color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--linie); border-radius: 10px;
+}
+.entwurf-menge input[name="menge"] { width: 5.5em; }
+.entwurf-menge input[name="einheit"] { width: 4.5em; }
+
 /* Die Sorten eines Oberbegriffs (WB-368): Kästchen, die mit dem Daumen zu
    treffen sind — eine Zeile je Sorte, das ganze Feld ist das Ziel, und die
    echte Stückzahl steht als Pille daneben. Mehrere gehen: „Aufschnitt"

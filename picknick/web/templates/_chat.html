@@ -251,6 +251,103 @@
         </form>
       </div>
       {% endif %}
+      {# Der Rezeptentwurf (WB-337). Er steht UNTER den Vorschlägen, weil er
+         aus ihnen entsteht: was hier drin ist, sind genau die Zeilen, die
+         eine Zutat des Gerichts benennen — „Klopapier" ist keine und taucht
+         hier nie auf.
+
+         **Gespeichert wird beim Abschicken, nicht hier.** Bis dahin darf sie
+         alles noch ändern; dieselbe Regel wie beim Eval-Label aus WB-329. #}
+      {% if m.entwurf %}
+      <section class="entwurf">
+        {% if m.entwurf.saved_at %}
+        <h3>Rezept angelegt</h3>
+        <p class="fussnote">„{{ m.entwurf.name }}“ steht in der Sammlung.
+          {% if m.entwurf.recipe_id %}
+          <a href="/rezepte/{{ m.entwurf.recipe_id }}">Ansehen</a>{% endif %}
+        </p>
+        {% elif m.entwurf.verworfen %}
+        <h3>Rezeptentwurf</h3>
+        <p class="fussnote">Daraus wird kein Rezept.</p>
+        <form method="post"
+              action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
+              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
+              hx-target="#chat" hx-swap="outerHTML">
+          <button class="mini" type="submit">Doch ein Rezept daraus</button>
+        </form>
+        {% else %}
+        <h3>Rezeptentwurf</h3>
+        {# Der Name ist überschreibbar, und das ist keine Kosmetik: der
+           Rezeptweg sucht ihn beim nächsten Mal wörtlich im Satz. #}
+        <form class="entwurf-name" method="post"
+              action="/warenkorb/chat/{{ m.id }}/entwurf/name"
+              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/name"
+              hx-target="#chat" hx-swap="outerHTML">
+          <input type="text" name="name" autocomplete="off"
+                 value="{{ m.entwurf.name }}"
+                 aria-label="Name des Rezepts">
+          <button class="mini" type="submit">Name merken</button>
+        </form>
+        <ul class="entwurfsliste">
+          {% for z in m.entwurf.zeilen %}
+          <li class="{{ 'raus' if not z.im_rezept or not z.behalten }}">
+            <span class="text">
+              <span class="name">{{ z.rezeptzeile.name }}</span>
+              {% if not z.behalten and not (z.korrektur and z.korrektur.behalten) %}
+              <span class="menge">{{ "verworfen" if not z.offen else
+                "noch nicht bestätigt" }} — kommt nicht ins Rezept</span>
+              {% elif not z.im_rezept %}
+              <span class="menge">aus dem Entwurf genommen</span>
+              {% endif %}
+            </span>
+            {# Die MENGE aus dem Rezept, nicht die Packungszahl (WB-362).
+               Was schon im Korb liegt, ändert sich davon nicht — dort steht
+               ein eigenes Mengenfeld. #}
+            <form class="entwurf-menge" method="post"
+                  action="/warenkorb/vorschlag/{{ z.id }}/bedarf"
+                  hx-post="/warenkorb/vorschlag/{{ z.id }}/bedarf"
+                  hx-target="#chat" hx-swap="outerHTML">
+              <input type="text" name="menge" inputmode="decimal"
+                     autocomplete="off"
+                     value="{{ z.need_amount | menge }}"
+                     aria-label="Menge von {{ z.rezeptzeile.name }} im Rezept">
+              <input type="text" name="einheit" autocomplete="off"
+                     value="{{ z.need_unit or '' }}"
+                     aria-label="Einheit von {{ z.rezeptzeile.name }}">
+              <button class="mini" type="submit">ok</button>
+            </form>
+            {# Aus dem Entwurf nehmen ist NICHT „Nein": das eine heisst „das
+               kaufe ich, aber es gehört nicht ins Rezept", das andere „das
+               Produkt ist falsch" — und nur das zweite ist ein Urteil über
+               das Modell (Spec 8.1). #}
+            <form method="post"
+                  action="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
+                  hx-post="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
+                  hx-target="#chat" hx-swap="outerHTML">
+              <button class="mini {{ 'zurueck' if z.im_rezept }}" type="submit">
+                {{ "raus" if z.im_rezept else "wieder rein" }}</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if m.entwurf.n_drin %}
+        <p class="fussnote">Beim Abschicken wird daraus das Rezept
+          „{{ m.entwurf.name }}“ mit {{ m.entwurf.n_drin }}
+          {{ "Zutat" if m.entwurf.n_drin == 1 else "Zutaten" }} — nur die
+          bestätigten, und nie das, was nicht zum Gericht gehört.</p>
+        {% else %}
+        <p class="fussnote">Es steht keine bestätigte Zutat im Entwurf —
+          so entsteht kein Rezept.</p>
+        {% endif %}
+        <form method="post"
+              action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
+              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
+              hx-target="#chat" hx-swap="outerHTML">
+          <button class="mini zurueck" type="submit">Kein Rezept daraus</button>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
     {% endif %}
   {% else %}
   <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti

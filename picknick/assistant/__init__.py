@@ -11,12 +11,16 @@ Modell erfindet niemals Produkte**:
 * `vorschlaege.py` — die Vorschlagsliste und die Entscheidung je Zeile. Diese
   Entscheidung ist das Eval-Label (Spec 8.1), deshalb steht sie von Anfang an
   sauber in `chat_suggestion.decision`.
+* `entwurf.py` — der Rezeptentwurf, der aus einem Zug entsteht (WB-337).
+  Beim Abschicken wird daraus ein Rezept, und das kürzt ab dem nächsten Satz
+  das Modell komplett weg.
 
 `chat.Chat.turn()` setzt die drei zusammen und ist der einzige Einstieg, den
 die Oberfläche braucht.
 """
 from picknick.assistant.chat import (  # noqa: F401
     WEG_LLM, WEG_REZEPT, Chat, ChatFehler, ChatNichtVerfuegbar, Ergebnis)
+from picknick.assistant.entwurf import EntwurfFehler  # noqa: F401
 from picknick.assistant.plan import (  # noqa: F401
     KANDIDATEN_ANZEIGE, KANDIDATEN_MODELL, Auswahl, PlanFehler, choose,
     extract)
@@ -28,6 +32,7 @@ from picknick.assistant.vorschlaege import (  # noqa: F401
 
 __all__ = [
     "Auswahl", "BEHALTEN", "Chat", "ChatFehler", "ChatNichtVerfuegbar",
+    "EntwurfFehler",
     "Ergebnis", "KANDIDATEN_ANZEIGE", "KANDIDATEN_MODELL", "OFFEN",
     "PlanFehler", "Rezeptweg", "VERWORFEN",
     "VorschlagFehler", "WEG_LLM", "WEG_REZEPT", "alle_entscheiden",

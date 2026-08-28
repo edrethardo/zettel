@@ -1,7 +1,8 @@
 """Die beiden Wege zwischen Rezept und Bestellung.
 
-Hinein: „daraus ein Rezept machen" an einer erledigten Bestellung — der
-einzige Moment, in dem die Zutaten ohnehin beisammen sind (Spec 6).
+Hinein: „daraus ein Rezept machen" an einer Bestellung — der Moment, in dem
+die Zutaten ohnehin beisammen sind (Spec 6). Seit WB-337 gilt das auch für
+den Warenkorb; die umgedrehte Begründung steht an `aus_bestellung()`.
 Hinaus: „alles in den Warenkorb" — das Rezept füllt den `draft`.
 
 Beide Richtungen benutzen die vorhandenen Bausteine (`orders.posten`,
@@ -213,12 +214,31 @@ def aus_bestellung(con: sqlite3.Connection, order_id: int,
                    name: str | None = None) -> int:
     """Macht aus den Posten einer Bestellung ein Rezept. Gibt dessen id zurück.
 
-    Der Knopf dazu steht an der erledigten Bestellung, weil das der einzige
-    Moment ist, in dem die Zutaten ohnehin beisammen sind (Spec 6). Der
-    Warenkorb ist ausgenommen: aus einer Absicht, die noch nicht eingekauft
-    wurde, ein Rezept zu machen, hiesse eine Mahlzeit zu behaupten, die es
-    noch nicht gab. Abgeschickte offene Bestellungen sind erlaubt — wer schon
-    im Laden steht, weiss meistens schon, dass daraus ein Rezept werden soll.
+    Der Knopf dazu steht an der erledigten Bestellung, weil das der Moment
+    ist, in dem die Zutaten ohnehin beisammen sind (Spec 6).
+
+    **Der Warenkorb ist seit WB-337 nicht mehr ausgenommen, und das ist eine
+    umgedrehte Entscheidung.** Hier stand bis dahin:
+
+        „Aus einer Absicht, die noch nicht eingekauft wurde, ein Rezept zu
+         machen, hiesse eine Mahlzeit zu behaupten, die es noch nicht gab."
+
+    Der Satz stimmt für eine Chronik und nicht für dieses Feld. **Ein Rezept
+    ist keine Chronik gegessener Mahlzeiten, sondern eine Einkaufsvorlage** —
+    ob der Einkauf schon stattgefunden hat, ist dafür ohne Belang. Der Preis
+    des alten Satzes war hoch: der natürliche Moment, in dem ein Rezept
+    entsteht, ist der Chat-Zug „alles für Spaghetti Bolognese", und der
+    landet im `draft`. Ein gespeichertes Rezept überspringt danach das Modell
+    vollständig (`picknick.path = "recipe"`), das Anlegen zu erschweren
+    arbeitet also gegen den stärksten Mechanismus des Shops.
+
+    Der Satz bleibt hier stehen, statt gelöscht zu werden: wer später liest,
+    soll sehen, dass die Frage gestellt und anders beantwortet wurde.
+
+    Der produktive Weg aus einem Chat-Zug geht trotzdem NICHT hier durch,
+    sondern über `assistant.entwurf` — er nimmt nur die Gerichtszutaten,
+    nicht den ganzen Korb. Genau darum ging es im Ticket: das Klopapier liegt
+    im Korb und gehört in kein Rezept.
 
     Menge, Produktbindung und Freitext werden übernommen; der Laden nicht: er
     hängt am Posten und wird beim nächsten Einlegen ohnehin neu vorbelegt
@@ -227,10 +247,6 @@ def aus_bestellung(con: sqlite3.Connection, order_id: int,
     b = orders.bestellung(con, order_id)
     if b is None:
         raise RezeptFehler(f"Bestellung {order_id} gibt es nicht.")
-    if b["state"] == "draft":
-        raise RezeptFehler(
-            "Aus dem Warenkorb wird kein Rezept — schick ihn erst ab. Ein "
-            "Rezept beschreibt einen Einkauf, den es gab.")
     zeilen = orders.posten(con, order_id)
     if not zeilen:
         raise LeeresRezept(

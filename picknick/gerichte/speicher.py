@@ -160,11 +160,20 @@ def merken(con: sqlite3.Connection, name: str, rezept: dict,
     dem Rezept von Hand Produkte zugeordnet, überlebt das eine Erneuerung —
     das ist die Arbeit eines Menschen, und die zu löschen wäre der teuerste
     Nebeneffekt, den diese Funktion haben könnte.
+
+    **Und seit WB-337 gilt dasselbe für den NAMEN.** Weicht er vom
+    `source_title` ab, hat ihn ein Mensch gesetzt — von Hand oder über einen
+    Rezeptentwurf aus dem Chat. Er bleibt dann stehen. Ohne diese Zeile wäre
+    der Umbenennung eine Frist gesetzt: nach 90 Tagen hiesse das Rezept
+    wieder „Bolognese al Forno à la Mama", `rezeptweg.erkenne` fände es im
+    Satz „alles für Bolognese" nicht mehr, und der schnelle Weg wäre ohne
+    ein Zutun still verschwunden.
     """
     jetzt = _jetzt(uhr)
     titel = rezept.get("titel") or " ".join((name or "").split())
     vorhanden = con.execute(
-        "SELECT id FROM recipe WHERE source = ? AND source_id = ?",
+        "SELECT id, name, source_title FROM recipe"
+        " WHERE source = ? AND source_id = ?",
         (chefkoch.SOURCE, rezept.get("rezept_id"))).fetchone()
     felder = (titel, rezept.get("servings"), rezept.get("instructions"),
               rezept.get("prep_minutes"), rezept.get("cook_minutes"),
@@ -174,6 +183,12 @@ def merken(con: sqlite3.Connection, name: str, rezept: dict,
               rezept.get("votes"), jetzt)
     if vorhanden:
         recipe_id = int(vorhanden["id"])
+        if (vorhanden["source_title"]
+                and vorhanden["name"] != vorhanden["source_title"]):
+            # Umbenannt von einem Menschen (siehe Docstring): sein Name
+            # gewinnt. `source_title` behält daneben, wie die Quelle es
+            # nennt — verloren geht dabei nichts.
+            felder = (vorhanden["name"], *felder[1:])
         con.execute(
             "UPDATE recipe SET name = ?, servings = ?, instructions = ?,"
             " prep_minutes = ?, cook_minutes = ?, rest_minutes = ?,"

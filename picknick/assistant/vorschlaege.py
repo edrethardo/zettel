@@ -105,7 +105,7 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
               fallback_term: str | None = None,
               corrected_from: int | None = None,
               menge=None, einheit: str | None = None,
-              decision: str = OFFEN) -> int:
+              dish_item=None, decision: str = OFFEN) -> int:
     """Legt eine Vorschlagszeile an. Entweder Produkt oder Freitext.
 
     Die Regel „genau eines von beidem" kommt aus `orders.genau_eines()` und
@@ -121,6 +121,12 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
     weitergereicht werden. `qty` daneben bleibt die Packungszahl. Ohne Menge
     ist alles wie vor WB-369, und das ist der Normalfall: „Klopapier" hat
     keine.
+
+    `dish_item` sagt, ob diese Zeile eine Zutat des Gerichts ist (WB-337):
+    `1` ja, `None` nein. Auch hier ist „Klopapier" der Normalfall — es liegt
+    im Korb und gehört in kein Rezept. Die dritte Möglichkeit (`0`, „von Hand
+    aus dem Entwurf genommen") entsteht nicht hier, sondern erst in
+    `assistant.entwurf`.
     """
     pid, text = orders.genau_eines(product_id, free_text, was="Ein Vorschlag")
     if pid is not None and not con.execute(
@@ -133,12 +139,12 @@ def vorschlag(con: sqlite3.Connection, chat_message_id: int, *,
         "INSERT INTO chat_suggestion (chat_message_id, product_id, free_text,"
         "                             qty, search_term, rank, decision,"
         "                             fallback_term, corrected_from,"
-        "                             need_amount, need_unit)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "                             need_amount, need_unit, dish_item)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (chat_message_id, pid, text, max(1, int(qty)), search_term,
          None if rang is None else float(rang), decision, fallback_term,
          corrected_from, None if menge is None else float(menge),
-         (einheit or None)))
+         (einheit or None), None if dish_item is None else int(dish_item)))
     con.commit()
     return int(cur.lastrowid)
 
@@ -147,7 +153,7 @@ _VORSCHLAG_SQL = (
     "SELECT s.id, s.chat_message_id, s.product_id, s.free_text, s.qty,"
     "       s.need_amount, s.need_unit,"
     "       s.search_term, s.rank AS rang, s.decision, s.decided_at,"
-    "       s.eingelegt_at, s.zurueckgenommen,"
+    "       s.eingelegt_at, s.zurueckgenommen, s.dish_item,"
     "       s.corrected_from, s.fallback_term,"
     "       coalesce(p.name, s.free_text) AS name,"
     "       p.unit_text, p.price_cents, p.image_path, p.active,"
@@ -181,6 +187,13 @@ def _auf(row: sqlite3.Row) -> dict:
     # `behalten`: nach einem zurückgenommenen „Ja" steht die Korbzeile
     # weiter da, und die Oberfläche muss es sagen können.
     v["im_korb"] = v["eingelegt_at"] is not None
+    # Gehört die Zeile zum Rezeptentwurf dieses Zugs (WB-337)? `zum_gericht`
+    # heisst „sie ist eine Zutat des Gerichts" und bleibt auch dann wahr,
+    # wenn sie aus dem Entwurf genommen wurde — sonst verschwände mit der
+    # Zeile auch der Knopf, der sie zurückholt. Ob sie ins Rezept geht, sagt
+    # `im_rezept`.
+    v["zum_gericht"] = v["dish_item"] is not None
+    v["im_rezept"] = v["dish_item"] == 1
     # Was aus der benötigten Menge WÜRDE, wenn diese Zeile jetzt in den Korb
     # ginge (WB-369). Gerechnet und nicht gespeichert: die Packungsgrösse
     # steht am Produkt und kann sich beim nächsten Crawl ändern, und der Satz
@@ -516,7 +529,14 @@ def _statt(con: sqlite3.Connection, suggestion_id: int, *, product_id=None,
                        # Menge — und im Korb läge eine Packung nach
                        # Bauchgefühl.
                        menge=quelle["need_amount"],
-                       einheit=quelle["need_unit"])
+                       einheit=quelle["need_unit"],
+                       # Und dasselbe für die Zugehörigkeit zum Gericht
+                       # (WB-337): wer „Nein" sagt und ein anderes
+                       # Hackfleisch wählt, kocht immer noch dieselbe
+                       # Bolognese. Ohne diese Zeile fiele ausgerechnet die
+                       # korrigierte Zutat aus dem Rezept — und zwar die,
+                       # bei der die Nutzerin am genauesten hingesehen hat.
+                       dish_item=quelle["dish_item"])
     return entscheiden(con, neu_id, BEHALTEN)
 
 
