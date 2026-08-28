@@ -101,10 +101,16 @@ class Ergebnis:
 class Chat:
     """Ein Chat-Zug, mit allem Injizierbaren an einer Stelle.
 
-    `zugang`, `wecker` und die beiden Stellschrauben aus Spec 8.3
-    (`kandidaten`, `guided`) hängen am Objekt und nicht an globalen Aufrufen —
-    so kann ein Test einen Fake-LLM unterschieben, ohne die Box zu wecken, und
-    ein Experiment dieselbe Pipeline mit anderer Kandidatenzahl fahren.
+    `zugang`, `wecker` und die Stellschrauben aus Spec 8.3 (`kandidaten`,
+    `guided`, die beiden System-Prompts) hängen am Objekt und nicht an
+    globalen Aufrufen — so kann ein Test einen Fake-LLM unterschieben, ohne
+    die Box zu wecken, und ein Experiment dieselbe Pipeline mit anderer
+    Kandidatenzahl oder einer anderen Prompt-Variante fahren.
+
+    Dass die Prompts hier durchgereicht werden und nicht in `plan` ersetzt,
+    ist Absicht: ein Experiment, das `plan.SYSTEM_EXTRACT` überschreibt,
+    ändert das Modul für alles, was im selben Prozess noch läuft — und zwei
+    Varianten nacheinander wären dann nicht mehr auseinanderzuhalten.
 
     Gebaut wird nichts davon im Konstruktor: `Modellzugang()` und `wecker()`
     entstehen erst beim ersten Modellweg. Der Web-Prozess soll ohne Modell
@@ -113,12 +119,16 @@ class Chat:
 
     def __init__(self, zugang=None, *, wecker=None,
                  kandidaten: int = plan.KANDIDATEN, guided: bool = True,
-                 denken: bool = plan.DENKEN):
+                 denken: bool = plan.DENKEN,
+                 system_extract: str = plan.SYSTEM_EXTRACT,
+                 system_choose: str = plan.SYSTEM_CHOOSE):
         self._zugang = zugang
         self._wecker = wecker
         self.kandidaten = kandidaten
         self.guided = guided
         self.denken = denken
+        self.system_extract = system_extract
+        self.system_choose = system_choose
 
     # -- Zugang -----------------------------------------------------------
 
@@ -274,7 +284,8 @@ class Chat:
             # eigener LLM-Span daneben würde die Tokenzahlen verdoppeln.
             with obs.stufe("plan.extract"):
                 begriffe = plan.extract(self.zugang, text, guided=self.guided,
-                                        denken=self.denken)
+                                        denken=self.denken,
+                                        system=self.system_extract)
         except plan.PlanFehler as e:
             # Kein JSON, leeres Array, falscher Typ: daraus lässt sich nichts
             # bauen, ohne zu raten. Der Request bleibt heil, die Nutzerin
@@ -303,7 +314,8 @@ class Chat:
         try:
             with obs.stufe("plan.choose"):
                 auswahl = plan.choose(self.zugang, text, aufgaben,
-                                      guided=self.guided, denken=self.denken)
+                                      guided=self.guided, denken=self.denken,
+                                      system=self.system_choose)
             choose_kaputt = None
         except plan.PlanFehler as e:
             # Auch das kostet keinen Begriff: ohne Wahl wird JEDER Begriff zu
