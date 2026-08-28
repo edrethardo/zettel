@@ -30,6 +30,61 @@ ORDER_STATES = ("draft", "offen", "erledigt")
 DECISIONS = ("offen", "kept", "removed")
 
 
+#: Deutsche Eigenheiten, die eine reine Volltextsuche leerlaufen lassen. Der
+#: unicode61-Tokenizer von FTS5 entfernt zwar Diakritika ("Spülmittel" ->
+#: "spulmittel"), aber niemand tippt "spulmittel" — getippt wird "spuelmittel".
+#: Beide Schreibweisen werden deshalb auf DIESELBE ASCII-Form abgebildet, und
+#: zwar an beiden Enden: beim Schreiben in den Index und auf dem Suchbegriff.
+#: Nur so findet "spuelmittel" das "Spülmittel" und umgekehrt.
+UMLAUTE = (
+    ("Ä", "ae"), ("ä", "ae"),
+    ("Ö", "oe"), ("ö", "oe"),
+    ("Ü", "ue"), ("ü", "ue"),
+    ("ẞ", "ss"), ("ß", "ss"),
+)
+
+
+def normalisiere(text: str) -> str:
+    """Faltet Umlaute und ß auf ihre ASCII-Umschreibung.
+
+    Das Gegenstück zu `_norm_sql()` unten. Die beiden MÜSSEN dasselbe tun —
+    laufen sie auseinander, findet die Suche stillschweigend nichts mehr.
+    Kleinschreibung übernimmt der Tokenizer, hier geht es nur um die
+    Buchstabenersetzung.
+    """
+    for zeichen, ersatz in UMLAUTE:
+        text = text.replace(zeichen, ersatz)
+    return text
+
+
+def _norm_sql(ausdruck: str) -> str:
+    """Baut denselben Ersetzungslauf als SQL-Ausdruck (geschachtelte replace).
+
+    SQLites eingebautes `lower()` kann nur ASCII, deshalb werden Gross- und
+    Kleinbuchstaben einzeln aufgeführt statt vorher kleingeschrieben.
+    """
+    for zeichen, ersatz in UMLAUTE:
+        ausdruck = f"replace({ausdruck}, '{zeichen}', '{ersatz}')"
+    return ausdruck
+
+
+#: Woraus die beiden normalisierten Suchspalten entstehen. Name und Marke
+#: getrennt von den Kategorien, damit die Suche einen Namenstreffer höher
+#: gewichten kann als einen blossen Kategorietreffer (siehe catalog/search.py).
+NORM_NAME_SQL = _norm_sql(
+    "coalesce(name, '') || ' ' || coalesce(brand, '')")
+NORM_CAT_SQL = _norm_sql(
+    "coalesce(category_l1, '') || ' ' || coalesce(category_l2, '')"
+    " || ' ' || coalesce(category_l3, '')")
+
+#: Generierte Spalten — SQLite rechnet sie bei jedem Lesen aus, sie belegen
+#: keinen Platz und können nicht veralten. Deshalb VIRTUAL und nicht STORED:
+#: `ALTER TABLE ADD COLUMN` erlaubt in SQLite ohnehin nur VIRTUAL.
+NORM_SPALTEN = (
+    ("norm_name", NORM_NAME_SQL),
+    ("norm_cat", NORM_CAT_SQL),
+)
+
 SCHEMA = [
     """
     CREATE TABLE IF NOT EXISTS product (
@@ -149,38 +204,56 @@ FTS_SCHEMA = [
     """
     CREATE VIRTUAL TABLE IF NOT EXISTS product_fts USING fts5(
         name, brand, category_l1, category_l2, category_l3,
+        norm_name, norm_cat,
         content='product', content_rowid='id'
     )
     """,
     """
     CREATE TRIGGER IF NOT EXISTS product_fts_ai AFTER INSERT ON product BEGIN
         INSERT INTO product_fts (rowid, name, brand,
-                                 category_l1, category_l2, category_l3)
+                                 category_l1, category_l2, category_l3,
+                                 norm_name, norm_cat)
         VALUES (new.id, new.name, new.brand,
-                new.category_l1, new.category_l2, new.category_l3);
+                new.category_l1, new.category_l2, new.category_l3,
+                new.norm_name, new.norm_cat);
     END
     """,
     """
     CREATE TRIGGER IF NOT EXISTS product_fts_ad AFTER DELETE ON product BEGIN
         INSERT INTO product_fts (product_fts, rowid, name, brand,
-                                 category_l1, category_l2, category_l3)
+                                 category_l1, category_l2, category_l3,
+                                 norm_name, norm_cat)
         VALUES ('delete', old.id, old.name, old.brand,
-                old.category_l1, old.category_l2, old.category_l3);
+                old.category_l1, old.category_l2, old.category_l3,
+                old.norm_name, old.norm_cat);
     END
     """,
     """
     CREATE TRIGGER IF NOT EXISTS product_fts_au AFTER UPDATE ON product BEGIN
         INSERT INTO product_fts (product_fts, rowid, name, brand,
-                                 category_l1, category_l2, category_l3)
+                                 category_l1, category_l2, category_l3,
+                                 norm_name, norm_cat)
         VALUES ('delete', old.id, old.name, old.brand,
-                old.category_l1, old.category_l2, old.category_l3);
+                old.category_l1, old.category_l2, old.category_l3,
+                old.norm_name, old.norm_cat);
         INSERT INTO product_fts (rowid, name, brand,
-                                 category_l1, category_l2, category_l3)
+                                 category_l1, category_l2, category_l3,
+                                 norm_name, norm_cat)
         VALUES (new.id, new.name, new.brand,
-                new.category_l1, new.category_l2, new.category_l3);
+                new.category_l1, new.category_l2, new.category_l3,
+                new.norm_name, new.norm_cat);
     END
     """,
 ]
+
+#: Reihenfolge der Spalten in `product_fts`. bm25() bekommt seine Gewichte
+#: positionsweise — steht hier etwas anderes als oben, gewichtet die Suche
+#: stillschweigend die falsche Spalte.
+FTS_SPALTEN = ("name", "brand", "category_l1", "category_l2", "category_l3",
+               "norm_name", "norm_cat")
+
+FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
+
 
 #: Jede Tabelle, die `migrate()` anlegt. Der Test prüft gegen genau diese Liste,
 #: damit eine vergessene Tabelle auffällt und nicht erst im Betrieb.
@@ -208,12 +281,60 @@ def connect(path: str | Path = DEFAULT_DB) -> sqlite3.Connection:
     return con
 
 
+def _spalten(con: sqlite3.Connection, tabelle: str,
+             pragma: str = "table_info") -> list[str]:
+    """Spaltennamen einer Tabelle.
+
+    `table_xinfo` statt `table_info` für `product`: VIRTUAL generierte Spalten
+    tauchen in `table_info` gar nicht auf — ohne das hielte die Migration sie
+    für fehlend und liefe beim zweiten Aufruf in «duplicate column name».
+    """
+    return [r[1] for r in con.execute(f"PRAGMA {pragma}({tabelle})")]
+
+
+def _norm_spalten_nachziehen(con: sqlite3.Connection) -> None:
+    """Ergänzt `product` um die normalisierten Suchspalten, falls sie fehlen.
+
+    Bewusst per ALTER statt im CREATE TABLE: so gibt es einen Codepfad für die
+    frische und die gewachsene Datenbank, und `CREATE TABLE IF NOT EXISTS`
+    kann eine bestehende Tabelle nicht stillschweigend übergehen.
+    """
+    vorhanden = _spalten(con, "product", "table_xinfo")
+    for name, ausdruck in NORM_SPALTEN:
+        if name not in vorhanden:
+            con.execute(f"ALTER TABLE product ADD COLUMN {name} TEXT"
+                        f" GENERATED ALWAYS AS ({ausdruck}) VIRTUAL")
+
+
+def _fts_nachziehen(con: sqlite3.Connection) -> bool:
+    """Wirft einen veralteten FTS-Index weg. Gibt zurück, ob neu gebaut wurde.
+
+    `CREATE VIRTUAL TABLE IF NOT EXISTS` ändert eine bestehende Tabelle nicht,
+    und ein Index ohne die norm-Spalten fände die Umlautschreibweisen nie.
+    Ein Index ist reine Ableitung aus `product` — ihn wegzuwerfen und aus dem
+    Inhalt neu aufzubauen kostet nichts ausser Zeit.
+    """
+    vorhanden = _spalten(con, "product_fts")
+    if not vorhanden or list(vorhanden) == list(FTS_SPALTEN):
+        return False
+    for trigger in FTS_TRIGGER:
+        # Die alten Trigger kennen die neuen Spalten nicht und würden nach
+        # CREATE TRIGGER IF NOT EXISTS unverändert stehen bleiben.
+        con.execute(f"DROP TRIGGER IF EXISTS {trigger}")
+    con.execute("DROP TABLE product_fts")
+    return True
+
+
 def migrate(con: sqlite3.Connection) -> None:
     """Legt das vollständige Schema an. Mehrfach aufrufbar."""
     for stmt in SCHEMA:
         con.execute(stmt)
+    _norm_spalten_nachziehen(con)
+    neu_gebaut = _fts_nachziehen(con)
     for stmt in FTS_SCHEMA:
         con.execute(stmt)
+    if neu_gebaut:
+        con.execute("INSERT INTO product_fts (product_fts) VALUES ('rebuild')")
     con.commit()
 
 
