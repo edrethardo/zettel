@@ -140,34 +140,23 @@ Zum Gegenstück: an einer Zutat, die der Katalog nicht hat („Sellerie"), steht
 statt der Liste „Mehr hat der Katalog dazu nicht hergegeben" und daneben das
 Freitextfeld. Das ist dort der richtige Ausgang und nicht der Notausgang.
 
-### 3b. „alles für Pho" — die Quelle gegen das Gedächtnis (WB-338)
+### 3b. „alles für Pho" — die Quelle gegen das Gedächtnis (WB-338, WB-367)
 
-Der Fall, für den das Ticket geschrieben wurde. Ins Chat-Feld:
+Der Fall, für den das Ticket geschrieben wurde. Vorher einmal sicherstellen,
+dass das Gericht wirklich neu ist (sonst zeigt der Zug nur den
+Zwischenspeicher):
+
+```bash
+sqlite3 data/picknick.db "DELETE FROM dish WHERE name = 'pho'"
+```
+
+Ins Chat-Feld:
 
 > `alles für Pho`
 
-**Erster Zug — Prüfung:** das Modell weiss nicht, was Pho ist. Gemessen am
-2026-08-28 gegen die echte Box: es hängt sich an „Rind", wiederholt
-3.358 Zeichen lang dieselben drei Begriffe und liefert entdoppelt
-
-```
-Rinderhack · Rinderknochen · Rinderbrust
-```
-
-Alle drei finden ein Katalogprodukt — „KIKOK Hähnchenbrust mit Knochen",
-„Mark&Fein BIO Rind Gulasch". **Keines davon gehört in eine Pho.** Das ist
-der Grund, warum „hat etwas gefunden" die falsche Zahl ist.
-
-Unter der Liste steht seit diesem Ticket ein Satz mehr:
-
-```
-Die Zutaten hier hat das Modell aus dem Gedächtnis genannt. „Pho" wird
-gerade bei Chefkoch geholt — frag gleich noch einmal, dann kommen sie aus
-einem echten Rezept.
-```
-
-**Denselben Satz noch einmal abschicken.** Der Abruf ist inzwischen durch
-(gemessen: unter einer Sekunde nach dem ersten Zug), und jetzt steht da:
+**Ein Zug, und er nimmt schon das Rezept.** Der Shop stellt fest, dass er zu
+„Pho" nichts gespeichert hat, holt es bei Chefkoch (gemessen 90 bis 147 ms)
+und antwortet damit:
 
 ```
 „Pho Bo - Vietnamesische Rindfleischsuppe" von Chefkoch — 23 Zutaten im
@@ -177,17 +166,44 @@ als Freitext: „Markknochen", „Nelken", „Sternanis", „Fischsauce", …
 ```
 
 Mit Zwiebeln, Zimtstangen, Ingwer, Thai-Basilikum, Mie Nudeln, Rinderfilet,
-Zitronen und Chilisauce in der Liste. Drei Dinge sind hier einen Satz wert:
+Zitronen und Chilisauce in der Liste.
+
+**Wogegen das antritt**, gemessen am 2026-08-28 gegen die echte Box: das
+Modell weiss nicht, was Pho ist. Es hängt sich an „Rind", wiederholt
+3.358 Zeichen lang dieselben drei Begriffe und liefert entdoppelt
+
+```
+Rinderhack · Rinderknochen · Rinderbrust
+```
+
+Alle drei finden ein Katalogprodukt — „KIKOK Hähnchenbrust mit Knochen",
+„Mark&Fein BIO Rind Gulasch". **Keines davon gehört in eine Pho.** Das ist
+der Grund, warum „hat etwas gefunden" die falsche Zahl ist. Bis WB-367 war
+genau diese Liste die Antwort auf den ERSTEN Satz — der Abruf lief daneben in
+einem eigenen Prozess, und erst der zweite Satz bekam das Rezept.
+
+Vier Dinge sind hier einen Satz wert:
 
 * **Die acht Freitexte sind kein Makel, sondern die ehrliche Hälfte.** Der
   Katalog hat keine Sternanis und keine Fischsauce; sie stehen als Freitext
   da, statt still zu verschwinden.
-* **Der Trace unterscheidet die beiden Züge**: `picknick.path` steht einmal
-  auf `llm` und einmal auf `chefkoch`, beide mit `picknick.dish = "Pho"`.
-  Genau daran wird gemessen, ob die Quelle besser ist als das Raten.
+* **Der erste Zug dauert länger als jeder weitere**, und zwar grob doppelt so
+  lange: der Gerichtsname kommt aus Stufe 1 (ein Modelllauf), und die
+  Zutatenliste des Rezepts braucht wieder das Modell, um Suchbegriffe daraus
+  zu machen. Der Abruf dazwischen ist der billigste Teil des Zugs.
+* **Der Trace sagt, woher die Zutaten kamen**: `picknick.path = chefkoch`,
+  `picknick.dish = "Pho"`, `picknick.dish_fetch = ok`. Steht dort `llm` mit
+  gesetztem `dish`, hat der Abruf nicht getragen — `dish_fetch` sagt dann
+  `leer` oder `fehler`.
 * **Das Rezept ist jetzt unter *Rezepte*** — mit 17 Schritten Zubereitung,
   90 Minuten Vorbereitung, 480 Minuten Kochzeit und einem Link auf die
   Originalseite. Wer abends um sieben Pho anfängt, sollte das vorher wissen.
+
+**Zum Ausfall:** wer sehen will, was ohne Chefkoch passiert, zieht das Netz
+ab und fragt nach einem Gericht, das noch nicht im Speicher steht. Der Zug
+läuft mit den geratenen Begriffen zu Ende und sagt es: *„Chefkoch war für
+„…" nicht zu erreichen (eine Stunde gemerkt, danach wird es neu versucht) —
+die Zutaten hier hat das Modell aus dem Gedächtnis genannt."*
 
 Zum Gegenstück ein Gericht, das das Modell kennt: `alles für Gemüselasagne`
 liefert über die Quelle 13 Produkte und **null** Freitext — die Quelle

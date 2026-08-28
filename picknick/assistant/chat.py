@@ -123,9 +123,13 @@ class Ergebnis:
     #: Das Rezept, das aus der Quelle in die Sammlung gewandert ist — damit
     #: die Meldung darauf zeigen kann („steht jetzt unter Rezepte").
     quelle_recipe_id: int | None = None
-    #: Dieser Zug hat einen Abruf angestossen. Der nächste Zug mit demselben
-    #: Gericht nimmt die Quelle.
-    angefordert: bool = False
+    #: Was der Abruf bei Chefkoch in DIESEM Zug ergeben hat (WB-367):
+    #: `ok`, `leer` (kennt das Gericht nicht), `fehler` (Störung oder
+    #: Zeitüberschreitung) — oder `None`, wenn gar nicht abgerufen wurde,
+    #: weil der Zwischenspeicher schon etwas Frisches hatte oder gar kein
+    #: Gericht im Satz stand. Auf `weg = llm` mit gesetztem `gericht` steht
+    #: hier der Grund, warum trotzdem geraten wurde.
+    abruf: str | None = None
 
     @property
     def n_produkte(self) -> int:
@@ -194,10 +198,11 @@ class Chat:
                  system_choose: str = plan.SYSTEM_CHOOSE):
         self._zugang = zugang
         self._wecker = wecker
-        # Die Gerichtequelle (WB-338). Wie `zugang` und `wecker`: hier nur
-        # gehalten, nichts gebaut und nichts gefragt. `Quelle()` öffnet keine
-        # Verbindung, geht nie selbst ins Netz und startet erst dann einen
-        # eigenen Prozess, wenn ein Zug ein unbekanntes Gericht nennt.
+        # Die Gerichtequelle (WB-338, WB-367). Wie `zugang` und `wecker`:
+        # hier nur gehalten, nichts gebaut und nichts gefragt. `Quelle()`
+        # öffnet keine Verbindung; sie ruft Chefkoch erst dann ab, wenn ein
+        # Zug ein Gericht nennt, das der Zwischenspeicher nicht kennt.
+        # `Quelle(holer=gerichte.nicht_holen)` schaltet genau das ab.
         self._quelle = quelle
         # `kandidaten` gilt je BEGRIFF, `obergrenze` je ZUTAT: die Vereinigung
         # über eine Begriffskette (WB-340) wäre sonst so lang, dass drei
@@ -292,9 +297,11 @@ class Chat:
             #    kann keine fremde Seite und kein Modell besser wissen.
             # 2. Ein GEHOLTES Gericht schlägt das Modell. Seine Zutatenliste
             #    stammt von Menschen, die das Gericht gekocht haben.
-            # 3. Das Modell bleibt für alles zuständig, was kein Gericht ist —
-            #    und für den ersten Zug zu einem Gericht, das noch niemand
-            #    geholt hat.
+            # 3. Das Modell bleibt für alles zuständig, was kein Gericht ist
+            #    — und für ein Gericht, das Chefkoch nicht kennt oder gerade
+            #    nicht herausrückt. Seit WB-367 ist das die Ausnahme und
+            #    nicht mehr der erste Zug: ein unbekanntes Gericht wird im
+            #    Request geholt (`_aus_modell`), nicht angefordert.
             treffer = rezeptweg.erkenne(con, text)
             gerichtsweg = None
             if not treffer:
@@ -319,7 +326,13 @@ class Chat:
             else:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
                  zusatz) = self._aus_modell(con, text)
-                weg = WEG_LLM
+                # Der Modellweg kann UNTERWEGS zum Quellenweg werden
+                # (WB-367): Stufe 1 nennt ein Gericht, das noch niemand
+                # geholt hat, es wird geholt, und die Zutaten kommen dann
+                # doch aus dem Rezept. Dann steht der Weg im Zusatz — und
+                # zwar als `chefkoch`, damit im Trace nicht `llm` steht, wo
+                # nicht geraten wurde.
+                weg = zusatz.pop("weg", WEG_LLM)
 
             ergebnis = self._schreiben(
                 con, order_id, text, weg, plan_zeilen, meldung,
@@ -386,7 +399,12 @@ class Chat:
             "picknick.dish": ergebnis.gericht,
             "picknick.dish_recipe": ergebnis.quelle_name,
             "picknick.dish_url": ergebnis.quelle_url,
-            "picknick.dish_requested": ergebnis.angefordert or None,
+            # Seit WB-367: `dish_requested` heisst „dieser Zug hat das
+            # Gericht selbst geholt" (statt „hat einen Lauf angestossen"),
+            # und `dish_fetch` sagt, was dabei herauskam. Ein `llm`-Zug mit
+            # gesetztem `dish` ist damit erklärbar statt bloss auffällig.
+            "picknick.dish_requested": bool(ergebnis.abruf) or None,
+            "picknick.dish_fetch": ergebnis.abruf,
         })
         obs.setze_ausgabe(span, [
             {"product_id": v["product_id"], "name": v["name"],
@@ -578,29 +596,85 @@ class Chat:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
 
-        # **Hier wird das Gericht angefordert, nicht abgewartet** (WB-338).
-        # Der Zug läuft mit den geratenen Begriffen zu Ende — der Abruf
-        # läuft daneben in einem eigenen Prozess, und der NÄCHSTE Satz mit
-        # demselben Gericht nimmt die Quelle. Zu warten hiesse, einen
-        # Request an eine fremde Seite zu hängen (Spec 3).
-        angefordert = False
+        # **Hier wird das Gericht GEHOLT, nicht angefordert** (WB-367).
+        # Stufe 1 hat gerade 20 bis 35 s gebraucht; der Abruf daneben kostet
+        # gemessen 90 bis 147 ms. Zwischen WB-338 und WB-367 wurde
+        # stattdessen ein eigener Prozess angestossen und dieser Zug mit den
+        # GERATENEN Begriffen zu Ende geführt — der erste Satz zu einem
+        # neuen Gericht bekam also genau das, was WB-338 abschaffen wollte.
+        abruf = None
+        gefunden = None
         if erst.gericht:
-            try:
-                angefordert = self.quelle.anfordern(con, erst.gericht)
-            except Exception:                    # noqa: BLE001 — bewusst breit
-                # Eine Quelle, die nicht will, kostet die Abkürzung und
-                # sonst nichts. Der Zug steht bereits.
-                angefordert = False
+            abruf = self._gericht_holen(con, erst.gericht)
+            if abruf in (None, gerichte.OK):
+                # `None` heisst „nicht abgerufen", und das schliesst den
+                # Fall ein, dass schon ein frisches Rezept dasteht — eines,
+                # das der Namensvergleich am Anfang des Zugs nicht gefunden
+                # hat, weil das Gericht im Satz anders heisst als in `dish`.
+                # Ohne diesen Zweig würde daneben geraten, obwohl das
+                # Rezept vorliegt.
+                gefunden = self._nach_abruf(con, text, erst.gericht)
+
+        if gefunden is not None:
+            # Der Zug wechselt den Weg. Was Stufe 1 geraten hat, wird
+            # weggeworfen — es war der Preis dafür, den Gerichtsnamen
+            # überhaupt zu kennen, und eine geratene Zutatenliste neben
+            # einer echten stehen zu lassen wäre der schlechteste Ausgang.
+            aus_quelle = self._aus_quelle(con, text, gefunden)
+            if aus_quelle is not None:
+                (zeilen, meldung, begriffe, verworfen, aufgaben,
+                 zusatz) = aus_quelle
+                return (zeilen, meldung, begriffe, verworfen, aufgaben,
+                        {**zusatz, "abruf": abruf, "weg": WEG_QUELLE})
 
         aufgaben = self._suchen(con, begriffe)
         auswahl, choose_kaputt = self._waehlen(text, aufgaben)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
 
         meldung = self._meldung_modell(begriffe, freitext, auswahl,
-                                       choose_kaputt, erst.gericht,
-                                       angefordert)
+                                       choose_kaputt, erst.gericht, abruf)
         return (zeilen, meldung, begriffe, auswahl.verworfen, aufgaben,
-                {"gericht": erst.gericht, "angefordert": angefordert})
+                {"gericht": erst.gericht, "abruf": abruf})
+
+    def _gericht_holen(self, con, name: str) -> str | None:
+        """Den Abruf anstossen und auf ihn warten — kurz (WB-367).
+
+        Gibt zurück, was dabei herauskam (`ok`, `leer`, `fehler`) oder
+        `None`, wenn nicht abgerufen wurde: der Speicher hatte schon etwas
+        Frisches, oder ein anderer Zug ruft dasselbe Gericht gerade ab.
+
+        **Was hier schiefgeht, kostet die Abkürzung und nicht den Zug.** Die
+        geratenen Begriffe von Stufe 1 stehen bereits; ein Ausfall der
+        Quelle führt zurück auf sie, nicht auf eine Fehlerseite.
+        """
+        try:
+            return self.quelle.holen(con, name)
+        except Exception:                        # noqa: BLE001 — bewusst breit
+            return None
+
+    def _nach_abruf(self, con, text: str, name: str):
+        """Das eben geholte Gericht als Gerichtsweg — oder `None`.
+
+        Zuerst derselbe Namensvergleich wie sonst (`_gericht_im_satz`): er
+        schneidet den Gerichtsnamen sauber aus dem Satz und lässt „und
+        Klopapier" als `rest` stehen. Steht der Name nicht wörtlich im Satz,
+        weil Stufe 1 ihn herausgelesen hat („für ne Bolo" -> „Bolognese"),
+        greift der Wortvergleich aus `rezeptweg.rest_ohne`. Beides ist
+        besser als der dritte Ausgang: das Rezept liegt vor, und es wird
+        trotzdem geraten.
+        """
+        gefunden = self._gericht_im_satz(con, text)
+        if gefunden is not None:
+            return gefunden
+        try:
+            zeile = self.quelle.zeile(con, name)
+        except Exception:                        # noqa: BLE001 — bewusst breit
+            return None
+        if zeile is None:
+            return None
+        return rezeptweg.Rezeptweg(rezepte=[dict(zeile)],
+                                   rest=rezeptweg.rest_ohne(text,
+                                                            zeile["query"]))
 
     # -- Stufe 2 und 3, für beide Modellwege dieselben --------------------
 
@@ -724,7 +798,7 @@ class Chat:
         return teile
 
     def _meldung_modell(self, begriffe, freitext, auswahl, choose_kaputt,
-                        gericht=None, angefordert=False):
+                        gericht=None, abruf=None):
         """Der Satz über der Liste. Nennt beim Namen, was nicht geklappt hat."""
         n = len(begriffe)
         teile = [f"{n} Begriff{'e' if n != 1 else ''} aus dem Satz, "
@@ -733,16 +807,37 @@ class Chat:
             teile.append("Ohne Katalogtreffer und deshalb als Freitext: "
                          + ", ".join(f"„{f}“" for f in freitext) + ".")
         teile.extend(self._meldung_auswahl(auswahl, choose_kaputt))
-        if angefordert:
-            # Ehrlich benennen, was gerade passiert und was es bringt. Ohne
-            # diesen Satz sähe die Nutzerin beim ersten „alles für Pho" eine
-            # geratene Liste und beim zweiten eine ganz andere, ohne zu
-            # wissen, warum.
-            teile.append(f"Die Zutaten hier hat das Modell aus dem Gedächtnis "
-                         f"genannt. „{gericht}“ wird gerade bei Chefkoch "
-                         "geholt — frag gleich noch einmal, dann kommen sie "
-                         "aus einem echten Rezept.")
+        if gericht:
+            # **Ein geratenes Gericht wird benannt** (WB-338), und seit
+            # WB-367 auch, WARUM geraten wurde. Vorher stand hier „frag
+            # gleich noch einmal" — das war die Aufforderung, den Fehler
+            # selbst auszubügeln. Jetzt ist der Abruf schon gelaufen, und
+            # was übrig bleibt, ist eine Auskunft: Chefkoch kennt das
+            # Gericht nicht, oder war gerade nicht zu erreichen.
+            teile.append(self._meldung_abruf(gericht, abruf))
         return " ".join(teile)
+
+    #: Warum die Zutaten trotz erkanntem Gericht geraten sind (WB-367). Die
+    #: Fristen daneben sind die aus `speicher` — sie stehen im Satz, damit
+    #: niemand fünf Minuten später dasselbe erwartet und etwas anderes
+    #: bekommt.
+    _ABRUF_GRUND = {
+        gerichte.LEER: "Chefkoch kennt „{gericht}“ nicht (eine Woche gemerkt)",
+        gerichte.FEHLER: "Chefkoch war für „{gericht}“ nicht zu erreichen "
+                         "(eine Stunde gemerkt, danach wird es neu versucht)",
+        # Geholt, aber trotzdem nicht benutzt: das Rezept ist zwischen Abruf
+        # und Verwendung verschwunden oder kam ohne Zutaten. Selten — und
+        # eine Meldung, die das verschweigt, wäre eine Lüge über die Herkunft.
+        gerichte.OK: "„{gericht}“ liegt jetzt bei den Rezepten, war für "
+                     "diesen Zug aber nicht verwertbar",
+        None: "Zu „{gericht}“ liegt gerade kein Rezept von Chefkoch vor",
+    }
+
+    def _meldung_abruf(self, gericht: str, abruf: str | None) -> str:
+        grund = self._ABRUF_GRUND.get(abruf, self._ABRUF_GRUND[None])
+        return (grund.format(gericht=gericht)
+                + " — die Zutaten hier hat das Modell aus dem Gedächtnis "
+                  "genannt.")
 
     # -- Schreiben --------------------------------------------------------
 
@@ -750,7 +845,7 @@ class Chat:
                    zeilen: list[dict], meldung: str, span_id: str | None,
                    *, begriffe, verworfen, rezepte, gericht=None,
                    quelle_name=None, quelle_url=None, quelle_recipe_id=None,
-                   angefordert=False) -> Ergebnis:
+                   abruf=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -792,4 +887,4 @@ class Chat:
             vorschlaege=vorschlaege.liste(con, antwort_id), begriffe=begriffe,
             verworfen=verworfen, rezepte=rezepte, meldung=meldung,
             gericht=gericht, quelle_name=quelle_name, quelle_url=quelle_url,
-            quelle_recipe_id=quelle_recipe_id, angefordert=angefordert)
+            quelle_recipe_id=quelle_recipe_id, abruf=abruf)

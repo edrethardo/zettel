@@ -18,6 +18,15 @@ Drei Teile, in dieser Reihenfolge:
 3. **NACHHER** — derselbe Satz durch `Chat.turn()`, jetzt mit gefülltem
    Speicher. `weg` steht dann auf `chefkoch`.
 
+Dazu die Handprobe zu WB-367:
+
+    .venv/bin/python scripts/gericht_probe.py --gericht Ratatouille --erster-zug
+
+**Leert den Speichereintrag und lässt genau EINEN Zug laufen.** Er muss
+`weg = chefkoch` liefern, ohne dass vorher jemand etwas geholt hat — das ist
+die Frage des Tickets, und sie lässt sich nur an einem Gericht stellen, das
+noch nicht dasteht.
+
 Gezählt wird ungeschönt: „hat ein Katalogprodukt gefunden" ist NICHT „hat das
 richtige gefunden" — genau die Zahl, vor der EVALS.md warnt. Deshalb steht
 unter jeder Liste, was gefunden wurde, und nicht nur wie viel.
@@ -35,7 +44,7 @@ from picknick import db  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
 from picknick.assistant import plan  # noqa: E402
 from picknick.catalog import search  # noqa: E402
-from picknick.gerichte import chefkoch, quelle  # noqa: E402
+from picknick.gerichte import chefkoch, quelle, speicher  # noqa: E402
 from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
 from picknick.llm import wake  # noqa: E402
 from picknick.llm.client import Modellzugang  # noqa: E402
@@ -127,6 +136,40 @@ def nachher(zugang, con, satz: str) -> None:
           f"Freitext.")
 
 
+def erster_zug(zugang, con, satz: str, gericht: str) -> None:
+    """Ein einziger Zug zu einem Gericht, das noch niemand geholt hat (WB-367).
+
+    Der Speichereintrag wird vorher gelöscht, sonst misst die Probe den
+    Zwischenspeicher und nicht den Abruf. Das gelöschte Rezept bleibt in der
+    Sammlung stehen — es ist fremde Arbeit und gehört dort hin; nur die
+    `dish`-Zeile, also die Frage „wurde das schon geholt", fällt weg.
+    """
+    print()
+    print("=" * 74)
+    print("ERSTER ZUG — nichts im Speicher, ein Satz, und er nimmt das Rezept")
+    print("=" * 74)
+    con.execute("DELETE FROM dish WHERE name = ?",
+                (speicher.schluessel(gericht),))
+    con.commit()
+    print(f"  dish-Eintrag zu {gericht!r} gelöscht: "
+          f"{speicher.zeile(con, gericht) is None}")
+
+    agent = chatmodul.Chat(zugang, wecker=wake.Wecker(), quelle=quelle.Quelle())
+    t0 = time.monotonic()
+    ergebnis = agent.turn(con, satz)
+    dauer = time.monotonic() - t0
+    print(f"  Weg: {ergebnis.weg}   Abruf: {ergebnis.abruf}   "
+          f"({dauer:.1f} s für den ganzen Zug)")
+    print(f"  Herkunft: {ergebnis.quelle_name} — {ergebnis.quelle_url}")
+    print(f"  Meldung: {ergebnis.meldung}\n")
+    for v in ergebnis.vorschlaege:
+        art = "FREITEXT" if v["ist_freitext"] else f"#{v['product_id']}"
+        print(f"    {v['qty']} × {v['name'][:44]:<44} {art:>9}  "
+              f"(gesucht: {v['search_term']!r})")
+    print(f"\n  {ergebnis.n_produkte} Produkte, {ergebnis.n_freitext} "
+          f"Freitext.")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--db", default=db.DEFAULT_DB)
@@ -134,6 +177,9 @@ def main() -> int:
     p.add_argument("--satz", default=None)
     p.add_argument("--nur-vorher", action="store_true")
     p.add_argument("--nur-nachher", action="store_true")
+    p.add_argument("--erster-zug", action="store_true",
+                   help="Speichereintrag löschen und EINEN Zug messen "
+                        "(die Handprobe zu WB-367)")
     args = p.parse_args()
     satz = args.satz or f"alles für {args.gericht}"
 
@@ -150,6 +196,9 @@ def main() -> int:
     zugang = Modellzugang()
 
     try:
+        if args.erster_zug:
+            erster_zug(zugang, con, satz, args.gericht)
+            return 0
         if not args.nur_nachher:
             vorher(zugang, con, satz)
         if not args.nur_vorher:

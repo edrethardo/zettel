@@ -1,9 +1,11 @@
 """Der Zwischenspeicher für geholte Gerichte (WB-338).
 
-**Das Einzige aus diesem Paket, das der Web-Prozess anfassen darf.** Ein
-Treffer hier braucht kein Netz — und weil ein Gericht nicht bei jedem
-Chat-Zug neu geholt wird, kostet „alles für Pho" die Quelle genau zweimal
-zwei Anfragen im Leben und nicht zwei bei jedem Satz.
+**Der Normalweg zu einem Gericht, und der einzige ohne Netz.** Ein Treffer
+hier kostet keine Anfrage — und weil ein Gericht nicht bei jedem Chat-Zug neu
+geholt wird, kostet „alles für Pho" die Quelle genau zwei Anfragen im Leben
+und nicht zwei bei jedem Satz. Seit WB-367 holt der Web-Prozess selbst, wenn
+hier nichts steht; dass er es fast nie muss, ist die Leistung dieser drei
+Tabellen.
 
 Drei Tabellen, drei Aufgaben (die Begründungen stehen am Schema in
 `picknick.db`):

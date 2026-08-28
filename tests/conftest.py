@@ -25,24 +25,39 @@ from picknick import obs  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def _kein_abruf_startet_einen_prozess(monkeypatch):
-    """Kein Test startet den Chefkoch-Abruf (WB-338, Spec 13).
+def _kein_test_ruft_chefkoch_an(monkeypatch):
+    """Kein Test geht bei Chefkoch ins Netz (WB-338/WB-367, Spec 13).
 
-    `Chat()` baut ohne Zutun eine `Quelle`, und die startet bei einem
-    unbekannten Gericht `python -m picknick.gerichte.lauf` — einen Prozess,
-    der ins Netz geht. In einem Test wäre das beides: langsam und ein Gang
-    ins Netz durch die Hintertür. Wer den Weg PRÜFEN will, reicht einen
-    eigenen `starter` herein (siehe `tests/test_gerichte.py`); wer es nicht
-    tut, bekommt hier einen Testfehler statt eines stillen Prozesses.
+    `Chat()` baut ohne Zutun eine `Quelle`, und die holt seit WB-367 ein
+    unbekanntes Gericht SOFORT ab — im selben Prozess, mit echtem `httpx`.
+    In einem Test wäre das ein Gang ins Netz durch die Hintertür, und zwar
+    ein besonders unauffälliger: er würde meistens funktionieren.
+
+    Wer den Weg PRÜFEN will, reicht einen eigenen `holer` an `Quelle` herein
+    (siehe `tests/test_gerichte.py`); wer es nicht tut, bekommt hier einen
+    Testfehler statt einer stillen Anfrage an api.chefkoch.de.
+
+    Diese Sperre sitzt an `lauf.hole_jetzt` und nicht an `Quelle`: sie soll
+    auch dann greifen, wenn jemand den Abruf eines Tages woanders aufruft.
+
+    Verboten ist genau das, was ein Socket öffnen würde — ein Aufruf OHNE
+    `http`. Mit einem Doppelgänger darf dieselbe Bahn laufen, und sie soll
+    es auch: sonst bliebe `hole_jetzt` selbst ungeprüft und die Tests
+    liefen an der Funktion vorbei, um die es geht.
     """
-    from picknick.gerichte import quelle
+    from picknick.gerichte import lauf
 
-    def _nein(argv):
-        raise AssertionError(
-            f"Ein Test wollte einen Abruf-Prozess starten: {argv!r}. "
-            "Reich einen eigenen `starter` an `Quelle` herein.")
+    echt = lauf.hole_jetzt
 
-    monkeypatch.setattr(quelle, "_als_prozess", _nein)
+    def _nur_mit_doppelgaenger(con, gericht, *, http=None, **kwargs):
+        if http is None:
+            raise AssertionError(
+                f"Ein Test wollte {gericht!r} wirklich bei Chefkoch holen. "
+                "Reich einen `holer` an `Quelle` oder ein `http` an "
+                "`hole_jetzt` herein.")
+        return echt(con, gericht, http=http, **kwargs)
+
+    monkeypatch.setattr(lauf, "hole_jetzt", _nur_mit_doppelgaenger)
 
 
 @pytest.fixture(autouse=True)

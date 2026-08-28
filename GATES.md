@@ -128,10 +128,12 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   echte Box). Ebenso wenig geprüft ist die rechtliche Seite: robots.txt
   erlaubt die beiden Endpunkte, die Nutzungsbedingungen sind nicht gelesen
   (siehe README).
-* **Kein echter Hintergrundprozess.** Dass `Quelle.anfordern()` das richtige
-  Kommando zusammenbaut, ist geprüft; dass ein `subprocess.Popen` daraus auf
-  dieser Maschine wirklich startet, nicht — im Gate ist der Starter eine
-  Liste, die mitschreibt.
+* **Keine echte Frist.** Dass `Quelle.holen()` im Zug abruft, mit der kurzen
+  Frist, und bei einem Ausfall auf das Modell zurückfällt, ist geprüft (WB-367);
+  dass `httpx` nach zwei Sekunden gegen ein wirklich langsames
+  api.chefkoch.de abbricht, nicht — im Gate ist der Abruf ein Doppelgänger,
+  der sofort antwortet oder sofort wirft. Die echte Frist misst
+  `scripts/gericht_probe.py`.
 * **Keine echten Annotationen.** Was `obs.labels.annotationen()` *berechnet*,
   ist geprüft; dass Phoenix sie annimmt, dem richtigen Span zuordnet und unter
   `annotator_kind = HUMAN` wiederfindet, prüft nur

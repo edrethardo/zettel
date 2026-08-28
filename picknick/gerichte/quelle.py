@@ -1,106 +1,88 @@
-"""Der Riegel zwischen dem Shop und einer fremden Seite (WB-338, Spec 3).
+"""Die Gerichtequelle, wie der Chat sie sieht (WB-338, umgebaut in WB-367).
 
-**Der Web-Prozess ruft nie eine fremde Seite auf.** Das ist keine Absicht,
-die man vergessen kann, sondern hier eine Struktur: dieses Modul importiert
-kein `httpx` und kennt keine URL. Es tut genau zwei Dinge:
+Zwei Dinge, und beide gehen über die Datenbank:
 
-1. Es trägt einen WUNSCH in `dish` ein (`speicher.wunsch`).
-2. Es startet `python -m picknick.gerichte.lauf` als EIGENEN PROZESS und
-   kehrt sofort zurück.
+1. **Lesen** — `bereit()` und `gericht()` fragen den Zwischenspeicher. Ein
+   Treffer dort kostet kein Netz, und das ist der Normalfall, sobald ein
+   Gericht einmal geholt wurde.
+2. **Holen** — `holen()` ruft Chefkoch AB, jetzt, in dem Prozess, der gerade
+   fragt. Mit kurzer Frist, und was dabei herauskommt (Rezept, „kennt
+   Chefkoch nicht", Störung), steht danach in `dish`.
 
-Der Abruf läuft damit hinter demselben Riegel wie der Katalog-Crawler — ein
-eigener Prozess, der ins Netz geht, während der Shop es nie tut. Und er läuft
-nicht im Request-Pfad: `anfordern()` wartet nicht, der laufende Chat-Zug geht
-in der Zwischenzeit den Modellweg weiter (`picknick.bons.lauf` ist dafür das
-Vorbild — starten und sofort zurückkehren, den Stand nachfragen).
+**Warum das ein Umbau ist und keine Ausgangslage.** WB-338 baute genau hier
+einen Riegel ein: dieses Modul kannte keine URL, trug nur einen WUNSCH ein
+und startete `python -m picknick.gerichte.lauf` als eigenen Prozess — weil
+Spec 3 sagte, der Web-Prozess rufe nie eine fremde Seite auf. Der Preis stand
+im Entwurf und war echt: **der erste Satz zu einem neuen Gericht wurde noch
+geraten**, erst der zweite bekam das Rezept.
 
-**Der zweite Zug ist der, der zählt.** „alles für Pho" beim ersten Mal geht
-noch übers Modell und sagt das auch; zwei Sekunden später steht das Rezept
-im Speicher und jeder weitere Satz mit „Pho" darin nimmt es. Das ist der
-Preis dafür, dass niemand im Request auf eine fremde Seite wartet — und es
-ist derselbe Handel wie beim Wecken der Modellbox (Spec 6): anstossen,
-zurückgeben, gleich nochmal fragen.
+Gemessen am 2026-08-28 trägt die Begründung nicht:
 
-Fällt der Start schief (kein Dateipfad zur Datenbank, kein Python, was auch
-immer), passiert nichts weiter: der Wunsch steht in der Tabelle und der
-nächste Lauf ohne Argument holt ihn nach. **Nichts davon darf den Chat
-zerbrechen** — der ganze Startvorgang liegt deshalb in einem `try`.
+    Chili con Carne   Suche 131 ms + Detail 16 ms =  147 ms
+    Kartoffelsalat    Suche  92 ms + Detail 17 ms =  109 ms
+    Sushi             Suche  70 ms + Detail 20 ms =   90 ms
+    Ratatouille       Suche  93 ms + Detail 20 ms =  114 ms
+    ---------------------------------------------------------
+    der Weg, der stattdessen genommen wurde: 35.600 ms Modell
+
+Rund 250-mal schneller als das Ausweichen — und der Chat wartet in derselben
+Sekunde ohnehin 20 bis 35 s auf die vLLM-Box, also auf eine andere Maschine
+im Netz. Ein Request, der auf ein Modell warten darf, aber nicht 100 ms auf
+ein Rezept, ist nicht vorsichtig, sondern inkonsequent.
+
+**Was von Spec 3 bleibt, ist der Teil, der das Produkt trägt:** der KATALOG
+wird nie live abgefragt. Suchen, Blättern, Einlegen, Abhaken, die Pick-Liste
+— nichts davon fasst je das Netz an, und ein Ausfall von knuspr.de verhindert
+kein Einkaufen. Fällt Chefkoch aus oder kennt das Gericht nicht, bricht auch
+hier nichts: es bleibt beim Modellweg, dann aber als bewusstes Ausweichen und
+nicht als Regelfall.
+
+**Die Sperre gegen doppelte Abrufe ist die Zeile in `dish`** und kein Merker
+im Speicher: zwei Web-Prozesse teilen sich keinen Merker, aber sehr wohl die
+Datenbank. `holen()` trägt den Wunsch ein, BEVOR es abruft — ein zweiter Zug
+zum selben Gericht sieht dann einen frischen `offen`-Eintrag und ruft nicht
+noch einmal ab.
 """
 from __future__ import annotations
 
 import sqlite3
-import subprocess
-import sys
 import time
-from pathlib import Path
 
-from picknick.gerichte import speicher
-
-#: Das Modul, das den Abruf macht. Als `-m`, damit derselbe Interpreter und
-#: derselbe Suchpfad gelten wie im Shop.
-MODUL = "picknick.gerichte.lauf"
-
-WURZEL = Path(__file__).resolve().parents[2]
+from picknick.gerichte import chefkoch, lauf, speicher
 
 
-def nicht_holen(argv) -> None:
-    """Ein `starter`, der nichts startet.
+def nicht_holen(con, name, **_) -> None:
+    """Ein Abruf, der nichts abruft.
 
-    Die Vorgabe für alles, was ohne Quelle auskommen soll — Tests, Evals,
-    ein Shop, dem jemand den Abruf abgedreht hat. Der Wunsch steht dann
-    trotzdem in `dish` und ein Lauf von Hand holt ihn.
+    Für alles, was ohne Quelle auskommen soll — Tests, Evals, ein Shop, dem
+    jemand den Abruf abgedreht hat. `Quelle(holer=nicht_holen)` liest den
+    Zwischenspeicher weiter; bereits geholte Gerichte werden also bedient,
+    neue nicht mehr geholt.
     """
-
-
-def _als_prozess(argv) -> None:
-    """Startet den Lauf abgekoppelt und wartet nicht auf ihn.
-
-    `start_new_session=True`: der Abruf soll einen Neustart des Shops
-    überleben und nicht an dessen Prozessgruppe hängen. Ausgabe nach
-    `DEVNULL`, weil der Lauf seinen Zustand in die Datenbank schreibt und
-    nicht auf ein Terminal, das niemand liest.
-    """
-    subprocess.Popen(argv, cwd=str(WURZEL), start_new_session=True,
-                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL)
-
-
-def db_pfad(con: sqlite3.Connection) -> str | None:
-    """Der Dateipfad der geöffneten Datenbank, oder `None` bei `:memory:`.
-
-    Der eigene Prozess braucht ihn, und eine sqlite-Verbindung kennt ihn:
-    `PRAGMA database_list`. Ihn stattdessen durch `create_app` und `Chat`
-    durchzureichen hiesse, dieselbe Angabe an drei Stellen zu führen, wo eine
-    schon dasteht — und die dritte wäre eines Tages die falsche.
-    """
-    try:
-        for _, name, datei in con.execute("PRAGMA database_list"):
-            if name == "main":
-                return datei or None
-    except sqlite3.Error:
-        return None
     return None
 
 
 class Quelle:
     """Die Gerichtequelle, wie der Chat sie sieht.
 
-    Alles Injizierbare an einer Stelle: `starter` (was den Lauf startet) und
-    `uhr` (wovon „zu alt" abhängt). Ein Test schiebt einen Starter unter, der
-    mitschreibt oder den Abruf synchron gegen eine Fixture fährt — kein Test
-    startet einen Prozess und keiner geht ins Netz (Spec 13).
-
-    `Quelle(starter=nicht_holen)` schaltet den Abruf ab, ohne den Speicher
-    abzuschalten: bereits geholte Gerichte werden weiter bedient.
+    Alles Injizierbare an einer Stelle: `holer` (was abruft), `uhr` (wovon
+    „zu alt" abhängt) und `frist_s` (wie lange gewartet wird). Ein Test
+    schiebt einen Holer unter, der gegen die aufgezeichneten Antworten
+    arbeitet oder eine Zeitüberschreitung spielt — **kein Test geht ins
+    Netz** (Spec 13).
     """
 
-    def __init__(self, *, starter=None, uhr=time.time,
-                 python: str | None = None):
-        self._starter = starter if starter is not None else _als_prozess
+    def __init__(self, *, holer=None, uhr=time.time,
+                 frist_s: float = chefkoch.TIMEOUT_SYNC_S):
+        # `None` bleibt `None` und wird erst beim Abruf zu `lauf.hole_jetzt`
+        # aufgelöst. Sonst hinge in jeder `Quelle` das Funktionsobjekt vom
+        # Zeitpunkt ihres Baus ab — und die Sperre der Testsuite, die genau
+        # diese Funktion ersetzt, griffe je nach Reihenfolge oder nicht.
+        self._holer = holer
         self._uhr = uhr
-        self._python = python or sys.executable
+        self._frist_s = frist_s
 
-    # -- Lesen (kein Netz, kein Prozess) ----------------------------------
+    # -- Lesen (kein Netz) ------------------------------------------------
 
     def bereit(self, con: sqlite3.Connection) -> list[dict]:
         """Die Gerichte, die ohne Netz bedient werden können."""
@@ -110,42 +92,43 @@ class Quelle:
         """Ein gespeichertes Gericht samt Zutaten, oder `None`."""
         return speicher.gericht(con, name, self._uhr)
 
-    # -- Anfordern (ein eigener Prozess, kein Warten) ---------------------
+    def zeile(self, con: sqlite3.Connection, name: str):
+        """Die `dish`-Zeile zu einem Gerichtsnamen, oder `None`."""
+        return speicher.zeile(con, name)
 
-    def anfordern(self, con: sqlite3.Connection, name: str) -> bool:
-        """Sorgt dafür, dass dieses Gericht geholt wird. Wartet NICHT.
+    # -- Holen (jetzt, mit Frist) -----------------------------------------
 
-        Gibt zurück, ob dieser Aufruf einen Lauf angestossen hat. `False`
-        heisst: brauchte es nicht (liegt schon vor, wurde gerade erst
-        versucht, läuft bereits) oder ging nicht (kein Dateipfad) — in beiden
-        Fällen ist nichts kaputt, der Aufrufer geht den bisherigen Weg.
+    def holen(self, con: sqlite3.Connection, name: str) -> str | None:
+        """Holt dieses Gericht, wenn nötig. Wartet — kurz (WB-367).
 
-        **Die Sperre gegen doppelte Läufe ist die Zeile in `dish`** und kein
-        Merker im Speicher: zwei Web-Prozesse teilen sich keinen Merker, aber
-        sehr wohl die Datenbank.
+        Gibt den Zustand des Abrufs zurück: `ok`, `leer` (Chefkoch kennt das
+        Gericht nicht) oder `fehler` (Störung oder Zeitüberschreitung).
+        `None` heisst „dieser Zug hat gar nicht abgerufen": kein Name, oder
+        im Speicher steht schon ein frischer Eintrag — ein Rezept, ein
+        gemerktes „kennt Chefkoch nicht", eine gemerkte Störung oder ein
+        Abruf, der gerade in einem anderen Zug läuft.
+
+        Wirft nicht. Was hier schiefgeht, wird als `fehler` vermerkt und
+        kostet die Abkürzung, nicht den Chat-Zug.
         """
         frage = " ".join((name or "").split())
         if not frage:
-            return False
+            return None
         vorhanden = speicher.zeile(con, frage)
         if vorhanden is not None and speicher.frisch(vorhanden, self._uhr):
-            # Frisch heisst hier je nach Zustand: liegt vor, kennt Chefkoch
-            # nicht, ist gerade schiefgegangen, oder wird gerade geholt. In
-            # allen vier Fällen wäre eine zweite Anfrage an eine fremde Seite
-            # umsonst.
-            return False
+            return None
 
-        pfad = db_pfad(con)
-        if not pfad:
-            # `:memory:` — ein eigener Prozess sähe eine leere Datenbank.
-            return False
+        # Der Wunsch steht VOR dem Abruf in der Tabelle, und das ist die
+        # Sperre: ein zweiter Zug zu demselben Gericht sieht ab hier einen
+        # frischen `offen`-Eintrag und ruft nicht noch einmal ab.
         speicher.wunsch(con, frage, self._uhr)
+        holer = self._holer if self._holer is not None else lauf.hole_jetzt
         try:
-            self._starter([self._python, "-m", MODUL, "--db", pfad,
-                           "--gericht", frage])
-        except Exception:                        # noqa: BLE001 — bewusst breit
-            # Ein Chat-Zug darf an einem fehlgeschlagenen Prozessstart nicht
-            # zerbrechen. Der Wunsch steht in der Tabelle; ein Lauf ohne
-            # Argument holt ihn nach.
-            return False
-        return True
+            return holer(con, frage, frist_s=self._frist_s)
+        except Exception as e:                   # noqa: BLE001 — bewusst breit
+            # Ein Chat-Zug darf an einem kaputten Abruf nicht zerbrechen.
+            # Vermerkt wird trotzdem, sonst stünde die Zeile eine Weile auf
+            # `offen` und niemand wüsste, warum nichts kommt.
+            speicher.vermerken(con, frage, speicher.FEHLER,
+                               f"{type(e).__name__}: {e}", self._uhr)
+            return speicher.FEHLER

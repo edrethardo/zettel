@@ -131,26 +131,35 @@ prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
 * **zwei Anfragen je Gericht, dann nie wieder** — das Ergebnis wird in `dish`
   zwischengespeichert (90 Tage; „kennt Chefkoch nicht" sieben Tage, eine
   Störung eine Stunde). Ein Gericht wird nicht bei jedem Chat-Zug neu geholt.
-* **1,5 s Pause** zwischen zwei Anfragen (`chefkoch.PAUSE_S`).
+* **1,5 s Pause** zwischen zwei Anfragen im Lauf von Hand (`chefkoch.PAUSE_S`).
+  Im Chat-Request entfällt sie: dort fallen genau zwei Anfragen an, einmal im
+  Leben dieses Gerichts, und ein Mensch wartet darauf.
 * **ein ehrlicher User-Agent**, der das Projekt benennt.
 * **die Herkunft bleibt am Rezept**: Rezeptname und `siteUrl` stehen in der
   Rezeptansicht, mit Link auf die Originalseite. Das ist fremde Arbeit.
 
-**Der Web-Prozess ruft nie eine fremde Seite auf** (Spec 3), und das ist keine
-Absicht, sondern eine Struktur: er trägt einen Wunsch in `dish` ein und
-startet einen eigenen Prozess.
+**Der erste Satz zu einem neuen Gericht nimmt schon das Rezept** —. Liegt nichts im Zwischenspeicher, holt der Web-Prozess selbst, mit 2 s
+Frist je Anfrage; bei Zeitüberschreitung oder Ausfall bleibt es beim
+Modellweg, und die Meldung sagt warum. Der Chat bricht nicht.
+
+Davor stand hier das Gegenteil, und zwar mit Absicht: Spec 3 sagte pauschal
+*„der Web-Prozess ruft nie eine fremde Seite auf"*, also trug er nur einen
+Wunsch ein und startete einen eigenen Prozess — der erste Satz bekam die
+geratene Liste, erst der zweite das Rezept. Gemessen am 2026-08-28 kostet der
+Abruf 90 bis 147 ms und der Modellweg daneben 35.600 ms; die Regel schützte
+einen Request, der ohnehin eine halbe Minute auf die vLLM-Box wartet, vor
+einem Zehntel Sekunde. **Für den Katalog gilt sie unverändert weiter:** der
+wird nie live abgefragt, und ein Ausfall von knuspr.de verhindert kein
+Einkaufen.
+
+Das Kommando von Hand bleibt — zum Vorwärmen und zum Nachholen:
 
 ```bash
 .venv/bin/python -m picknick.gerichte.lauf --gericht "Pho"   # ein Gericht
 .venv/bin/python -m picknick.gerichte.lauf --alle            # offene Wünsche
 ```
 
-Deshalb ist der ERSTE Satz zu einem neuen Gericht noch der Modellweg — er sagt
-das auch — und erst der zweite nimmt das Rezept. Ein Request wartet nie auf
-eine fremde Seite. Fällt Chefkoch aus, bleibt es beim Modellweg; der Chat
-bricht nicht.
-
-Zurücknehmen lässt sich das Ganze an einer Stelle: `Chat(quelle=Quelle(
-starter=gerichte.nicht_holen))` liest weiter den Speicher, holt aber nichts
-mehr nach.
+Zurücknehmen lässt sich der Abruf an einer Stelle: `Chat(quelle=Quelle(
+holer=gerichte.nicht_holen))` liest weiter den Speicher, holt aber nichts
+mehr nach. Genau das tun die Evals, damit zwei Läufe vergleichbar bleiben.
 
