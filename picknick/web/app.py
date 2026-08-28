@@ -178,11 +178,15 @@ def serve(hosts=None, port: int | None = None, app: FastAPI | None = None) -> No
         raise RuntimeError(
             f"Konnte nicht auf {hosts}:{port} binden ({e}). Läuft tailscaled "
             "und stimmt die Adresse in PICKNICK_HOST noch?") from e
-    # ws="none": der Shop spricht kein WebSocket, HTMX braucht keines — und
-    # uvicorns Auto-Erkennung importiert sonst das systemweite `websockets`,
-    # das auf dieser Maschine zu alt ist und den Start mit einem ImportError
-    # abbricht (gemessen 2026-08-28).
-    server = uvicorn.Server(uvicorn.Config(app, log_level="info", ws="none"))
+    # ws bleibt auf der Vorgabe "auto". Es stand hier einmal auf "none", weil
+    # uvicorns Auto-Erkennung das systemweite `websockets` 9.1 importierte und
+    # der Start an einem ImportError zerbrach. Das war eine Eigenheit des
+    # System-Interpreters, nicht des Shops: im Projekt-venv ist `websockets`
+    # gar nicht installiert (der Shop spricht keines), uvicorn schaltet es
+    # still ab und lädt sauber. Gemessen 2026-08-28, beide Wege direkt
+    # gegeneinander. Läuft das hier je wieder gegen System-Python, kommt der
+    # ImportError zurück — dann ist das venv die Antwort, nicht ws="none".
+    server = uvicorn.Server(uvicorn.Config(app, log_level="info"))
     server.run(sockets=sockets)
 
 
