@@ -12,13 +12,19 @@ Everything the agent does is one trace in Phoenix, every user decision becomes
 an eval label, and the whole recipe path has been measured end-to-end on 64
 dishes. This page is the tour; the German docs
 ([`DESIGN.md`](DESIGN.md), [`OBSERVABILITY.md`](OBSERVABILITY.md),
-[`EVALS.md`](EVALS.md)) carry the full detail.
+[`EVALS.md`](EVALS.md)) carry the full detail, and
+[`CASE-STUDY.md`](CASE-STUDY.md) tells the two debugging stories in English —
+how one trace acquitted the model, and how one measured line took the eval
+from 76 % to 83 %.
 
-*All screenshots below come from a staged demo copy of the database (same
-catalog, no household data). The chat turn shown is a real turn against the
-real model — nothing in the pictures is mocked.*
+*All screenshots and GIFs below come from a staged demo copy of the database
+(same catalog, no household data). The chat turns shown are real turns
+against the real model — nothing in the pictures is mocked, only the waiting
+time is compressed.*
 
 ## One sentence in, one shopping list out
+
+![One sentence becomes a recipe card: typing, the model working, the card with cooking time and five alternatives](docs/images/chat-recipe-card.gif)
 
 | | |
 |---|---|
@@ -54,6 +60,16 @@ After "Yes": the cart shows the computed pack counts, the free-text toilet
 paper is still there, submitting turns the cart into the **pick list** he
 checks off in the store ("gab's nicht" = the shelf was empty — an honest third
 state), and the status page counts the labels every decision produced.
+
+| | |
+|---|---|
+| ![Changing servings from 3 to 6 recalculates every quantity](docs/images/servings-rescale.gif) | ![Checking off the pick list in the store, including the third state "gab's nicht"](docs/images/pick-list.gif) |
+
+Left: the servings field on the recipe card — 3 → 6, and every quantity in
+the ingredient list is recomputed (600 g spinach becomes 1200 g), while
+anything already confirmed into the cart deliberately stays untouched.
+Right: the pick list in the store — two items checked off, one marked
+*"gab's nicht"*, which counts as done without pretending it was bought.
 Confirmed ingredients become a **saved recipe** on submit — the next
 "lasagna" answers from it with **zero model calls**.
 
@@ -156,9 +172,24 @@ fantasy names, exotic international, …), each driven through the full path —
 sentence → ingredients → search terms → products → cart → shopping list.
 No run failed. Median 34 s per dish.
 
-* **411 of 533 search terms (77 %) found a catalog product** — median 83 %
-  per dish, range 0–100. Two thirds of dishes land above 80 %; four land at
-  zero (see weaknesses).
+* **446 of 540 search terms (83 %) found a catalog product** — median 89 %
+  per dish, range 0–100. Two thirds of dishes land above 80 %; exactly one
+  lands at zero (a deliberately fictional dish, "Schrumpelfrikandel").
+  This number was 76 % until one measured line changed it: a frozen-prompt
+  probe isolated the cause to the mere **presence** of the user's sentence
+  in stage 3's prompt — Kartoffelpürree scored 0 of 10 with the sentence
+  and 10 of 10 without, same candidates, reproduced three times, and
+  Königsberger Klopse failed identically even though its sentence matched
+  its recipe perfectly. One line stopped passing the sentence on the recipe
+  path, and the re-run over the same 64 dishes moved 76 % → 83 % and
+  dishes-at-zero 4 → 1 — the full story, tables included, is in
+  [`CASE-STUDY.md`](CASE-STUDY.md).
+
+![Per-dish catalog hit rate before and after the one-line fix](docs/images/eval-vorher-nachher.svg)
+
+The remaining bullets are from the first breadth run — the one whose
+quantity chain was audited link by link in [`EVALS.md`](EVALS.md):
+
 * **Not one suggestion line was lost**: 558 rows → 558 cart items → 558
   shopping-list lines. 71 % carried a quantity to the end.
 * The lost quantities split cleanly into four measured links: the recipe
@@ -182,7 +213,7 @@ reason (it stopped forgetting onions and garlic), and precision 0.850 →
 0.960 — partly by **omitting** an item, which the docs flag as suspect
 rather than celebrate.
 
-**Gates: 1,146 tests and a 76-check smoke gate** (counted 2026-08-29 — the
+**Gates: 1,150 tests and a 76-check smoke gate** (counted 2026-08-29 — the
 numbers keep growing), both running without
 network, model, or Phoenix — and for the gate that is *enforced, not
 assumed*: it monkeypatches `socket.connect/bind/getaddrinfo` before the
@@ -193,12 +224,13 @@ the very Phoenix port that is live on the dev machine.
 
 A showcase that hides its edges is an ad. The measured ones:
 
-* **"Salat" scores 0 of 9 — reproducibly.** Stage 3 chooses against the
-  *sentence*, not the recipe: the dish fetch returns "KFC Coleslaw" for
-  "Salat", the mismatch makes the model reject **every** candidate — even
-  milk and butter that were right there. *"alles für Salat"* (same recipe,
-  same catalog) gets 6 of 9. All-or-nothing, and the sentence's phrasing is
-  half the problem.
+* **The 83 % has a price, and one path is unmeasured.** The one-line fix
+  that rescued the zero-scoring dishes ("Salat": 0 of 9 → 8 of 9) removed
+  the sentence from stage 3 on the recipe path — 13 dishes improved, but 10
+  lost exactly one term each (visible in the chart above). And whether the
+  *model* path actually needs the sentence ("Milch für den Kaffee") remains
+  an assumption: every frozen fixture is a recipe-path turn, so the path
+  that kept the sentence is the one that was never measured.
 * **The search knows prefixes only.** "milch" never finds "Landmilch" by
   name, "Klopapier" never finds "Toilettenpapier" — German compounds put the
   noun at the end. This is the single biggest retrieval weakness; part of

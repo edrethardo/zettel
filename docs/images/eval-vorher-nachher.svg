@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1004" width="720" height="1004" role="img" aria-label="Dumbbell chart: catalog hit rate per dish before and after the one-line fix, 76 to 83 percent overall">
+<style>
+  text { font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  .titel   { font-size: 15px; font-weight: 600; fill: #57606a; }
+  .unter, .legende, .achse { font-size: 10.5px; fill: #6e7781; }
+  .kopf    { font-size: 10.5px; font-weight: 600; fill: #6e7781; }
+  .name    { font-size: 9.5px; fill: #6e7781; }
+  .gitter  { stroke: #6e7781; stroke-opacity: .22; stroke-width: 1; }
+  .l-auf   { stroke: #2a78d6; stroke-opacity: .45; stroke-width: 2; }
+  .l-ab    { stroke: #eb6834; stroke-opacity: .45; stroke-width: 2; }
+  .p-auf   { fill: #2a78d6; }
+  .p-ab    { fill: #eb6834; }
+  .p-vor   { fill: none; stroke-width: 1.6; }
+  .p-vor.p-auf { stroke: #2a78d6; }
+  .p-vor.p-ab  { stroke: #eb6834; }
+  .p-still { fill: #6e7781; fill-opacity: .55; }
+  @media (prefers-color-scheme: dark) {
+    .titel { fill: #9198a1; }
+    .unter, .legende, .achse, .kopf, .name { fill: #9198a1; }
+    .gitter { stroke: #9198a1; }
+    .l-auf { stroke: #3987e5; }
+    .l-ab  { stroke: #d95926; }
+    .p-auf { fill: #3987e5; }
+    .p-ab  { fill: #d95926; }
+    .p-vor { fill: none; }
+    .p-vor.p-auf { stroke: #3987e5; }
+    .p-vor.p-ab  { stroke: #d95926; }
+    .p-still { fill: #9198a1; }
+  }
+</style>
+
+<text class="titel" x="12" y="24">Catalog hit rate per dish — before and after the one-line fix</text>
+<text class="unter" x="12" y="44">412/541 search terms found a product (76 %) → 446/540 (83 %) · dishes at zero: 4 → 1 · 61 dishes with a stage-1 run, same catalog, same model</text>
+<g transform="translate(12,62)">
+  <circle class="p-vor p-auf" cx="6" cy="0" r="3"/><text class="legende" x="14" y="3.2">before</text>
+  <circle class="p-nach p-auf" cx="66" cy="0" r="3.4"/><text class="legende" x="74" y="3.2">after, improved</text>
+  <circle class="p-nach p-ab" cx="168" cy="0" r="3.4"/><text class="legende" x="176" y="3.2">after, worse</text>
+  <circle class="p-still" cx="256" cy="0" r="3.2"/><text class="legende" x="264" y="3.2">unchanged</text>
+</g>
+<line class="gitter" x1="192.0" y1="88" x2="192.0" y2="966"/>
+<text class="achse" x="192.0" y="980" text-anchor="middle">0 %</text>
+<line class="gitter" x1="319.0" y1="88" x2="319.0" y2="966"/>
+<text class="achse" x="319.0" y="980" text-anchor="middle">25</text>
+<line class="gitter" x1="446.0" y1="88" x2="446.0" y2="966"/>
+<text class="achse" x="446.0" y="980" text-anchor="middle">50</text>
+<line class="gitter" x1="573.0" y1="88" x2="573.0" y2="966"/>
+<text class="achse" x="573.0" y="980" text-anchor="middle">75</text>
+<line class="gitter" x1="700.0" y1="88" x2="700.0" y2="966"/>
+<text class="achse" x="700.0" y="980" text-anchor="middle">100 %</text>
+<text class="kopf" x="178" y="101" text-anchor="end">13 dishes improved</text>
+<text class="name" x="178" y="118.7" text-anchor="end">Kartoffelpürree</text>
+<line class="l-auf" x1="192.0" y1="115.5" x2="653.8" y2="115.5"/>
+<circle class="p-vor p-auf" cx="192.0" cy="115.5" r="3"/>
+<circle class="p-nach p-auf" cx="653.8" cy="115.5" r="3.4"/>
+<text class="name" x="178" y="131.7" text-anchor="end">Salat</text>
+<line class="l-auf" x1="192.0" y1="128.5" x2="643.6" y2="128.5"/>
+<circle class="p-vor p-auf" cx="192.0" cy="128.5" r="3"/>
+<circle class="p-nach p-auf" cx="643.6" cy="128.5" r="3.4"/>
+<text class="name" x="178" y="144.7" text-anchor="end">Königsberger Klopse</text>
+<line class="l-auf" x1="192.0" y1="141.5" x2="573.0" y2="141.5"/>
+<circle class="p-vor p-auf" cx="192.0" cy="141.5" r="3"/>
+<circle class="p-nach p-auf" cx="573.0" cy="141.5" r="3.4"/>
+<text class="name" x="178" y="157.7" text-anchor="end">Okonomiyaki</text>
+<line class="l-auf" x1="382.5" y1="154.5" x2="573.0" y2="154.5"/>
+<circle class="p-vor p-auf" cx="382.5" cy="154.5" r="3"/>
+<circle class="p-nach p-auf" cx="573.0" cy="154.5" r="3.4"/>
+<text class="name" x="178" y="170.7" text-anchor="end">Gnocchi mit Salbeibutter</text>
+<line class="l-auf" x1="446.0" y1="167.5" x2="615.3" y2="167.5"/>
+<circle class="p-vor p-auf" cx="446.0" cy="167.5" r="3"/>
+<circle class="p-nach p-auf" cx="615.3" cy="167.5" r="3.4"/>
+<text class="name" x="178" y="183.7" text-anchor="end">Salat als ganzer Satz</text>
+<line class="l-auf" x1="530.7" y1="180.5" x2="643.6" y2="180.5"/>
+<circle class="p-vor p-auf" cx="530.7" cy="180.5" r="3"/>
+<circle class="p-nach p-auf" cx="643.6" cy="180.5" r="3.4"/>
+<text class="name" x="178" y="196.7" text-anchor="end">Rotkohl</text>
+<line class="l-auf" x1="607.6" y1="193.5" x2="700.0" y2="193.5"/>
+<circle class="p-vor p-auf" cx="607.6" cy="193.5" r="3"/>
+<circle class="p-nach p-auf" cx="700.0" cy="193.5" r="3.4"/>
+<text class="name" x="178" y="209.7" text-anchor="end">Massaman Curry</text>
+<line class="l-auf" x1="515.3" y1="206.5" x2="607.6" y2="206.5"/>
+<circle class="p-vor p-auf" cx="515.3" cy="206.5" r="3"/>
+<circle class="p-nach p-auf" cx="607.6" cy="206.5" r="3.4"/>
+<text class="name" x="178" y="222.7" text-anchor="end">Nudeln mit Pesto</text>
+<line class="l-auf" x1="482.3" y1="219.5" x2="554.9" y2="219.5"/>
+<circle class="p-vor p-auf" cx="482.3" cy="219.5" r="3"/>
+<circle class="p-nach p-auf" cx="554.9" cy="219.5" r="3.4"/>
+<text class="name" x="178" y="235.7" text-anchor="end">Linsenbolognese</text>
+<line class="l-auf" x1="587.1" y1="232.5" x2="643.6" y2="232.5"/>
+<circle class="p-vor p-auf" cx="587.1" cy="232.5" r="3"/>
+<circle class="p-nach p-auf" cx="643.6" cy="232.5" r="3.4"/>
+<text class="name" x="178" y="248.7" text-anchor="end">Käsekuchen</text>
+<line class="l-auf" x1="587.1" y1="245.5" x2="643.6" y2="245.5"/>
+<circle class="p-vor p-auf" cx="587.1" cy="245.5" r="3"/>
+<circle class="p-nach p-auf" cx="643.6" cy="245.5" r="3.4"/>
+<text class="name" x="178" y="261.7" text-anchor="end">Suppe</text>
+<line class="l-auf" x1="607.6" y1="258.5" x2="653.8" y2="258.5"/>
+<circle class="p-vor p-auf" cx="607.6" cy="258.5" r="3"/>
+<circle class="p-nach p-auf" cx="653.8" cy="258.5" r="3.4"/>
+<text class="name" x="178" y="274.7" text-anchor="end">Spagetti Bolognese</text>
+<line class="l-auf" x1="649.2" y1="271.5" x2="653.8" y2="271.5"/>
+<circle class="p-vor p-auf" cx="649.2" cy="271.5" r="3"/>
+<circle class="p-nach p-auf" cx="653.8" cy="271.5" r="3.4"/>
+<text class="kopf" x="178" y="301" text-anchor="end">38 unchanged</text>
+<text class="name" x="178" y="318.7" text-anchor="end">Rouladen</text>
+<circle class="p-still" cx="700.0" cy="315.5" r="3.2"/>
+<text class="name" x="178" y="331.7" text-anchor="end">Maultaschen</text>
+<circle class="p-still" cx="700.0" cy="328.5" r="3.2"/>
+<text class="name" x="178" y="344.7" text-anchor="end">Semmelknödel</text>
+<circle class="p-still" cx="700.0" cy="341.5" r="3.2"/>
+<text class="name" x="178" y="357.7" text-anchor="end">Shakshuka</text>
+<circle class="p-still" cx="700.0" cy="354.5" r="3.2"/>
+<text class="name" x="178" y="370.7" text-anchor="end">Quiche Lorraine</text>
+<circle class="p-still" cx="700.0" cy="367.5" r="3.2"/>
+<text class="name" x="178" y="383.7" text-anchor="end">Tortilla Espanola</text>
+<circle class="p-still" cx="700.0" cy="380.5" r="3.2"/>
+<text class="name" x="178" y="396.7" text-anchor="end">Gemüselasagne</text>
+<circle class="p-still" cx="700.0" cy="393.5" r="3.2"/>
+<text class="name" x="178" y="409.7" text-anchor="end">Ofengemüse mit Feta</text>
+<circle class="p-still" cx="700.0" cy="406.5" r="3.2"/>
+<text class="name" x="178" y="422.7" text-anchor="end">Apfelkuchen</text>
+<circle class="p-still" cx="700.0" cy="419.5" r="3.2"/>
+<text class="name" x="178" y="435.7" text-anchor="end">Waffeln</text>
+<circle class="p-still" cx="700.0" cy="432.5" r="3.2"/>
+<text class="name" x="178" y="448.7" text-anchor="end">Marmorkuchen</text>
+<circle class="p-still" cx="700.0" cy="445.5" r="3.2"/>
+<text class="name" x="178" y="461.7" text-anchor="end">Toast Hawaii</text>
+<circle class="p-still" cx="700.0" cy="458.5" r="3.2"/>
+<text class="name" x="178" y="474.7" text-anchor="end">Gefüllte Paprika</text>
+<circle class="p-still" cx="700.0" cy="471.5" r="3.2"/>
+<text class="name" x="178" y="487.7" text-anchor="end">Lauchkuchen</text>
+<circle class="p-still" cx="700.0" cy="484.5" r="3.2"/>
+<text class="name" x="178" y="500.7" text-anchor="end">Lasagne</text>
+<circle class="p-still" cx="700.0" cy="497.5" r="3.2"/>
+<text class="name" x="178" y="513.7" text-anchor="end">Bratkartoffeln</text>
+<circle class="p-still" cx="700.0" cy="510.5" r="3.2"/>
+<text class="name" x="178" y="526.7" text-anchor="end">Kaiserschmarrn</text>
+<circle class="p-still" cx="700.0" cy="523.5" r="3.2"/>
+<text class="name" x="178" y="539.7" text-anchor="end">Broccoliauflauf</text>
+<circle class="p-still" cx="700.0" cy="536.5" r="3.2"/>
+<text class="name" x="178" y="552.7" text-anchor="end">Cordon bleu</text>
+<circle class="p-still" cx="700.0" cy="549.5" r="3.2"/>
+<text class="name" x="178" y="565.7" text-anchor="end">Zwuckelpfanne mit Gnubbeln</text>
+<circle class="p-still" cx="700.0" cy="562.5" r="3.2"/>
+<text class="name" x="178" y="578.7" text-anchor="end">Glibberschmarrn</text>
+<circle class="p-still" cx="700.0" cy="575.5" r="3.2"/>
+<text class="name" x="178" y="591.7" text-anchor="end">Moussaka</text>
+<circle class="p-still" cx="657.7" cy="588.5" r="3.2"/>
+<text class="name" x="178" y="604.7" text-anchor="end">Eintopf</text>
+<circle class="p-still" cx="653.8" cy="601.5" r="3.2"/>
+<text class="name" x="178" y="617.7" text-anchor="end">Bibimbap</text>
+<circle class="p-still" cx="636.5" cy="614.5" r="3.2"/>
+<text class="name" x="178" y="630.7" text-anchor="end">Falafel</text>
+<circle class="p-still" cx="636.5" cy="627.5" r="3.2"/>
+<text class="name" x="178" y="643.7" text-anchor="end">Pizzateig</text>
+<circle class="p-still" cx="615.3" cy="640.5" r="3.2"/>
+<text class="name" x="178" y="656.7" text-anchor="end">Zwetschgendatschi</text>
+<circle class="p-still" cx="615.3" cy="653.5" r="3.2"/>
+<text class="name" x="178" y="669.7" text-anchor="end">Kichererbsencurry</text>
+<circle class="p-still" cx="607.6" cy="666.5" r="3.2"/>
+<text class="name" x="178" y="682.7" text-anchor="end">Auflauf</text>
+<circle class="p-still" cx="598.4" cy="679.5" r="3.2"/>
+<text class="name" x="178" y="695.7" text-anchor="end">Chili con Carne</text>
+<circle class="p-still" cx="573.0" cy="692.5" r="3.2"/>
+<text class="name" x="178" y="708.7" text-anchor="end">Ramen</text>
+<circle class="p-still" cx="564.5" cy="705.5" r="3.2"/>
+<text class="name" x="178" y="721.7" text-anchor="end">Hühnerfrikassee</text>
+<circle class="p-still" cx="561.5" cy="718.5" r="3.2"/>
+<text class="name" x="178" y="734.7" text-anchor="end">Grünkohl mit Pinkel</text>
+<circle class="p-still" cx="547.6" cy="731.5" r="3.2"/>
+<text class="name" x="178" y="747.7" text-anchor="end">Sauerbraten</text>
+<circle class="p-still" cx="530.7" cy="744.5" r="3.2"/>
+<text class="name" x="178" y="760.7" text-anchor="end">Frikadellen</text>
+<circle class="p-still" cx="504.6" cy="757.5" r="3.2"/>
+<text class="name" x="178" y="773.7" text-anchor="end">Pho Bo</text>
+<circle class="p-still" cx="486.1" cy="770.5" r="3.2"/>
+<text class="name" x="178" y="786.7" text-anchor="end">Risotto</text>
+<circle class="p-still" cx="482.3" cy="783.5" r="3.2"/>
+<text class="name" x="178" y="799.7" text-anchor="end">Schrumpelfrikandel</text>
+<circle class="p-still" cx="192.0" cy="796.5" r="3.2"/>
+<text class="kopf" x="178" y="826" text-anchor="end">10 lost one term each</text>
+<text class="name" x="178" y="843.7" text-anchor="end">Petersilienpesto</text>
+<line class="l-ab" x1="700.0" y1="840.5" x2="615.3" y2="840.5"/>
+<circle class="p-vor p-ab" cx="700.0" cy="840.5" r="3"/>
+<circle class="p-nach p-ab" cx="615.3" cy="840.5" r="3.4"/>
+<text class="name" x="178" y="856.7" text-anchor="end">Käse Lauch Suppe</text>
+<line class="l-ab" x1="700.0" y1="853.5" x2="615.3" y2="853.5"/>
+<circle class="p-vor p-ab" cx="700.0" cy="853.5" r="3"/>
+<circle class="p-nach p-ab" cx="615.3" cy="853.5" r="3.4"/>
+<text class="name" x="178" y="869.7" text-anchor="end">Käse-Lauch-Suppe</text>
+<line class="l-ab" x1="700.0" y1="866.5" x2="615.3" y2="866.5"/>
+<circle class="p-vor p-ab" cx="700.0" cy="866.5" r="3"/>
+<circle class="p-nach p-ab" cx="615.3" cy="866.5" r="3.4"/>
+<text class="name" x="178" y="882.7" text-anchor="end">Knoblauchsuppe</text>
+<line class="l-ab" x1="573.0" y1="879.5" x2="509.5" y2="879.5"/>
+<circle class="p-vor p-ab" cx="573.0" cy="879.5" r="3"/>
+<circle class="p-nach p-ab" cx="509.5" cy="879.5" r="3.4"/>
+<text class="name" x="178" y="895.7" text-anchor="end">Pad Thai</text>
+<line class="l-ab" x1="547.6" y1="892.5" x2="496.8" y2="892.5"/>
+<circle class="p-vor p-ab" cx="547.6" cy="892.5" r="3"/>
+<circle class="p-nach p-ab" cx="496.8" cy="892.5" r="3.4"/>
+<text class="name" x="178" y="908.7" text-anchor="end">Paella</text>
+<line class="l-ab" x1="573.0" y1="905.5" x2="530.7" y2="905.5"/>
+<circle class="p-vor p-ab" cx="573.0" cy="905.5" r="3"/>
+<circle class="p-nach p-ab" cx="530.7" cy="905.5" r="3.4"/>
+<text class="name" x="178" y="921.7" text-anchor="end">Spargel mit Sauce Hollandaise</text>
+<line class="l-ab" x1="573.0" y1="918.5" x2="530.7" y2="918.5"/>
+<circle class="p-vor p-ab" cx="573.0" cy="918.5" r="3"/>
+<circle class="p-nach p-ab" cx="530.7" cy="918.5" r="3.4"/>
+<text class="name" x="178" y="934.7" text-anchor="end">Tom Kha Gai</text>
+<line class="l-ab" x1="543.7" y1="931.5" x2="504.6" y2="931.5"/>
+<circle class="p-vor p-ab" cx="543.7" cy="931.5" r="3"/>
+<circle class="p-nach p-ab" cx="504.6" cy="931.5" r="3.4"/>
+<text class="name" x="178" y="947.7" text-anchor="end">Chili sin Carne</text>
+<line class="l-ab" x1="591.1" y1="944.5" x2="554.9" y2="944.5"/>
+<circle class="p-vor p-ab" cx="591.1" cy="944.5" r="3"/>
+<circle class="p-nach p-ab" cx="554.9" cy="944.5" r="3.4"/>
+<text class="name" x="178" y="960.7" text-anchor="end">Gulasch</text>
+<line class="l-ab" x1="496.8" y1="957.5" x2="462.9" y2="957.5"/>
+<circle class="p-vor p-ab" cx="496.8" cy="957.5" r="3"/>
+<circle class="p-nach p-ab" cx="462.9" cy="957.5" r="3.4"/>
+</svg>
