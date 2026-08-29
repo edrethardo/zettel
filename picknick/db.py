@@ -586,6 +586,18 @@ SCHEMA = [
         -- wer ein Gericht aus dem Zwischenspeicher wirft, soll nicht die
         -- Rezeptkarte eines Chat-Zugs mitnehmen.
         dish_id         INTEGER REFERENCES dish(id) ON DELETE SET NULL,
+        -- Für wie viele Portionen dieser ZUG rechnet (WB-384). Die Vorgabe
+        -- kommt aus `recipe.servings`, die Entscheidung von hier — und das
+        -- Rezept wird dabei nicht angefasst. Dieselbe Trennung wie beim
+        -- Portionsfeld an `recipes.in_den_korb` (WB-362): „diesmal für acht"
+        -- ist eine Aussage über diesen Einkauf und keine über das Rezept.
+        --
+        -- Nullable, und das ist der Normalfall: solange niemand am Feld war,
+        -- gilt die Zahl der Quelle. Eine beim Anlegen mitgeschriebene Kopie
+        -- von `servings` wäre schlechter — sie sagte nicht mehr, ob jemand
+        -- gewählt hat, und ein später gewechseltes Rezept (WB-387) käme mit
+        -- seiner eigenen Zahl nicht mehr durch.
+        portionen       INTEGER,
         PRIMARY KEY (chat_message_id, recipe_id)
     )
     """,
@@ -888,6 +900,12 @@ NACHGETRAGENE_SPALTEN = (
     # Herkunft. NULL heisst hier „dazu wurde nichts mitgeschrieben".
     ("chat_rezept", "dish_id",
      "INTEGER REFERENCES dish(id) ON DELETE SET NULL"),
+    # WB-384: die Portionszahl, für die ein Chat-Zug rechnet. Ohne Nachtrag
+    # für den Altbestand, und richtigerweise: an keinem der 270 Züge hat je
+    # jemand eine Portionszahl gewählt — es gab kein Feld. NULL heisst „es
+    # gilt die Zahl des Rezepts" und ist damit dieselbe Auskunft wie vor dem
+    # Ticket.
+    ("chat_rezept", "portionen", "INTEGER"),
 )
 
 

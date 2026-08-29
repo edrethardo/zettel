@@ -330,9 +330,14 @@ entstanden ist: bei einem falschen `search_term` hat Stufe 3 danebengegriffen
 die Zuordnung Begriff -> Zutat (`assistant.herkunft`), bei einer falschen
 `packages` die Packungsgrösse am Produkt (`pack_text` steht daneben).
 
-**Was der Span NICHT sagt: welche Portionszahl gemeint war.** `servings` ist
-auf dem Chat-Weg immer leer, weil dort nicht skaliert wird — siehe „Was hier
-schwächer ist, als es aussieht".
+**`servings` steht seit WB-384 auch auf dem Chat-Weg.** Bis dahin war es dort
+immer leer — richtigerweise, denn es gab keine Portionszahl, die jemand
+gewählt hätte, und aus dem Satz zu raten wäre falsch gewesen (WB-369, Regel
+5). Seit die Rezeptkarte im Chat ein Portionsfeld hat, ist die Zahl keine
+Vermutung mehr: sie steht in `chat_rezept.portionen`, geht beim „Ja" durch
+`korb.einlegen(portionen=…)` und landet hier. Ohne Feldbedienung ist es die
+Zahl des Rezepts — dieselbe Vorgabe, die auch „Alles in den Warenkorb"
+benutzt.
 
 **`assumption` ist die Ehrlichkeitsspalte.** Milliliter gegen Gramm werden 1:1
 gerechnet — für Wässriges stimmt das, für Mehl (1 l wiegt rund 550 g) und Öl
@@ -780,15 +785,20 @@ zeigte ins Leere.
   nichts. Das ist die Kehrseite davon, dass eine fehlende Zahl ehrlicher ist
   als eine erfundene; wer die Fehltipp-Häufigkeit wirklich messen will, muss
   sie in `chat_suggestion.zurueckgenommen` zählen und nicht in Phoenix.
-* **Die Portionszahl aus dem Chat gibt es nicht** (WB-369, Regel 5). „alles
-  für Lasagne für 6" nimmt Chefkochs eigene `servings` und skaliert nichts;
-  `picknick.servings` bleibt auf dem Chat-Weg leer. Das ist eine Entscheidung
-  und kein Versehen: welche Zahl in einem Satz die Portionszahl ist, liesse
-  sich nur raten, und eine falsche Portionszahl multipliziert jede Menge im
-  Korb. Die Zahlen dafür fehlen ausserdem — in den 35 echten Nutzersätzen der
-  Datenbank (2026-08-28) kommt **keine einzige Ziffer** vor. Wer skalieren
-  will, tippt am Rezept auf „Alles in den Warenkorb", dort steht das Feld
-  (WB-362).
+* **Aus dem SATZ wird die Portionszahl weiterhin nicht gelesen** (WB-369,
+  Regel 5). „alles für Lasagne für 6" nimmt Chefkochs eigene `servings`; die
+  6 im Satz bleibt unbeachtet. Das ist eine Entscheidung und kein Versehen:
+  welche Zahl in einem Satz die Portionszahl ist, liesse sich nur raten, und
+  eine falsche multipliziert jede Menge im Korb. Die Zahlen dafür fehlen
+  ausserdem — in den 35 echten Nutzersätzen der Datenbank (2026-08-28) kommt
+  **keine einzige Ziffer** vor. **Was sich mit WB-384 geändert hat:** ein
+  FELD ist kein Raten. An der Rezeptkarte im Chat steht seither eines, seine
+  Zahl liegt in `chat_rezept.portionen`, und sie steht seither auch als
+  `picknick.servings` im Trace. Ein Zug, an dem niemand das Feld angefasst
+  hat, trägt dort die Zahl des Rezepts — nicht zu unterscheiden von einer
+  bestätigten. Wer wissen will, wie oft wirklich gewählt wurde, zählt in
+  `chat_rezept.portionen` (nicht NULL) und nicht in Phoenix; dieselbe
+  Kehrseite wie bei den Rücknahmen einen Punkt weiter oben.
 * **Die Zuordnung Begriff -> Zutat kann eine Menge verlieren** (WB-369). Sie
   vergleicht Wörter (`assistant.herkunft`) und erkennt ein Synonym des
   Modells nicht: nennt es „Möhren" als „Karotten", findet die Zeile ihre

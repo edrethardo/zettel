@@ -885,6 +885,25 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .andereliste .zahlen > span:last-child::after { content: ""; }
 .andere .fussnote { margin: 0; }
 
+/* Für wie viele Portionen dieser Zug rechnet (WB-384). Dieselbe Gestalt wie
+   das Feld an „Alles in den Warenkorb" (`.abschicken.portionen`) — es ist
+   dieselbe Frage an einem anderen Ort, und zwei Gestalten dafür wären zwei
+   Sachen zum Lernen. Es steht unmittelbar über den Mengen, die es ändert. */
+.zugportionen {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 10px;
+}
+.zugportionen label {
+  display: flex; align-items: center; gap: 8px; font-size: 15px;
+  color: var(--gedaempft);
+}
+.zugportionen input {
+  width: 4.5ch; min-height: var(--tap); text-align: center; font-size: 17px;
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  background: var(--karte); color: var(--tinte); padding: 0 6px;
+}
+.zugportionen .fussnote { flex-basis: 100%; margin: 0; }
+
 /* Der einzige eingeklappte Teil. Die Schritte werden beim Aufklappen
    NACHGELADEN (WB-383) — ein `<details>` versteckt sonst nur, was trotzdem
    übertragen wurde, und Pho Bos Zubereitung sind 3.924 Zeichen. */

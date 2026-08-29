@@ -142,19 +142,28 @@
    „diesmal für acht“ ist eine Aussage über diesen Einkauf und keine über das
    Rezept. Vorbelegt mit dem, was am Rezept steht — bei einem geholten Rezept
    also mit Chefkochs Angabe. Wer das Rezept dauerhaft ändern will, tut es
-   unten unter „Kopfdaten“. #}
+   unten unter „Kopfdaten“.
+
+   **Beide Felder hiessen bis WB-384 „Portionen"**, und der Unterschied stand
+   nur in diesem Kommentar. Ein Kommentar ist keine Oberfläche: seither sagt
+   die Beschriftung „diesmal", der Satz darunter sagt, was gleich bleibt, und
+   das Feld in den Kopfdaten sagt das Gegenteil. #}
 <form class="abschicken portionen" method="post"
       action="/rezepte/{{ rezept.id }}/korb"
       hx-post="/rezepte/{{ rezept.id }}/korb"
       hx-target="#rezept" hx-swap="innerHTML">
-  <label>Für wie viele Portionen?
+  <label>Diesmal für wie viele Portionen?
     <input type="text" inputmode="numeric" name="portionen"
            value="{{ rezept.servings if rezept.servings is not none else '' }}"
            aria-label="Portionen für diesen Einkauf"></label>
   <button class="gross" type="submit">Alles in den Warenkorb</button>
-  {% if not rezept.servings %}
-  <span class="hinweis">Am Rezept steht keine Portionszahl — dann bleiben die
-    Mengen, wie sie sind.</span>
+  {% if rezept.servings %}
+  <span class="hinweis">Gilt nur für diesen Einkauf — das Rezept bleibt bei
+    {{ rezept.servings }} {{ "Portion" if rezept.servings == 1 else "Portionen" }}.
+    Dauerhaft ändern: unten unter „Kopfdaten“.</span>
+  {% else %}
+  <span class="hinweis">Am Rezept steht keine Portionszahl — dann gibt es
+    keinen Faktor, und die Mengen bleiben, wie sie sind.</span>
   {% endif %}
 </form>
 {% endif %}

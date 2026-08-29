@@ -123,15 +123,42 @@ def aendern(con: sqlite3.Connection, recipe_id: int, name=None,
     Die Zutaten haben ihre eigenen Funktionen — ein „alles auf einmal
     speichern" müsste die Liste vergleichen und könnte dabei eine Zeile
     verlieren, die gerade jemand anderes hinzugefügt hat.
+
+    **Ausser bei der Portionszahl** (WB-384). Sie ist seit WB-362 keine Notiz
+    mehr, sondern die Grösse, auf die sich JEDE Menge dieses Rezepts bezieht:
+    `recipe_ingredient.amount` (die Liste der Quelle) und `recipe_item.amount`
+    (die verknüpften Produkte, ausdrücklich „bei DER Portionszahl, die in
+    `recipe.servings` steht"). Sie zu ändern, ohne die Mengen mitzurechnen,
+    ist deshalb nicht bloss eine schiefe Überschrift — es ändert still die
+    Bedeutung jeder künftigen Einkaufsrechnung.
+
+    Gemessen vor dem Ticket: `servings` von 4 auf 8, die Zutaten unverändert
+    bei 500,0 g Hackfleisch, und darüber las die Seite „Zutaten laut Rezept
+    (für 8 Portionen)". Das ist eine Falschaussage und keine Unschärfe.
+
+    Der andere Weg wäre gewesen, `servings` als reine Angabe der Quelle zu
+    behandeln und die Überschrift umzuformulieren. Er scheidet aus, weil das
+    Feld dann WEITER die Rechengrösse wäre: eine geänderte Zahl verstellte
+    jeden Einkauf, nur ohne dass es irgendwo dastünde. Der Preis des
+    gewählten Wegs steht dafür hier: die Zutatenliste ist danach nicht mehr
+    Zeichen für Zeichen die der Quelle. Deshalb sagt der Bericht, dass
+    gerechnet wurde, und der nächste Abruf des Rezepts setzt beides — Mengen
+    UND Portionszahl — gemeinsam auf die Quelle zurück
+    (`gerichte.speicher.merken`).
+
+    Der Bericht hängt als `umgerechnet` am zurückgegebenen Rezept: `None`,
+    wo nichts zu rechnen war.
     """
-    _muss_geben(con, recipe_id)
+    vorher = dict(_muss_geben(con, recipe_id))
     felder, werte = [], []
     if name is not None:
         felder.append("name = ?")
         werte.append(_name(name))
+    neu_servings = _UNBERUEHRT
     if servings is not _UNBERUEHRT:
+        neu_servings = _servings(servings)
         felder.append("servings = ?")
-        werte.append(_servings(servings))
+        werte.append(neu_servings)
     if note is not _UNBERUEHRT:
         felder.append("note = ?")
         werte.append(_note(note))
@@ -139,7 +166,74 @@ def aendern(con: sqlite3.Connection, recipe_id: int, name=None,
         con.execute(f"UPDATE recipe SET {', '.join(felder)} WHERE id = ?",
                     (*werte, recipe_id))
         con.commit()
-    return rezept(con, recipe_id)
+    bericht = _mengen_umrechnen(con, recipe_id, vorher["servings"],
+                                neu_servings)
+    return {**rezept(con, recipe_id), "umgerechnet": bericht}
+
+
+def _mengen_umrechnen(con: sqlite3.Connection, recipe_id: int, von,
+                      auf) -> dict | None:
+    """Rechnet alle Mengen eines Rezepts auf eine andere Portionszahl um.
+
+    Gerechnet wird mit `mengen.skaliere` und Zeile für Zeile, nicht mit einem
+    `amount * ?` in SQL: `picknick.mengen` ist die eine Stelle, an der eine
+    Menge skaliert wird (WB-362), und ein zweiter Rechenausdruck hier wäre
+    der Anfang einer zweiten Mengenrechnung. Ein Rezept hat zwei Dutzend
+    Zeilen — der Weg über Python kostet nichts.
+
+    `None`, wo nichts zu rechnen war. **Und das ist der halbe Punkt des
+    Tickets**: fehlt eine der beiden Zahlen, gibt es keinen Faktor, und dann
+    bleiben die Mengen, wie sie sind (Regel 4). Wer an einem Rezept ohne
+    Portionszahl eine 4 einträgt, sagt damit „diese Mengen sind für 4" — er
+    rechnet nichts um, denn es gibt nichts, wovon aus.
+    """
+    if auf is _UNBERUEHRT or not von or not auf or von == auf:
+        return None
+    faktor = mengen.faktor(von, auf)
+    # Beide Mengenspalten des Rezepts, und beide meinen dieselbe Portionszahl:
+    # `recipe_ingredient.amount` ist die Liste, wie die Quelle sie schreibt,
+    # `recipe_item.amount` die Menge am verknüpften Produkt. Eine von beiden
+    # stehenzulassen hiesse, die Lüge aus dem Ticket auf die andere Hälfte zu
+    # verschieben.
+    n = {"recipe_ingredient": 0, "recipe_item": 0}
+    for tabelle in ("recipe_ingredient", "recipe_item"):
+        for row in con.execute(
+                f"SELECT id, amount FROM {tabelle}"
+                f" WHERE recipe_id = ? AND amount IS NOT NULL",
+                (recipe_id,)).fetchall():
+            con.execute(f"UPDATE {tabelle} SET amount = ? WHERE id = ?",
+                        (mengen.skaliere(row["amount"], von, auf), row["id"]))
+            n[tabelle] += 1
+    con.commit()
+    return {"von": von, "auf": auf, "faktor": faktor,
+            "n_zutaten": n["recipe_ingredient"],
+            "n_produkte": n["recipe_item"],
+            "meldung": _umrechnungssatz(von, auf, n)}
+
+
+def _umrechnungssatz(von: int, auf: int, n: dict) -> str:
+    """Was gerade mit den Mengen geschehen ist, als ein Satz.
+
+    Steht hier und nicht in der Vorlage, damit die Tests denselben Satz
+    prüfen, den die Nutzerin liest — dieselbe Begründung wie bei
+    `recipes.uebernahme._meldung`.
+    """
+    wort = "Portion" if auf == 1 else "Portionen"
+    teile = [f"Das Rezept gilt jetzt für {auf} statt {von} {wort}."]
+    gerechnet = []
+    if n["recipe_ingredient"]:
+        gerechnet.append(f"{n['recipe_ingredient']} Zutaten laut Rezept")
+    if n["recipe_item"]:
+        gerechnet.append(f"{n['recipe_item']} verknüpfte Produkte")
+    if gerechnet:
+        teile.append("Mitgerechnet: " + " und ".join(gerechnet) + ".")
+    else:
+        # Ein Rezept ohne eine einzige Mengenangabe. Die Portionszahl steht
+        # danach trotzdem anders da, und zu schweigen hiesse, eine Rechnung
+        # zu behaupten, die es nicht gab.
+        teile.append("An keiner Zeile steht eine Menge — es war nichts "
+                     "umzurechnen.")
+    return " ".join(teile)
 
 
 def loeschen(con: sqlite3.Connection, recipe_id: int) -> None:

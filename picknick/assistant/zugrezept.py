@@ -47,17 +47,29 @@ Spinatlasagne (4,837 gegen 4,695 für die klassische). Sie ist nicht kaputt;
 „am besten bewertet" ist nur nicht „was ich gemeint habe". `alternativen()`
 stellt sie zur Wahl, mit denselben Zahlen wie die Karte darüber und ohne eine
 einzige zusätzliche Anfrage.
+
+**Und seit WB-384 steht die Portionszahl nicht nur da, sie ist einstellbar.**
+Bis dahin bekam jeder, der „alles für Lasagne" schrieb, Chefkochs Portionszahl
+und konnte sie nicht ändern — die Mengen aus WB-369 wurden für eine
+Personenzahl gerechnet, die niemand gewählt hatte. Die Vorgabe kommt weiter
+aus dem Rezept, die Entscheidung aus `chat_rezept.portionen`, und das Rezept
+selbst bleibt unberührt (dieselbe Trennung wie in `recipes.in_den_korb`).
 """
 from __future__ import annotations
 
 import sqlite3
 
+from picknick import mengen
 from picknick.gerichte import chefkoch, speicher
 
 #: Ab hier wird aus Minuten eine Stundenangabe. Darunter ist die Minutenzahl
 #: die kürzere und die genauere Auskunft („35 Minuten"), darüber liest sich
 #: „570 Minuten" wie ein Messwert und nicht wie eine Antwort.
 STUNDE = 60
+
+
+class ZugrezeptFehler(RuntimeError):
+    """An der Rezeptkarte eines Zugs stimmt etwas nicht."""
 
 
 def merken(con: sqlite3.Connection, chat_message_id: int,
@@ -115,7 +127,8 @@ def zum_zug(con: sqlite3.Connection, chat_message_id: int,
         "       r.rest_minutes, r.difficulty, r.source, r.source_id,"
         "       r.source_url, r.source_title, r.source_rating, r.source_votes,"
         "       (r.instructions IS NOT NULL) AS hat_zubereitung,"
-        "       r.instructions AS _text, z.dish_id, d.query AS gericht"
+        "       r.instructions AS _text, z.dish_id, z.portionen AS _gewaehlt,"
+        "       d.query AS gericht"
         "  FROM chat_rezept z JOIN recipe r ON r.id = z.recipe_id"
         "  LEFT JOIN dish d ON d.id = z.dish_id"
         " WHERE z.chat_message_id = ? ORDER BY z.pos, z.recipe_id",
@@ -133,6 +146,7 @@ def zum_zug(con: sqlite3.Connection, chat_message_id: int,
                          if k["rest_minutes"] else None)
         k["n_zettel"] = k["n_ohne_produkt"] = k["n_fehlt"] = None
         k["alternativen"] = alternativen(con, k)
+        _portionen_an(k)
         if not _hat_inhalt(k):
             # Ein selbst angelegtes Rezept hat weder Zeiten noch Bewertung,
             # Zutatenliste oder Zubereitung — nur Produkte, und die stehen
@@ -201,6 +215,195 @@ def alternativen(con: sqlite3.Connection, karte: dict) -> list[dict]:
     return fertig
 
 
+def _portionen_an(karte: dict) -> None:
+    """Die Portionszahl an die Karte — und die Mengen, die daran hängen.
+
+    **Vier Felder, und jedes beantwortet eine andere Frage** (WB-384):
+
+        portionen_rezept   wofür die QUELLE rechnet (`recipe.servings`)
+        portionen          wofür DIESER ZUG rechnet — das Feld an der Karte
+        faktor             das eine, was daraus folgt
+        umgerechnet        ob überhaupt etwas anderes dasteht als die Quelle
+
+    Der Faktor kommt aus `mengen.faktor` und nirgendwo sonst: die Reihenfolge
+    aus WB-362 (skalieren, zusammenzählen, aufrunden) gilt unverändert, und
+    eine zweite Multiplikation an dieser Stelle wäre der Anfang einer zweiten
+    Mengenrechnung.
+
+    **Die Zutatenliste wird nur zum ANZEIGEN hochgerechnet, nicht
+    gespeichert.** `recipe_ingredient` ist die Liste der Quelle — fremde
+    Arbeit, verlinkt und zitiert —, und sie gehört nicht diesem Zug. Was
+    dieser Zug ändern darf, ist seine eigene Vorschlagsliste
+    (`chat_suggestion.need_amount`, siehe `portionen_setzen`).
+
+    Fehlt `servings`, gibt es keinen Faktor und die Mengen bleiben, wie sie
+    sind (Regel 4 des Tickets). Geraten wird nichts — die Karte sagt es dann
+    selbst, statt eine 4 hinzuschreiben, die niemand behauptet hat.
+    """
+    basis = karte.get("servings")
+    gewaehlt = karte.pop("_gewaehlt", None)
+    karte["portionen_rezept"] = basis
+    karte["portionen"] = gewaehlt or basis
+    karte["faktor"] = mengen.faktor(basis, karte["portionen"])
+    karte["umgerechnet"] = bool(basis and karte["portionen"] != basis)
+    for z in karte["zutaten"]:
+        z["gerechnet"] = mengen.skaliere(z.get("amount"), basis,
+                                         karte["portionen"])
+
+
+def zeilen_zur_karte(karte: dict, zeilen, n_karten: int = 1) -> list[dict]:
+    """Welche Vorschlagszeilen zu dieser Rezeptkarte gehören.
+
+    **Eine Regel für zwei Fragen**: wie viele Zutaten auf dem Zettel stehen
+    (`_deckung`, WB-383) und welche Mengen eine geänderte Portionszahl
+    betrifft (`portionen_setzen`, WB-384). Zwei Kopien liefen auseinander,
+    und dann zählte die Karte etwas anderes, als sie umrechnet.
+
+    Zwei Wege führen zur Zuordnung, und beide stehen schon in den Daten:
+
+    * **Quellenweg** — die Zeilen des Gerichts tragen `dish_item` (WB-337).
+    * **Rezeptweg** — `_aus_rezept` schreibt den REZEPTNAMEN als
+      `search_term` an jede Zeile. Dort gibt es keinen Entwurf, und ohne
+      diesen Vergleich bliebe genau der schnelle Weg ohne Zuordnung.
+
+    Bei mehreren Rezepten in EINEM Zug lässt sich der Quellenweg nicht
+    aufteilen (der Entwurf kennt nur ein Gericht) — dann gilt der Rezeptname.
+
+    Eine korrigierte Zeile fällt heraus, die Korrektur bleibt drin (WB-359):
+    beide meinen dieselbe Zutat, und sie doppelt zu zählen wäre ebenso falsch
+    wie sie doppelt umzurechnen.
+    """
+    zeilen = list(zeilen or [])
+    if not zeilen:
+        return []
+    zum_gericht = [z for z in zeilen if z.get("zum_gericht")]
+    name = (karte.get("name") or "").casefold()
+    if zum_gericht and n_karten == 1:
+        # Der Entwurf ist das genauere Signal, wo es ihn gibt — er steht an
+        # der ZEILE und nicht an einem Namensvergleich.
+        eigene = zum_gericht
+    else:
+        eigene = [z for z in zeilen
+                  if (z.get("search_term") or "").casefold() == name]
+    korrekturen = {z["corrected_from"] for z in zeilen
+                   if z.get("ist_korrektur")}
+    return [z for z in eigene if z["id"] not in korrekturen]
+
+
+def portionen_setzen(con: sqlite3.Connection, chat_message_id: int,
+                     recipe_id: int, portionen, zeilen) -> dict:
+    """Rechnet die Mengen eines Chat-Zugs auf eine andere Portionszahl um.
+
+    **Das Feld, das WB-369 offengelassen hat.** Dort wurde bewusst nicht aus
+    dem Satz geraten — „in 35 echten Nutzersätzen kommt keine einzige Ziffer
+    vor" —, und das war richtig. Ein Feld ist kein Raten: hier steht die Zahl,
+    die ein Mensch getippt hat.
+
+    Drei Dinge, die dieser Funktion ihre Form geben:
+
+    1. **Gerechnet wird mit `mengen.skaliere` und sonst nirgends.** Es bleibt
+       bei der einen Mengenrechnung aus WB-362; hier steht nur der erste ihrer
+       drei Schritte. Zusammengezählt wird weiterhin in `korb.einlegen`, und
+       aufgerundet erst danach.
+    2. **Was schon im Korb liegt, bleibt liegen** (`im_korb`, WB-361 und
+       WB-387). Die Korbzeile ist beim „Ja" entstanden und kann längst eine
+       sein, die die Nutzerin selbst aufgestockt hat — sie nachzurechnen
+       hiesse, fremde Mengen zu überschreiben. Die neue Zahl wirkt auf das
+       Nächste, und der Bericht sagt es.
+    3. **Umgerechnet wird von der zuletzt gewählten Zahl**, nicht von der des
+       Rezepts: nach „für 8" und dann „für 6" stünde sonst das Doppelte des
+       Rezepts mal drei Viertel im Korb. Die Zahl steht in `chat_rezept`,
+       eben damit es die zuletzt gewählte gibt.
+
+    Ohne Portionszahl am Rezept gibt es keinen Faktor (Regel 4): dann wird
+    nichts geändert und `grund` sagt, warum. Dasselbe bei einer Zahl, die
+    keine ist — getippt wird auf einem Telefon, und ein Vertipper darf keine
+    Mengen verstellen.
+    """
+    row = con.execute(
+        "SELECT z.portionen, r.servings, r.name"
+        "  FROM chat_rezept z JOIN recipe r ON r.id = z.recipe_id"
+        " WHERE z.chat_message_id = ? AND z.recipe_id = ?",
+        (chat_message_id, recipe_id)).fetchone()
+    if row is None:
+        raise ZugrezeptFehler("Zu diesem Zug steht dieses Rezept nicht "
+                              "(mehr) da.")
+    basis = row["servings"]
+    vorher = row["portionen"] or basis
+    gewuenscht = _zahl(portionen)
+    if gewuenscht is None:
+        grund = "Das ist keine Portionszahl."
+        if vorher:
+            grund = f"Das ist keine Portionszahl — es bleibt bei {vorher}."
+        return {"name": row["name"], "geaendert": 0, "im_korb": 0,
+                "von": vorher, "auf": vorher, "grund": grund}
+    if not basis:
+        return {"name": row["name"], "geaendert": 0, "im_korb": 0,
+                "von": None, "auf": None,
+                "grund": "Am Rezept steht keine Portionszahl — dann gibt es "
+                         "keinen Faktor, und die Mengen bleiben, wie sie "
+                         "sind."}
+    con.execute("UPDATE chat_rezept SET portionen = ?"
+                " WHERE chat_message_id = ? AND recipe_id = ?",
+                (gewuenscht, chat_message_id, recipe_id))
+    geaendert = im_korb = 0
+    for z in zeilen:
+        if z.get("need_amount") is None:
+            continue
+        if z.get("im_korb"):
+            # Nicht rückwirkend: was bestätigt wurde, gehört dem Korb.
+            im_korb += 1
+            continue
+        con.execute("UPDATE chat_suggestion SET need_amount = ? WHERE id = ?",
+                    (mengen.skaliere(z["need_amount"], vorher, gewuenscht),
+                     z["id"]))
+        geaendert += 1
+    con.commit()
+    return {"name": row["name"], "geaendert": geaendert, "im_korb": im_korb,
+            "von": vorher, "auf": gewuenscht, "grund": None}
+
+
+def gewaehlte_portionen(con: sqlite3.Connection, chat_message_id: int):
+    """Für wie viele Portionen dieser Zug rechnet — oder `None`.
+
+    Die gewählte Zahl, sonst die des Rezepts, sonst nichts. Sie geht beim
+    „Ja" an `korb.einlegen(portionen=…)` und landet als `picknick.servings`
+    im Trace — dasselbe Attribut, das der Rezeptweg seit WB-362 setzt.
+
+    **Bis WB-384 blieb es auf dem Chat-Weg leer**, und das war richtig: es gab
+    dort keine Portionszahl, die jemand gewählt hätte, und aus dem Satz zu
+    raten wäre falsch gewesen (WB-369, Regel 5). Jetzt gibt es das Feld, und
+    die Zahl ist keine Vermutung mehr.
+
+    Der erste Zug seiner Karten und nicht die Summe: Züge mit mehreren
+    Rezepten sind der Ausnahmefall, und eine erfundene gemeinsame Zahl wäre
+    schlechter als die des ersten.
+    """
+    row = con.execute(
+        "SELECT z.portionen, r.servings FROM chat_rezept z"
+        "  JOIN recipe r ON r.id = z.recipe_id"
+        " WHERE z.chat_message_id = ? ORDER BY z.pos, z.recipe_id LIMIT 1",
+        (chat_message_id,)).fetchone()
+    if row is None:
+        return None
+    return row["portionen"] or row["servings"]
+
+
+def _zahl(wert):
+    """`'8'` -> 8, leer oder Unsinn -> `None`, alles unter 1 auch.
+
+    Dieselbe Nachsicht wie `recipes.uebernahme._portionen`: die Zahl kommt
+    aus einem Formularfeld auf einem Telefon. Der Unterschied ist der
+    Rückfall — dort auf die Zahl des Rezepts, hier auf gar nichts, weil hier
+    nichts gerechnet werden MUSS.
+    """
+    try:
+        zahl = int(str(wert).strip())
+    except (TypeError, ValueError):
+        return None
+    return zahl if zahl > 0 else None
+
+
 def _hat_inhalt(k: dict) -> bool:
     """Trägt diese Karte irgendetwas, das nicht schon in der Liste steht?"""
     return bool(k["gesamt_minuten"] or k["source_rating"] or k["n_zutaten"]
@@ -255,40 +458,19 @@ def _deckung(karten: list[dict], vorgeschlagen: list[dict] | None) -> None:
     Korrektur (WB-359) legt eine NEUE Vorschlagszeile an, und eine
     festgeschriebene Zahl stünde danach falsch da.
 
-    Zwei Wege führen zur Zuordnung, und beide stehen schon in den Daten:
-
-    * **Quellenweg** — die Zeilen des Gerichts tragen `dish_item` (WB-337).
-    * **Rezeptweg** — `_aus_rezept` schreibt den REZEPTNAMEN als
-      `search_term` an jede Zeile. Dort gibt es keinen Entwurf, und ohne
-      diesen Vergleich bliebe genau der schnelle Weg ohne Zahl.
-
-    Bei mehreren Rezepten in einem Zug lässt sich der Quellenweg nicht
-    aufteilen (der Entwurf kennt nur ein Gericht). Dann bleibt die Zahl weg,
-    statt geraten zu werden.
+    Welche Zeilen zu welcher Karte gehören, entscheidet `zeilen_zur_karte`
+    und nicht diese Funktion — seit WB-384 hängt an derselben Zuordnung auch,
+    welche Mengen eine geänderte Portionszahl betrifft, und zwei Kopien der
+    Regel liefen auseinander.
     """
     zeilen = list(vorgeschlagen or [])
     if not zeilen:
         return
-    korrekturen = {z["corrected_from"] for z in zeilen
-                   if z.get("ist_korrektur")}
-    zum_gericht = [z for z in zeilen if z.get("zum_gericht")]
     for k in karten:
-        name = (k["name"] or "").casefold()
-        if zum_gericht and len(karten) == 1:
-            # Der Entwurf ist das genauere Signal, wo es ihn gibt — er steht
-            # an der ZEILE und nicht an einem Namensvergleich. Bei zwei
-            # Rezepten im Zug lässt er sich aber nicht aufteilen (er kennt
-            # nur ein Gericht), dann gilt unten der Rezeptname.
-            eigene = zum_gericht
-        else:
-            eigene = [z for z in zeilen
-                      if (z.get("search_term") or "").casefold() == name]
+        eigene = zeilen_zur_karte(k, zeilen, len(karten))
         if not eigene:
             k["n_zettel"] = k["n_ohne_produkt"] = None
             continue
-        # Eine korrigierte Zeile zählt nicht doppelt: die Korrektur ist
-        # dieselbe Zutat mit einem anderen Produkt.
-        eigene = [z for z in eigene if z["id"] not in korrekturen]
         k["n_zettel"] = len(eigene)
         k["n_ohne_produkt"] = sum(1 for z in eigene if z["ist_freitext"])
         # Nur wo die Quelle eine Zutatenliste mitgebracht hat, gibt es
