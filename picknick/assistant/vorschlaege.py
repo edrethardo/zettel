@@ -362,8 +362,9 @@ def verlauf(con: sqlite3.Connection, order_id: int,
     """Der Chat zu einer Bestellung: Nachrichten, jede mit ihren Vorschlägen.
 
     Der Chat hängt an der Bestellung und nicht an einer eigenen Sitzung
-    (Spec 9: er gehört in den Warenkorb). Damit wandert er beim Abschicken
-    mit — und die Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören.
+    (Spec 9). Damit wandert er beim Abschicken mit — und die Entscheidungen
+    bleiben bei dem Einkauf, zu dem sie gehören. Der eigene Ort aus WB-382
+    ist eine eigene Ansicht, kein eigener Besitzer.
 
     `ab` schneidet vorne ab und rendert nur die Chatzeilen ab dieser id
     (WB-372). **Das ist eine Anzeigegrenze und keine Löschung** — die Zeilen

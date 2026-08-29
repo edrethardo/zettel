@@ -155,7 +155,7 @@ button:disabled { opacity: 0.5; cursor: default; }
   content: ""; width: 8px; height: 8px; border-radius: 50%;
   background: var(--akzent); margin-top: 6px;
 }
-/* Acht Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
+/* Neun Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
    statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
 
    Die Bildlaufleiste war ganz ausgeblendet — auf 375 px lagen „Bons" und
@@ -304,6 +304,12 @@ button:disabled { opacity: 0.5; cursor: default; }
   border: 1.5px dashed var(--linie); border-radius: var(--radius);
 }
 .leer .knopf { margin-top: 12px; }
+/* Zwei Wege aus dem leeren Korb (WB-382), und sie sind nicht gleich viel
+   wert: „Zum Chat" ist ein Satz, „Zum Katalog" zwölf Suchen. `.still` nimmt
+   dem zweiten die Fläche, nicht die Grösse — 44 px bleiben 44 px. */
+.leer .knopf + .knopf { margin-left: 8px; }
+.knopf.still { font-weight: 500; color: var(--gedaempft);
+               background: none; }
 /* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Nicht `.band`:
    das ist das seitenbreite Hinweisband oben am Blatt, und hier gehört der Satz
    in die Liste, zu der er gehört. Der Honigton verbindet die beiden trotzdem —
@@ -615,9 +621,44 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* Chat (WB-327): Sprechblasen — ihre rechts in Blattgrün-Fläche, die
    Antworten links auf Karte. Eine Vorschlagszeile ist eine kleine Karte, die
    aussieht wie eine Korbzeile: dieselbe Sache, nur noch nicht bestätigt. */
-.chat { margin: 28px 0 0; border-top: 1px solid var(--linie);
-        padding-top: var(--rand); }
+/* Kein Trennstrich mehr oben (WB-382): der war die Naht zum Korb, unter dem
+   der Chat bis dahin hing. Auf einer eigenen Seite trennte er ihn von nichts —
+   er hätte nur die Korbbrücke abgeschnitten, die zu ihm gehört. */
+.chat { margin: 0; }
 .chat h2 { margin: 0 0 8px; }
+
+/* Die Korbbrücke (WB-382) — der Weg zwischen den beiden Seiten, die WB-382
+   getrennt hat, und zugleich die Rückmeldung, dass ein „Ja" angekommen ist.
+
+   Sie KLEBT auf der Chatseite oben. Das ist der ganze Grund, warum sie eine
+   eigene Regel braucht: die Entscheidungsknöpfe stehen mitten in einer Liste
+   von 150 Zeilen, und eine Zahl am Seitenkopf ist beim Tippen längst aus dem
+   Bild. Dieselbe Überlegung wie bei `.pick-meldung`, nur oben statt unten —
+   unten steht hier das Eingabefeld, und darüber darf nichts kleben.
+
+   Unter dem Korb (`.unten`) klebt sie nicht: dort ist sie kein Statuslicht,
+   sondern eine Tür, und eine Tür läuft nicht mit. */
+.korbbruecke {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; justify-content: center;
+  margin: 0 0 8px; padding: 6px 0;
+  background: var(--grund);
+  font-size: 14px; color: var(--gedaempft);
+}
+.korbbruecke.unten { position: static; margin-top: var(--rand); }
+.korbbruecke .knopf { font-size: 15px; }
+/* Der leere Korb bekommt keinen Knopf: ein Link auf eine leere Liste ist eine
+   Sackgasse mit Einladung. Der Satz bleibt trotzdem stehen, damit die Stelle
+   nicht erst auftaucht, wenn etwas passiert — sonst springt der Verlauf beim
+   ersten „Ja" um eine Zeilenhöhe. */
+.korbbruecke.leer-still { justify-content: flex-start; }
+
+/* Der Ankunftssatz an der Zeile (WB-382). Nur in der Antwort auf genau diesen
+   Tipp, nicht im Verlauf: er ist ein Ereignis und kein Zustand. Grün und
+   auftauchend wie jede andere Rückmeldung dieses Blattes — kein vierter
+   Bewegungsort, sondern derselbe wie am Plus-Knopf im Katalog. */
+.zeile .hinweis.eben { color: var(--ok-text); font-weight: 600;
+                       animation: auftauchen 0.3s ease; }
 .chatband { border: 1px solid var(--honig-linie); border-radius: var(--radius);
             margin-bottom: var(--rand); }
 .chatband::before { animation: puls 1.6s ease-in-out infinite; }

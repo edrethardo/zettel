@@ -31,8 +31,8 @@ kein Netz — alles kommt aus der Datenbank oder aus Zählern des laufenden
 Prozesses. Der Grund ist konkret: `chat.zustand()` weckt die vLLM-Box per
 Wake-on-LAN. Eine Statusseite, die einen Rechner im Nebenzimmer aufweckt, weil
 jemand nachsehen wollte, ob alles läuft, wäre ein Fehler mit Stromrechnung.
-Was die Box gerade tut, fragt genau eine Stelle: der Chat im Warenkorb, und
-nur dann, wenn ihn jemand vor sich hat.
+Was die Box gerade tut, fragt genau eine Stelle: die Chatseite (`/chat`),
+und nur dann, wenn jemand sie vor sich hat.
 """
 from __future__ import annotations
 

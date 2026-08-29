@@ -1157,7 +1157,7 @@ def checks_zuruecknehmen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
         wecker=_Box())
     app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
     with TestClient(app) as client:
-        client.post("/warenkorb/chat", data={"satz": "Butter"},
+        client.post("/chat", data={"satz": "Butter"},
                     headers={"HX-Request": "true"})
         con = db.connect(db_datei)
         try:
@@ -1177,7 +1177,7 @@ def checks_zuruecknehmen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
 
 def _entscheiden(client, sid: int, decision: str):
     antwort = client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision={decision}",
+        f"/chat/vorschlag/{sid}/entscheiden?decision={decision}",
         headers={"HX-Request": "true"})
     gleich(antwort.status_code, 200, f"POST entscheiden?decision={decision}")
     return antwort.text
@@ -1232,6 +1232,137 @@ def _kein_label(client, con, sid: int) -> str:
 
 # --------------------------------------------------------------------------
 # Portionen und die Reihenfolge der Rechenschritte (WB-362)
+
+def checks_zwei_orte(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    """Chat und Korb sind zwei Orte — und der Weg dazwischen trägt (WB-382).
+
+    Am HTTP-Rand geklickt, weil genau dort der Unterschied sitzt. Drei Dinge
+    stehen auf dem Spiel, und alle drei sind stumm kaputtzumachen:
+
+    * die Trennung selbst — der Korb darf den Verlauf nicht mehr tragen;
+    * das ANKOMMEN — wer im Chat „Ja" tippt, muss ohne Seitenwechsel merken,
+      dass etwas im Korb liegt. Das ist der eigentliche Kern des Tickets;
+    * die zwei Wege dazwischen, OHNE die Navigationsleiste.
+
+    Am Datenmodell ändert sich dabei nichts: der Verlauf hängt weiter an der
+    Bestellung, und das wird hier mitgeprüft — daran hängen die Eval-Labels.
+    """
+    b.abschnitt("Der Chat hat einen eigenen Ort, der Korb ist ein Korb "
+                "(WB-382)")
+
+    con = db.connect(db_datei)
+    try:
+        butter = pid(con, "Salzbutter")
+    finally:
+        con.close()
+    agent = chatmodul.Chat(
+        _mock_zugang(_extract(("Butter", 1)), _choose(("Butter", butter, 1))),
+        wecker=_Box())
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        client.post("/chat", data={"satz": "Butter"},
+                    headers={"HX-Request": "true"})
+        con = db.connect(db_datei)
+        try:
+            sid = int(con.execute("SELECT id FROM chat_suggestion ORDER BY id"
+                                  ).fetchone()["id"])
+            b.pruefe("der Chat hat eine eigene Adresse und steht in der "
+                     "Navigation", lambda: _chat_ist_ein_ort(client))
+            b.pruefe("der Warenkorb zeigt den Korb und nicht den Verlauf",
+                     lambda: _korb_ohne_verlauf(client))
+            b.pruefe("ein „Ja“ im Chat ist an der Zeile als angekommen "
+                     "erkennbar — ohne Seitenwechsel",
+                     lambda: _ja_kommt_an(client, con, sid))
+            b.pruefe("beide Wege dazwischen gehen ohne die "
+                     "Navigationsleiste", lambda: _wege_hin_und_zurueck(client))
+            b.pruefe("der Verlauf hängt weiter an der Bestellung und wandert "
+                     "beim Abschicken mit", lambda: _verlauf_wandert_mit(
+                         client, con))
+        finally:
+            con.close()
+
+
+def _ohne_leiste(text: str) -> str:
+    """Die Seite ohne die Navigationsleiste des Grundgerüsts.
+
+    Ein Weg, den es nur in der Leiste gibt, ist keiner: sie scrollt quer, hat
+    neun Ziele und sieht auf jeder Seite gleich aus. Geprüft wird deshalb, was
+    IM BLATT steht.
+    """
+    kopf, _, rest = text.partition('<nav id="hauptnavigation"')
+    return kopf + rest.partition("</nav>")[2]
+
+
+def _chat_ist_ein_ort(client) -> str:
+    seite = client.get("/chat")
+    gleich(seite.status_code, 200, "GET /chat")
+    wahr('name="satz"' in seite.text, "Auf /chat steht kein Eingabefeld.")
+    leiste = seite.text.partition('<nav id="hauptnavigation"')[2].partition(
+        "</nav>")[0]
+    wahr('href="/chat"' in leiste, "Der Chat steht nicht in der Navigation.")
+    return "GET /chat trägt den Chat, die Leiste führt hin"
+
+
+def _korb_ohne_verlauf(client) -> str:
+    korb = client.get("/warenkorb")
+    gleich(korb.status_code, 200, "GET /warenkorb")
+    wahr('<section class="chat"' not in korb.text,
+         "Der Warenkorb trägt weiter den Chatverlauf.")
+    wahr('name="satz"' not in korb.text,
+         "Im Warenkorb steht weiter das Chat-Eingabefeld.")
+    wahr("/chat/zustand" not in korb.text,
+         "Der Blick in den Korb weckt weiter die vLLM-Box.")
+    return "kein Verlauf, kein Eingabefeld, kein Weckruf"
+
+
+def _ja_kommt_an(client, con, sid: int) -> str:
+    """Der Kern des Tickets: das Ankommen ist ohne Seitenwechsel zu sehen."""
+    stueck = _entscheiden(client, sid, "kept")
+    gleich(len(orders.inhalt(con)), 1, "Korbzeilen nach dem „Ja“")
+    wahr("Liegt jetzt im Korb" in stueck,
+         "An der Zeile steht nicht, dass sie im Korb gelandet ist.")
+    wahr('id="korbbruecke" hx-swap-oob="true"' in stueck,
+         "Die Korbbrücke wird nicht mitgetauscht — die Zahl bliebe stehen.")
+    wahr("1 Sache im Korb" in stueck,
+         "Die Brücke nennt die Zahl nicht.")
+    wahr('id="korb-anzahl"' in stueck,
+         "Die Zahl im Kopf wird nicht nachgezogen.")
+    # Kein Redirect-Karussell: die Antwort ist ein Bruchstück und keine Seite.
+    wahr("<html" not in stueck.lower(),
+         "Ein „Ja“ liefert eine ganze Seite — das wäre ein Seitenwechsel.")
+    return "Satz an der Zeile, Brücke und Kopfzahl — als Bruchstück"
+
+
+def _wege_hin_und_zurueck(client) -> str:
+    hin = _ohne_leiste(client.get("/chat").text)
+    wahr('href="/warenkorb"' in hin,
+         "Vom Chat führt kein Weg in den Korb ausser der Leiste.")
+    voll = _ohne_leiste(client.get("/warenkorb").text)
+    wahr('href="/chat"' in voll,
+         "Vom vollen Korb führt kein Weg zurück in den Chat.")
+    return "Chat -> Korb über die Brücke, Korb -> Chat unter der Liste"
+
+
+def _verlauf_wandert_mit(client, con) -> str:
+    """Am Datenmodell ändert der eigene Ort nichts (Spec 9, neue Fassung)."""
+    vorher = int(con.execute(
+        "SELECT count(*) AS n FROM chat_message m JOIN orders o"
+        "  ON o.id = m.order_id WHERE o.state = 'draft'").fetchone()["n"])
+    wahr(vorher > 0, "Der Verlauf hängt gar nicht am Entwurf.")
+    antwort = client.post("/warenkorb/abschicken", data={"note": "WB-382"},
+                          follow_redirects=False)
+    wahr(antwort.status_code in (204, 303),
+         f"Unerwarteter Status {antwort.status_code}")
+    danach = con.execute(
+        "SELECT o.state AS state, count(m.id) AS n FROM chat_message m"
+        "  JOIN orders o ON o.id = m.order_id GROUP BY o.state").fetchall()
+    gleich([(z["state"], z["n"]) for z in danach], [("offen", vorher)],
+           "Chatzeilen je Bestellzustand")
+    # Und der frische Chat fängt leer an — er hängt am neuen Entwurf.
+    wahr("Schreib, was du brauchst" in client.get("/chat").text,
+         "Nach dem Abschicken steht der alte Verlauf noch im Chat.")
+    return f"{vorher} Chatzeilen mit der Bestellung auf 'offen' gewandert"
+
 
 def checks_portionen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
     """Skalieren, zusammenzählen, DANN aufrunden — am HTTP-Rand geklickt.
@@ -1419,9 +1550,9 @@ def checks_mengen_im_chat(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
 
 
 def _chat_menge(client, con, product_id: int, satz: str, erwartet) -> str:
-    antwort = client.post("/warenkorb/chat", data={"satz": satz},
+    antwort = client.post("/chat", data={"satz": satz},
                           headers={"HX-Request": "true"})
-    gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+    gleich(antwort.status_code, 200, "POST /chat")
     sid = int(con.execute(
         "SELECT id FROM chat_suggestion WHERE product_id = ?"
         " ORDER BY id DESC LIMIT 1", (product_id,)).fetchone()["id"])
@@ -1540,9 +1671,9 @@ def checks_rezeptentwurf(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
 
 
 def _entwurf_entsteht(client, con, klo: int) -> str:
-    antwort = client.post("/warenkorb/chat", data={"satz": SATZ_337},
+    antwort = client.post("/chat", data={"satz": SATZ_337},
                           headers={"HX-Request": "true"})
-    gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+    gleich(antwort.status_code, 200, "POST /chat")
     wahr("Rezeptentwurf" in antwort.text, "Kein Entwurf in der Antwort.")
     mid = _letzte_antwort(con)
     e = entwuerfe.zu_nachricht(con, mid)
@@ -1571,16 +1702,16 @@ def _noch_kein_rezept(con) -> str:
 
 def _entwurf_bearbeiten(client, con, spag: int) -> str:
     mid = _letzte_antwort(con)
-    antwort = client.post(f"/warenkorb/chat/{mid}/alle?decision=kept",
+    antwort = client.post(f"/chat/{mid}/alle?decision=kept",
                           headers={"HX-Request": "true"})
     gleich(antwort.status_code, 200, "POST alle?decision=kept")
-    antwort = client.post(f"/warenkorb/chat/{mid}/entwurf/name",
+    antwort = client.post(f"/chat/{mid}/entwurf/name",
                           data={"name": "Bolo"},
                           headers={"HX-Request": "true"})
     gleich(antwort.status_code, 200, "POST entwurf/name")
     sid = con.execute("SELECT id FROM chat_suggestion WHERE product_id = ?",
                       (spag,)).fetchone()["id"]
-    antwort = client.post(f"/warenkorb/vorschlag/{sid}/rezeptzeile?drin=0",
+    antwort = client.post(f"/chat/vorschlag/{sid}/rezeptzeile?drin=0",
                           headers={"HX-Request": "true"})
     gleich(antwort.status_code, 200, "POST rezeptzeile?drin=0")
     e = entwuerfe.zu_nachricht(con, mid)
@@ -1613,9 +1744,9 @@ def _abschicken_legt_an(client, con, klo: int) -> str:
 
 
 def _zweiter_satz(client, con) -> str:
-    antwort = client.post("/warenkorb/chat", data={"satz": "heute Bolo"},
+    antwort = client.post("/chat", data={"satz": "heute Bolo"},
                           headers={"HX-Request": "true"})
-    gleich(antwort.status_code, 200, "POST /warenkorb/chat (Rezeptweg)")
+    gleich(antwort.status_code, 200, "POST /chat (Rezeptweg)")
     mid = _letzte_antwort(con)
     zeilen = vorschlaege.liste(con, mid)
     gleich(len(zeilen), 2, "Vorschläge aus dem Rezept")
@@ -1662,9 +1793,9 @@ def checks_rest_neben_dem_gericht(b: Bericht, db_datei: Path,
     with TestClient(app) as client:
         con = db.connect(db_datei)
         try:
-            antwort = client.post("/warenkorb/chat", data={"satz": SATZ_337},
+            antwort = client.post("/chat", data={"satz": SATZ_337},
                                   headers={"HX-Request": "true"})
-            gleich(antwort.status_code, 200, "POST /warenkorb/chat")
+            gleich(antwort.status_code, 200, "POST /chat")
             mid = _letzte_antwort(con)
             b.pruefe("das Klopapier liegt im Korb, obwohl das Modell einen "
                      "Begriff ohne Herkunftszutat lieferte",
@@ -1799,6 +1930,12 @@ def main() -> int:
         zurueck_db = ordner / "zuruecknehmen.db"
         katalog_anlegen(zurueck_db)
         checks_zuruecknehmen(b, zurueck_db, bild_dir)
+        # Und noch eine: WB-382 schickt am Ende eine Bestellung ab, damit
+        # der Verlauf nachweislich mitwandert — das hätte in den Warenkörben
+        # oben nichts verloren.
+        orte_db = ordner / "zwei_orte.db"
+        katalog_anlegen(orte_db)
+        checks_zwei_orte(b, orte_db, bild_dir)
         # Und noch eine: die Portionsrechnung legt Rezepte an und füllt den
         # Korb mehrfach — beides hätte in den Warenkörben oben nichts
         # verloren.

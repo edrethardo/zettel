@@ -1,0 +1,25 @@
+{% extends "basis.html" %}
+{% block titel %}Chat — Picknick{% endblock %}
+{% block inhalt %}
+<h1>Chat</h1>
+{# Ein Chat für beide (Spec 4 und 9). Derselbe Satz wie über dem Korb, denn es
+   ist dieselbe Sache: der Verlauf hängt am `draft`, und den haben beide
+   gemeinsam. Wer das nicht liest, sucht später „seinen" Chat. #}
+<p class="fussnote">Ein gemeinsamer Chat — er hängt am Korb und wandert beim
+  Abschicken mit der Bestellung mit.</p>
+
+{# Der Zustand der Box wird nachgeladen: das Rendern dieser Seite fragt die
+   vLLM-Box nicht an — sonst wartete jeder Blick in den Chat am
+   health-Timeout. Er steht NUR hier, weil nur hier jemand das Modell
+   braucht. #}
+<div id="chat-zustand" hx-get="/chat/zustand" hx-trigger="load"
+     hx-swap="outerHTML"></div>
+
+{# Die Brücke in den Korb (WB-382). Sie steht ÜBER dem Verlauf und klebt beim
+   Scrollen oben: ein „Ja" mitten in einer Liste von 150 Zeilen muss sichtbar
+   ankommen, ohne dass die Seite gewechselt wird. Der Kopfzähler allein reicht
+   dafür nicht — er ist eine Ziffer in einer quer scrollenden Leiste. #}
+<div id="korbbruecke">{% include "_korbbruecke.html" %}</div>
+
+{% include "_chat.html" %}
+{% endblock %}

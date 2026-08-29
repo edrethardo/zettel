@@ -1,0 +1,25 @@
+{# Die Brücke vom Chat in den Korb (WB-382) — und die Rückmeldung, dass ein
+   „Ja" angekommen ist.
+
+   Sie tut zwei Dinge auf einmal, und beide stehen im Ticket:
+
+   * **Der Weg hin, ohne die Navigationsleiste.** Vom Chat zum Korb ist der
+     häufigste Wechsel des Shops; die Leiste oben scrollt quer und hat neun
+     Ziele.
+   * **Das Ankommen.** Jede Entscheidung tauscht dieses Stück out-of-band
+     (`_nachtrag.html`), die Zahl zählt also sichtbar hoch. Sie klebt beim
+     Scrollen oben, damit sie beim Tippen nicht aus dem Bild ist — dieselbe
+     Überlegung wie bei der Meldung auf der Pick-Liste, nur oben statt unten:
+     unten steht hier das Eingabefeld.
+
+   Der leere Korb bekommt keinen Knopf, sondern einen Satz: ein Link auf eine
+   leere Liste ist eine Sackgasse mit Einladung. #}
+{% if korb_anzahl %}
+{%- set was = "Sache" if korb_anzahl == 1 else "Sachen" %}
+<p class="korbbruecke" role="status">
+  <a class="knopf mini" href="/warenkorb">{{ korb_anzahl }} {{ was }} im Korb — ansehen</a>
+</p>
+{% else %}
+<p class="korbbruecke leer-still">Noch nichts im Korb. Was du hier mit „Ja"
+  bestätigst, landet dort.</p>
+{% endif %}

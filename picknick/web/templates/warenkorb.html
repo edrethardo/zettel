@@ -5,12 +5,22 @@
 {# Ein Korb für beide (Spec 4). Der Satz steht hier, weil sonst jemand nach
    „seinem" Korb sucht und ihn nicht findet. #}
 <p class="fussnote">Ein gemeinsamer Korb — was hier steht, sieht auch der andere.</p>
+
+{# Seit WB-382 steht hier der KORB und nicht mehr der Chatverlauf dazu. Die
+   alte Fassung von Spec 9 sagte „Chat — gehört zum Warenkorb, kein eigener
+   Ort"; daraus folgte aber nur, dass er am `draft` hängt, nicht, dass er auf
+   derselben Seite stehen muss. Er hängt weiter daran und wohnt jetzt unter
+   `/chat`.
+
+   Der Weg dorthin steht hier und nicht bloss in der Navigationsleiste: sie
+   scrollt quer und hat neun Ziele. Beim vollen Korb ist es eine Zeile unter
+   der Liste, beim leeren die Einladung selbst — dort ist „sag einfach, was du
+   brauchst" der einzige Vorschlag, der ohne Stöbern zum Ziel führt. #}
 <div id="korb">{% include "_korb.html" %}</div>
 
-{# Der Chat gehört hierher und nicht auf eine eigene Seite (Spec 9). Der
-   Zustand der Box wird nachgeladen: das Rendern dieser Seite fragt die vLLM-Box
-   nicht an — sonst wartete jeder Blick in den Korb am health-Timeout. #}
-<div id="chat-zustand" hx-get="/warenkorb/chat/zustand" hx-trigger="load"
-     hx-swap="outerHTML"></div>
-{% include "_chat.html" %}
+{% if posten %}
+<p class="korbbruecke unten">
+  <a class="knopf mini" href="/chat">Noch etwas? Sag es im Chat</a>
+</p>
+{% endif %}
 {% endblock %}

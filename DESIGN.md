@@ -190,6 +190,65 @@ aufgehobenen Liste (`catalog.search.kuerze_kette`) und ist damit garantiert
 eine Teilmenge davon. Liefe sie auseinander, zeigte „Nein" nicht mehr die
 Liste, aus der gewählt wurde.
 
+### Der Chat hat einen eigenen Ort und hängt trotzdem am Korb
+
+Spec 9 sagte bis WB-382 wörtlich: *„Chat — gehört zum Warenkorb, kein eigener
+Ort."* Der Satz beantwortete zwei Fragen auf einmal, und nur eine der beiden
+Antworten trug.
+
+**Was bleibt: der BESITZER.** Der Verlauf hängt an der Bestellung
+(`chat_message.order_id`), nicht an einer Sitzung und nicht an einem Gerät.
+Daran hängt mehr, als es aussieht: er wandert beim Abschicken mit, die
+Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören, und aus genau
+diesen Entscheidungen werden die Eval-Labels (WB-329). Zwei Telefone sehen
+denselben Chat, wie sie denselben Korb sehen — genau ein `draft`, gemeinsam
+(Spec 4). **Am Datenmodell hat WB-382 nichts geändert.**
+
+**Was nicht mehr trägt: der gemeinsame PLATZ.** Aus „gehört zum Warenkorb"
+folgt nicht „muss auf derselben Seite stehen". Die Vermutung dahinter war, dass
+man beim Bestätigen den Korb wachsen sehen will. Sie hat den Shop seine grösste
+Seite gekostet: 257 KB vor WB-372, danach 45 KB, und beides drängelte sich um
+denselben Raum — der Korb stand über 157 Vorschlagszeilen, an die als Nächstes
+noch das vorgeschlagene Rezept sollte.
+
+**Das Ankommen im Korb ist dabei die eigentliche Sache** und nicht die Adresse.
+Wer im Chat „Ja" tippt, muss ohne Seitenwechsel merken, dass etwas angekommen
+ist. Es sagen jetzt drei Stellen, und jede tut etwas, was die anderen nicht
+können:
+
+* **die Zeile selbst** — „Liegt jetzt im Korb — 5 Sachen drin." Nur in der
+  Antwort auf genau diesen Tipp, nicht im gerenderten Verlauf: dort ist nichts
+  „gerade" passiert. Sie ist die wichtigste der drei, weil dort der Daumen
+  steht — die Knöpfe sitzen mitten in einer Liste von 150 Zeilen.
+* **die Korbbrücke** über dem Verlauf — „5 Sachen im Korb — ansehen". Sie klebt
+  beim Scrollen oben und wird bei jeder Entscheidung out-of-band getauscht, die
+  Zahl zählt also sichtbar hoch. Sie ist zugleich der Weg in den Korb, ohne die
+  quer scrollende Navigationsleiste.
+* **der Kopfzähler** aus WB-372 — er steht ohnehin auf jeder Seite.
+
+Die Marke „im Korb" an der entschiedenen Zeile bleibt daneben stehen. Sie ist
+ein ZUSTAND und sieht nach dem Neuladen genauso aus; was fehlte, war das
+EREIGNIS.
+
+**Gemessen, weil sonst niemand es glaubt** (`scripts/groesse_probe.py`, 17
+Züge, 153 Vorschläge, derselbe Verlauf wie in WB-372):
+
+| | vorher (eine Seite) | nachher |
+|---|---|---|
+| Seite mit dem Chat | 50.934 Bytes | 44.088 Bytes |
+| Korb für sich | — | 8.054 Bytes |
+| ein „Ja" | 10.412 Bytes | **2.249 Bytes** |
+| Formulare je „Ja" | 21 | 3 |
+
+Der Tipp ist beim Umzug nebenbei um drei Viertel billiger geworden, und das war
+kein eigener Handgriff: er trug den ganzen Korb mit — Zeilen mit Bildern,
+Mengenformularen und Ladenauswahl —, weil der Korb danebenstand. Jetzt trägt er
+die Brücke, die Kopfzahl und einen Satz.
+
+**Kein Redirect-Karussell.** Ein „Ja" bleibt eine HTMX-Teilantwort und springt
+nicht auf den Korb und zurück; ohne JavaScript geht dieselbe Adresse wie vorher
+auf die Chatseite.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist
@@ -230,8 +289,11 @@ selbst ausstellt.
 * **Katalog alt** → ein Hinweisband, kein stilles Weiteraltern; `/status`
   nennt verworfene Läufe mit Begründung.
 
-Das Rendern des Warenkorbs fragt die Box **nicht** — der Zustand wird per HTMX
-nachgeladen. Sonst hinge jeder Blick in den Korb am health-Timeout.
+Das Rendern der Chatseite fragt die Box **nicht** — der Zustand wird per HTMX
+nachgeladen. Sonst hinge jeder Blick am health-Timeout. Der Aufruf, der das
+Nachladen macht, ist zugleich der, der `wake-vllm` anstösst; er steht deshalb
+seit WB-382 nur noch auf `/chat` und nicht mehr im Warenkorb — ein Weckruf beim
+Blick in den Korb wäre einer für nichts.
 
 ## Kleinere Entscheidungen, die überraschen
 

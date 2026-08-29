@@ -51,10 +51,17 @@
 
 {% if not posten %}
   {# Der leere Zustand sagt, was als Nächstes sinnvoll ist, statt nur zu
-     schweigen (WB-360). Der Satz davor bleibt wörtlich — Tests kennen ihn. #}
+     schweigen (WB-360). Der Satz davor bleibt wörtlich — Tests kennen ihn.
+
+     Seit WB-382 führt er auch WEG von hier: der Chat wohnt nicht mehr unter
+     dieser Liste, und ein leerer Korb ohne Weg zu ihm wäre genau die
+     Sackgasse, in die der Umzug den Shop sonst gebracht hätte. Der Chat steht
+     zuerst, weil er der schnellere Weg zu einem vollen Korb ist — „alles für
+     Bolognese" ist ein Satz, der Katalogweg sind zwölf Suchen. #}
   <p class="leer">Der Warenkorb ist leer.<br>
-    Stöber im Katalog oder frag unten im Chat nach allem auf einmal.<br>
-    <a class="knopf" href="/katalog">Zum Katalog</a></p>
+    Sag einfach, was du brauchst — oder stöber im Katalog.<br>
+    <a class="knopf" href="/chat">Zum Chat</a>
+    <a class="knopf still" href="/katalog">Zum Katalog</a></p>
 {% else %}
 <ul class="korb">
   {% for i in posten %}

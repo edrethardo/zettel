@@ -21,7 +21,7 @@
 {% set laeuft = chat_zustand and chat_zustand.zustand == "wacht_auf" %}
 <div id="chat-zustand" {% if oob %}hx-swap-oob="true"{% endif %}
      {% if chat_zustand and not chat_zustand.bedient %}
-     hx-get="/warenkorb/chat/zustand"
+     hx-get="/chat/zustand"
      hx-trigger="load delay:{{ 5 if laeuft else 30 }}s"
      hx-swap="outerHTML"
      {% endif %}>
@@ -43,9 +43,9 @@
   </p>
   {% if not laeuft %}
   {# Der Weg aus der Sackgasse von Hand. Ohne JavaScript lädt derselbe Knopf
-     den Warenkorb neu — dort holt sich das Band beim Laden ohnehin selbst. #}
-  <form class="zustand-nachsehen" method="get" action="/warenkorb"
-        hx-get="/warenkorb/chat/zustand"
+     die Chatseite neu — dort holt sich das Band beim Laden ohnehin selbst. #}
+  <form class="zustand-nachsehen" method="get" action="/chat"
+        hx-get="/chat/zustand"
         hx-target="#chat-zustand" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <button class="mini" type="submit">Jetzt nachsehen</button>

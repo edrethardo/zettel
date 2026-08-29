@@ -13,15 +13,15 @@
    Knopf, der nichts mehr tut. #}
 {% if m.vorschlaege | selectattr("offen") | list %}
 <div class="sammel">
-  <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
-        hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
+  <form method="post" action="/chat/{{ m.id }}/alle?decision=kept"
+        hx-post="/chat/{{ m.id }}/alle?decision=kept"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}"
         hx-disabled-elt="find button">
     <button class="mini" type="submit">Alles übernehmen</button>
   </form>
-  <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
-        hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
+  <form method="post" action="/chat/{{ m.id }}/alle?decision=removed"
+        hx-post="/chat/{{ m.id }}/alle?decision=removed"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}"
         hx-disabled-elt="find button">

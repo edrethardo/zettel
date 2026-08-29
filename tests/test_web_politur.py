@@ -29,8 +29,8 @@ HTMX = {"HX-Request": "true"}
 #: Alle Vollseiten des Shops. `/` ist eine Weiterleitung und steht deshalb
 #: nicht dabei; `/pick` ohne Bestellung und `/bons` ohne Datei sind ihre
 #: eigenen leeren Zustände und sollen trotzdem antworten.
-VOLLSEITEN = ["/katalog", "/warenkorb", "/rezepte", "/bestellungen", "/pick",
-              "/bons", "/status", "/rolle"]
+VOLLSEITEN = ["/katalog", "/chat", "/warenkorb", "/rezepte", "/bestellungen",
+              "/pick", "/bons", "/status", "/rolle"]
 
 
 @pytest.fixture
@@ -179,7 +179,7 @@ def test_die_markierung_ist_nicht_nur_ansage_sondern_auch_sichtbar():
 
 
 def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
-    """Acht Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
+    """Neun Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
     ausgeblendet. Ob sie auf 375 px sichtbar ist, entscheidet ein Gerät —
     hier steht nur, dass sie nicht mehr weggeschaltet wird."""
     stil = STIL.read_text(encoding="utf-8")

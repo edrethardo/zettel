@@ -25,8 +25,8 @@
        und der steht danach unter diesem hier. #}
     {% if m.faecher %}
     <form class="sorten" method="post"
-          action="/warenkorb/chat/{{ m.id }}/sorten"
-          hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+          action="/chat/{{ m.id }}/sorten"
+          hx-post="/chat/{{ m.id }}/sorten"
           hx-target="#chat" hx-swap="outerHTML"
           hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
       <ul class="sortenliste">
@@ -49,8 +49,8 @@
        sein. Dieselbe Adresse, derselbe Ausgang — der Knopf spart nur das
        Absenden eines leeren Formulars. #}
     <form class="sorten-weiter" method="post"
-          action="/warenkorb/chat/{{ m.id }}/sorten"
-          hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+          action="/chat/{{ m.id }}/sorten"
+          hx-post="/chat/{{ m.id }}/sorten"
           hx-target="#chat" hx-swap="outerHTML"
           hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
       <button class="mini" type="submit">Überspringen — direkt nach
