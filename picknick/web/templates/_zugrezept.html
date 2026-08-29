@@ -9,8 +9,15 @@
        2. wie viele Zutaten, und wie viele     23 Zutaten, 8 nicht auf
           davon nicht auf dem Zettel stehen    dem Zettel
        3. Schwierigkeit, Portionen, Bewertung
-       4. erst danach die Zutatenliste
-       5. und eingeklappt die Zubereitung
+       4. die ANDEREN Rezepte derselben Suche  „Nicht gemeint? 5 andere
+          (WB-387)                              Rezepte zu ‚Pho'"
+       5. erst danach die Zutatenliste
+       6. und eingeklappt die Zubereitung
+
+   **Punkt 4 steht vor Punkt 5, und das ist eine Entscheidung.** Die
+   Zutatenliste ist die eines BESTIMMTEN Rezepts; wer sie liest, hat die Wahl
+   schon getroffen. WB-380 hat gemessen, was das kostet, wenn die Vorauswahl
+   danebengriff: „Salat" holte „KFC Coleslaw" und lieferte 0 von 9 Treffern.
 
    Der Chat nannte bisher die Zutatenzahl und die Bewertung — genau die beiden
    Zahlen, die am wenigsten entscheiden. Neuneinhalb Stunden gegen
@@ -58,6 +65,66 @@
     <a class="quelle" href="{{ r.source_url }}" target="_blank" rel="noopener noreferrer">Original auf {{ r.source | capitalize if r.source else "der Quellseite" }}</a>
     {%- endif %}
   </p>
+  {%- endif %}
+
+  {%- if r.alternativen %}
+  {# Die anderen Rezepte derselben Suche (WB-387). Chefkoch liefert zwölf in
+     EINER Antwort; bis zu diesem Ticket nahm der Shop eines und warf elf weg,
+     bevor sie jemand sehen konnte.
+
+     **Sie stehen VOR der Zutatenliste**, und das ist die ganze Anordnung: die
+     Liste darunter ist die Zutatenliste EINES BESTIMMTEN Rezepts, und wer sie
+     liest, hat die Wahl schon getroffen. WB-380 hat gemessen, was ein
+     schiefes Rezept kostet — „Salat" holte „KFC Coleslaw" und lieferte 0 von
+     9 Treffern. Hier ist die Stelle, an der ein Mensch das abfängt.
+
+     Nicht eingeklappt: ein `<details>` spart keine Bytes (die Zeilen wären
+     trotzdem übertragen) und kostet den Blick, um den es geht. Sechs Zeilen
+     à drei Zahlen sind billig — gemessen mit `scripts/groesse_probe.py`. #}
+  <form class="andere" method="post" action="/chat/{{ m.id }}/rezept"
+        hx-post="/chat/{{ m.id }}/rezept"
+        hx-target="#chat" hx-swap="outerHTML"
+        hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+    <p class="andere-kopf">Nicht gemeint? {{ r.alternativen | length - 1 }}
+      andere Rezepte zu „{{ r.gericht }}“ aus derselben Suche.</p>
+    <ul class="andereliste">
+      {# Die ganze Zeile ist das Ziel: Titel oben, Zahlen darunter. Das
+         vorgeschlagene Rezept steht MIT in der Liste und trägt keinen Knopf —
+         sonst wäre nicht zu sehen, wogegen man wählt.
+
+         Die Leerraumsteuerung (`{%-`) ist hier dieselbe Nebenbedingung wie
+         bei der Zutatenliste unten: sechs Zeilen mal sechs Zeilen Einrückung
+         wären ein Sechstel dieses Blocks, und die Seite darf nach WB-372
+         nicht zurückwachsen. #}
+      {%- for a in r.alternativen %}
+      <li{% if a.gewaehlt %} class="ist"{% endif %}>
+      {%- if a.gewaehlt %}<span class="wahl"><span class="name">{{ a.titel }}
+        <span class="marke">vorgeschlagen</span></span>
+      {%- else %}<button class="wahl" type="submit" name="rezept" value="{{ a.source_id }}">
+        <span class="name">{{ a.titel }}</span>
+      {%- endif %}
+        <span class="zahlen">
+        {%- if a.zeitsatz %}<span>{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
+        {%- if a.rating %}<span>{{ "%.2f"|format(a.rating) }} aus {{ a.votes }} Stimmen</span>{% endif %}
+        {%- if a.n_zutaten %}<span>{{ a.n_zutaten }} Zutaten</span>{% endif %}
+        </span>
+      {%- if a.gewaehlt %}</span>{% else %}</button>{% endif %}</li>
+      {%- endfor %}
+    </ul>
+    {# Zwei Sätze, die beide gesagt werden MÜSSEN, weil sie sonst niemand
+       ahnt. Der erste: was die Suchantwort NICHT hergibt. Chefkochs
+       `preparationTime` ist die Arbeitszeit — Pho Bo steht dort mit 90
+       Minuten und braucht 9½ Stunden; Koch- und Ruhezeit und die Zutatenzahl
+       stehen erst im Rezept selbst, und sie für fünf Alternativen zu holen
+       wären fünf weitere Anfragen an eine fremde Seite.
+
+       Der zweite: was ein Wechsel mit dem Korb macht — nämlich nichts. Was
+       bestätigt wurde, gehört dem Korb (dieselbe Haltung wie in WB-361 und
+       WB-384), und wer das nicht weiss, traut sich nicht zu wechseln. #}
+    <p class="fussnote">Ein anderes Rezept fragt neu — <strong>was schon im
+      Korb liegt, bleibt liegen</strong>. Zutatenzahl und Kochzeit stehen erst
+      im Rezept selbst; die Suche nennt nur die Arbeitszeit.</p>
+  </form>
   {%- endif %}
 
   {%- if r.zutaten %}

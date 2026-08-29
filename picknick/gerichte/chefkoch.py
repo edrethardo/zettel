@@ -50,6 +50,29 @@ SOURCE = "chefkoch"
 #: die Fixture lesbar bleibt.
 LIMIT = 12
 
+#: Wie viele davon zur WAHL gestellt werden (WB-387) — einschliesslich des
+#: vorausgewählten. Zwölf sind zu viele für ein Telefon, drei zu wenig.
+#: Gemessen an „Lasagne" (2026-08-29, 2.155 Rezepte bei Chefkoch, zwölf in
+#: der Antwort), nach Gewicht sortiert:
+#:
+#:     4.837  Vegetarische Spinat-Gemüse-Lasagne   <- vorausgewählt
+#:     4.723  Julies feine Gemüselasagne
+#:     4.695  Lasagne                              <- die klassische, mit Hack
+#:     4.686  Zucchini-Lasagne
+#:     4.624  Spinatlasagne
+#:     4.593  Béchamel-Hackfleisch-Lasagne
+#:     ------------------------------------------ ab hier nicht angeboten
+#:     4.591  Lasagne Bolognese
+#:     …
+#:
+#: **Die Zahl entscheidet, ob überhaupt beide Lager vorkommen.** Wer
+#: „Lasagne" tippt und Hackfleisch meint, findet bei drei Angeboten nur
+#: Vegetarisches; bei sechs stehen die klassische Lasagne (Platz 3) und eine
+#: Béchamel-Hackfleisch-Lasagne (Platz 6) mit darin. Nach oben ist die
+#: Grenze das Telefon: sechs Zeilen à drei Zahlen stehen unter der
+#: Rezeptkarte, ohne sie zu verdecken.
+ANGEBOT = 6
+
 #: Pause zwischen zwei Anfragen. Ein Gericht kostet zwei — Suche und Detail —
 #: und danach nie wieder eine, weil das Ergebnis zwischengespeichert wird.
 PAUSE_S = 1.5
@@ -182,11 +205,27 @@ def bestes(treffer: list[dict]) -> dict | None:
     """
     if not treffer:
         return None
-    auswahl = treffer
+    return (zur_wahl(treffer) or [None])[0]
+
+
+def zur_wahl(treffer: list[dict], grenze: int | None = None) -> list[dict]:
+    """Die Treffer in der Reihenfolge, in der sie zur Wahl stehen (WB-387).
+
+    Bestgewichtet zuerst — der erste ist damit genau der, den `bestes()`
+    nimmt; das ist keine zweite Rangfolge, sondern dieselbe, nur nicht mehr
+    auf einen Eintrag zusammengestrichen.
+
+    Plus-Rezepte fallen heraus, solange es andere gibt (siehe
+    `PLUS_UEBERGEHEN`): ihre Stimmenzahl ist keine, und was nicht gewählt
+    werden darf, soll auch nicht zur Wahl stehen.
+    """
+    auswahl = list(treffer or [])
     if PLUS_UEBERGEHEN:
-        ohne_plus = [t for t in treffer if not t.get("plus")]
-        auswahl = ohne_plus or treffer
-    return max(auswahl, key=lambda t: (gewicht(t), t.get("votes") or 0))
+        ohne_plus = [t for t in auswahl if not t.get("plus")]
+        auswahl = ohne_plus or auswahl
+    auswahl.sort(key=lambda t: (gewicht(t), t.get("votes") or 0),
+                 reverse=True)
+    return auswahl[:grenze] if grenze else auswahl
 
 
 # --------------------------------------------------------------------------
@@ -384,28 +423,47 @@ def hole(http, gericht: str, *, limit: int = LIMIT, pause_s: float = PAUSE_S,
 
     if pause_s:
         schlafen(pause_s)
+    rezept = hole_detail(http, wahl)
+    # **Die übrigen elf reisen mit** (WB-387). Sie stehen in derselben
+    # Antwort, sie kosten nichts, und bis zu diesem Ticket wurden sie hier
+    # weggeworfen. Wer sie speichert, kann später eine Wahl anbieten, ohne
+    # noch einmal zu suchen.
+    rezept["treffer"] = treffer
+    return rezept
+
+
+def hole_detail(http, wahl: dict) -> dict:
+    """Das Detail zu EINEM bereits vorliegenden Treffer. Genau eine Anfrage.
+
+    `wahl` ist ein Eintrag aus `parse_treffer` — aus der Suche von eben oder
+    aus dem Zwischenspeicher (`dish_treffer`). Damit kostet die Wahl einer
+    Alternative (WB-387) keinen zweiten Suchabruf: die zwölf Treffer liegen
+    schon, geholt werden muss nur, was die Suche nicht mitliefert — Zutaten,
+    Zubereitung, Koch- und Ruhezeit.
+    """
+    rezept_id = str(wahl.get("rezept_id") or "")
+    if not rezept_id:
+        raise ChefkochFehler("Ohne Rezept-ID gibt es nichts zu holen.")
     try:
-        roh = http.get(detail_url(wahl["rezept_id"])).json()
+        roh = http.get(detail_url(rezept_id)).json()
     except Exception as e:                       # noqa: BLE001
-        raise ChefkochFehler(f"Rezept {wahl['rezept_id']} nicht geladen: "
+        raise ChefkochFehler(f"Rezept {rezept_id} nicht geladen: "
                              f"{type(e).__name__}: {e}") from e
     rezept = parse_rezept(roh)
     if not rezept["zutaten"]:
         raise ChefkochFehler(
-            f"Rezept {wahl['rezept_id']} kam ohne Zutaten zurück — "
-            "Format geändert?")
+            f"Rezept {rezept_id} kam ohne Zutaten zurück — Format geändert?")
 
     # Was die Suche besser weiss als das Detail: die Bewertung. Der
     # Detail-Endpunkt liefert sie für manche Rezepte gar nicht (`null`), und
     # sie ist der Grund, warum GENAU DIESES Rezept gewählt wurde — sie gehört
     # deshalb an das gespeicherte Rezept.
-    rezept["rezept_id"] = rezept["rezept_id"] or wahl["rezept_id"]
-    rezept["titel"] = rezept["titel"] or wahl["titel"]
-    rezept["site_url"] = rezept["site_url"] or wahl["site_url"]
+    rezept["rezept_id"] = rezept["rezept_id"] or rezept_id
+    rezept["titel"] = rezept["titel"] or wahl.get("titel") or ""
+    rezept["site_url"] = rezept["site_url"] or wahl.get("site_url")
     if rezept["rating"] is None:
-        rezept["rating"] = wahl["rating"]
-        rezept["votes"] = wahl["votes"]
+        rezept["rating"] = wahl.get("rating")
+        rezept["votes"] = wahl.get("votes") or 0
     rezept["gewicht"] = gewicht(wahl)
-    rezept["n_treffer"] = len(treffer)
     rezept["quelle"] = SOURCE
     return rezept

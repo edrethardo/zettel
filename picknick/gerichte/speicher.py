@@ -11,6 +11,10 @@ Drei Tabellen, drei Aufgaben (die Begründungen stehen am Schema in
 `picknick.db`):
 
 * `dish` — die FRAGE („pho") samt Zustand und Abrufdatum.
+* `dish_treffer` — die ÜBRIGEN Rezepte derselben Suche (WB-387). Chefkoch
+  liefert zwölf in einer Antwort; elf davon wurden bis dahin weggeworfen,
+  obwohl sie nichts kosteten. Sie stehen hier, damit ein Mensch wählen kann,
+  ohne dass noch einmal gesucht wird.
 * `recipe` — die ANTWORT: das Rezept, jetzt mit Zubereitung, Zeiten und
   Herkunft. Dasselbe `recipe` wie die selbst angelegten Rezepte, damit ein
   geholtes Rezept in der Rezeptliste steht und gekocht werden kann.
@@ -224,8 +228,129 @@ def merken(con: sqlite3.Connection, name: str, rezept: dict,
         "     fetched_at = excluded.fetched_at",
         (schluessel(frage), frage, OK, chefkoch.SOURCE, recipe_id, jetzt,
          jetzt))
+    # Die übrigen Treffer derselben Suche (WB-387) — nur wenn welche
+    # mitgekommen sind. Die Wahl einer Alternative holt genau EIN Detail und
+    # bringt keine Trefferliste mit; sie darf die vorhandene nicht löschen.
+    if rezept.get("treffer"):
+        treffer_merken(con, zeile(con, frage)["id"], rezept["treffer"])
     con.commit()
     return recipe_id
+
+
+def treffer_merken(con: sqlite3.Connection, dish_id: int,
+                   treffer: list[dict]) -> int:
+    """Schreibt die Trefferliste einer Suche an das Gericht (WB-387).
+
+    Ersetzt, was dort stand: die Liste ist die ANTWORT auf eine Suche, und
+    nach einem neuen Abruf gilt die neue. Ein Rezept, das inzwischen aus den
+    zwölf herausgefallen ist, soll nicht als Alternative stehen bleiben —
+    angeboten wird, was die Quelle heute liefert.
+
+    Gibt zurück, wie viele Zeilen entstanden sind. Kein `commit`: der
+    Aufrufer schreibt das Rezept im selben Zug.
+    """
+    con.execute("DELETE FROM dish_treffer WHERE dish_id = ?", (dish_id,))
+    n = 0
+    for pos, t in enumerate(treffer or []):
+        if not t.get("rezept_id"):
+            continue
+        cur = con.execute(
+            "INSERT OR IGNORE INTO dish_treffer (dish_id, source_id,"
+            " source_title, source_url, rating, votes, prep_minutes,"
+            " difficulty, plus, gewicht, pos)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (dish_id, str(t["rezept_id"]), t.get("titel") or "",
+             t.get("site_url"), t.get("rating"), t.get("votes"),
+             t.get("prep_minutes"), t.get("difficulty"),
+             1 if t.get("plus") else 0, chefkoch.gewicht(t), pos))
+        n += cur.rowcount or 0
+    return n
+
+
+def treffer(con: sqlite3.Connection, dish_id: int,
+            grenze: int | None = chefkoch.ANGEBOT) -> list[dict]:
+    """Die Rezepte, die zu diesem Gericht zur Wahl stehen (WB-387).
+
+    Bestgewichtet zuerst — dieselbe Reihenfolge wie `chefkoch.zur_wahl`, nur
+    aus der Datenbank statt aus der Antwort. Das erste Element ist damit das
+    vorausgewählte Rezept.
+
+    **Plus-Rezepte stehen nicht drin.** Sie tragen erfundene Stimmenzahlen
+    (`chefkoch.PLUS_UEBERGEHEN`) und werden auch nicht vorausgewählt; was
+    nicht gewählt werden darf, soll auch nicht zur Wahl stehen.
+
+    Was die Suchantwort nicht hergibt — Gesamtzeit und Zutatenzahl —, kommt
+    aus `recipe`, WO ES SCHON GEHOLT WURDE. Der Verbund läuft über die
+    Rezept-ID der Quelle und kostet keine Anfrage: die vorausgewählte Zeile
+    hat diese Zahlen immer, eine nie geholte Alternative hat sie nicht, und
+    dann steht dort nichts statt einer geschätzten Zahl.
+    """
+    # **Die Spaltennamen sind die von `chefkoch.parse_treffer`** (`rezept_id`,
+    # `titel`, `site_url`). Ein gespeicherter Treffer soll aussehen wie ein
+    # frisch geholter — dann nimmt `chefkoch.hole_detail` beide, und es gibt
+    # nicht zwei Gestalten desselben Dings im Projekt.
+    rows = con.execute(
+        "SELECT t.id, t.source_id AS rezept_id, t.source_title AS titel,"
+        "       t.source_url AS site_url, t.rating,"
+        "       t.votes, t.prep_minutes, t.difficulty, t.gewicht, t.pos,"
+        "       r.id AS recipe_id, r.prep_minutes AS r_prep,"
+        "       r.cook_minutes AS r_cook, r.rest_minutes AS r_rest,"
+        "       (SELECT count(*) FROM recipe_ingredient i"
+        "         WHERE i.recipe_id = r.id) AS n_zutaten"
+        "  FROM dish_treffer t"
+        "  LEFT JOIN recipe r ON r.source = ? AND r.source_id = t.source_id"
+        " WHERE t.dish_id = ? AND t.plus = 0"
+        " ORDER BY t.gewicht DESC, t.votes DESC, t.pos",
+        (chefkoch.SOURCE, dish_id)).fetchall()
+    liste = [dict(r) for r in rows]
+    return liste[:grenze] if grenze else liste
+
+
+def angeboten(con: sqlite3.Connection, dish_id: int, source_id: str,
+              grenze: int | None = chefkoch.ANGEBOT) -> dict | None:
+    """Der Treffer zu dieser Rezept-ID — aber nur, wenn er angeboten WURDE.
+
+    Dieselbe Zusicherung wie bei den Produkt-IDs in `plan.choose` und bei den
+    Sorten in `oberbegriffe.gewaehlte`, nur für dieses Formular: gewählt
+    werden kann, was vorlag. Eine ID aus einem von Hand gebauten Formular
+    fällt hier weg, statt eine fremde Seite nach einer beliebigen Zahl zu
+    fragen.
+    """
+    gesucht = str(source_id or "").strip()
+    if not gesucht:
+        return None
+    return next((t for t in treffer(con, dish_id, grenze)
+                 if t["rezept_id"] == gesucht), None)
+
+
+def rezept_zur_quelle(con: sqlite3.Connection, source_id: str):
+    """Das gespeicherte Rezept zu einer Rezept-ID der Quelle, oder `None`.
+
+    Der Weg an der Quelle vorbei (WB-387): wer zwischen zwei Rezepten hin und
+    her wechselt, soll beim Zurückwechseln keine Anfrage kosten. Geholt wurde
+    es schon einmal, und ein Rezept ändert sich nicht.
+    """
+    return con.execute(
+        "SELECT id, name FROM recipe WHERE source = ? AND source_id = ?",
+        (chefkoch.SOURCE, str(source_id or ""))).fetchone()
+
+
+def zeigt_auf(con: sqlite3.Connection, name: str, recipe_id: int,
+              uhr=time.time) -> None:
+    """Lässt ein Gericht auf ein anderes, bereits geholtes Rezept zeigen.
+
+    Nur der Verweis ändert sich — die Trefferliste bleibt, wie sie ist, und
+    das Rezept, das vorher dranhing, bleibt in der Sammlung stehen. Es ist
+    dieselbe Haltung wie bei den Zutaten in `merken`: was schon da ist,
+    gehört dem, der es hat.
+    """
+    jetzt = _jetzt(uhr)
+    frage = " ".join((name or "").split())
+    con.execute(
+        "UPDATE dish SET status = ?, recipe_id = ?, error = NULL,"
+        "                fetched_at = ? WHERE name = ?",
+        (OK, int(recipe_id), jetzt, schluessel(frage)))
+    con.commit()
 
 
 def zutaten(con: sqlite3.Connection, recipe_id: int) -> list[dict]:
@@ -274,6 +399,25 @@ def bereit(con: sqlite3.Connection, uhr=time.time) -> list[dict]:
         f"{_DISH_SQL} WHERE status = ? AND recipe_id IS NOT NULL"
         " ORDER BY length(query) DESC, id", (OK,)).fetchall()
     return [dict(r) for r in rows if frisch(r, uhr)]
+
+
+def ohne_treffer(con: sqlite3.Connection) -> list[dict]:
+    """Geholte Gerichte, zu denen keine Trefferliste mitgeschrieben wurde.
+
+    Der Altbestand von WB-387: alles, was vor diesem Ticket geholt wurde, hat
+    ein Rezept und keine Alternativen — die elf anderen wurden damals
+    weggeworfen, und aus einem gespeicherten Rezept lassen sie sich nicht
+    zurückgewinnen. Nachtragen kann sie nur ein neuer Abruf, und der gehört
+    nicht in eine Migration: er geht ins Netz.
+
+    Diese Liste ist deshalb das, was `lauf --ohne-treffer` von Hand
+    nachholt — mit `PAUSE_S` zwischen den Gerichten, wie jeder andere Lauf.
+    """
+    rows = con.execute(
+        f"{_DISH_SQL} WHERE status = ? AND recipe_id IS NOT NULL"
+        "   AND id NOT IN (SELECT dish_id FROM dish_treffer)"
+        " ORDER BY id", (OK,)).fetchall()
+    return [dict(r) for r in rows]
 
 
 def offene(con: sqlite3.Connection) -> list[dict]:

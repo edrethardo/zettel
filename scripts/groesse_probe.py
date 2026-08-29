@@ -24,7 +24,8 @@ so ist zu sehen, welcher Hebel wie viel bringt.
 
 `--rezept` hängt einen echten Chefkoch-Zug hinten an (WB-383): Pho Bo, 23
 Zutaten, 90 + 480 Minuten, 3.924 Zeichen Zubereitung. Er kostet die
-Rezeptkarte, und genau die soll messbar sein. **Ohne die Schalter misst die
+Rezeptkarte — samt der Auswahl aus sechs Rezepten, die seit WB-387 darin
+steht —, und genau die soll messbar sein. **Ohne die Schalter misst die
 Probe unverändert das, was WB-372 gemessen hat** — sonst wären die Zahlen von
 damals nicht mehr vergleichbar. Das Rezept kommt aus derselben aufgezeichneten
 Antwort wie in der Testsuite; auch diese Probe geht nicht ins Netz.
@@ -134,6 +135,11 @@ def rezeptzug(pfad: Path) -> None:
                     schreib=lambda _: None)
     recipe_id = con.execute(
         "SELECT id FROM recipe ORDER BY id DESC LIMIT 1").fetchone()["id"]
+    # Das Gericht dazu (WB-387): an ihm hängen die Alternativen, und ohne
+    # diesen Verweis misst die Probe eine Karte ohne sie — also nicht die,
+    # die der Shop zeigt.
+    dish_id = con.execute("SELECT id FROM dish ORDER BY id DESC"
+                          " LIMIT 1").fetchone()["id"]
     korb = orders.warenkorb(con)
     produkte = [r["id"] for r in
                 con.execute("SELECT id FROM product ORDER BY id").fetchall()]
@@ -146,7 +152,7 @@ def rezeptzug(pfad: Path) -> None:
         vorschlagsliste.vorschlag(con, mid, product_id=produkte[i],
                                   qty=1, search_term=f"Zutat {i}",
                                   rang=-1.5, dish_item=1)
-    zugrezept.merken(con, mid, [recipe_id])
+    zugrezept.merken(con, mid, [recipe_id], [dish_id])
     con.commit()
     con.close()
 

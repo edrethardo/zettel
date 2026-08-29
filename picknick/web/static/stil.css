@@ -847,6 +847,44 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .zugrezept .rezeptzutaten .menge { flex: 0 0 7ch; }
 .zugrezept .fussnote { margin: 0; }
 
+/* Die anderen Rezepte derselben Suche (WB-387). Sie stehen IN der Karte, vor
+   der Zutatenliste — die Wahl kommt vor dem Lesen, sonst liest man die
+   Zutaten eines Rezepts, das man gar nicht meinte.
+
+   Eine Zeile ist ein Knopf und nicht eine Zeile mit einem Knopf: der ganze
+   Streifen ist das Ziel, mit `--tap` als Untergrenze. Dieselbe Bauart wie
+   `.sortenliste` — das ist dieselbe Handlung eine Ebene höher, und zwei
+   Gestalten dafür wären zwei Sachen zum Lernen. */
+.andere { margin: 0 0 10px; }
+.andere-kopf { margin: 0 0 6px; font-size: 14px; color: var(--gedaempft); }
+.andereliste { list-style: none; margin: 0 0 6px; padding: 0; }
+.andereliste > li { margin: 6px 0; }
+.andereliste .wahl {
+  display: flex; flex-direction: column; gap: 2px; width: 100%;
+  min-height: var(--tap); padding: 6px 12px; text-align: left;
+  background: var(--karte-tief); color: var(--tinte);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  font: inherit; cursor: pointer;
+}
+.andereliste button.wahl:active { transform: scale(0.99); }
+/* Das vorgeschlagene steht mit in der Liste, damit sichtbar ist, wogegen
+   gewählt wird — aber ohne Knopf und ohne Griff: es ist schon da. */
+.andereliste .ist .wahl {
+  background: transparent; border-style: dashed; cursor: default;
+}
+.andereliste .name { font-size: 15px; font-weight: 600; }
+.andereliste .marke {
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--karte); color: var(--gedaempft); white-space: nowrap;
+}
+.andereliste .zahlen {
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  font-size: 13px; color: var(--gedaempft);
+}
+.andereliste .zahlen > span::after { content: " ·"; color: var(--linie); }
+.andereliste .zahlen > span:last-child::after { content: ""; }
+.andere .fussnote { margin: 0; }
+
 /* Der einzige eingeklappte Teil. Die Schritte werden beim Aufklappen
    NACHGELADEN (WB-383) — ein `<details>` versteckt sonst nur, was trotzdem
    übertragen wurde, und Pho Bos Zubereitung sind 3.924 Zeichen. */

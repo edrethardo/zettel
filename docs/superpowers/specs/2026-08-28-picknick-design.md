@@ -118,7 +118,7 @@ sind unverändert.
 
 **Abweichung, nachträglich (Stand 2026-08-29):** Das Schema oben ist der
 Entwurf vom ersten Tag und beschreibt den Kern richtig — aber es ist nicht
-mehr vollständig. Sieben Tabellen und vierundzwanzig Spalten sind seither
+mehr vollständig. Neun Tabellen und fünfundzwanzig Spalten sind seither
 dazugekommen, jede in einem eigenen Ticket begründet. **Die Wahrheit steht in
 `picknick/db.py`**; die folgende Liste sagt nur, wo etwas herkam, damit
 niemand den Entwurf für den Stand hält.
@@ -128,7 +128,9 @@ niemand den Entwurf für den Stand hält.
 | `chat_kandidat` |  | die Alternativen, die die Suche vorlegte, statt nur die gewählte |
 | `chat_sorte` |  | die Sorten eines Oberbegriffs („Aufschnitt" → Salami, Kochschinken …) |
 | `chat_entwurf` |  | der Rezeptentwurf eines Chat-Zugs, bis zum Abschicken |
+| `chat_rezept` |  | welches Rezept ein Chat-Zug gezeigt hat |
 | `dish` |  | der Zwischenspeicher für geholte Gerichte samt Fristen |
+| `dish_treffer` |  | die übrigen elf Rezepte derselben Suche, damit ein Mensch wählen kann |
 | `recipe_ingredient` |  | die Zutatenliste der Quelle, getrennt von den verknüpften Produkten |
 | `receipt`, `receipt_item` |  | die Kassenbons aus der Rewe-/Lidl-App |
 | `order_item.need_amount/need_unit` |  | die benötigte Menge neben der Packungszahl |
@@ -141,6 +143,7 @@ niemand den Entwurf für den Stand hält.
 | `chat_suggestion.dish_item` |  | gehört zum Gericht, herausgenommen, oder gar nicht dazu |
 | `recipe_item.amount/unit` |  | die Zutatenmenge, aus der die Packungszahl entsteht |
 | `recipe.*` (zwölf Spalten) |  | Zubereitung, Zeiten, Herkunft und Bewertung von Chefkoch |
+| `chat_rezept.dish_id` |  | welches Gericht das Rezept eines Zugs vertrat — daran hängen die Alternativen |
 
 **Warum das hier steht und nicht bloss im Code:** Eine Spec, die von sich
 behauptet vollständig zu sein und es nicht ist, ist schädlicher als eine, die

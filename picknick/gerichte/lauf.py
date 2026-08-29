@@ -2,6 +2,7 @@
 
     .venv/bin/python -m picknick.gerichte.lauf --gericht "pho"
     .venv/bin/python -m picknick.gerichte.lauf --alle
+    .venv/bin/python -m picknick.gerichte.lauf --ohne-treffer
 
 Zwei Eingänge in dieselbe Bahn, und der Unterschied ist nur die Frist:
 
@@ -104,6 +105,49 @@ def hole_jetzt(con, gericht: str, *,
             http.close()
 
 
+def waehle_jetzt(con, gericht: str, treffer: dict, *,
+                 frist_s: float = chefkoch.TIMEOUT_SYNC_S, http=None,
+                 schreib=lambda _: None) -> str:
+    """Ein Mensch hat ein ANDERES Rezept gewählt (WB-387). Eine Anfrage.
+
+    `treffer` ist die Zeile aus `dish_treffer`, also ein Rezept aus genau der
+    Suchantwort, die dieses Gericht ohnehin schon gekostet hat. **Es wird
+    deshalb nicht noch einmal gesucht** — nur das Detail des gewählten
+    Rezepts fehlt (Zutaten, Zubereitung, Koch- und Ruhezeit), und das ist
+    eine Anfrage statt zweier.
+
+    Danach zeigt `dish` auf das gewählte Rezept, und der nächste Zug zu
+    diesem Gericht nimmt es wie jedes andere — kein zweiter Mechanismus
+    daneben.
+
+    Gibt denselben Zustand zurück wie `hole_eines` (`ok`, `fehler`) und wirft
+    aus demselben Grund nicht. `leer` gibt es hier nicht: das Rezept liegt
+    vor, gefragt wird nur nach seinem Detail.
+    """
+    eigener_client = http is None
+    if eigener_client:
+        import httpx
+        http = httpx.Client(timeout=frist_s,
+                            headers={"User-Agent": chefkoch.USER_AGENT})
+    try:
+        rezept = chefkoch.hole_detail(http, treffer)
+    except chefkoch.ChefkochFehler as e:
+        # **Der Zwischenspeicher wird NICHT auf `fehler` gesetzt.** Anders als
+        # beim ersten Abruf steht hier ein gültiges Rezept in `dish`; es
+        # wegen einer misslungenen Wahl zu entwerten hiesse, dem Nutzer für
+        # einen Fehlgriff der Quelle auch noch das zu nehmen, was er schon
+        # hatte.
+        schreib(f"fehler: {gericht} — {e}")
+        return speicher.FEHLER
+    finally:
+        if eigener_client:
+            http.close()
+    recipe_id = speicher.merken(con, gericht, rezept)
+    schreib(f"ok: {gericht} -> „{rezept['titel']}“ "
+            f"({len(rezept['zutaten'])} Zutaten) -> recipe {recipe_id}")
+    return speicher.OK
+
+
 def lauf(db_path: str, gerichte, *, http=None, pause_s: float = chefkoch.PAUSE_S,
          schreib=print) -> dict:
     """Holt eine Reihe von Gerichten. Gibt eine Zusammenfassung zurück.
@@ -147,20 +191,34 @@ def main(argv=None) -> int:
                     help="Gerichtsname; mehrfach erlaubt")
     ap.add_argument("--alle", action="store_true",
                     help="alle offenen Wünsche aus `dish` abarbeiten")
+    ap.add_argument("--ohne-treffer", action="store_true",
+                    dest="ohne_treffer",
+                    help="Gerichte neu holen, zu denen keine Trefferliste "
+                         "gespeichert ist (Altbestand vor WB-387)")
     ap.add_argument("--pause", type=float, default=chefkoch.PAUSE_S)
     args = ap.parse_args(argv)
 
     gerichte = list(args.gericht)
-    if args.alle:
+    if args.alle or args.ohne_treffer:
         con = db.connect(args.db)
         try:
-            gerichte += [w["query"] for w in speicher.offene(con)
+            wuensche = []
+            if args.alle:
+                wuensche += speicher.offene(con)
+            if args.ohne_treffer:
+                # Der Altbestand von WB-387 (siehe `speicher.ohne_treffer`).
+                # **Das holt bestehende Rezepte neu**, und dabei kann ein
+                # besser bewertetes gewinnen — genau das, was nach 90 Tagen
+                # ohnehin geschieht. Deshalb steht es hinter einem eigenen
+                # Schalter und nicht in `--alle`.
+                wuensche += speicher.ohne_treffer(con)
+            gerichte += [w["query"] for w in wuensche
                          if w["query"] not in gerichte]
         finally:
             con.close()
     if not gerichte:
-        print("nichts zu holen — --gericht oder --alle angeben",
-              file=sys.stderr)
+        print("nichts zu holen — --gericht, --alle oder --ohne-treffer "
+              "angeben", file=sys.stderr)
         return 2
 
     zaehler = lauf(args.db, gerichte, pause_s=args.pause)
