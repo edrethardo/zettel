@@ -742,7 +742,14 @@ class Chat:
         begriffe = self._zum_gericht(begriffe, gerichte_daten)
 
         aufgaben = self._suchen(con, begriffe)
-        auswahl, choose_kaputt = self._waehlen(text, aufgaben)
+        # **Ohne den Satz** (WB-386). Auf dem Modellweg ist er der einzige
+        # Kontext, den Stufe 3 hat; hier stammen die Begriffe aus einem
+        # Rezept, und der Satz ist nur noch das Wort, mit dem jemand danach
+        # gefragt hat. Passt das geholte Rezept dazu nicht — „Salat" holt
+        # „KFC Coleslaw" —, kostet er die ganze Zutatenliste: das Modell
+        # prüft dann jeden Kandidaten gegen den Satz statt gegen den Begriff
+        # und lehnt auch Milch und Butter ab.
+        auswahl, choose_kaputt = self._waehlen("", aufgaben)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
 
         erstes = quellen[0]
@@ -1246,6 +1253,11 @@ class Chat:
         das Modell deshalb gar nichts wählen (siehe
         `plan.SYSTEM_CHOOSE_SORTE`). Die Stufe bleibt dieselbe, samt Span und
         Prüfung gegen die Vorlage.
+
+        **Ein leerer `text` lässt die Anfragezeile im Prompt weg** (WB-386).
+        Der Rezeptweg nutzt das; die Begründung steht an seiner Aufrufstelle.
+        Die Zusicherung der Stufe ist davon unberührt — gewählt wird nach wie
+        vor nur aus den vorgelegten Kandidaten.
         """
         try:
             with obs.stufe("plan.choose"):
