@@ -323,3 +323,138 @@ derselbe Zug noch einmal als bewerteter Dokumenten-Trace.
   mit frischem Projektnamen neu starten (`Picknick Demo 2`, …) — oder die
   alten Takes als ältere Zeilen unter dem neuen akzeptieren, der neueste
   steht oben.
+
+## Take A liegt vorproduziert (WB-396)
+
+Die **Bildschirmteile (Shots 1–7) sind aufgenommen** — es fehlen nur noch die
+zwei Teile, die niemand ausser Aaron liefern kann: Shot 0 (Gesicht) und das
+Voice-Over. Aufgenommen wurde am 29.08.2026 nicht der echte Schirm, sondern
+ein verschachtelter: `Xephyr :78 -screen 1920x1080 -ac` auf `:1`. Der Grund ist
+nicht Bequemlichkeit — auf `:1` liegt die angemeldete GNOME-Sitzung mit
+Aarons eigenen Fenstern, und die gehört nicht in ein Contest-Video. Auf `:78`
+steht nur, was für die Kamera hingestellt wurde.
+
+Was in der Aufnahme steht: der Satz wird getippt und abgeschickt, der Zug
+läuft **27 s** (gemessen: abgeschickt 20:42:57, Antwort in der Datenbank
+20:43:24), der GPU-Streifen springt sichtbar auf **100 % / 276,6 W**, die
+Spans schlagen bei **T+13…15 s** in einem Schub ins Phoenix-Fenster, die
+Portionen gehen 3 → 6 und die Mengen rechnen sich sichtbar neu (600 g → 1200 g,
+2 × → 3 ×), zwei „Ja", Korb, Bestellung, Pick-Liste, und am Ende der Trace mit
+den bewerteten RETRIEVER-Dokumenten und `picknick.rejected = 0`.
+
+**Wo es liegt** (Scratchpad der Sitzung, bewusst nicht im Repo — eine
+Videodatei gehört nicht ungefragt in ein Repo, das gerade
+veröffentlichungsfähig gemacht wurde), zusätzlich als Kopie unter
+`~/picknick-video/`:
+
+| Datei | Was |
+|---|---|
+| `picknick_shots_1-7_roh.mkv` | die ungekürzte Aufnahme am Stück, ohne Ton |
+| `picknick_shots_1-7_schnitt.mp4` | nach Drehbuch geschnitten, mit 5 s schwarzem Vorlauf für Shot 0 |
+| `picknick_shots_1-7.srt` | Untertitel (Spalte aus der Shot-Tabelle), nicht eingebrannt |
+
+**Neu erzeugen** — drei Aufrufe, in dieser Reihenfolge:
+
+```bash
+bash aufnahme.sh 250     # startet ffmpeg (feste Länge!) und fährt dreh.py
+python3 schnitt.py       # baut Schnittfassung + .srt aus den Zeitmarken
+```
+
+`dreh.py` fährt den Durchlauf mit `xdotool`: Tippen Zeichen für Zeichen mit
+schwankendem Takt, Mausbewegung auf einem Weg mit Anlauf und Abbremsen. Das
+ist kein Selbstzweck — ein Video, in dem der Zeiger springt und Text auf einen
+Schlag im Feld steht, sieht nach Automat aus und nicht nach jemandem, der
+einkauft.
+
+### Zwei Rezepte im Bild — und weder „vegan" sagen noch zeigen
+
+Der Nutzer will in Shot 3 sagen können „für jeden ist etwas dabei". Dafür muss
+die **Alternativenliste aus WB-387 offen und lesbar im Bild stehen** — nicht
+nur vorhanden sein. Sie steht ohnehin unter der Rezeptkarte; der Schnitt muss
+den Moment nur halten, in dem beide Zeilen zu lesen sind:
+
+    4,85 (2125 Stimmen)  Vegetarische Spinat-Gemüse-Lasagne …   <- Fokus, vorgewählt
+    4,70 (5008 Stimmen)  Lasagne                                <- der Klassiker
+    4,61 (1267 Stimmen)  Béchamel-Hackfleisch-Lasagne           <- sagt „Hackfleisch" im Namen
+
+**Das Spitzenrezept ist vegetarisch, nicht vegan.** Untertitel und Voice-Over
+dürfen „vegan" nicht sagen: vegane Lasagne-Rezepte gibt es bei Chefkoch zwar,
+aber sämtlich mit **0 Stimmen** — sie taugen weder als „sehr gut bewertet",
+noch würde die Gewichtung sie je vorwählen. Ein Video, das „vegan" behauptet
+und ein Rezept mit Frischkäse und Sahne zeigt, verliert genau die
+Glaubwürdigkeit, um die es in diesem Beitrag geht.
+
+### Was beim Nachdrehen schiefgeht — vier Fallen, alle bezahlt
+
+* **Abschicken speichert das Rezept.** Nach einem vollen Durchlauf steht in
+  `recipe_item`, was im Korb lag; der nächste Zug erkennt „Lasagne" als
+  gespeichertes Rezept und nimmt den **Gespeichert-Pfad: 66 ms, ein einziger
+  Span, keine Katalogsuchen**. Das Video wäre inhaltlich leer — kein Schub im
+  Phoenix-Fenster, keine bewerteten Dokumente. Der Reset zwischen zwei Takes
+  muss `recipe_item` deshalb mitnehmen. **Nicht löschen** dagegen `recipe`,
+  `recipe_ingredient`, `dish` und `dish_treffer`: das ist der Gericht-Cache,
+  und ohne ihn geht der Zug wieder über Chefkoch (37 s statt 29 s) oder fällt
+  ganz auf den Modell-Pfad. Beide Hälften gehören zusammen — v1 ist in die
+  eine Hälfte getappt, WB-396 in die andere.
+* **`ffmpeg` mit fester Länge (`-t`) aufnehmen, nicht abbrechen.** Ein
+  `kill -INT` erwischt ihn nicht zuverlässig: beim ersten Versuch lief er
+  danach 23 Minuten weiter und rechnete in den nächsten Take hinein, und die
+  MP4 blieb ohne `moov`-Atom liegen — **unlesbar, die ganze Aufnahme war
+  weg**. MKV verträgt einen Abbruch, MP4 nicht.
+* **Xephyr holt sich das Tastaturlayout des Elternschirms zurück.** Einmal
+  `setxkbmap de` gesetzt, stand eine Stunde später wieder `us` — und
+  `xdotool type` liess das „ü" in „für" stillschweigend weg. Im Bild stand
+  „alles fr Lasagne". Das Layout gehört unmittelbar vor das Tippen.
+* **Der Portionen-Knopf bricht ab ~540 px Fensterbreite nicht mehr um.**
+  Beschriftung, Zahlenfeld und „Mengen neu rechnen" stehen dann auf **einer**
+  Zeile. Wer die Abstände an einem schmaleren Fenster misst, greift 50 px
+  daneben.
+
+### Und die Warnung, die mehr wert ist als die vier Fallen
+
+**Eine grüne Protokollzeile beweist hier nichts.** Take 3 schrieb
+„Portionen 3 → 6" mit, obwohl der Klick danebengegangen war und die Mengen bei
+3 Portionen blieben; gesehen wurde es erst beim Ansehen des fertigen Videos.
+Prüf nach jedem entscheidenden Schritt die **Wirkung**, nicht den Klick —
+`chat_rezept.portionen == 6`, `need_amount == 1200`, `order_item.missing_at`
+gesetzt. Die Datenbank weiss es, das Bild ist Auslegung.
+
+Vier Stellen, an denen ein Klickpunkt aus einem Bild stillschweigend falsch
+wird — alle im Trockenlauf ohne Modell aufgelaufen und dort behoben:
+
+1. **Firefox rollt weich.** Ein Bild, das unmittelbar nach einem Radklick
+   entsteht, zeigt die Seite noch in Bewegung; der daraus gerechnete Punkt
+   sitzt ein paar Pixel daneben. Vor jedem Griff warten, bis zwei Bilder
+   gleich sind.
+2. **Ist der Anfang der Zutatenliste schon aus dem Bild gerollt**, liefert der
+   Anker eine Zeile aus der Mitte — und der Griff landet 200 px zu hoch, auf
+   einer Zutat statt auf dem Portionsfeld. Der Anker taugt nur, wenn die
+   erste Zeile weit genug unten steht.
+3. **Die Freitextzeile ist kompakt gebaut**: ihre „Ja"-Pille verschmilzt mit
+   dem Rest der Zeile zu 127 px Breite statt 44. Eine Formschranke, die auf
+   44 × 44 besteht, wirft genau die Zeile weg, um die es geht.
+4. **„Bis ans Ende scrollen" mit fester Klickzahl erreicht das Ende nicht** —
+   die Liste ist mit sechs Portionen länger. Rollen, bis das Bild stillsteht.
+   Und am Ende steht die letzte Zeile oft schon im Bild: dann darf nicht
+   weiter hochgerollt werden, sonst wandert sie unten wieder hinaus.
+
+Dazu kommt eine Eigenheit dieser Oberfläche, die jeden Bilderkenner in die
+Irre führt: **die „Ja"-Pille, die eigene Chatzeile, die „im Korb"-Marke und
+der obere Rand jeder Vorschlagskarte haben dieselbe helle Farbe.** Sie
+unterscheiden sich nur in der Form (die Pille ist ~44 × 44 px, der Rest
+170–220 px breit oder unter 30 px hoch). In WB-396 haben sich daraus **zwei
+Fehler gegenseitig verdeckt**: der Erkenner meldete „Antwort da", weil er auf
+die eigene Chatzeile hereinfiel — was zufällig zur richtigen Zeit geschah; die
+Härtung gegen diesen Fehlgriff schloss dann die letzte Pille gleich mit aus,
+und das zweite „Ja" landete auf der Butter statt auf dem Klopapier. Wer hier
+ein Skript baut: such nach Form, nicht nach Farbe, und **frag für „ist die
+Antwort da?" den Server** (`chat_message`) statt die Pixel.
+
+**Der Trockenlauf, der das alles aufgedeckt hat, kostet keine Box.** Ein
+gespeichertes Rezept (Zeilen in `recipe_item`) schickt den Zug über den
+Gespeichert-Pfad: 66 ms, kein Modell. Eine Zeile davon als `free_text`
+angelegt, und die Choreografie lässt sich vollständig üben — Portionen,
+beide „Ja", Korb, Bestellung, Pick-Liste, „gab's nicht" — bis jeder Schritt
+seine Wirkung meldet. Erst dann lohnt es, die Box für den echten Take zu
+belegen. (Danach die Prüfstand-Zeilen aus `recipe_item` wieder löschen,
+sonst nimmt der Kamera-Zug genau diesen Pfad.)
