@@ -987,6 +987,9 @@ def test_kein_rezept_daraus_und_wieder_zurueck(con, db_pfad, tmp_path):
     # zusammengesucht, sondern nie weggeworfen.
     assert 'value="Spaghetti Bolognese"' in stueck
     assert "Rinderhackfleisch" in stueck.split('class="entwurf"', 1)[1]
-    # Bestätigt ist noch nichts, und die Vorlage sagt das statt ein Rezept zu
-    # versprechen, das so nicht entstünde.
-    assert "keine bestätigte Zutat" in stueck
+    # Bestätigt ist noch nichts, und die Vorlage verspricht auch kein Rezept,
+    # das so nicht entstünde. Sie sagt es aber als Anfang und nicht als
+    # Fehlschlag (WB-378): entschieden wurde hier noch gar nichts.
+    assert "Beim Abschicken wird daraus das Rezept" not in stueck
+    assert "So fängt das Rezept" in stueck
+    assert "so entsteht kein Rezept" not in stueck

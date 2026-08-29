@@ -739,6 +739,22 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }
 
+/* Rückmeldung an JEDEM Tipp im Chat (WB-378), nicht nur am Sendefeld. Die
+   Entscheidungsknöpfe stehen mitten in einer Liste von 150 Zeilen; ein
+   Indikator am Seitenfuss ist beim Tippen längst aus dem Bild, und ohne
+   sichtbares Warten tippt man ein zweites Mal.
+
+   Blass wird deshalb genau das Stück, das gleich getauscht wird — die Zeile
+   bei „Ja"/„Nein", der ganze Zug bei allem, was mehrere Zeilen ändert. Dazu
+   `pointer-events: none`: `hx-disabled-elt` sperrt nur den einen Knopf, aber
+   während ein Zug unterwegs ist, sind auch die anderen Knöpfe darin ein
+   Rennen gegen die Antwort. Beides gilt nur für die Dauer der Anfrage. */
+.zeile.htmx-request, .zug.htmx-request { opacity: 0.5; pointer-events: none; }
+
+/* Der Weg aus dem Fehlerzustand von Hand (WB-378) — er sitzt unter dem Band
+   und hängt daran, statt eine eigene Zeile aufzumachen. */
+.zustand-nachsehen { margin: -8px 0 var(--rand); }
+
 /* Rückmeldung auf der Pick-Liste (WB-373). Sie klebt unten am Bildrand, weil
    im Laden gescrollt wird und der Daumen unten ist — eine Meldung am
    Seitenkopf ist genau dann aus dem Bild, wenn ein Haken schiefgeht. Farben

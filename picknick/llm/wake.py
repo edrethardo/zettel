@@ -87,10 +87,32 @@ class Zustand:
 
     @property
     def rest_s(self) -> float | None:
-        """Grobe Restzeit für den Zähler. Nie negativ, gern zu optimistisch."""
+        """Grobe Restzeit für den Zähler — `None`, sobald sie abgelaufen ist.
+
+        Bis WB-378 stand hier ein `max(0.0, …)`, und damit blieb nach 90 s
+        unbegrenzt „noch ~0 s" stehen. Ein Zähler, der auf null klemmt, sagt
+        weniger als gar keiner: er behauptet, es sei gleich soweit, während
+        die Nutzerin längst länger wartet als angekündigt. Ist die Erwartung
+        durch, gibt es keine Restzeit mehr, sondern einen Satz — siehe
+        `ueberfaellig`.
+
+        Auch die letzte Sekunde zählt schon nicht mehr: `~0 s` wäre wieder
+        genau die Auskunft, die keine ist.
+        """
         if self.seit_s is None:
             return None
-        return max(0.0, self.erwartet_s - self.seit_s)
+        rest = self.erwartet_s - self.seit_s
+        return rest if rest >= 1.0 else None
+
+    @property
+    def ueberfaellig(self) -> bool:
+        """Es läuft, dauert aber länger als angekündigt.
+
+        Der Unterschied zu „kein Zähler": `rest_s` ist in beiden Fällen
+        `None`, und die Oberfläche muss „noch ~40 s", „es dauert länger als
+        sonst" und „gar keine Angabe" auseinanderhalten können.
+        """
+        return self.seit_s is not None and self.rest_s is None
 
 
 @dataclass(frozen=True)

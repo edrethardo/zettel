@@ -388,6 +388,32 @@ def test_zaehler_laeuft_mit_der_zeit(weckbefehl):
     uhr.weiter(80)
     z = w.zustand()
     assert z.seit_s == 80.0 and z.rest_s == 10.0
+    assert not z.ueberfaellig
+
+
+def test_abgelaufener_zaehler_klemmt_nicht_bei_null(weckbefehl):
+    """WB-378: `max(0.0, …)` liess unbegrenzt „noch ~0 s" stehen.
+
+    Eine Restzeit von null ist keine Auskunft, sondern ein stehengebliebener
+    Zähler — und er behauptet, es sei gleich soweit, während sie längst
+    doppelt so lange wartet wie angekündigt. Danach gibt es keine Restzeit
+    mehr, sondern `ueberfaellig`, und die Oberfläche schreibt einen Satz.
+    """
+    uhr = Uhr()
+    w = wecker(stille_box, FakeStarter(), uhr, weckbefehl=weckbefehl)
+    w.zustand()
+    uhr.weiter(wake.WECKDAUER_S + 60)
+    z = w.zustand()
+    assert z.zustand == wake.WACHT_AUF
+    assert z.rest_s is None
+    assert z.ueberfaellig
+
+
+def test_ohne_zaehler_ist_nichts_ueberfaellig():
+    """`rest_s is None` allein reicht der Vorlage nicht als Unterscheidung."""
+    z = wake.Zustand(wake.NICHT_ERREICHBAR, grund="kein Weckbefehl")
+    assert z.seit_s is None and z.rest_s is None
+    assert not z.ueberfaellig
 
 
 def test_ladende_box_braucht_keinen_weckruf(weckbefehl):

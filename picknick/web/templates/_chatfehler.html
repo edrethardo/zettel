@@ -5,7 +5,12 @@
    den ganzen Chat tauscht: ohne sie bliebe die Begründung eines
    fehlgeschlagenen Tipps unsichtbar, und der Knopf sähe aus, als täte er
    nichts. Die Hülle steht auch dann da, wenn es nichts zu sagen gibt — ein
-   Element, das es nur im Fehlerfall gibt, lässt sich nicht überschreiben. #}
+   Element, das es nur im Fehlerfall gibt, lässt sich nicht überschreiben.
+
+   Seit WB-378 gibt es ZWEI Hüllen — oben am Chat und unten am Eingabefeld,
+   weil zwischen beiden der ganze Verlauf liegt. `leise` unterdrückt das
+   `role="status"` der oberen: derselbe Satz zweimal vorgelesen ist keine
+   doppelte Auskunft. Angesagt wird die untere, denn dort steht der Knopf. #}
 {% if chat_fehler %}
-<p class="fehler" role="status">{{ chat_fehler }}</p>
+<p class="fehler"{% if not leise %} role="status"{% endif %}>{{ chat_fehler }}</p>
 {% endif %}

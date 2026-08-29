@@ -17,7 +17,13 @@
 <section class="chat" id="chat">
   <h2>Chat</h2>
 
-  <div id="chat-fehler">{% include "_chatfehler.html" %}</div>
+  {# Die Meldung steht ZWEIMAL, und das ist Absicht (WB-378). Hier oben, weil
+     der Chat hier anfängt — und gleich noch einmal über dem Eingabefeld, das
+     im Verlauf einer echten Sitzung siebentausend Zeilen weiter unten steht.
+     Wer unten „Fragen" tippt, sieht diese hier nie. #}
+  <div id="chat-fehler">
+    {% with leise = true %}{% include "_chatfehler.html" %}{% endwith %}
+  </div>
 
   {% if verlauf_geleert %}
   {# Was gelöscht wurde, und was ausdrücklich nicht (WB-372). Der zweite Satz
@@ -40,7 +46,8 @@
      erst gerendert, und der Knopf holt sie. #}
   <form class="aeltere" method="get" action="/warenkorb"
         hx-get="/warenkorb/chat?verlauf=alles"
-        hx-target="#chat" hx-swap="outerHTML">
+        hx-target="#chat" hx-swap="outerHTML"
+        hx-disabled-elt="find button">
     <input type="hidden" name="verlauf" value="alles">
     <button class="mini" type="submit">{{ aeltere.zuege }} {{ "älterer Zug" if aeltere.zuege == 1 else "ältere Züge" }} —
       {{ aeltere.vorschlaege }} {{ "Vorschlag" if aeltere.vorschlaege == 1 else "Vorschläge" }},
@@ -76,12 +83,14 @@
     <div class="sammel">
       <form method="post" action="/warenkorb/chat/leeren?ja=1"
             hx-post="/warenkorb/chat/leeren?ja=1"
-            hx-target="#chat" hx-swap="outerHTML">
+            hx-target="#chat" hx-swap="outerHTML"
+            hx-disabled-elt="find button">
         <button class="mini nein" type="submit">Ja, Verlauf löschen</button>
       </form>
       <form method="post" action="/warenkorb/chat/leeren?ja=0"
             hx-post="/warenkorb/chat/leeren?ja=0"
-            hx-target="#chat" hx-swap="outerHTML">
+            hx-target="#chat" hx-swap="outerHTML"
+            hx-disabled-elt="find button">
         <button class="mini" type="submit">Abbrechen</button>
       </form>
     </div>
@@ -92,10 +101,17 @@
      indem sie eine Bestellung abschickte, die sie nicht wollte. #}
   <form class="verlauf-leeren" method="post" action="/warenkorb/chat/leeren"
         hx-post="/warenkorb/chat/leeren"
-        hx-target="#chat" hx-swap="outerHTML">
+        hx-target="#chat" hx-swap="outerHTML"
+        hx-disabled-elt="find button">
     <button class="mini zurueck" type="submit">Verlauf leeren</button>
   </form>
   {% endif %}
+
+  {# Hier steht die Meldung ein zweites Mal — an dem Knopf, der sie ausgelöst
+     hat. Eine eigene `id`, weil zwei Elemente mit derselben nicht getauscht
+     werden können; gefüllt wird sie aus demselben `chat_fehler`, und
+     `_nachtrag.html` trägt beide out-of-band nach. #}
+  <div id="chat-fehler-unten">{% include "_chatfehler.html" %}</div>
 
   <form class="chatform" method="post" action="/warenkorb/chat"
         hx-post="/warenkorb/chat" hx-target="#chat" hx-swap="outerHTML"

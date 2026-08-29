@@ -13,6 +13,12 @@
    ist) und der Rezeptentwurf (er zeigt dieselbe Entscheidung noch einmal).
    Siehe `_entscheidung.html` — dort steht die Liste an einer Stelle.
 
+   **Jedes Formular hier zeigt beim Antippen, dass es losgeht** (WB-378):
+   `hx-indicator` auf GENAU DAS Stück, das gleich getauscht wird, und
+   `hx-disabled-elt` auf den Knopf. Ein Indikator am Seitenfuss hilft hier
+   nichts — diese Knöpfe stehen mitten in einer Liste von 150 Zeilen, und was
+   unten am Eingabefeld blinkt, ist auf dem Telefon längst aus dem Bild.
+
    Jede Entscheidung ist zugleich das Eval-Label (Spec 8.1). Deshalb steht an
    jeder Zeile, WORAUS sie entstanden ist — der Suchbegriff und der Rang der
    Suche. Ohne das lässt sich später nicht unterscheiden, ob ein Fehlgriff am
@@ -75,14 +81,18 @@
       <form method="post"
             action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
             hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
-            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
+            hx-indicator="#vorschlag-{{ v.id }}"
+            hx-disabled-elt="find button">
         <button class="mini ja" type="submit"
                 aria-label="{{ v.name }} in den Korb">Ja</button>
       </form>
       <form method="post"
             action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
             hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
-            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
+            hx-indicator="#vorschlag-{{ v.id }}"
+            hx-disabled-elt="find button">
         <button class="mini nein" type="submit"
                 aria-label="{{ v.name }} verwerfen">Nein</button>
       </form>
@@ -111,7 +121,9 @@
       <form method="post"
             action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
             hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
-            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
+            hx-indicator="#vorschlag-{{ v.id }}"
+            hx-disabled-elt="find button">
         <button class="mini zurueck" type="submit"
                 aria-label="Entscheidung zu {{ v.name }} zurücknehmen{% if v.behalten %} — die Zeile bleibt im Korb{% endif %}"
                 >rückgängig</button>
@@ -160,7 +172,9 @@
           <form method="post"
                 action="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
                 hx-post="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
-                hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML">
+                hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML"
+                hx-indicator="#zug-{{ v.chat_message_id }}"
+                hx-disabled-elt="find button">
             <button class="mini ja" type="submit"
                     aria-label="{{ a.name }} statt {{ v.name }} in den Korb">Das</button>
           </form>
@@ -185,7 +199,9 @@
     <form class="selbst" method="post"
           action="/warenkorb/vorschlag/{{ v.id }}/freitext"
           hx-post="/warenkorb/vorschlag/{{ v.id }}/freitext"
-          hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML">
+          hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML"
+          hx-indicator="#zug-{{ v.chat_message_id }}"
+          hx-disabled-elt="find button">
       <input type="text" name="text" autocomplete="off"
              value="{{ v.search_term or v.name }}"
              aria-label="Stattdessen als Freitext">
