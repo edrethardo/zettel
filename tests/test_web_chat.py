@@ -940,6 +940,71 @@ def test_der_tipp_nimmt_den_sammelknopf_mit_wenn_nichts_mehr_offen_ist(
 
 
 # --------------------------------------------------------------------------
+# „Doch nicht alles" — der Rückweg des Sammelknopfs (WB-397)
+#
+# Am HTTP-Rand geprüft, weil genau dort das zweite Problem des Tickets sitzt:
+# der Rückweg muss DA stehen, wo eben noch der Sammelknopf stand — und die
+# beiden Sammelknöpfe verschwinden genau in dem Augenblick, in dem er
+# gebraucht wird.
+
+def _mid(db_datei):
+    con = db.connect(db_datei)
+    try:
+        return con.execute("SELECT max(chat_message_id) AS m"
+                           "  FROM chat_suggestion").fetchone()["m"]
+    finally:
+        con.close()
+
+
+def test_der_sammelrueckweg_steht_da_wo_eben_der_sammelknopf_stand(
+        db_datei, tmp_path):
+    """Vorher blieb hier eine leere Stelle — die einzige Entscheidung im Shop
+    ohne Weg zurück."""
+    ids = _langer_verlauf(db_datei, zuege=1, je_zug=3)
+    client, _ = _client(db_datei, tmp_path)
+    mid = _mid(db_datei)
+
+    stueck = client.post(f"/chat/{mid}/alle?decision=kept", headers=HTMX).text
+
+    assert "Alles übernehmen" not in stueck     # nichts mehr offen
+    assert "Doch nicht alles (3)" in stueck
+    assert f'/chat/{mid}/alle?decision=offen' in stueck
+    # Und die Zusicherung steht VOR dem Tipp da, nicht erst danach: was
+    # einzeln entschieden wurde, bleibt — und der Korb wird nicht angerührt.
+    assert "Entschiedenes bleibt stehen" in stueck
+    assert "und der Korb auch" in stueck
+
+
+def test_der_sammelrueckweg_nimmt_nur_den_sammeltipp_zurueck(db_datei,
+                                                             tmp_path):
+    """Die Geste aus dem Video: erst zwei einzeln, dann alles, dann zurück zu
+    den zweien."""
+    ids = _langer_verlauf(db_datei, zuege=1, je_zug=4)
+    client, _ = _client(db_datei, tmp_path)
+    mid = _mid(db_datei)
+    _entscheiden(client, ids[0][0], "kept")
+    _entscheiden(client, ids[0][1], "kept")
+    client.post(f"/chat/{mid}/alle?decision=kept", headers=HTMX)
+    vorher = [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)]
+
+    stueck = client.post(f"/chat/{mid}/alle?decision=offen", headers=HTMX).text
+
+    con = db.connect(db_datei)
+    try:
+        assert [v["decision"] for v in vorschlagsliste.liste(con, mid)] == [
+            "kept", "kept", "offen", "offen"]
+    finally:
+        con.close()
+    # Der Korb bleibt, wie er war — und die Zeilen sagen es.
+    assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == vorher
+    assert "die Zeile bleibt im Korb" in stueck
+    # Zwei Zeilen sind wieder offen, also stehen die Sammelknöpfe wieder da —
+    # und der Rückweg ist weg, es gibt keinen Vorgang mehr.
+    assert "Alles übernehmen" in stueck
+    assert "Doch nicht alles" not in stueck
+
+
+# --------------------------------------------------------------------------
 # Der eingeklappte Teil
 
 def test_aeltere_zuege_werden_nicht_gerendert(db_datei, tmp_path):

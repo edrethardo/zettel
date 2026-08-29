@@ -130,6 +130,33 @@ es einen Umweg über `offen` gibt — „Ja, rückgängig, Ja" liefe zweimal dur
 `chat_suggestion.eingelegt_at`: „war diese Zeile schon einmal im Korb". Das
 ist die Frage, die er die ganze Zeit stellen wollte.
 
+**Auch der Sammelknopf hat einen Rückweg** (WB-397). „Alles übernehmen" war
+danach die einzige Entscheidung im Shop ohne einen — und ausgerechnet die, die
+eine ganze Liste auf einmal entscheidet; elf Zeilen einzeln zurückzunehmen
+sind elf Tipps auf einem Telefon. „Doch nicht alles" nimmt den letzten
+Sammelvorgang zurück und **ausschliesslich ihn**:
+
+```
+Butter einzeln „Ja"     -> kept   (ihre Entscheidung)
+Spinat einzeln „Ja"     -> kept   (ihre Entscheidung)
+„Alles übernehmen"      -> 9 weitere auf kept
+„Doch nicht alles"      -> NUR diese 9 zurück auf offen
+```
+
+Das ist die Zusicherung des Sammelknopfs, rückwärts gelesen: er rührt
+ausdrücklich nur die OFFENEN Zeilen an, damit ein einziger Tipp nicht die
+Labels umkippt, die die Nutzerin einzeln gesetzt hat. Ein Rückweg, der Butter
+und Spinat mitnähme, wäre derselbe Fehler in die andere Richtung.
+
+Dafür trägt jede gesammelt entschiedene Zeile die Nummer ihres Vorgangs
+(`chat_suggestion.sammel_nr`), und ein EINZELNER Tipp löscht sie wieder — ab
+da gehört die Entscheidung ihr. Eine Gruppierung über `decided_at` täte es
+nicht: `jetzt()` ist sekundengenau, ein einzelnes „Ja" in derselben Sekunde
+fiele in die Gruppe, und ein Sammelvorgang über eine Sekundengrenze zerfiele
+in zwei. Der Knopf steht dort, wo eben noch der Sammelknopf stand — der
+verschwindet ja genau dann, wenn nichts mehr offen ist, also unmittelbar nach
+dem Sammeltipp.
+
 ### „Nein" verwirft nicht bloss, es zeigt die Alternativen
 
 Die Alternativen gibt es längst: `suche_kette()` legt sie vor, Stufe 3 wählt

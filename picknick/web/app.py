@@ -1668,6 +1668,13 @@ def create_app(db_path: str | Path | None = None,
         """Sammelknopf. Rührt nur an, was noch offen ist.
 
         Der ganze Zug zurück (WB-372): er ändert jede offene Zeile darin.
+
+        **`decision=offen` ist „Doch nicht alles"** (WB-397) — der Rückweg für
+        den letzten Sammelvorgang dieses Zugs, und dieselbe Adresse aus
+        demselben Grund wie an der einzelnen Zeile: es ist keine vierte Sache,
+        die man mit einem Zug tun kann, sondern die dritte Entscheidung aus
+        Spec 8.1. Zurückgenommen wird ausschliesslich, was der Sammeltipp
+        entschieden hat; was sie einzeln angetippt hat, bleibt stehen.
         """
         werte = await eingaben(request)
         c = con()

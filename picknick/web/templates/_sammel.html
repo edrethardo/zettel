@@ -1,16 +1,23 @@
-{# Die beiden Sammelknöpfe eines Zugs. Nur der INHALT — die Hülle mit der `id`
-   steht beim Aufrufer (`_zug.html` inline, `_entscheidung.html` out-of-band),
-   damit genau dort entschieden wird, ob getauscht wird oder nicht. Dieselbe
-   Bauart wie beim Korb in `_chat_antwort.html`.
+{# Die Sammelknöpfe eines Zugs — und ihr Rückweg. Nur der INHALT; die Hülle
+   mit der `id` steht beim Aufrufer (`_zug.html` inline, `_entscheidung.html`
+   out-of-band), damit genau dort entschieden wird, ob getauscht wird oder
+   nicht. Dieselbe Bauart wie beim Korb in `_chat_antwort.html`.
 
-   Beide Knöpfe zeigen beim Antippen, dass es losgeht (WB-378): Indikator ist
+   Alle Knöpfe zeigen beim Antippen, dass es losgeht (WB-378): Indikator ist
    der Zug, also genau das, was gleich getauscht wird. „Alles übernehmen" ist
    der langsamste Tipp des Chats — er entscheidet eine ganze Liste auf einmal.
 
    Warum das überhaupt out-of-band mitmuss (WB-372): mit dem letzten „Ja" ist
-   nichts mehr offen, und dann gehören die Knöpfe weg. Täte man das nicht,
-   stünde unter einem fertig entschiedenen Zug weiter „Alles übernehmen" — ein
-   Knopf, der nichts mehr tut. #}
+   nichts mehr offen, und dann gehören die beiden Sammelknöpfe weg. Täte man
+   das nicht, stünde unter einem fertig entschiedenen Zug weiter „Alles
+   übernehmen" — ein Knopf, der nichts mehr tut.
+
+   Und genau in DIESEM Augenblick wird der Rückweg gebraucht (WB-397): der
+   Sammeltipp lässt nichts Offenes zurück, also blieb hier bis zu diesem
+   Ticket eine leere Stelle — die einzige Entscheidung im Shop, aus der es
+   keinen Weg zurück gab. Er steht deshalb an derselben Stelle, an der eben
+   noch der Knopf stand, den er zurücknimmt. #}
+{% set sammel_zurueck = m.vorschlaege | selectattr("sammel_rueckweg") | list %}
 {% if m.vorschlaege | selectattr("offen") | list %}
 <div class="sammel">
   <form method="post" action="/chat/{{ m.id }}/alle?decision=kept"
@@ -28,4 +35,31 @@
     <button class="mini" type="submit">Alles verwerfen</button>
   </form>
 </div>
+{% endif %}
+{% if sammel_zurueck %}
+{# Dieselbe Adresse mit `decision=offen` und kein eigener Endpunkt — genau
+   wie an der einzelnen Zeile in WB-361. `offen` ist der Rückweg; ein viertes
+   Label gibt es nicht.
+
+   Die Zahl steht am Knopf, weil sie die eigentliche Zusicherung trägt: nach
+   zwei einzelnen „Ja" und einem Sammeltipp über neun Zeilen sagt „(9)", dass
+   die zwei stehen bleiben. Ohne sie läse sich der Knopf wie „alles zurück". #}
+<div class="sammel">
+  <form method="post" action="/chat/{{ m.id }}/alle?decision=offen"
+        hx-post="/chat/{{ m.id }}/alle?decision=offen"
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}"
+        hx-disabled-elt="find button">
+    <button class="mini zurueck" type="submit"
+            aria-label="Den letzten Sammeltipp zurücknehmen — {{ sammel_zurueck | length }} Zeile{{ "n" if sammel_zurueck | length != 1 }}; einzeln Entschiedenes bleibt stehen{% if sammel_zurueck | selectattr("im_korb") | list %}, und was im Korb liegt, bleibt liegen{% endif %}"
+            >Doch nicht alles ({{ sammel_zurueck | length }})</button>
+  </form>
+</div>
+{# Der Korb wird beim Zurücknehmen nicht angerührt — wie überall seit WB-361
+   (`orders.einlegen()` fasst gleiche Zeilen zusammen, die Korbzeile kann also
+   längst eine sein, die sie selbst aufgestockt hat). Bei elf Zeilen auf
+   einmal muss das VOR dem Tipp dastehen und nicht erst als Hinweis an jeder
+   einzelnen Zeile danach. #}
+<p class="fussnote">Nimmt nur diesen einen Sammeltipp zurück — einzeln
+  Entschiedenes bleibt stehen{% if sammel_zurueck | selectattr("im_korb") | list %}, und der Korb auch{% endif %}.</p>
 {% endif %}

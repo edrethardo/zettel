@@ -416,6 +416,31 @@ SCHEMA = [
         -- Vorgaben für dieselbe Spalte wären zwei Verhalten; gelesen wird
         -- sie an einer Stelle mit `or 0`.
         zurueckgenommen INTEGER,
+        -- WELCHER Sammelvorgang diese Zeile entschieden hat (WB-397) — eine
+        -- laufende Nummer je Zug, und NULL für jede einzeln getroffene
+        -- Entscheidung. Sie ist die einzige Angabe, mit der „Doch nicht
+        -- alles" die neun Zeilen des Sammeltipps von der Butter und dem
+        -- Spinat unterscheiden kann, die die Nutzerin vorher selbst
+        -- angetippt hat.
+        --
+        -- Warum keine Gruppierung über `decided_at`: `jetzt()` ist
+        -- sekundengenau. Ein einzelnes „Ja" in derselben Sekunde fiele in
+        -- die Gruppe, und ein Sammelvorgang, der über eine Sekundengrenze
+        -- läuft (elf Zeilen gehen einzeln durch `orders.einlegen()`),
+        -- zerfiele in zwei. Beide Fehler gehen in die Richtung, die das
+        -- Ticket ausdrücklich verbietet.
+        --
+        -- Die Nummer wird beim Zurücknehmen wieder NULL — und ebenso, sobald
+        -- die Zeile EINZELN angetippt wird. Ab da gehört die Entscheidung
+        -- ihr, und der Sammelrückweg lässt sie stehen. Deshalb ist das
+        -- grösste vergebene `sammel_nr` eines Zugs immer der jüngste noch
+        -- rücknehmbare Sammelvorgang.
+        --
+        -- Nullable und ohne Nachtrag für gewachsene Datenbanken: was vor
+        -- diesem Ticket gesammelt entschieden wurde, ist im Nachhinein nicht
+        -- mehr von einzelnen Tipps zu unterscheiden. NULL heisst dort genau
+        -- das Richtige — „kein Sammelvorgang, den man zurücknehmen könnte".
+        sammel_nr       INTEGER,
         -- Diese Zeile ist die KORREKTUR eines anderen Vorschlags (WB-359):
         -- die Nutzerin hat „Nein" gesagt und aus den aufgehobenen Kandidaten
         -- etwas anderes gewählt. Ohne diesen Verweis stünden hinterher zwei
@@ -831,6 +856,9 @@ NACHGETRAGENE_SPALTEN = (
     # Doppeltipp, seit er nicht mehr an `decision` hängen darf.
     ("chat_suggestion", "eingelegt_at", "TEXT"),
     ("chat_suggestion", "zurueckgenommen", "INTEGER"),
+    # WB-397: welcher Sammelvorgang diese Zeile entschieden hat. Ohne
+    # Nachtrag — die Begründung steht am Schema oben.
+    ("chat_suggestion", "sammel_nr", "INTEGER"),
     # WB-338: was zum Kochen gehört und woher das Rezept stammt. Eine
     # Datenbank aus der Zeit davor hat `recipe` bereits — `CREATE TABLE IF
     # NOT EXISTS` sähe sie gar nicht an, und die Rezeptansicht fiele mit

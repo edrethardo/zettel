@@ -27,8 +27,8 @@ from picknick.assistant.plan import (  # noqa: F401
 from picknick.assistant.rezeptweg import Rezeptweg, erkenne  # noqa: F401
 from picknick.assistant.vorschlaege import (  # noqa: F401
     BEHALTEN, OFFEN, VERWORFEN, VorschlagFehler, alle_entscheiden,
-    alternativen, entscheiden, korrigieren, quote, span_setzen,
-    stattdessen_freitext, verlauf)
+    alternativen, entscheiden, korrigieren, quote,
+    sammel_zuruecknehmen, span_setzen, stattdessen_freitext, verlauf)
 
 __all__ = [
     "Auswahl", "BEHALTEN", "Chat", "ChatFehler", "ChatNichtVerfuegbar",
@@ -37,5 +37,6 @@ __all__ = [
     "PlanFehler", "Rezeptweg", "VERWORFEN",
     "VorschlagFehler", "WEG_LLM", "WEG_REZEPT", "alle_entscheiden",
     "alternativen", "choose", "entscheiden", "erkenne", "extract",
-    "korrigieren", "quote", "span_setzen", "stattdessen_freitext", "verlauf",
+    "korrigieren", "quote", "sammel_zuruecknehmen", "span_setzen",
+    "stattdessen_freitext", "verlauf",
 ]

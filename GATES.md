@@ -117,6 +117,16 @@ an `eingelegt_at` und nicht mehr an der letzten Entscheidung — sonst wäre der
 Rückweg ein Loch in ihm); und ein zurückgenommener Fehltipp hinterlässt **kein
 Eval-Label**, nur den Zähler `withdrawn`.
 
+**Der Sammelrückweg** (3, WB-397) — die Geste aus dem Video, am HTTP-Rand
+geklickt: nach „Alles übernehmen" steht „Doch nicht alles (4)" GENAU DA, wo
+eben der Sammelknopf stand (der verschwindet ja mit der letzten offenen
+Zeile — vorher blieb dort eine leere Stelle); zwei vorher einzeln getroffene
+Entscheidungen **bleiben stehen**, während die übrigen wieder offen sind, und
+der Korb bleibt unverändert; und Sammeln / zurücknehmen / Sammeln legt jede
+Sache genau EINMAL in den Korb — der Schutz aus WB-361 trägt auch auf dem
+Sammelweg, weil der Rückweg Zeile für Zeile durch `entscheiden()` geht statt
+über ein `UPDATE`, das `eingelegt_at` überginge.
+
 **Portionen und die Reihenfolge der Rechenschritte** (4, WB-362) — am
 HTTP-Rand geklickt, weil die Reihenfolge eine Eigenschaft des WEGES ist und
 keine einer Hilfsfunktion: ein Rezept für 4, für 8 Portionen in den Korb

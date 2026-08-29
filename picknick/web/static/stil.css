@@ -743,6 +743,13 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
+/* Der Sammelrückweg (WB-397). Der Satz gehört zum Knopf darüber und nicht in
+   den Abstand danach — er sagt VOR dem Tipp, was „Doch nicht alles" NICHT
+   anfasst (einzeln Entschiedenes, den Korb). Die 20 px Vorlauf der
+   allgemeinen Fussnote rissen ihn vom Knopf los und machten aus der
+   Zusicherung eine Randnotiz. */
+.sammel + .fussnote { margin: -8px 0 var(--rand); }
+
 /* Der eingeklappte Teil des Verlaufs (WB-372). Er sieht wie eine Trennlinie
    mit Aufschrift aus und nicht wie eine Handlung: was dort steht, ist
    erledigt, und der Knopf ist ein Rückblick, kein nächster Schritt. Volle

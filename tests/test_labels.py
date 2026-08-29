@@ -563,6 +563,31 @@ def test_ein_zurueckgenommener_fehltipp_hinterlaesst_kein_label(con):
     assert annos == []
 
 
+def test_ein_zurueckgenommener_sammelvorgang_hinterlaesst_kein_label(con):
+    """Dasselbe für „Alles übernehmen" (WB-397).
+
+    Der Sammelknopf entscheidet eine ganze Liste auf einmal — ein Fehlgriff
+    dort verdürbe die Trefferquote in einem Zug. Nach der Rücknahme stehen
+    seine Zeilen auf `offen`, und `offen` zählt nirgends (Spec 8.1); die
+    einzeln getroffenen Entscheidungen bekommen ihr Label trotzdem.
+    """
+    msg = _zug(con, begriffe=("Butter", "Milch", "Zwiebeln", "Klopapier"))
+    sids = [v["id"] for v in vorschlaege.liste(con, msg)]
+    vorschlaege.entscheiden(con, sids[0], BEHALTEN)
+    vorschlaege.alle_entscheiden(con, msg, BEHALTEN)
+
+    vorschlaege.alle_entscheiden(con, msg, vorschlaege.OFFEN)
+    annos = labels.annotationen(con, orders.warenkorb(con))
+
+    einzel = [a for a in annos if a["name"] == labels.NAME_ENTSCHEIDUNG]
+    # Genau eines: das der Zeile, die sie selbst angetippt hat.
+    assert [a["result"]["label"] for a in einzel] == ["kept"]
+    # Und die Quote steht auf dieser einen Entscheidung, nicht auf vieren.
+    quote = [a for a in annos if a["name"] == labels.NAME_QUOTE][0]
+    assert quote["result"]["score"] == 1.0
+    assert (quote["metadata"]["kept"], quote["metadata"]["open"]) == (1, 3)
+
+
 def test_die_ruecknahme_steht_als_metadatum_an_der_annotation(con):
     """Ein `kept`, bei dem vorher danebengetippt wurde, ist ein anderer
     Datenpunkt als ein `kept` beim ersten Hinsehen."""

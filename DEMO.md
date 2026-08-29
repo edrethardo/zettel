@@ -181,6 +181,37 @@ gemacht hat. Weil die Annotationen erst beim ABSCHICKEN entstehen, kostet der
 Rückweg vorher nichts — der Fehltipp hinterlässt kein Label, nur ein
 `withdrawn = 1` in den Metadaten. **Der Rückweg ist Datenqualität.**
 
+### 3b′. „Doch nicht alles" — auch die Sammelentscheidung geht zurück (WB-397)
+
+Die Geste, die vorführt, worum es geht. Sie braucht eine längere Liste — der
+Bolognese-Zug aus 3c oder 4 tut es. Der Reihe nach:
+
+1. Zwei Zeilen **einzeln** auf *Ja* tippen. Sagen wir Butter und Spinat.
+2. Auf **Alles übernehmen**. Der Rest der Liste geht in einem Zug auf `kept`,
+   und die beiden Sammelknöpfe verschwinden — es ist nichts mehr offen.
+3. An ihrer Stelle steht jetzt **Doch nicht alles (9)** und darunter:
+
+```
+Nimmt nur diesen einen Sammeltipp zurück — einzeln Entschiedenes bleibt
+stehen, und der Korb auch.
+```
+
+4. Antippen.
+
+**Prüfung — und das ist der ganze Punkt:** die neun Zeilen des Sammeltipps
+stehen wieder mit Ja/Nein da, **Butter und Spinat bleiben auf „im Korb"**. Das
+ist die Zusicherung des Sammelknopfs, rückwärts gelesen: er rührt nur die
+offenen Zeilen an, damit ein Tipp nicht die Labels umkippt, die sie einzeln
+gesetzt hat — und ein Rückweg, der die beiden mitnähme, wäre derselbe Fehler
+in die andere Richtung. Der Shop weiss das, weil jede gesammelt entschiedene
+Zeile die Nummer ihres Vorgangs trägt (`chat_suggestion.sammel_nr`); ein
+einzelner Tipp löscht sie wieder.
+
+**Prüfung — die Korbzahl oben bleibt.** Wie überall seit WB-361: was im Korb
+liegt, gehört dem Korb. Und wer jetzt noch einmal auf **Alles übernehmen**
+tippt, sieht die Korbzahl NICHT steigen — der Schutz aus WB-361 (`eingelegt_at`)
+trägt auch hier, weil der Rückweg Zeile für Zeile durch dieselbe Tür geht.
+
 ### 3c. „alles für Pho" — die Quelle gegen das Gedächtnis (WB-338, WB-367)
 
 Der Fall, für den das Ticket geschrieben wurde. Vorher einmal sicherstellen,
