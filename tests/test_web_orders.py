@@ -183,6 +183,73 @@ def test_die_auswahl_zeigt_die_vorbelegung_der_letzten_wahl(client, con):
 
 
 # --------------------------------------------------------------------------
+# Die Zahl im Kopf (WB-372)
+#
+# Sie stand an jeder Korb-Aktion DIESER Seite still: „+", „−", Löschen und das
+# Freitext-Feld tauschten den Korb und liessen den Kopf behaupten, es lägen
+# noch drei Sachen drin. `_eingelegt.html` an der Katalog-Kachel machte es von
+# Anfang an richtig — ausgerechnet der Korb selbst nicht.
+
+
+def _kopfzahl(text):
+    """Die Zahl aus dem out-of-band getauschten `#korb-anzahl`, oder None."""
+    treffer = re.search(r'id="korb-anzahl"[^>]*>(\d+)<', text)
+    return None if treffer is None else int(treffer.group(1))
+
+
+def test_die_zahl_im_kopf_kommt_bei_jeder_korbaktion_mit(client, con):
+    """+, −, Löschen und Freitext — jede Antwort trägt den Kopf nach.
+
+    Gezählt werden ZEILEN und keine Stückzahlen (`orders.korb_anzahl`): „+"
+    und „−" an einer Zeile ändern die Zahl also nicht, und genau deshalb steht
+    sie hier trotzdem in jeder Antwort. Vorher fehlte sie in allen vier, und
+    der Kopf behauptete nach einem Löschen weiter, es läge etwas im Korb.
+    """
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    item = orders.inhalt(con)[0]["id"]
+
+    mehr = client.post(f"/warenkorb/posten/{item}/menge?qty=2",
+                       headers=HTMX).text
+    assert _kopfzahl(mehr) == 1
+    weniger = client.post(f"/warenkorb/posten/{item}/menge?qty=1",
+                          headers=HTMX).text
+    assert _kopfzahl(weniger) == 1
+
+    freitext = client.post("/warenkorb/einlegen",
+                           data={"free_text": "Brötchen vom Bäcker"},
+                           headers=HTMX).text
+    assert _kopfzahl(freitext) == 2
+
+    # „−" bis auf null nimmt die Zeile heraus — dann MUSS der Kopf mitgehen.
+    raus = client.post(f"/warenkorb/posten/{item}/menge?qty=0",
+                       headers=HTMX).text
+    assert _kopfzahl(raus) == 1
+
+    brot = orders.inhalt(con)[0]["id"]
+    leer = client.post(f"/warenkorb/posten/{brot}/loeschen", headers=HTMX).text
+    assert _kopfzahl(leer) == 0
+    assert orders.inhalt(con) == []
+
+
+def test_die_zahl_im_kopf_wird_nur_out_of_band_getauscht(client, con):
+    """Und steht nicht als zweite Zahl mitten im Korb.
+
+    Sie gehört in den Kopf. Im Vollbild darf dieses Stück sie also gerade
+    NICHT mitbringen — sonst stünde sie zweimal auf der Seite, einmal oben und
+    einmal irgendwo zwischen den Zeilen.
+    """
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    seite = client.get("/warenkorb").text
+    assert seite.count('id="korb-anzahl"') == 1
+    assert 'hx-swap-oob' not in seite.split('id="korb-anzahl"')[1][:60]
+
+    stueck = client.post("/warenkorb/einlegen",
+                         data={"free_text": "Salz"}, headers=HTMX).text
+    assert stueck.count('id="korb-anzahl"') == 1
+    assert 'hx-swap-oob="true"' in stueck
+
+
+# --------------------------------------------------------------------------
 # Freitext — gleichwertig, überall (Spec 4)
 
 def test_warenkorb_hat_ein_feld_fuer_freitext(client):

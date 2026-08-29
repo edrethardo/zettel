@@ -1,0 +1,20 @@
+{# Was jede TEILantwort ausser ihrem eigenen Stück noch nachtragen muss
+   (WB-372).
+
+   Seit ein Tipp nur noch eine Zeile oder einen Zug tauscht, ist alles andere,
+   was sich mit ihm ändert, unsichtbar, wenn es hier nicht steht — und ein
+   Knopf, dessen Wirkung man nicht sieht, wird ein zweites Mal gedrückt.
+   Drei Dinge sind es, und mehr sind es auch nicht:
+
+   * **der Korb** — ein „Ja" legt ein (Spec 6);
+   * **die Zahl im Kopf** — sonst füllt sich der Korb unsichtbar;
+   * **die Fehlerzeile** — sonst bleibt die Begründung eines misslungenen
+     Tipps aus, und der Knopf sieht kaputt aus.
+
+   Der Korb steht hier als ganzes Stück und nicht zeilenweise: er ist die
+   kleine Liste (ein Einkauf, keine 150 Zeilen), und `orders.einlegen()` fasst
+   gleiche Posten zusammen — welche Zeile sich durch ein „Ja" ändert, steht
+   erst hinterher fest. #}
+<div id="korb" hx-swap-oob="true">{% include "_korb.html" %}</div>
+<span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
+<div id="chat-fehler" hx-swap-oob="true">{% include "_chatfehler.html" %}</div>

@@ -15,6 +15,7 @@ ausdrücklich geprüft:
   darauf trägt Chat UND Korb, sonst sieht die Nutzerin ihre Zeile nicht.
 """
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -697,3 +698,289 @@ def test_die_tap_ziele_der_sortenliste_sind_gross_genug(db_datei, tmp_path):
         encoding="utf-8")
     block = stil.split(".sortenliste label")[1].split("}")[0]
     assert "min-height: var(--tap)" in block
+
+
+# --------------------------------------------------------------------------
+# WB-372: was ein Tipp kostet, was eingeklappt ist, und der Weg heraus
+#
+# Der gemessene Anlass: 34 Chatzeilen, 157 Vorschläge, und JEDER Tipp auf „Ja"
+# übertrug den kompletten Verlauf — 258.890 Bytes gegen den laufenden Shop.
+# Genau diese Tipps macht man in Serie durch eine Liste von 157 Zeilen, am
+# Telefon über Mobilfunk.
+#
+# Der Verlauf wird hier direkt geschrieben statt über das Modell erfragt: für
+# zehn Züge bräuchte es zwanzig vorbereitete Antworten, und geprüft würde
+# damit der Fake und nicht die Ansicht.
+
+
+def _langer_verlauf(db_datei, zuege=6, je_zug=3):
+    """Schreibt `zuege` Züge mit je `je_zug` Vorschlägen. Gibt deren ids."""
+    con = db.connect(db_datei)
+    try:
+        produkte = [r["id"] for r in
+                    con.execute("SELECT id FROM product ORDER BY id LIMIT 8")]
+        korb = orders.warenkorb(con)
+        ids = []
+        for zug in range(zuege):
+            vorschlagsliste.nachricht(con, korb, vorschlagsliste.ROLLE_NUTZERIN,
+                                      f"Frage aus Zug {zug}")
+            mid = vorschlagsliste.nachricht(
+                con, korb, vorschlagsliste.ROLLE_AGENT, f"Antwort zu Zug {zug}")
+            ids.append([vorschlagsliste.vorschlag(
+                con, mid, product_id=produkte[(zug + i) % len(produkte)],
+                search_term=f"Begriff {zug}-{i}") for i in range(je_zug)])
+        return ids
+    finally:
+        con.close()
+
+
+def _chatteil(text):
+    """Der `#chat`-Block einer Vollseite — das, was vorher je Tipp neu ging."""
+    return text[text.find('<section class="chat"'):]
+
+
+def test_ein_ja_uebertraegt_nicht_mehr_den_ganzen_verlauf(db_datei, tmp_path):
+    """Der Grössenvergleich, um den es im Ticket geht."""
+    ids = _langer_verlauf(db_datei)
+    client, _ = _client(db_datei, tmp_path)
+    seite = _chatteil(client.get("/warenkorb?verlauf=alles").text)
+
+    antwort = _entscheiden(client, ids[-1][0], "kept").text
+
+    # Eine Zeile plus Nachträge statt des Verlaufs. Der Faktor ist grosszügig
+    # gewählt: geprüft wird die Grössenordnung, nicht eine Byte-Zahl, die bei
+    # jeder Änderung an der Vorlage nachgezogen werden müsste.
+    assert len(antwort) < len(seite) / 4
+    # Und zwar, weil die anderen Züge nicht mitkommen — nicht, weil zufällig
+    # gerade wenig dranhing.
+    assert "Antwort zu Zug 0" not in antwort
+    assert "Antwort zu Zug 5" not in antwort
+
+
+def test_der_tipp_taucht_genau_die_eine_zeile_aus(db_datei, tmp_path):
+    ids = _langer_verlauf(db_datei)
+    sid, geschwister = ids[-1][0], ids[-1][1]
+    client, _ = _client(db_datei, tmp_path)
+
+    antwort = _entscheiden(client, sid, "kept").text
+
+    assert f'id="vorschlag-{sid}"' in antwort
+    assert f'id="vorschlag-{geschwister}"' not in antwort
+    # Der Korb und die Zahl im Kopf kommen out-of-band mit, sonst sieht sie
+    # nicht, dass ihr „Ja" etwas getan hat.
+    assert 'id="korb" hx-swap-oob="true"' in antwort
+    assert 'id="korb-anzahl"' in antwort
+
+
+def test_der_tipp_nimmt_den_sammelknopf_mit_wenn_nichts_mehr_offen_ist(
+        db_datei, tmp_path):
+    """Sonst stünde unter einem fertigen Zug ein Knopf, der nichts mehr tut."""
+    ids = _langer_verlauf(db_datei, zuege=1, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+
+    erste = _entscheiden(client, ids[0][0], "kept").text
+    assert "Alles übernehmen" in erste          # eine Zeile ist noch offen
+    letzte = _entscheiden(client, ids[0][1], "kept").text
+    assert "Alles übernehmen" not in letzte
+
+
+# --------------------------------------------------------------------------
+# Der eingeklappte Teil
+
+def test_aeltere_zuege_werden_nicht_gerendert(db_datei, tmp_path):
+    _langer_verlauf(db_datei, zuege=6, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+
+    seite = client.get("/warenkorb").text
+
+    # Die letzten drei Züge stehen da, die älteren nicht.
+    for zug in (3, 4, 5):
+        assert f"Antwort zu Zug {zug}" in seite
+    for zug in (0, 1, 2):
+        assert f"Antwort zu Zug {zug}" not in seite
+    # Und es wird gesagt, wie viel fehlt — mit Zahlen.
+    assert "3 ältere Züge" in seite
+    assert "6 Vorschläge" in seite
+
+
+def test_ein_eingeklappter_zug_ist_aufklappbar_und_traegt_seine_entscheidungen(
+        db_datei, tmp_path):
+    """Sie soll nachsehen können, was sie vor zehn Zügen entschieden hat."""
+    ids = _langer_verlauf(db_datei, zuege=6, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    # Im ÄLTESTEN Zug entscheiden, danach klappt er weg.
+    _entscheiden(client, ids[0][0], "kept")
+    _entscheiden(client, ids[0][1], "removed")
+    assert "Antwort zu Zug 0" not in client.get("/warenkorb").text
+
+    alles = client.get("/warenkorb?verlauf=alles").text
+
+    assert "Antwort zu Zug 0" in alles
+    # Die Entscheidungen sind da, wo sie waren.
+    assert alles.count("im Korb") >= 1
+    assert "verworfen" in alles
+    # Und über HTMX kommt dasselbe als Bruchstück.
+    stueck = client.get("/warenkorb/chat?verlauf=alles", headers=HTMX).text
+    assert "Antwort zu Zug 0" in stueck
+    assert "<html" not in stueck.lower()
+
+
+def test_einklappen_loescht_keine_entscheidung(db_datei, tmp_path):
+    """Eine ANZEIGEgrenze — an der Datenbank ändert sie nichts."""
+    ids = _langer_verlauf(db_datei, zuege=6, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    _entscheiden(client, ids[0][0], "kept")
+    client.get("/warenkorb")
+
+    con = db.connect(db_datei)
+    try:
+        assert con.execute("SELECT count(*) AS n FROM chat_message"
+                           ).fetchone()["n"] == 12
+        assert con.execute("SELECT count(*) AS n FROM chat_suggestion"
+                           ).fetchone()["n"] == 12
+        assert con.execute(
+            "SELECT decision FROM chat_suggestion WHERE id = ?",
+            (ids[0][0],)).fetchone()["decision"] == "kept"
+    finally:
+        con.close()
+
+
+def test_ein_kurzer_verlauf_bekommt_keinen_aufklapper(db_datei, tmp_path):
+    """„0 ältere Züge anzeigen" wäre ein Knopf ohne Gegenstand."""
+    _langer_verlauf(db_datei, zuege=2, je_zug=1)
+    client, _ = _client(db_datei, tmp_path)
+    seite = client.get("/warenkorb").text
+    assert "ältere Züge" not in seite
+    assert "Antwort zu Zug 0" in seite
+
+
+# --------------------------------------------------------------------------
+# Der Verlauf lässt sich leeren — ohne eine Bestellung abzuschicken
+
+def _chatzeilen(db_datei):
+    con = db.connect(db_datei)
+    try:
+        return con.execute("SELECT count(*) AS n FROM chat_message"
+                           ).fetchone()["n"]
+    finally:
+        con.close()
+
+
+def test_verlauf_leeren_fragt_erst_nach(db_datei, tmp_path):
+    _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+
+    frage = client.post("/warenkorb/chat/leeren", headers=HTMX).text
+
+    assert "wirklich löschen?" in frage
+    assert "Eval-Labels" in frage            # sie sagt, was auf dem Spiel steht
+    assert "4 Vorschläge" in frage
+    assert "/warenkorb/chat/leeren?ja=1" in frage
+    assert _chatzeilen(db_datei) == 4         # gefragt, nicht gelöscht
+
+
+def test_verlauf_leeren_laesst_sich_abbrechen(db_datei, tmp_path):
+    _langer_verlauf(db_datei, zuege=2, je_zug=1)
+    client, _ = _client(db_datei, tmp_path)
+    client.post("/warenkorb/chat/leeren", headers=HTMX)
+
+    zurueck = client.post("/warenkorb/chat/leeren?ja=0", headers=HTMX).text
+
+    assert "wirklich löschen?" not in zurueck
+    assert _chatzeilen(db_datei) == 4
+
+
+def test_verlauf_leeren_loescht_und_laesst_den_korb_unangetastet(db_datei,
+                                                                 tmp_path):
+    """Der Kern: sie will den Verlauf loswerden, nicht ihren Einkauf."""
+    ids = _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    _entscheiden(client, ids[0][0], "kept")          # eine Zeile in den Korb
+    vorher = _inhalt(db_datei)
+    assert len(vorher) == 1
+
+    antwort = client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX).text
+
+    assert _chatzeilen(db_datei) == 0
+    assert "Der Verlauf ist gelöscht" in antwort
+    assert "4 Vorschlägen" in antwort               # die Zahlen stehen dabei
+    # Der Korb liegt unberührt da — die Posten und ihre ids.
+    assert [z["id"] for z in _inhalt(db_datei)] == [z["id"] for z in vorher]
+
+
+def test_verlauf_leeren_raeumt_auch_alles_ab_was_daran_haengt(db_datei,
+                                                              tmp_path):
+    """Vorschläge und Kandidaten gehen per CASCADE mit — nichts bleibt liegen."""
+    _milch_zug(db_datei, tmp_path)
+    client, _ = _client(db_datei, tmp_path)
+    client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX)
+
+    con = db.connect(db_datei)
+    try:
+        for tabelle in ("chat_message", "chat_suggestion", "chat_kandidat"):
+            assert con.execute(f"SELECT count(*) AS n FROM {tabelle}"
+                               ).fetchone()["n"] == 0, tabelle
+    finally:
+        con.close()
+
+
+def test_der_leere_korb_mit_vollem_verlauf_ist_keine_sackgasse_mehr(db_datei,
+                                                                    tmp_path):
+    """Genau der Zustand aus dem Ticket: 0 Posten, viele Chatzeilen.
+
+    Der einzige Reset war das Abschicken, und das wirft bei leerem Korb. Sie
+    kam da nur heraus, indem sie etwas einlegte und eine Bestellung
+    abschickte, die sie nicht wollte.
+    """
+    _langer_verlauf(db_datei, zuege=3, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    assert _inhalt(db_datei) == []
+    # Abschicken ist versperrt …
+    abgelehnt = client.post("/warenkorb/abschicken", headers=HTMX)
+    assert "Der Warenkorb ist leer" in abgelehnt.text
+
+    # … das Leeren nicht.
+    client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX)
+
+    assert _chatzeilen(db_datei) == 0
+    con = db.connect(db_datei)
+    try:
+        # Und die Bestellung ist weiter ein Entwurf: nichts wurde abgeschickt.
+        assert con.execute("SELECT state FROM orders").fetchone()["state"] \
+            == "draft"
+    finally:
+        con.close()
+
+
+def test_ohne_verlauf_gibt_es_nichts_zu_leeren(db_datei, tmp_path):
+    """Der Knopf steht nur da, wo er etwas tut."""
+    client, _ = _client(db_datei, tmp_path)
+    assert "Verlauf leeren" not in client.get("/warenkorb").text
+    _langer_verlauf(db_datei, zuege=1, je_zug=1)
+    assert "Verlauf leeren" in client.get("/warenkorb").text
+
+
+def test_jedes_tauschziel_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
+    """Ein `hx-target`, das ins Leere zeigt, tut nichts — und sagt es nicht.
+
+    Seit WB-372 zielt nicht mehr alles auf `#chat`, sondern auf `#zug-N` und
+    `#vorschlag-N`. Ein Tippfehler in einer dieser ids wäre in keiner anderen
+    Prüfung zu sehen: die Antwort käme mit 200 zurück, HTMX fände nichts zum
+    Tauschen, und der Knopf sähe aus wie kaputt. Deshalb wird hier stumpf
+    verglichen — jedes Ziel gegen alle ids, die die Seite wirklich trägt.
+    """
+    ids = _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    # Ein „Nein" bringt die Alternativenliste mit ihren eigenen Zielen dazu.
+    _entscheiden(client, ids[-1][0], "removed")
+
+    seite = client.get("/warenkorb").text
+    vorhanden = set(re.findall(r'id="([\w-]+)"', seite))
+    ziele = set(re.findall(r'hx-target="#([\w-]+)"', seite))
+
+    assert ziele, "die Seite hat gar keine Tauschziele — der Test misst nichts"
+    assert ziele <= vorhanden, f"zeigt ins Leere: {sorted(ziele - vorhanden)}"
+    # Und die drei Grössen kommen wirklich alle vor.
+    assert "chat" in ziele
+    assert any(z.startswith("zug-") for z in ziele)
+    assert any(z.startswith("vorschlag-") for z in ziele)

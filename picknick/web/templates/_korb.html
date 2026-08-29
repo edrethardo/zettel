@@ -99,3 +99,18 @@
   <button class="gross" type="submit">Bestellung abschicken</button>
 </form>
 {% endif %}
+
+{# Die Zahl oben im Kopf (WB-372). Sie fehlte an jeder Korb-Aktion dieser
+   Seite: „+", „−", Löschen und das Freitext-Feld tauschten den Korb und
+   liessen die Zahl stehen — der Korb füllte sich also sichtbar und der Kopf
+   behauptete weiter, es lägen drei Sachen drin. `_eingelegt.html` an der
+   Katalog-Kachel machte es von Anfang an richtig, ausgerechnet der Korb
+   selbst nicht.
+
+   Nur wenn dieses Stück die ganze Antwort IST (`_korb_antwort`). Wo es in
+   eine grössere Antwort eingebettet wird, steht die Zahl dort auf oberster
+   Ebene (`_nachtrag.html`, `_chat_antwort.html`) — ein `hx-swap-oob` in einem
+   schon out-of-band getauschten Element wäre ein Tausch im Tausch. #}
+{% if korb_oob %}
+<span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
+{% endif %}

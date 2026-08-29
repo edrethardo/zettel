@@ -1,0 +1,70 @@
+{# EIN Zug des Chats — eine Chatzeile mit allem, was an ihr hängt.
+
+   Die mittlere der drei Tauschgrössen aus WB-372:
+
+       #vorschlag-N   ein „Ja"/„Nein"        — eine Zeile
+       #zug-N         alles, was Zeilen ANLEGT oder mehrere auf einmal ändert
+       #chat          ein neuer Zug, Sorten, Verlauf zeigen/leeren
+
+   Auf den Zug zielt, was eine Zeile nicht fassen kann: eine Korrektur und ein
+   Freitext legen eine NEUE Vorschlagszeile an (WB-359) — sie hat noch kein
+   Element im Dokument, in das sie getauscht werden könnte. Dasselbe gilt für
+   die Sammelknöpfe und für den Rezeptentwurf, die beide mehrere Zeilen
+   zugleich betreffen. #}
+<div class="zug" id="zug-{{ m.id }}">
+  {% if m.role == "user" %}
+    <p class="chatzeile ich">{{ m.content }}</p>
+  {% else %}
+    <p class="chatzeile agent">{{ m.content }}</p>
+    {# Ein Oberbegriff (WB-368): erst die Sorte, dann das Produkt. Die Sorten
+       kommen aus dem Kategoriebaum und tragen ihre echte Stückzahl —
+       angeboten wird nur, was wirklich im Katalog steht. Mehrere Kästchen
+       gehen, weil „Aufschnitt" oft Salami UND Kochschinken heisst.
+
+       Ziel ist der ganze Chat: eine Sortenauswahl löst einen NEUEN Zug aus,
+       und der steht danach unter diesem hier. #}
+    {% if m.faecher %}
+    <form class="sorten" method="post"
+          action="/warenkorb/chat/{{ m.id }}/sorten"
+          hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+          hx-target="#chat" hx-swap="outerHTML"
+          hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+      <ul class="sortenliste">
+        {% for s in m.faecher.sorten %}
+        <li>
+          <label>
+            <input type="checkbox" name="sorte" value="{{ s.name }}">
+            <span class="name">{{ s.name }}</span>
+            <span class="anzahl">{{ s.anzahl }}</span>
+          </label>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="sammel">
+        <button class="mini ja" type="submit">Ausgewählte Sorten zeigen</button>
+      </div>
+    </form>
+    {# Kein Kästchen angekreuzt heisst „überspringen": dann wird direkt nach
+       dem gesucht, was getippt wurde. Ein Oberbegriff darf keine Sackgasse
+       sein. Dieselbe Adresse, derselbe Ausgang — der Knopf spart nur das
+       Absenden eines leeren Formulars. #}
+    <form class="sorten-weiter" method="post"
+          action="/warenkorb/chat/{{ m.id }}/sorten"
+          hx-post="/warenkorb/chat/{{ m.id }}/sorten"
+          hx-target="#chat" hx-swap="outerHTML"
+          hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+      <button class="mini" type="submit">Überspringen — direkt nach
+        „{{ m.faecher.wort }}“ suchen</button>
+    </form>
+    {% endif %}
+    {% if m.vorschlaege %}
+    <ul class="vorschlaege">
+      {% for v in m.vorschlaege %}
+      {% include "_vorschlag.html" %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div id="sammel-{{ m.id }}">{% include "_sammel.html" %}</div>
+    <div id="entwurf-{{ m.id }}">{% include "_entwurf.html" %}</div>
+  {% endif %}
+</div>
