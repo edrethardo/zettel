@@ -407,7 +407,7 @@ button, .knopf { overflow-wrap: normal; }
 .zeile {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
-  grid-template-areas: "bild text" "voll voll" "stellen stellen";
+  grid-template-areas: "bild text" "stellen stellen" "voll voll";
   column-gap: 10px; row-gap: 4px; align-items: center;
   padding: 10px 4px; border-bottom: 1px solid var(--linie);
 }
