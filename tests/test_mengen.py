@@ -208,3 +208,75 @@ def test_der_satz_verschweigt_nicht_was_von_hand_dazukam():
     r = mengen.rechne(80, "g", "100 g")
     assert "Im Korb liegen 3" in mengen.satz(r, unit_text="100 g", qty=3)
     assert "heruntergesetzt" in mengen.satz(r, unit_text="100 g", qty=0)
+
+
+# --------------------------------------------------------------------------
+# Dieselben Angaben getrennt — die Einkaufszeile (WB-381)
+
+def test_die_gebrauchte_menge_steht_fuer_sich_allein():
+    """Sie ist die Hauptangabe der Einkaufszeile und darf nicht erst aus
+    einem Satz herausgelesen werden müssen."""
+    r = mengen.rechne(1000, "ml", "500 g")
+    assert mengen.bedarf_text(r) == "1000 ml gebraucht"
+
+
+def test_ohne_gebrauchte_menge_gibt_es_keine_hauptangabe():
+    """`None` heisst „hier wurde nie eine Menge ausgerechnet" — und nichts
+    anderes rückt an ihre Stelle."""
+    assert mengen.bedarf_text(mengen.rechne(None, None, "1 kg")) is None
+
+
+def test_die_packungszahl_multipliziert_die_packungsgroesse():
+    """„2 × 500 g" kann nicht als „zwei Kilo" gelesen werden, „2× Pomito"
+    daneben schon."""
+    r = mengen.rechne(1000, "ml", "500 g")
+    assert mengen.gebinde_text(r, unit_text="500 g", qty=2) == "dafür 2 × 500 g"
+
+
+def test_dafuer_steht_nur_da_wo_es_wirklich_gerechnet_wurde():
+    """Liegt etwas anderes im Korb, als die Rechnung verlangt, wäre „dafür"
+    eine Behauptung über eine Zahl, die von Hand kommt."""
+    r = mengen.rechne(1000, "ml", "500 g")
+    assert mengen.gebinde_text(r, unit_text="500 g", qty=3) == "3 × 500 g"
+
+
+def test_die_packungsangabe_ohne_bedarf_bleibt_eine_packungsangabe():
+    """Ein von Hand eingelegter Posten hat keine gebrauchte Menge. Die
+    Packungsgrösse ist dann alles, was es gibt — und muss als das erkennbar
+    sein, statt wie eine Bedarfsmenge auszusehen."""
+    r = mengen.rechne(None, None, "1 kg")
+    assert mengen.gebinde_text(r, unit_text="1 kg", qty=2) == "2 × 1 kg"
+
+
+def test_eine_nicht_ausrechenbare_packungszahl_sagt_das_selbst():
+    """„6 Stange gebraucht" gegen „1 Stk": die 1 vor der Packung stammt nicht
+    aus den 6 Stangen, und ohne diesen Zusatz sähe sie wie ein Rechenfehler
+    aus (Regel 5)."""
+    r = mengen.rechne(6, "Stange/n", "1 Stk")
+    assert mengen.gebinde_text(r, unit_text="1 Stk", qty=1) == \
+        "1 × 1 Stk — nicht ausrechenbar"
+
+
+def test_der_nachsatz_wiederholt_nicht_was_die_zeile_schon_zeigt():
+    """Wo Bedarf und Packungsangabe getrennt dastehen, bleibt im
+    Kleingedruckten nichts übrig — und eine Zeile, die nichts zu sagen hat,
+    schweigt."""
+    r = mengen.rechne(500, "ml", "500 ml")
+    assert mengen.nachsatz(r, unit_text="500 ml", qty=1) is None
+
+
+def test_der_nachsatz_behaelt_annahme_und_handmenge():
+    r = mengen.rechne(1000, "ml", "500 g")
+    nach = mengen.nachsatz(r, unit_text="500 g", qty=3)
+    assert "Im Korb liegen 3" in nach
+    assert mengen.DICHTE_ANNAHME in nach
+
+
+def test_der_nachsatz_nennt_den_grund_nur_wenn_ihn_sonst_niemand_nennt():
+    """Steht eine Packungsangabe an der Zeile, trägt sie das „nicht
+    ausrechenbar" selbst. Fehlt sie ganz — ein Freitext hat keine —, muss der
+    Nachsatz sagen, warum nichts gerechnet wurde."""
+    mit = mengen.rechne(6, "Stange/n", "1 Stk")
+    assert mengen.nachsatz(mit, unit_text="1 Stk", qty=1) is None
+    ohne = mengen.rechne(200, "g", None)
+    assert "bleibt, wie sie ist" in mengen.nachsatz(ohne, qty=1)

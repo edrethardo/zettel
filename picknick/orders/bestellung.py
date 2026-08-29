@@ -190,6 +190,21 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
         e["bedarf_satz"] = mengen.satz(rechnung, produkt=e["name"],
                                        unit_text=e["unit_text"],
                                        qty=int(e["qty"]))
+        # Für die Einkaufsliste in drei Stücken statt in einem Satz (WB-381):
+        # die GEBRAUCHTE Menge ist die Hauptangabe der Zeile, die
+        # Packungsgrösse die Nebenangabe. Solange `unit_text` das
+        # Mengenfeld besetzte, las sich „2× Zwiebeln, 1 kg" wie zwei Kilo
+        # Zwiebeln — gemeint waren zwei Netze. Der ganze Satz bleibt
+        # daneben stehen, weil Warenkorb und Rezeptübernahme ihn zeigen;
+        # `bedarf_nachsatz` ist sein Rest für eine Zeile, die beide Zahlen
+        # schon selbst trägt.
+        e["bedarf_text"] = mengen.bedarf_text(rechnung)
+        e["gebinde_text"] = mengen.gebinde_text(rechnung,
+                                                unit_text=e["unit_text"],
+                                                qty=int(e["qty"]))
+        e["bedarf_nachsatz"] = mengen.nachsatz(rechnung,
+                                               unit_text=e["unit_text"],
+                                               qty=int(e["qty"]))
         eintraege.append(e)
     return eintraege
 

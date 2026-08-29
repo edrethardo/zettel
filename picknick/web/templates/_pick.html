@@ -47,17 +47,36 @@
             <span class="bild bild-fehlt" aria-hidden="true"></span>
           {% endif %}
           <span class="text">
-            <span class="name">{{ i.qty }}× {{ i.name }}</span>
-            <span class="menge">
-              {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}{% endif %}
-            </span>
-            {# Was gerechnet wurde (WB-362), endlich dort, wofür es gerechnet
-               wurde: „1000 ml gebraucht — 2 × Pomito 500 g" beantwortet vor
-               dem Regal die einzige Frage, die sich dort stellt — reicht das,
-               was ich in der Hand habe? Im Warenkorb steht der Satz seit
-               WB-362, im Laden fehlte er (WB-373). #}
-            {% if i.bedarf_satz %}
-            <span class="hinweis">{{ i.bedarf_satz }}</span>
+            {# Die Packungszahl steht nicht mehr vor dem Namen, sondern
+               unten an der Packungsgrösse, die sie multipliziert (WB-381):
+               „2× Zwiebeln Gelb, Netz / 1 kg" las sich wie zwei Kilo
+               Zwiebeln, gemeint waren zwei Netze. Nur wo es keine
+               Packungsangabe gibt — beim Freitext —, bleibt sie am Namen,
+               sonst verschwände sie ganz; und im Laden ist sie das, was in
+               den Wagen wandert. #}
+            <span class="name">{% if not i.gebinde_text %}{{ i.qty }}× {% endif %}{{ i.name }}</span>
+            {# Die GEBRAUCHTE Menge ist die Hauptangabe (WB-381) — vor dem
+               Regal ist sie die einzige Frage, die sich stellt. Sie steht
+               nur da, wo es sie gibt: ein von Hand eingelegter Posten hat
+               keine, und eine Packungsgrösse an ihrer Stelle wäre eine
+               erfundene Bedarfsmenge. #}
+            {% if i.bedarf_text %}
+            <span class="menge">{{ i.bedarf_text }}</span>
+            {% endif %}
+            {# Die Packungsangabe als Nebenangabe: „dafür 2 × 1 kg". Ohne
+               gebrauchte Menge ist sie die einzige Mengenangabe der Zeile —
+               dann trägt sie das Feld allein, und das „2 ×" davor sagt, dass
+               sie eine Packungsgrösse ist und keine Bedarfsmenge. #}
+            {% if i.gebinde_text or i.ist_freitext %}
+            <span class="gebinde">{% if i.ist_freitext %}Freitext{% else %}{{ i.gebinde_text }}{% endif %}</span>
+            {% endif %}
+            {# Was die beiden Angaben nicht schon selbst sagen (WB-381): eine
+               von Hand gesetzte Packungszahl, die Annahme „1 ml als 1 g" —
+               oder, wenn es gar keine Packungsangabe gibt, warum nicht
+               gerechnet werden konnte. Der ganze Satz aus WB-362 stünde hier
+               zweimal und machte die Zeile länger, ohne mehr zu sagen. #}
+            {% if i.bedarf_nachsatz %}
+            <span class="hinweis">{{ i.bedarf_nachsatz }}</span>
             {% endif %}
             {% if i.fehlt %}
             <span class="vermisst">Gab's nicht — zählt als erledigt.</span>

@@ -428,6 +428,21 @@ button:disabled { opacity: 0.5; cursor: default; }
 .vermisst { font-size: 14px; line-height: 1.3; white-space: normal;
             color: var(--beere); font-weight: 600; }
 
+/* Die Hauptangabe der Einkaufszeile ist die GEBRAUCHTE Menge (WB-381) und
+   nicht die Packungsgrösse: vor dem Regal zählt, wie viel gebraucht wird —
+   was auf der Packung steht, liest man dort ab. Also trägt sie den Ton der
+   Zeile und nicht den gedämpften der Nebenangabe. */
+.pickzeile .menge { color: var(--tinte); font-size: 16px; font-weight: 600; }
+/* Die Packungsangabe („dafür 2 × 1 kg"). Sie steht gross, SOLANGE sie die
+   einzige Mengenangabe der Zeile ist: ein von Hand eingelegter Posten hat
+   keine gebrauchte Menge, und dort wäre eine geflüsterte Zahl die einzige.
+   Steht die gebrauchte Menge darüber, rückt sie hinter sie zurück — das
+   Geschwisterzeichen ist genau diese Bedingung, ohne dass die Vorlage sie
+   noch einmal entscheiden müsste. */
+.pickzeile .gebinde { font-size: 15px; color: var(--gedaempft);
+                      line-height: 1.35; white-space: normal; }
+.pickzeile .menge + .gebinde { font-size: 13px; }
+
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
    weil es dieselbe Sache ist. */
 .rezeptzeile .zweig { align-items: flex-start; }

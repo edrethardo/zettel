@@ -548,25 +548,124 @@ def test_ein_gescheiterter_haken_bleibt_nicht_stumm(client, offene_bestellung):
 # --------------------------------------------------------------------------
 # Die Mengenrechnung gehört vor das Regal (WB-362 gerechnet, WB-373 gezeigt)
 
-def test_der_bedarfssatz_steht_auf_der_pickzeile(client, con,
-                                                 offene_bestellung):
-    """Gerechnet wurde er für genau diesen Moment; gezeigt wurde er nur im
-    Warenkorb."""
-    item = orders.posten(con, offene_bestellung)[0]
-    con.execute("UPDATE order_item SET need_amount = 1000, need_unit = 'ml'"
-                " WHERE id = ?", (item["id"],))
+def _bedarf(con, order_id, **felder):
+    """Setzt Bedarf und Packungszahl am ersten Posten (der Milch)."""
+    item = orders.posten(con, order_id)[0]
+    satz = ", ".join(f"{k} = ?" for k in felder)
+    con.execute(f"UPDATE order_item SET {satz} WHERE id = ?",
+                (*felder.values(), item["id"]))
     con.commit()
-
-    satz = orders.posten(con, offene_bestellung)[0]["bedarf_satz"]
-    assert satz and "1000 ml gebraucht" in satz
-    assert satz in _zeile(client.get("/pick").text, MILCH)
+    return item["id"]
 
 
-def test_ohne_bedarf_bleibt_die_pickzeile_still(client, offene_bestellung):
-    """Ein von Hand eingelegter Posten HAT keine benötigte Menge — eine Zeile,
-    die trotzdem etwas behauptet, wäre schlimmer als keine."""
-    zeile = _zeile(client.get("/pick").text, "Klopapier")
+def test_die_gebrauchte_menge_ist_die_hauptangabe_der_pickzeile(
+        client, con, offene_bestellung):
+    """Vor dem Regal zählt, wie viel gebraucht wird — was auf der Packung
+    steht, liest man dort ab (WB-381).
+
+    Bis dahin besetzte die Packungsgrösse das Mengenfeld und die gebrauchte
+    Menge stand klein darunter: die wichtigere der beiden Zahlen war die
+    kleinere.
+    """
+    _bedarf(con, offene_bestellung, need_amount=1000, need_unit="ml")
+
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert '<span class="menge">1000 ml gebraucht</span>' in zeile
+    # Die Packungsgrösse steht daneben — und nicht an ihrer Stelle.
+    assert '<span class="gebinde">dafür 1 × 1 l</span>' in zeile
+    assert '<span class="menge">1 l' not in zeile
+
+
+def test_ohne_gebrauchte_menge_behauptet_die_pickzeile_keine(
+        client, offene_bestellung):
+    """Ein von Hand eingelegter Posten HAT keine benötigte Menge — und alle
+    13 Posten der echten Datenbank sind solche (WB-381).
+
+    Dann bleibt das Feld der Hauptangabe LEER. Eine Packungsgrösse an dieser
+    Stelle wäre eine erfundene Bedarfsmenge, und die ist im Laden schlimmer
+    als gar keine.
+    """
+    zeile = _zeile(client.get("/pick").text, MILCH)
     assert "gebraucht" not in zeile
+    assert '<span class="menge">' not in zeile
+    # Was es gibt, steht als das da, was es ist: eine Packung zu 1 l.
+    assert '<span class="gebinde">1 × 1 l</span>' in zeile
+
+
+def test_die_packungszahl_steht_an_der_packung_und_nicht_am_namen(
+        client, con, offene_bestellung):
+    """„2× Zwiebeln Gelb, Netz / 1 kg" las sich wie zwei Kilo Zwiebeln.
+
+    Verstecken wäre falsch — im Laden ist die Packungszahl das, was in den
+    Wagen wandert. Sie steht deshalb dort, wo sie wirklich multipliziert:
+    an der Packungsgrösse.
+    """
+    _bedarf(con, offene_bestellung, qty=2)
+
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert f'<span class="name">{MILCH}</span>' in zeile
+    assert "2×" not in zeile
+    assert '<span class="gebinde">2 × 1 l</span>' in zeile
+
+
+def test_eine_nicht_ausrechenbare_einheit_liest_sich_nicht_wie_ein_fehler(
+        client, con, offene_bestellung):
+    """„6 Stange gebraucht" gegen „1 l" ist die bekannte Lücke aus WB-362:
+    die Menge steht da, die Packungszahl ist 1 — und ohne ein Wort dazu
+    sähe die Zeile aus, als hätte sich jemand verrechnet."""
+    _bedarf(con, offene_bestellung, need_amount=6, need_unit="stange")
+
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert '<span class="menge">6 Stange gebraucht</span>' in zeile
+    assert "1 × 1 l — nicht ausrechenbar" in zeile
+    # „dafür" wäre die Behauptung, die 1 stamme aus den 6 Stangen.
+    assert "dafür" not in zeile
+
+
+def test_eine_von_hand_gesetzte_packungszahl_sagt_sich_weiter_an(
+        client, con, offene_bestellung):
+    """Im Korb liegt etwas anderes, als die Rechnung verlangt (WB-362) — im
+    Laden stünde sonst jemand vor der falschen Zahl."""
+    _bedarf(con, offene_bestellung, need_amount=1000, need_unit="ml", qty=3)
+
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert '<span class="gebinde">3 × 1 l</span>' in zeile
+    assert "Im Korb liegen 3 — von Hand dazugelegt." in zeile
+
+
+def test_die_annahme_bleibt_an_der_pickzeile_stehen(client, con,
+                                                    offene_bestellung):
+    """1 ml als 1 g zu rechnen stimmt für Wässriges und nicht für Öl. Die
+    Annahme darf gesehen und bestritten werden (WB-362)."""
+    _bedarf(con, offene_bestellung, need_amount=1000, need_unit="g")
+
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert '<span class="menge">1000 g gebraucht</span>' in zeile
+    assert "1 ml als 1 g gerechnet" in zeile
+
+
+def test_ein_freitextposten_bleibt_wie_er_war(client, offene_bestellung):
+    """Er hat kein Produkt und damit keine Packungsgrösse — nur seine Zahl,
+    und die darf nicht verschwinden, bloss weil es nichts zu multiplizieren
+    gibt."""
+    zeile = _zeile(client.get("/pick").text, "Klopapier")
+    assert "1× Klopapier" in zeile
+    assert "Freitext" in zeile
+    assert "gebraucht" not in zeile
+
+
+def test_die_hauptangabe_ist_im_stil_auch_die_hauptangabe(client):
+    """Eine Rangfolge, die nur in der Vorlage steht, ist keine.
+
+    Ohne diese Regeln stünden beide Angaben im selben gedämpften Ton, und
+    „welche der beiden Zahlen gilt" wäre wieder offen.
+    """
+    stil = STIL.read_text(encoding="utf-8")
+    assert ".pickzeile .menge {" in stil
+    assert ".pickzeile .gebinde {" in stil
+    # Und die Packungsangabe rückt zurück, sobald eine gebrauchte Menge
+    # über ihr steht — steht sie allein, trägt sie das Feld.
+    assert ".pickzeile .menge + .gebinde" in stil
 
 
 def test_ohne_offene_bestellung_bleibt_der_weg_zum_katalog(client):
