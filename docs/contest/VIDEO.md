@@ -377,6 +377,12 @@ den Moment nur halten, in dem beide Zeilen zu lesen sind:
     4,70 (5008 Stimmen)  Lasagne                                <- der Klassiker
     4,61 (1267 Stimmen)  Béchamel-Hackfleisch-Lasagne           <- sagt „Hackfleisch" im Namen
 
+Der Satz dazu (Nutzer, bestätigt am 29.08.): *„The top-rated one is
+vegetarian — 4.85 from 2,125 ratings. If you want the classic with meat, it's
+right there in the list."* **Gewechselt wird nicht** — gezeigt wird, dass die
+Wahl da ist, nicht wie man sie trifft; ein Wechsel kostete einen weiteren Zug
+(30 s) und damit Videolänge.
+
 **Das Spitzenrezept ist vegetarisch, nicht vegan.** Untertitel und Voice-Over
 dürfen „vegan" nicht sagen: vegane Lasagne-Rezepte gibt es bei Chefkoch zwar,
 aber sämtlich mit **0 Stimmen** — sie taugen weder als „sehr gut bewertet",
