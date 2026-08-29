@@ -3,14 +3,20 @@
     .venv/bin/python -m picknick.scrapers.nachtlauf
 
 Genau das, was `picknick-crawl.service` startet, und genau das, was man von
-Hand aufruft, wenn man wissen will, ob es noch geht. Zwei Schritte in fester
+Hand aufruft, wenn man wissen will, ob es noch geht. Drei Schritte in fester
 Reihenfolge:
 
 1. **Crawlen** — `knuspr.crawl()` über die Begriffsliste aus
    `picknick.scrapers.begriffe`. Der Lauf ist in `scrape_run` protokolliert,
    samt Begründung, falls er verworfen wird; die Statusseite des Shops liest
    genau diese Tabelle (Spec 11).
-2. **Sichern** — `betrieb.sichern()`, sieben Stände per `VACUUM INTO`.
+2. **Miniaturen ableiten** — `miniaturen.lauf()` zieht die Kachelbilder zu den
+   frisch geholten Fotos nach (WB-374). Das gehört hierher und nicht in den
+   Web-Prozess: umrechnen kostet ~11 ms je Bild, und der Antwortweg einer
+   Seite, die gerade auf dem Telefon lädt, ist der falsche Ort dafür (Spec 3).
+   Läuft auch dann, wenn der Crawl gescheitert ist — heruntergeladen sind die
+   Bilder trotzdem.
+3. **Sichern** — `betrieb.sichern()`, sieben Stände per `VACUUM INTO`.
 
 Die Sicherung läuft **auch dann, wenn der Crawl scheitert**. Sie sichert nicht
 den Crawl, sondern die Datenbank: Bestellungen, Rezepte und Chatverläufe sind
@@ -26,7 +32,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from picknick import betrieb, db
+from picknick import betrieb, db, miniaturen
 from picknick.scrapers import begriffe as begriffsliste
 from picknick.scrapers import knuspr
 
@@ -77,6 +83,12 @@ def lauf(db_path: str, *, begriffe, image_dir: str | None,
             schreib(f"  Begründung: {bericht['error']}")
     finally:
         con.close()
+
+    if image_dir:
+        # Nach dem Crawl und ausserhalb des `try`: ein Fehlschlag des Crawls
+        # lässt die schon geholten Bilder liegen, und die sollen trotzdem eine
+        # Miniatur bekommen.
+        miniaturen.lauf(image_dir, schreib=schreib)
 
     if sichern:
         # Erst nach dem Schliessen der Verbindung: `VACUUM INTO` verträgt keine
