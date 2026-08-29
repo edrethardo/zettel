@@ -1,0 +1,48 @@
+{% extends "basis.html" %}
+{% block titel %}{{ titel }} — Picknick{% endblock %}
+{% block inhalt %}
+
+{# Die Rückfrage vor etwas Endgültigem (WB-376).
+
+   **Warum eine Seite und kein `hx-confirm`.** Der Bestätigungsdialog von HTMX
+   ist `window.confirm()` — er braucht JavaScript, er greift nur an Knöpfen,
+   die HTMX überhaupt anfasst (die Löschknöpfe auf `/bons` sind einfache
+   Formulare), und er kann nur EINEN Satz sagen. Hier muss aber stehen, WAS
+   verloren geht, mit Zahlen: „14 Entscheidungen" ist der Unterschied zwischen
+   einer Rückfrage und einem Türsteher.
+
+   **Abbrechen steht zuerst.** Das ist die Wahl, die nichts kaputt macht, und
+   auf dem Telefon liegt sie damit dort, wo der Daumen ohnehin ist. Der
+   zerstörende Knopf ist der zweite und trägt die Beerenfarbe, die im ganzen
+   Blatt „Vorsicht" heisst.
+
+   `zurueck` ist die Seite, von der aus getippt wurde — Abbrechen führt
+   dorthin zurück und nicht auf eine Übersicht: nach einer Rückfrage will man
+   da weitermachen, wo man war. #}
+
+<h1>{{ titel }}</h1>
+
+<p class="fehler" role="status">{{ frage }}</p>
+
+{% if verlust %}
+{# Was WEG ist, wenn sie tippt — jede Sache in einer eigenen Zeile und mit
+   ihrer Zahl. Ein Satz „alles wird gelöscht" liest sich schneller und sagt
+   weniger. #}
+<ul class="verlust">
+  {% for v in verlust %}<li>{{ v }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% if bleibt %}
+{# Und was BLEIBT. Ohne diesen Satz rechnet sie mit dem grösseren Verlust und
+   tippt Abbrechen, obwohl sie das Richtige wollte. #}
+<p class="fussnote">{{ bleibt }}</p>
+{% endif %}
+
+<div class="bestaetigen">
+  <a class="knopf" href="{{ zurueck }}">Abbrechen</a>
+  <form method="post" action="{{ aktion }}">
+    <button class="knopf loeschen" type="submit">{{ knopf }}</button>
+  </form>
+</div>
+{% endblock %}

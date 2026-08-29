@@ -1,0 +1,32 @@
+{% extends "basis.html" %}
+{% block titel %}Gibt es nicht — Picknick{% endblock %}
+{% block inhalt %}
+
+{# EINE Seite für jede Adresse, die ins Leere zeigt (WB-376).
+
+   Vorher antworteten `/pick/99` und `/rezepte/99` mit `Response(404)` — null
+   Bytes, also ein weisses Blatt ohne Kopf, ohne Navigation und ohne Rückweg.
+   Auf dem Telefon bleibt dann nur der Zurück-Knopf des Browsers, und ein
+   Lesezeichen auf eine erledigte Bestellung ist eine Sackgasse. Daneben stand
+   `/bons/gibtesnicht.pdf`, das mit 200 antwortete und eine Geisterseite über
+   eine Datei baute, die es nicht gibt — drei Wege, drei Antworten.
+
+   Der Kopf kommt aus `basis.html`, der Rückweg steht hier, und beides
+   zusammen ist der ganze Unterschied. `wege` ist nicht eine feste Liste,
+   sondern die Antwort auf „wo war ich?": von einem Rezept aus führt sie zur
+   Rezeptliste, von einem Bon aus zu den Bons. Ein blosser Link auf die
+   Startseite wäre ein Rückweg, der die Nutzerin ganz von vorn anfangen
+   lässt. #}
+
+<h1>Das gibt es nicht</h1>
+
+<p class="leer">
+  {{ satz }}<br>
+  Vielleicht ist es gelöscht worden, vielleicht ist die Adresse alt.
+  <span class="wege">
+    {% for w in wege %}
+    <a class="knopf" href="{{ w.url }}">{{ w.text }}</a>
+    {% endfor %}
+  </span>
+</p>
+{% endblock %}

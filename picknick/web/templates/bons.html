@@ -36,6 +36,14 @@
 <p class="fertig" role="status">Gespeichert als {{ neu }}.</p>
 {% endif %}
 
+{% if weg %}
+{# Die Meldung nach dem Löschen (WB-376). Eine Liste, die einfach kürzer
+   geworden ist, sagt nicht, ob der richtige Bon getroffen wurde — und der
+   Löschknopf sitzt am Telefon direkt neben dem harmlosen. #}
+<p class="fertig" role="status">{{ weg }} ist gelöscht. Die ausgelesenen
+  Käufe stehen weiter in der Historie.</p>
+{% endif %}
+
 {% if not bons %}
   <p class="leer">Noch kein Bon hochgeladen.</p>
 {% else %}
@@ -65,19 +73,36 @@
       </span>
     </span>
     <span class="stellen">
+      {# **Die Knopfposition wandert nicht** (WB-376). Vorher hatte die
+         PDF-Zeile `[Auslesen][×]` und die Bild-Zeile ohne OCR nur `[×]` — das
+         Löschen sass dort, wo eine Zeile weiter oben der harmlose Knopf sass,
+         und auf dem Telefon trifft der Daumen dann das Falsche. Wo es nichts
+         auszulesen gibt, steht deshalb ein Platzhalter derselben Breite statt
+         eines Knopfes, der verlässlich scheitern würde. #}
       {% if b.lesbar and not (b.lauf and b.lauf.laeuft) %}
-      {# Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
-         gemeint ist, dessen Knopf getroffen wurde. #}
-      <form method="post" action="/bons/{{ b.name | urlencode }}/auslesen">
-        <button type="submit" class="mini"
-                aria-label="{{ b.name }} auslesen">
-          {% if b.beleg %}neu lesen{% else %}Auslesen{% endif %}</button>
-      </form>
+        {% if b.beleg %}
+        {# „Neu lesen" verwirft alle bisherigen Ja/Nein dieses Belegs
+           (`kaeufe.anlegen(ersetzen=True)`). Deshalb führt es über die
+           Rückfrage, die die Zahl nennt — ein Link, kein Formular: der GET
+           liest nur. #}
+        <a class="mini" href="/bons/{{ b.name | urlencode }}/auslesen"
+           aria-label="{{ b.name }} neu lesen — fragt vorher nach">neu lesen</a>
+        {% else %}
+        {# Beim ersten Lesen geht nichts verloren, also auch keine Rückfrage.
+           Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
+           gemeint ist, dessen Knopf getroffen wurde. #}
+        <form method="post" action="/bons/{{ b.name | urlencode }}/auslesen">
+          <button type="submit" class="mini"
+                  aria-label="{{ b.name }} auslesen">Auslesen</button>
+        </form>
+        {% endif %}
+      {% else %}
+      <span class="mini platzhalter" aria-hidden="true"></span>
       {% endif %}
-      <form method="post" action="/bons/{{ b.name | urlencode }}/loeschen">
-        <button type="submit" class="mini loeschen"
-                aria-label="{{ b.name }} löschen">×</button>
-      </form>
+      {# Löschen ist endgültig — es gibt keine zweite Kopie der Datei. Der
+         Link führt auf die Rückfrage, gelöscht wird erst dort per POST. #}
+      <a class="mini loeschen" href="/bons/{{ b.name | urlencode }}/loeschen"
+         aria-label="{{ b.name }} löschen — fragt vorher nach">×</a>
     </span>
   </li>
   {% endfor %}

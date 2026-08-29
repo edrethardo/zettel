@@ -22,7 +22,7 @@ from picknick.orders.pick import (  # noqa: F401
 from picknick.orders.korb import (  # noqa: F401
     LADEN_VORGABE, abschicken, einlegen, entfernen, gebinde, genau_eines,
     inhalt, korb_anzahl, laden_setzen, menge_setzen, rechnung,
-    vorbelegter_laden, warenkorb, warenkorb_id)
+    vorbelegter_laden, warenkorb, warenkorb_id, wieder_einlegen)
 
 __all__ = [
     "UEBERGAENGE", "BestellFehler", "FalscherZustand", "LeererWarenkorb",
@@ -32,5 +32,5 @@ __all__ = [
     "laden_setzen", "markiere_katalogstand", "menge_setzen", "nach_laden",
     "naechste", "offene", "posten", "rechnung",
     "setze_stand", "vorbelegter_laden", "warenkorb", "warenkorb_id",
-    "wechsle",
+    "wechsle", "wieder_einlegen",
 ]

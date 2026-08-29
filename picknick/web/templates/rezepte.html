@@ -7,6 +7,14 @@
 <p class="fehler" role="status">{{ fehler }}</p>
 {% endif %}
 
+{% if weg %}
+{# Die Meldung nach dem Löschen (WB-376). Ohne sie sieht die Liste nach einem
+   gelöschten Rezept genauso aus wie nach einem Abbruch — und wer eines von
+   vieren gelöscht hat, zählt nach, statt es zu lesen. Der Name kommt aus dem
+   Query der Weiterleitung: eine Sitzung hat dieser Shop nicht. #}
+<p class="fertig" role="status">„{{ weg }}“ ist gelöscht.</p>
+{% endif %}
+
 {% if not rezepte %}
   <p class="leer">Noch kein Rezept. Leg eines an — oder mach an einer
     erledigten Bestellung eines daraus.</p>

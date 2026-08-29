@@ -922,3 +922,43 @@ code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Rückfrage, Rückweg und die Adresse ins Leere (WB-376) -------------------
+   Kein zweites Gestaltungssystem: alles hier baut auf `.knopf`, `.mini`,
+   `.leer` und `.fertig` auf und nimmt nur Anordnung und Farbe dazu. */
+
+/* Ein Link, der ein Knopf ist. `.mini` gibt Grösse und Rand, aber es war
+   bisher immer ein `<button>` — ein `<a>` ist `inline` und würde die 44 px
+   Höhe nicht einlösen, also träfe der Daumen daneben. Zerstörendes führt seit
+   WB-376 über eine Rückfrage, und ein GET ist dafür die richtige Methode. */
+a.mini {
+  display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none; box-sizing: border-box;
+}
+
+/* Der Platzhalter, damit die Knopfposition nicht wandert: eine Bon-Zeile ohne
+   Auslesen-Knopf hält dessen Platz frei, sonst rutscht das Löschen dorthin,
+   wo eine Zeile weiter oben der harmlose Knopf sass. Unsichtbar, aber
+   raumnehmend — `visibility` statt `display: none`. */
+.stellen .platzhalter { visibility: hidden; }
+
+/* Die Rückfrage: Abbrechen zuerst, das Zerstörende zweit und in Beere. */
+.bestaetigen { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+.bestaetigen form { margin: 0; }
+.bestaetigen .knopf.loeschen {
+  color: var(--beere); border-color: var(--beere-hell);
+  background: var(--beere-hell);
+}
+/* Was verloren geht, Zeile für Zeile — mit Luft, weil es gelesen und nicht
+   überflogen werden soll. */
+.verlust { margin: 14px 0; padding-left: 22px; line-height: 1.6; }
+.verlust li { margin-bottom: 6px; }
+
+/* Der Rückweg im Korb: Meldung und „rückgängig" in einer Zeile, damit der
+   Knopf zu dem Satz gehört, den er zurücknimmt. */
+.rueckweg { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rueckweg form { margin: 0; }
+
+/* Die Wege zurück auf der 404-Seite: nebeneinander, mittig unter dem Satz. */
+.wege { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        margin-top: 14px; }

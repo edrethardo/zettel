@@ -7,6 +7,48 @@
 <p class="fehler" role="status">{{ fehler }}</p>
 {% endif %}
 
+{% if meldung %}
+<p class="fertig" role="status">{{ meldung }}</p>
+{% endif %}
+
+{% if weg %}
+{# Der Rückweg zum Löschen (WB-376). „−" bei Menge 1 und das „×" nehmen eine
+   Zeile aus dem Korb — beides ohne Rückfrage, und das soll so bleiben: es ist
+   die häufigste Geste des Shops, und ein Zwischenschritt davor wäre auf dem
+   Telefon der doppelte Aufwand für jeden Handgriff. Stattdessen ist die Zeile
+   zurückzuholen, genau wie eine Entscheidung im Chat seit WB-361 — der
+   Hinweis dort verweist für die Rücknahme ausdrücklich hierher.
+
+   Die Zeile reist in versteckten Feldern mit und nicht in einem Fach auf dem
+   Server: der Korb ist ein gemeinsamer, und ein „zuletzt gelöscht" im Prozess
+   wäre eines für beide Telefone zusammen. Ohne JavaScript funktioniert es
+   genauso, weil `action` und `hx-post` dieselbe Adresse tragen. #}
+<div class="fertig rueckweg" role="status">
+  <span>„{{ weg.name }}“ ist aus dem Korb.</span>
+  <form method="post" action="/warenkorb/wiederherstellen"
+        hx-post="/warenkorb/wiederherstellen"
+        hx-target="#korb" hx-swap="innerHTML">
+    <input type="hidden" name="name" value="{{ weg.name }}">
+    {% if weg.product_id %}
+    <input type="hidden" name="product_id" value="{{ weg.product_id }}">
+    {% endif %}
+    {% if weg.free_text %}
+    <input type="hidden" name="free_text" value="{{ weg.free_text }}">
+    {% endif %}
+    <input type="hidden" name="qty" value="{{ weg.qty }}">
+    <input type="hidden" name="hand_qty" value="{{ weg.hand_qty or 0 }}">
+    <input type="hidden" name="store" value="{{ weg.store }}">
+    {% if weg.need_amount is not none %}
+    <input type="hidden" name="need_amount" value="{{ weg.need_amount }}">
+    <input type="hidden" name="need_unit" value="{{ weg.need_unit or '' }}">
+    {% endif %}
+    <button class="mini zurueck" type="submit"
+            aria-label="{{ weg.name }} wieder in den Korb legen"
+            >rückgängig</button>
+  </form>
+</div>
+{% endif %}
+
 {% if not posten %}
   {# Der leere Zustand sagt, was als Nächstes sinnvoll ist, statt nur zu
      schweigen (WB-360). Der Satz davor bleibt wörtlich — Tests kennen ihn. #}

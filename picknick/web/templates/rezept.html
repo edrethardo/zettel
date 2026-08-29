@@ -101,7 +101,12 @@
   <button class="knopf" type="submit">Speichern</button>
 </form>
 
-<form class="rezeptloeschen" method="post" action="/rezepte/{{ rezept.id }}/loeschen">
-  <button class="knopf loeschen" type="submit">Rezept löschen</button>
-</form>
+{# Der teuerste Knopf des Shops (WB-376): `DELETE FROM recipe` nimmt per
+   CASCADE Zutaten, Zubereitung, Zeiten und Herkunft mit, und ein geholtes
+   Chefkoch-Rezept sind zwei Modellläufe plus Abruf. Dazu steht er direkt
+   unter „Speichern". Er führt deshalb auf eine Rückfrage, die aufzählt, was
+   verschwindet — gelöscht wird erst dort, per POST. #}
+<div class="rezeptloeschen">
+  <a class="knopf loeschen" href="/rezepte/{{ rezept.id }}/loeschen">Rezept löschen</a>
+</div>
 {% endblock %}
