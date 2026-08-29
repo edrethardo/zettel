@@ -214,6 +214,259 @@ def test_statusbericht_zaehlt_nur_aktive_produkte(db_datei):
 
 
 # --------------------------------------------------------------------------
+# Der Agent auf der Statusseite (WB-377)
+#
+# Die Statusseite eines Observability-Vorführstücks muss über die eigene
+# Beobachtung Auskunft geben, sonst widerlegt sie sich selbst. Gemessen am
+# 2026-08-29 in der echten Datenbank: 13 von 35 Nutzerzügen ohne `span_id` —
+# nie in Phoenix angekommen, und der Shop sagte es niemandem.
+
+
+class WeckenderChat:
+    """Ein Chat, dessen `zustand()` die vLLM-Box wecken würde.
+
+    Der Doppelgänger für die wichtigste Zusicherung dieses Tickets: er wirft,
+    statt ein Magic Packet zu schicken. Ein `/status`, das ihn fragt, fällt
+    damit im Test auf und nicht erst daran, dass nachts ein Rechner angeht.
+    """
+
+    def zustand(self):
+        raise AssertionError(
+            "/status hat nach dem Modellzustand gefragt. Dieser Aufruf weckt "
+            "die vLLM-Box per Wake-on-LAN — eine Seite, die jemand nur "
+            "aufmacht, um nachzusehen, darf keinen Rechner hochfahren.")
+
+
+def _chatzug(pfad, *, span_id=None, wann="2026-08-28 20:00:00",
+             vorschlaege=()):
+    """Ein Zug: Zeile der Nutzerin plus Antwort, beide mit derselben Span-ID.
+
+    So schreibt `assistant.chat.turn()` es auch — genau deshalb muss die
+    Statusseite die Zeilen der Nutzerin zählen und nicht beide.
+    """
+    con = db.connect(pfad)
+    # Es darf nur EINEN Warenkorb geben (Teilindex auf `orders.state`), also
+    # hängen alle Züge am selben — wie im Betrieb auch.
+    row = con.execute("SELECT id FROM orders WHERE state = 'draft'").fetchone()
+    order_id = row["id"] if row else con.execute(
+        "INSERT INTO orders (state, created_at) VALUES ('draft', ?)",
+        (wann,)).lastrowid
+    for rolle, inhalt in (("user", "brauche Butter"), ("assistant", "bitte")):
+        mid = con.execute(
+            "INSERT INTO chat_message (order_id, role, content, span_id,"
+            " created_at) VALUES (?, ?, ?, ?, ?)",
+            (order_id, rolle, inhalt, span_id, wann)).lastrowid
+        if rolle == "user":
+            nutzerzeile = mid
+    for entscheidung in vorschlaege:
+        con.execute(
+            "INSERT INTO chat_suggestion (chat_message_id, free_text, qty,"
+            " decision) VALUES (?, 'Butter', 1, ?)",
+            (nutzerzeile, entscheidung))
+    con.commit()
+    con.close()
+    return nutzerzeile
+
+
+def test_status_fragt_den_modellzustand_nicht_ab_und_weckt_die_box_nicht(
+        db_datei, tmp_path, monkeypatch):
+    """Die wichtigste Zusicherung von WB-377.
+
+    `chat.zustand()` schickt `wake-vllm` los. Stünde dieser Aufruf auf der
+    Statusseite, weckte jeder Blick auf sie einen Rechner im Nebenzimmer —
+    96 s Anlaufzeit, für eine Auskunft, die niemand erbeten hat. Deshalb ein
+    Doppelgänger, der wirft: der Test bleibt nur grün, solange die Seite
+    schweigt und den zuletzt bekannten Stand zeigt.
+    """
+    from picknick.llm import wake
+
+    def _nie(*a, **k):
+        raise AssertionError("/status hat die Box angefasst.")
+
+    # Zweiter Riegel: auch ein Weg an `app.state.chat` vorbei fällt auf.
+    monkeypatch.setattr(wake, "health", _nie)
+    monkeypatch.setattr(wake, "zustand", _nie)
+    monkeypatch.setattr(wake, "wecker", _nie)
+
+    bilder = tmp_path / "bilder"
+    bilder.mkdir()
+    app = webapp.create_app(db_path=db_datei, image_dir=bilder,
+                            chat=WeckenderChat())
+    with TestClient(app) as c:
+        r = c.get("/status")
+    assert r.status_code == 200
+    assert "Modell" in r.text
+    # Und die Seite sagt auch, warum sie schweigt.
+    assert "weckt" in r.text
+
+
+def _flach(text: str) -> str:
+    """HTML ohne Zeilenumbrüche — ein Satz in der Vorlage darf umbrechen."""
+    return " ".join(text.split())
+
+
+def test_die_luecke_steht_als_zahl_auf_der_seite(db_datei, client):
+    """„N von M Zügen ohne Trace" ist die ehrlichste Zeile dieser Seite."""
+    _chatzug(db_datei, span_id="aabbccdd00112233", wann="2026-08-28 19:00:00")
+    _chatzug(db_datei, span_id=None, wann="2026-08-28 20:00:00")
+    _chatzug(db_datei, span_id=None, wann="2026-08-28 21:00:00")
+    text = _flach(client.get("/status").text)
+    assert "<strong>2 von 3</strong> Zügen haben keine Span-ID" in text
+    assert "nie in Phoenix angekommen" in text
+    assert "1 Züge sind angekommen (33 %)" in text
+    # Der Zeitpunkt gehört dazu, sonst ist die Zahl nicht einzuordnen.
+    assert "Letzter Zug MIT Trace: 2026-08-28 19:00:00" in text
+    assert "Letzter Zug OHNE Trace: 2026-08-28 21:00:00" in text
+
+
+def test_trace_luecke_zaehlt_zuege_und_nicht_zeilen(db_datei):
+    """Jeder Zug schreibt zwei Zeilen — über beide gezählt stünde die
+    doppelte Zahl auf der Seite, und niemand könnte sie einordnen."""
+    _chatzug(db_datei, span_id="aabbccdd00112233")
+    _chatzug(db_datei, span_id=None)
+    con = db.connect(db_datei)
+    luecke = betrieb.trace_luecke(con)
+    con.close()
+    assert luecke["zuege"] == 2
+    assert luecke["mit_trace"] == 1
+    assert luecke["ohne_trace"] == 1
+    assert luecke["anteil"] == 0.5
+
+
+def test_ohne_chat_gibt_es_keinen_anteil_statt_null_prozent(db_datei):
+    """0 % hiesse „nichts kommt an", richtig ist „noch nichts passiert"."""
+    con = db.connect(db_datei)
+    luecke = betrieb.trace_luecke(con)
+    con.close()
+    assert luecke == {"zuege": 0, "mit_trace": 0, "ohne_trace": 0,
+                      "letzter_mit": None, "letzter_ohne": None,
+                      "anteil": None}
+
+
+def test_zuordnungen_lassen_offene_vorschlaege_aus_der_quote(db_datei):
+    """Dieselbe Rechnung wie `vorschlaege.quote()`, über den ganzen Bestand."""
+    _chatzug(db_datei, vorschlaege=("kept", "removed", "removed", "offen"))
+    con = db.connect(db_datei)
+    z = betrieb.zuordnungen(con)
+    con.close()
+    assert (z["behalten"], z["verworfen"], z["offen"]) == (1, 2, 1)
+    assert z["vorgeschlagen"] == 4
+    assert z["quote"] == pytest.approx(1 / 3)
+
+
+def test_ohne_entscheidung_gibt_es_keine_trefferquote(db_datei):
+    """Eine 0.0 hiesse „alles falsch", wo „noch nichts gesagt" richtig ist."""
+    _chatzug(db_datei, vorschlaege=("offen", "offen"))
+    con = db.connect(db_datei)
+    z = betrieb.zuordnungen(con)
+    con.close()
+    assert z["offen"] == 2 and z["quote"] is None
+
+
+def test_die_zuordnungen_stehen_mit_ihren_labelnamen_auf_der_seite(
+        db_datei, client):
+    """Aus genau diesen Zahlen entstehen die Eval-Labels (Spec 8.1)."""
+    _chatzug(db_datei, vorschlaege=("kept", "removed", "offen"))
+    text = client.get("/status").text
+    assert "1 behalten" in text
+    assert "1 verworfen" in text
+    assert "1 offen" in text
+    assert "kept" in text and "removed" in text
+
+
+def test_die_seite_nennt_den_tracer_auch_ohne_phoenix(db_datei, client):
+    """Die Testsuite läuft mit `PICKNICK_TRACING=0` — genau der Fall, in dem
+    eine Seite ohne diesen Abschnitt einfach schweigen würde."""
+    text = client.get("/status").text
+    assert "Beobachtung" in text
+    assert "Tracing ist abgeschaltet" in text
+    assert "PICKNICK_TRACING" in text
+
+
+def test_ein_ablehnendes_phoenix_steht_auf_der_seite(db_datei, tmp_path):
+    """Der Fall, für den es diese Seite gibt: der Exporter läuft, und nichts
+    kommt an. Ohne Buchführung sähe das genauso aus wie „alles in Ordnung"."""
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (SimpleSpanProcessor,
+                                                SpanExporter, SpanExportResult)
+
+    from picknick import obs
+    from picknick.obs import otel
+
+    class Ablehnend(SpanExporter):
+        def export(self, spans):
+            return SpanExportResult.FAILURE
+
+        def shutdown(self):
+            pass
+
+    provider = TracerProvider()
+    schlange = otel.NichtBlockierend(
+        SimpleSpanProcessor(otel.Buchfuehrend(Ablehnend())))
+    provider.add_span_processor(schlange)
+    obs.setze_provider(provider)
+    try:
+        t = provider.get_tracer("test")
+        with t.start_as_current_span("chat.turn"):
+            pass
+        assert schlange.force_flush(10_000)
+
+        bilder = tmp_path / "bilder"
+        bilder.mkdir()
+        with TestClient(webapp.create_app(db_path=db_datei, image_dir=bilder,
+                                          chat=WeckenderChat())) as c:
+            text = _flach(c.get("/status").text)
+    finally:
+        schlange.shutdown()
+        obs.abbauen()
+
+    assert "Phoenix nimmt die Spans nicht an" in text
+    assert "1 Spans abgelehnt" in text
+    # Ein gesetzter Provider schlägt die Umgebung: die Suite läuft mit
+    # PICKNICK_TRACING=0, und „abgeschaltet" wäre hier trotzdem gelogen.
+    assert "Tracing ist abgeschaltet" not in text
+
+
+def test_der_statusbericht_geht_nicht_ins_netz(db_datei):
+    """Kein Zweig darf eine Verbindung aufbauen — auch nicht der Modellteil.
+
+    `modellstand()` liest die Konfiguration und mehr nicht; ein `httpx`, das
+    hier eine Verbindung öffnete, fiele sofort auf.
+    """
+    import httpx
+
+    def _nie(*a, **k):
+        raise AssertionError("Der Statusbericht wollte ins Netz.")
+
+    echt = httpx.Client.request
+    httpx.Client.request = _nie
+    try:
+        con = db.connect(db_datei)
+        bericht = betrieb.statusbericht(con)
+        con.close()
+    finally:
+        httpx.Client.request = echt
+    assert bericht["modell"]["endpunkt"]
+    assert bericht["modell"]["fehler"] is None
+    assert bericht["tracer"]["endpunkt"]
+
+
+def test_eine_kaputte_modelladresse_steht_auf_der_seite(db_datei, tmp_path,
+                                                        monkeypatch):
+    """Die alte IP der Box ist keine Netzstörung, sondern eine Altlast — und
+    das ist die einzige Aussage über das Modell, die ohne Netzaufruf sicher
+    zu treffen ist."""
+    monkeypatch.setenv("PICKNICK_LLM_ENDPOINT", "http://192.168.2.219:8000/v1")
+    bilder = tmp_path / "bilder"
+    bilder.mkdir()
+    with TestClient(webapp.create_app(db_path=db_datei, image_dir=bilder,
+                                      chat=WeckenderChat())) as c:
+        text = c.get("/status").text
+    assert "192.168.2.219" in text
+    assert "nicht benutzbar" in text
+
+
+# --------------------------------------------------------------------------
 # Nachtlauf
 
 def test_nachtlauf_crawlt_und_sichert_ohne_netz(tmp_path):

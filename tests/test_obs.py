@@ -634,6 +634,119 @@ def test_nicht_blockierend_verliert_keinen_span():
 
 
 # --------------------------------------------------------------------------
+# Der Shop weiss, ob seine eigene Beobachtung ankommt (WB-377)
+#
+# Ohne diese Buchführung kann der Shop über den Tracer nur sagen, dass er
+# eingerichtet ist. Der `SimpleSpanProcessor` verwirft das Ergebnis von
+# `export()`, danach sieht ein abgelehnter Span aus wie ein angekommener — und
+# eine Statusseite, die daraufhin „Tracing läuft" behauptet, wäre genau die
+# stille Lüge, gegen die dieses Projekt gebaut ist.
+
+def _mit_buchfuehrung(exporter):
+    """Derselbe Aufbau wie im Betrieb: Schlange, Prozessor, Buchführung."""
+    prozessor = SimpleSpanProcessor(tracermodul.Buchfuehrend(exporter))
+    provider = TracerProvider()
+    schlange = tracermodul.NichtBlockierend(prozessor)
+    provider.add_span_processor(schlange)
+    return provider, schlange
+
+
+def test_der_tracerstand_zaehlt_die_angekommenen_spans():
+    exporter = InMemorySpanExporter()
+    provider, schlange = _mit_buchfuehrung(exporter)
+    t = provider.get_tracer("test")
+    for i in range(3):
+        with t.start_as_current_span(f"s{i}"):
+            pass
+    assert schlange.force_flush(10_000)
+
+    stand = obs.tracerstand(provider)
+    assert stand["gemessen"] is True
+    assert stand["angekommen"] == 3
+    assert stand["gescheitert"] == 0
+    assert stand["zuletzt_ok"] is not None
+    assert stand["zuletzt_fehler"] is None
+    schlange.shutdown()
+
+
+def test_ein_ablehnender_collector_faellt_im_tracerstand_auf():
+    """Der Fall, den es zu sehen gilt: Spans gehen raus und kommen nie an."""
+
+    class Ablehnend(SpanExporter):
+        def export(self, spans):
+            return SpanExportResult.FAILURE
+
+        def shutdown(self):
+            pass
+
+    provider, schlange = _mit_buchfuehrung(Ablehnend())
+    t = provider.get_tracer("test")
+    for i in range(2):
+        with t.start_as_current_span(f"s{i}"):
+            pass
+    assert schlange.force_flush(10_000)
+
+    stand = obs.tracerstand(provider)
+    assert stand["angekommen"] == 0
+    assert stand["gescheitert"] == 2
+    assert stand["zuletzt_fehler"] is not None
+    assert "nimmt die Spans nicht an" in stand["grund"]
+    schlange.shutdown()
+
+
+def test_ein_werfender_exporter_wird_gebucht_und_nicht_weitergereicht():
+    """Die Buchführung darf den Zug nicht mitnehmen — nur mitschreiben."""
+
+    class Kaputt(SpanExporter):
+        def export(self, spans):
+            raise RuntimeError("Collector weg")
+
+        def shutdown(self):
+            pass
+
+    buch = tracermodul.Buchfuehrend(Kaputt())
+    assert buch.export([object()]) is SpanExportResult.FAILURE
+    assert buch.gescheitert == 1
+    assert "RuntimeError: Collector weg" in buch.grund
+
+
+def test_ohne_buchfuehrung_sagt_der_stand_unbekannt_statt_null():
+    """Eine 0 wäre hier erfunden — der Provider misst schlicht nicht mit.
+
+    Genau der Zustand eines von Hand gesetzten Providers (`setze_provider`).
+    Die Statusseite muss „unbekannt" schreiben können und nicht „nichts
+    angekommen".
+    """
+    provider = TracerProvider()
+    schlange = tracermodul.NichtBlockierend(
+        SimpleSpanProcessor(InMemorySpanExporter()))
+    provider.add_span_processor(schlange)
+    stand = obs.tracerstand(provider)
+    assert stand["gemessen"] is False
+    assert stand["angekommen"] == 0 and stand["zuletzt_ok"] is None
+    schlange.shutdown()
+
+
+def test_der_tracerstand_geht_nicht_ins_netz_und_haelt_auch_ohne_provider():
+    """Der Aufruf hängt an einer Seite, die jemand nur aufmacht, um
+    nachzusehen: er darf weder Phoenix fragen noch die Box wecken."""
+    obs.abbauen()
+
+    def _nie(*a, **k):
+        raise AssertionError("tracerstand() wollte ins Netz.")
+
+    echt = httpx.Client.request
+    httpx.Client.request = _nie
+    try:
+        stand = obs.tracerstand()
+    finally:
+        httpx.Client.request = echt
+    assert stand["eingerichtet"] is False
+    # Wohin es GINGE, ist auch ohne Provider eine beantwortbare Frage.
+    assert stand["endpunkt"] and stand["projekt"]
+
+
+# --------------------------------------------------------------------------
 # Was gerechnet wurde, steht im Span (WB-362)
 #
 # Ohne diesen Span ist später nicht nachvollziehbar, warum zwei Packungen im

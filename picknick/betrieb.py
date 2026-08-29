@@ -15,6 +15,24 @@ entscheiden, ob der Shop in einem Monat noch brauchbar ist:
    der Katalog altert dann einfach weiter, und das Hinweisband in Spec 11
    sagt nur „Preise sind N Tage alt", nicht warum. Deshalb wird jeder
    verworfene Lauf mit seiner Begründung ausgewiesen.
+
+   **Derselbe Satz gilt für den Tracer** (WB-377), und dort wog er lange
+   schwerer: dieses Projekt ist ein Vorführstück für Observability, und seine
+   Statusseite hat bis WB-377 kein Wort darüber verloren, ob die Beobachtung
+   überhaupt ankommt. Gemessen am 2026-08-29 in der echten Datenbank: 13 von
+   35 Nutzerzügen trugen keine `span_id` — sie sind nie in Phoenix gelandet,
+   und niemand konnte es sehen. Ein Beobachtbarkeits-Vorführstück, dessen
+   eigene Statusseite dazu schweigt, widerlegt sich selbst. Deshalb stehen
+   hier neben dem Katalog auch `trace_luecke()`, `zuordnungen()` und
+   `modellstand()`.
+
+**Der Statusbericht fragt nichts nach draussen.** Kein Phoenix, kein Modell,
+kein Netz — alles kommt aus der Datenbank oder aus Zählern des laufenden
+Prozesses. Der Grund ist konkret: `chat.zustand()` weckt die vLLM-Box per
+Wake-on-LAN. Eine Statusseite, die einen Rechner im Nebenzimmer aufweckt, weil
+jemand nachsehen wollte, ob alles läuft, wäre ein Fehler mit Stromrechnung.
+Was die Box gerade tut, fragt genau eine Stelle: der Chat im Warenkorb, und
+nur dann, wenn ihn jemand vor sich hat.
 """
 from __future__ import annotations
 
@@ -22,6 +40,8 @@ import re
 import sqlite3
 import time
 from pathlib import Path
+
+from picknick import db, obs
 
 #: Wie viele Stände aufgehoben werden (Spec 12). Sieben, weil ein Fehler, der
 #: den Katalog kaputtmacht, spätestens am nächsten Wochenende auffällt — und
@@ -176,12 +196,121 @@ def verworfene_laeufe(con: sqlite3.Connection, limit: int = 20) -> list[dict]:
     return zeilen
 
 
+# --------------------------------------------------------------------------
+# Der Agent: Trace, Zuordnungen, Modell (WB-377)
+
+#: Die Rolle der Nutzerin in `chat_message`. Denselben Wert schreibt
+#: `assistant.vorschlaege.ROLLE_NUTZERIN`; von dort importiert zöge dieses
+#: Modul über `picknick.assistant` das ganze Chat-Paket samt `openai` herein,
+#: und der nächtliche Sicherungslauf soll nichts davon laden.
+ROLLE_NUTZERIN = "user"
+
+OFFEN, BEHALTEN, VERWORFEN_ENTSCHEIDUNG = db.DECISIONS
+
+
+def trace_luecke(con: sqlite3.Connection) -> dict:
+    """Wie viele Chat-Züge nie in Phoenix angekommen sind (WB-377).
+
+    Ein Zug ohne `span_id` hat keinen Trace: entweder war Tracing aus, oder
+    der Provider liess sich nicht einrichten. Die Zeile ist nachträglich nicht
+    mehr aufzulösen — welcher der beiden Gründe es war, steht nirgends —, und
+    genau deshalb wird sie hier gezählt und nicht geraten.
+
+    Gezählt werden die Zeilen der NUTZERIN. Jeder Zug schreibt zwei Zeilen mit
+    derselben `span_id`; über beide gezählt stünde auf der Seite die doppelte
+    Zahl, und niemand könnte sie mit „35 Züge" in Übereinstimmung bringen.
+    """
+    row = con.execute(
+        "SELECT count(*) AS zuege,"
+        "       sum(span_id IS NOT NULL) AS mit,"
+        "       max(CASE WHEN span_id IS NOT NULL THEN created_at END)"
+        "            AS letzter_mit,"
+        "       max(CASE WHEN span_id IS NULL THEN created_at END)"
+        "            AS letzter_ohne"
+        " FROM chat_message WHERE role = ?", (ROLLE_NUTZERIN,)).fetchone()
+    zuege = int(row["zuege"] or 0)
+    mit = int(row["mit"] or 0)
+    return {
+        "zuege": zuege,
+        "mit_trace": mit,
+        "ohne_trace": zuege - mit,
+        "letzter_mit": row["letzter_mit"],
+        "letzter_ohne": row["letzter_ohne"],
+        # Kein Anteil ohne Züge: 0 % gelesen als „nichts kommt an" wäre eine
+        # Aussage über einen Shop, in dem noch niemand etwas getippt hat.
+        "anteil": (mit / zuege) if zuege else None,
+    }
+
+
+def zuordnungen(con: sqlite3.Connection) -> dict:
+    """kept / removed / offen über alle Vorschläge — die Eval-Grundlage.
+
+    Dieselbe Rechnung wie `assistant.vorschlaege.quote()`, nur über den ganzen
+    Bestand statt über eine Chatzeile: **offene Vorschläge zählen weder im
+    Zähler noch im Nenner**, und Korrekturzeilen zählen gar nicht mit. Beides
+    aus demselben Grund wie dort — ein Abbruch ist kein Fehlgriff des Modells,
+    und wer von Hand nachbessert, soll damit nicht die Quote heben, die genau
+    diesen Fehlgriff misst.
+
+    Ohne eine einzige Entscheidung bleibt `quote` `None`. Eine 0.0 hiesse
+    „alles falsch", wo „noch nichts gesagt" richtig ist.
+    """
+    gezaehlt = {z["decision"]: int(z["n"]) for z in _zeilen(
+        con, "SELECT decision, count(*) AS n FROM chat_suggestion"
+             " WHERE corrected_from IS NULL GROUP BY decision")}
+    behalten = gezaehlt.get(BEHALTEN, 0)
+    verworfen = gezaehlt.get(VERWORFEN_ENTSCHEIDUNG, 0)
+    offen = gezaehlt.get(OFFEN, 0)
+    entschieden = behalten + verworfen
+    return {"vorgeschlagen": entschieden + offen, "behalten": behalten,
+            "verworfen": verworfen, "offen": offen,
+            "quote": (behalten / entschieden) if entschieden else None}
+
+
+def modellstand(con: sqlite3.Connection) -> dict:
+    """Was über das Modell bekannt ist, OHNE die Box zu fragen (WB-377).
+
+    Der wichtigste Teil dieser Funktion ist das, was sie nicht tut: sie ruft
+    `chat.zustand()` nicht auf. Dieser Aufruf schickt ein Magic Packet und
+    **weckt einen Rechner im LAN** — für eine Seite, die jemand aufmacht, um
+    nachzusehen, ist das der falsche Preis. Deshalb steht hier der zuletzt
+    belegte Stand mit Zeitpunkt und nicht der aktuelle.
+
+    Was zurückkommt, ist entsprechend bescheiden und ehrlich:
+
+    * `letzter_zug` — wann zuletzt überhaupt ein Chat-Zug lief. Ob dabei das
+      Modell gefragt wurde, steht nicht in der Datenbank: der Rezeptweg
+      (Spec 6) schreibt dieselbe Zeile ohne einen einzigen Modellaufruf. Die
+      Seite behauptet deshalb nicht, die Box habe zu diesem Zeitpunkt bedient.
+    * `endpunkt` — wohin gefragt WÜRDE. Reine Konfiguration.
+    * `fehler` — die Konfiguration ist so nicht benutzbar. Das ist die einzige
+      Aussage über das Modell, die sich ohne Netzaufruf sicher treffen lässt,
+      und es ist ausgerechnet die, die hier schon Zeit gekostet hat (die alte
+      IP der Box, siehe `llm.client.pruefe_endpunkt`).
+    """
+    row = con.execute("SELECT max(created_at) AS letzter FROM chat_message"
+                      ).fetchone()
+    stand = {"letzter_zug": row["letzter"] if row else None,
+             "endpunkt": None, "fehler": None}
+    try:
+        # Erst hier importiert: `llm.client` zieht `openai` herein, und der
+        # nächtliche Sicherungslauf hat damit nichts zu tun.
+        from picknick.llm.client import endpunkt_aus_umgebung
+        stand["endpunkt"] = endpunkt_aus_umgebung()
+    except Exception as e:  # noqa: BLE001 — Konfiguration oder fehlendes Paket
+        stand["fehler"] = str(e)
+    return stand
+
+
 def statusbericht(con: sqlite3.Connection, *, limit: int = 20) -> dict:
-    """Alles, was die Statusseite zeigt (Spec 11).
+    """Alles, was die Statusseite zeigt (Spec 11, WB-377).
 
     Bewusst eine Funktion und keine Abfrage in der Vorlage: so ist der Bericht
     ohne Web-Prozess prüfbar, und die Seite kann nichts anderes anzeigen als
     das, was hier steht.
+
+    **Kein Aufruf hier geht ins Netz.** Siehe den Modul-Docstring: die Seite
+    darf die vLLM-Box nicht wecken, nur weil jemand nachsehen wollte.
     """
     letzter = laeufe(con, 1)
     letzter_ok = _zeilen(
@@ -195,4 +324,8 @@ def statusbericht(con: sqlite3.Connection, *, limit: int = 20) -> dict:
         "produkte": int(produkte),
         "laeufe": laeufe(con, limit),
         "verworfen": verworfene_laeufe(con, limit),
+        "tracer": obs.tracerstand(),
+        "trace_luecke": trace_luecke(con),
+        "zuordnungen": zuordnungen(con),
+        "modell": modellstand(con),
     }
