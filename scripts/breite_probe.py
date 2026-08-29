@@ -10,6 +10,15 @@ Einkaufsliste — und **an welchem Glied gehen die Mengen verloren?**
         --gerichte 6 --parallel 3          # kurzer Probelauf
     .venv/bin/python scripts/breite_probe.py --achsen   # nur die Liste zeigen
 
+Mit `--trace` gehen die Spans der Züge nach Phoenix — für einen Eval-Lauf in
+ein EIGENES Projekt, damit das Alltagsprojekt sauber bleibt (WB-393/395):
+
+    PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+    .venv/bin/python scripts/breite_probe.py --messen --db kopie.db --trace
+
+Fehlt Phoenix, scheitert die Probe daran nicht: die Einrichtung wirft nie,
+und der Export läuft in einem Hintergrund-Thread (`picknick.obs.otel`).
+
 `--db` ist die KOPIE, aus der die Probe ihre Arbeitskopien zieht
 (`sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"`). Sie wird gelesen und —
 in Phase A — um Chefkoch-Rezepte ergänzt; die echte Datei fasst die Probe
@@ -102,7 +111,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402
 
-from picknick import db, orders, recipes  # noqa: E402
+from picknick import db, obs, orders, recipes  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
 from picknick.assistant import herkunft, oberbegriffe, vorschlaege  # noqa: E402
 from picknick.gerichte import chefkoch, quelle  # noqa: E402
@@ -898,6 +907,13 @@ def main() -> int:
                    help="Rohdaten je Gericht hierhin schreiben")
     p.add_argument("--ohne-vorwaermen", action="store_true",
                    help="Phase A überspringen (misst dann den KALTEN Weg)")
+    p.add_argument("--trace", action="store_true",
+                   help="Spans nach Phoenix schicken. Projekt über "
+                        "PICKNICK_PHOENIX_PROJECT, Endpunkt über "
+                        "PICKNICK_PHOENIX_ENDPOINT — ein Eval-Lauf gehört in "
+                        "sein EIGENES Projekt (WB-393), nicht ins "
+                        "Alltagsprojekt. Ohne laufendes Phoenix läuft die "
+                        "Probe trotzdem durch; die Spans gehen dann verloren.")
     args = p.parse_args()
 
     if args.achsen:
@@ -934,6 +950,17 @@ def main() -> int:
     if not args.messen:
         print("Nichts zu tun — `--messen` oder `--achsen` angeben.")
         return 2
+    if args.trace:
+        # `einrichten()` wirft nie: fehlt Phoenix oder das Paket, läuft die
+        # Probe ohne Trace weiter — genau die Bedingung aus WB-395. Erst ab
+        # hier, nicht per Vorgabe: ohne den Schalter soll ein Messlauf das
+        # Alltagsprojekt „Picknick Agent" nicht mit 60 Gerichten fluten.
+        if obs.einrichten() is not None:
+            stand = obs.tracerstand()
+            print(f"Trace: Projekt {stand['projekt']!r} auf {stand['endpunkt']}")
+        else:
+            print("Trace: nicht eingerichtet — die Probe läuft ohne "
+                  "(Grund steht im Log, z. B. PICKNICK_TRACING=0).")
 
     t0 = time.monotonic()
     zustaende: dict[str, str] = {}
@@ -968,6 +995,10 @@ def main() -> int:
                        default=str), encoding="utf-8")
         print(f"\n  Rohdaten: {args.json}")
     bericht(ergebnisse, zustaende, dauer)
+    if args.trace:
+        # Der Export läuft in einem Hintergrund-Thread (`NichtBlockierend`);
+        # ohne Warten endete das Skript vor den letzten Spans.
+        obs.flush()
     return 0
 
 

@@ -31,6 +31,7 @@ from openinference.semconv.trace import (
     SpanAttributes,
 )
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.trace import StatusCode
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -39,7 +40,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
 from picknick import db, obs, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.llm import wake
-from picknick.llm.client import Modellzugang
+from picknick.llm.client import Modellzugang, ModellNichtErreichbar
 from picknick.obs import otel as tracermodul
 
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
@@ -106,9 +107,14 @@ def _mock_zugang(*inhalte: str) -> Modellzugang:
     den Instrumentor.
     """
     antworten = list(inhalte)
+    #: Wie oft der Doppelgänger `/v1/models` beantwortet hat. Für WB-395
+    #: ablesbar am Zugang: der Modellname soll je Zugang EINMAL beschafft
+    #: werden, nicht je Span — sonst kostete jeder Zug eine Extra-Anfrage.
+    modellabfragen = [0]
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith("/models"):
+            modellabfragen[0] += 1
             return httpx.Response(200, json={
                 "object": "list",
                 "data": [{"id": "Qwen3.8-27B-Instruct", "object": "model",
@@ -127,7 +133,9 @@ def _mock_zugang(*inhalte: str) -> Modellzugang:
     client = openai.OpenAI(
         base_url="http://box.test/v1", api_key="1",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)))
-    return Modellzugang(endpunkt="http://box.test/v1", client=client)
+    zugang = Modellzugang(endpunkt="http://box.test/v1", client=client)
+    zugang.modellabfragen = modellabfragen
+    return zugang
 
 
 class Box:
@@ -438,6 +446,65 @@ def test_eine_erfundene_id_zeigt_der_trace_als_modellfehler(con, spans):
     # … und trotzdem kam nichts heraus. Das ist ein Modellfehler.
     assert wurzel["picknick.rejected"] == 1
     assert wurzel["picknick.products"] == 0
+
+
+# --------------------------------------------------------------------------
+# Das Modell am Span (WB-395)
+
+def test_der_modellname_steht_an_jedem_llm_span_und_kommt_von_der_box(
+        con, spans):
+    """Ein Qwen-Zug und ein Nemotron-Zug müssen in Phoenix unterscheidbar sein.
+
+    `llm.model_name` schreibt der Instrumentor aus der ANTWORT der Box —
+    dieselbe Quelle, aus der auch `Antwort.modell` liest, kein zweiter Weg
+    und nie hartkodiert. Das Kürzel hat auf der Box schon zweimal gewechselt,
+    und beim Modellvergleich (WB-393/394) hängt die ganze Ablesbarkeit an
+    diesem einen Feld.
+
+    Und: die Discovery (`/v1/models`) läuft EINMAL je Zugang, nicht je Span.
+    Zwei LLM-Spans in diesem Zug, eine Abfrage — im Request-Pfad kostet der
+    Name keinen zusätzlichen Netzaufruf.
+    """
+    agent = _butter_und_zwiebeln(con)
+    agent.turn(con, "Butter und Zwiebeln")
+
+    for name in ("plan.extract", "plan.choose"):
+        a = _einer(spans, name).attributes
+        assert a[SpanAttributes.LLM_MODEL_NAME] == "Qwen3.8-27B-Instruct", \
+            f"{name} muss das Modell der Box tragen"
+    assert agent.zugang.modellabfragen == [1], \
+        "einmal je Zugang beschafft, nicht je Span"
+
+
+def test_ohne_erreichbare_box_entsteht_der_span_ohne_modellnamen(spans):
+    """WB-395-Abnahme: die schlafende Box lässt den Span nicht verschwinden.
+
+    Der Aufruf scheitert (`ModellNichtErreichbar`), aber der LLM-Span steht
+    im Trace — als Fehler, OHNE `llm.model_name`. Ein geratener oder
+    veralteter Name wäre schlimmer als keiner: er sähe aus wie eine Messung.
+    """
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("die Box schläft")
+
+    client = openai.OpenAI(
+        base_url="http://box.test/v1", api_key="1",
+        # Wie im echten Zugang: kein Neuversuch — sonst zeichnete der
+        # Instrumentor drei Anläufe in einem Span auf und der Test schliefe.
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)))
+    zugang = Modellzugang(endpunkt="http://box.test/v1", client=client)
+
+    with obs.stufe("plan.extract"):
+        with pytest.raises(ModellNichtErreichbar):
+            # `modell=` explizit: mit gemerktem Kürzel und schlafender Box —
+            # der Fall, in dem überhaupt noch ein Chat-Aufruf startet.
+            zugang.chat([{"role": "user", "content": "Butter"}],
+                        modell="Qwen3.8-27B-Instruct")
+
+    span = _einer(spans, "plan.extract")
+    assert span.attributes[KIND] == "LLM"
+    assert span.status.status_code == StatusCode.ERROR
+    assert SpanAttributes.LLM_MODEL_NAME not in span.attributes
 
 
 # --------------------------------------------------------------------------

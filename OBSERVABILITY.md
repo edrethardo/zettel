@@ -7,7 +7,9 @@ sie bedeuten. Dieses Dokument ist der Vertrag: was hier steht, prüfen
 
 Projekt in Phoenix: **`Picknick Agent`**, OTLP/HTTP auf
 `http://localhost:6006/v1/traces`. Abschaltbar mit `PICKNICK_TRACING=0`; alles
-andere heisst „an", auch nichts.
+andere heisst „an", auch nichts. `PICKNICK_PHOENIX_PROJECT` benennt das
+Projekt um, `PICKNICK_PHOENIX_ENDPOINT` das Ziel — gebraucht wird das von
+Eval-Läufen, die nicht ins Alltagsprojekt gehören (siehe unten, WB-393).
 
 ## Der Fall, um den es geht
 
@@ -357,6 +359,36 @@ zwei davon:
   verlorenging — der teuerste Fehler dieses Agenten (siehe `EVALS.md`).
 * **`plan.choose` → `input.value`**: die Kandidatenlisten, wie sie dem Modell
   vorlagen. Das ist die zweite Hälfte des Butter-Beweises.
+
+**`llm.model_name` sagt, WELCHES Modell geantwortet hat** (WB-395). Der Wert
+kommt vom Instrumentor aus der Antwort der Box — derselben Quelle, aus der
+der Client `Antwort.modell` liest. Kein zweiter Beschaffungsweg, nie
+hartkodiert (das Kürzel hat auf der Box schon zweimal gewechselt,
+3.6-MoE → 3.8-dense), und kein zusätzlicher Netzaufruf je Zug: die
+Discovery über `/v1/models` läuft einmal je Zugang und wird gemerkt
+(`Modellzugang.modell()`). Ohne dieses Feld wären ein Qwen-Zug und ein
+Nemotron-Zug in Phoenix ununterscheidbar — genau daran hängt der
+Modellvergleich aus WB-393/394. Ist die Box nicht erreichbar, entsteht der
+LLM-Span trotzdem: als Fehler-Span **ohne** `llm.model_name`, statt einen
+Namen zu raten, der wie eine Messung aussähe.
+
+### Modellvergleiche laufen in eigene Projekte (WB-393)
+
+Ein Eval-Lauf, der ein anderes Modell misst, tract in ein EIGENES
+Phoenix-Projekt statt ins Alltagsprojekt `Picknick Agent` — sonst stünden
+sechzig Messgerichte zwischen den echten Einkäufen. `llm.model_name`
+unterscheidet die Modelle INNERHALB eines Projekts, das Projekt trennt die
+Läufe:
+
+```
+PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+.venv/bin/python scripts/breite_probe.py --messen --db kopie.db --trace
+```
+
+`--trace` schaltet das Tracing der Probe ein (per Vorgabe läuft sie ohne).
+Fehlt Phoenix, scheitert die Probe daran nicht: die Einrichtung wirft nie,
+der Export läuft im Hintergrund-Thread, und am Ende wartet ein `flush()`
+begrenzt auf die letzten Spans.
 
 ## Der Rang, und was er nicht ist
 
