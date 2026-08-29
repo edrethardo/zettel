@@ -303,3 +303,39 @@ def test_ein_alter_korbposten_behaelt_seine_menge(tmp_path):
                            ).fetchone()[0] == 1
     finally:
         con.close()
+
+
+def test_ein_alter_posten_gilt_nach_der_migration_nicht_als_vermisst(tmp_path):
+    """WB-373: `missing_at` kommt ohne Nachtrag für den Altbestand — richtig.
+
+    Ein Posten aus der Zeit davor wurde entweder abgehakt oder steht noch
+    offen; vermisst wurde keiner, denn den Weg gab es nicht. NULL ist hier die
+    Wahrheit und keine Lücke — und ein abgehakter Posten darf durch die
+    Migration nicht plötzlich in beiden Spalten stehen.
+    """
+    pfad = tmp_path / "alt.db"
+    alt = sqlite3.connect(pfad)
+    alt.executescript("""
+        CREATE TABLE orders (id INTEGER PRIMARY KEY, state TEXT, created_at TEXT);
+        CREATE TABLE order_item (
+            id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL,
+            product_id INTEGER, free_text TEXT,
+            qty INTEGER NOT NULL DEFAULT 1,
+            store TEXT NOT NULL DEFAULT 'egal', picked_at TEXT);
+        INSERT INTO orders (id, state, created_at)
+             VALUES (1, 'offen', '2026-08-01 10:00:00');
+        INSERT INTO order_item (order_id, free_text, picked_at)
+             VALUES (1, 'Butter', '2026-08-01 11:00:00'), (1, 'Hefe', NULL);
+    """)
+    alt.commit()
+    alt.close()
+
+    con = db.connect(pfad)
+    try:
+        db.migrate(con)
+        zeilen = con.execute("SELECT picked_at, missing_at FROM order_item"
+                             " ORDER BY id").fetchall()
+        assert [r["missing_at"] for r in zeilen] == [None, None]
+        assert zeilen[0]["picked_at"] == "2026-08-01 11:00:00"
+    finally:
+        con.close()

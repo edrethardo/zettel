@@ -372,6 +372,9 @@ def checks_app(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
             b.pruefe("der Haken lässt sich zurücknehmen "
                      "(erledigt -> offen, bewusst)",
                      lambda: _haken_zurueck(client, con))
+            b.pruefe("„gab’s nicht“ schliesst die Bestellung trotzdem "
+                     "ab und lässt sich zurücknehmen",
+                     lambda: _gabs_nicht(client, con))
         finally:
             con.close()
 
@@ -471,11 +474,46 @@ def _haken_zurueck(client, con) -> str:
     order_id = orders.bestellungen(con, "erledigt")[0]["id"]
     item = orders.posten(con, order_id)[0]["id"]
     antwort = client.post(f"/pick/{order_id}/posten/{item}",
-                          data={"gepickt": "0"},
+                          data={"stand": "offen"},
                           headers={"HX-Request": "true"})
     gleich(antwort.status_code, 200, "status")
     gleich(orders.bestellung(con, order_id)["state"], "offen", "Zustand")
     return f"Bestellung {order_id} wieder offen"
+
+
+def _gabs_nicht(client, con) -> str:
+    """Der dritte Stand (WB-373), einmal hin und zurück.
+
+    Läuft nach `_haken_zurueck`, das die Bestellung wieder auf `offen`
+    gestellt hat — und genau das war der Fall, an dem die Pick-Liste vorher
+    stehenblieb: wer im Laden nichts bekam, musste falsch abhaken oder die
+    Bestellung für immer offen lassen.
+    """
+    order_id = orders.naechste(con)
+    wahr(order_id is not None, "Keine offene Bestellung für „gab’s nicht“.")
+    item = orders.posten(con, order_id)[0]["id"]
+
+    antwort = client.post(f"/pick/{order_id}/posten/{item}",
+                          data={"stand": "fehlt"},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "status")
+    gleich(orders.posten(con, order_id)[0]["stand"], "fehlt", "Stand")
+    gleich(orders.bestellung(con, order_id)["state"], "erledigt", "Zustand")
+    wahr("gab’s nicht" in antwort.text or "gab's nicht" in antwort.text,
+         "Die Liste sagt nicht, dass etwas nicht zu bekommen war.")
+    wahr("Alles abgehakt" not in antwort.text,
+         "Die Liste behauptet, es sei alles abgehakt.")
+
+    b = orders.bestellungen(con, "erledigt")[0]
+    gleich((b["n_geholt"], b["n_fehlt"]), (0, 1), "Historie")
+
+    antwort = client.post(f"/pick/{order_id}/posten/{item}",
+                          data={"stand": "gepickt"},
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, "status")
+    gleich(orders.posten(con, order_id)[0]["stand"], "gepickt", "zurückgenommen")
+    gleich(orders.posten(con, order_id)[0]["missing_at"], None, "missing_at")
+    return f"Bestellung {order_id} einmal vermisst und wieder abgehakt"
 
 
 # --------------------------------------------------------------------------

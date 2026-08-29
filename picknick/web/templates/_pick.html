@@ -3,9 +3,18 @@
    Fertigmeldung: der letzte Haken macht die Bestellung erledigt, und das muss
    im selben Austausch sichtbar werden. #}
 {% if bestellung.state == 'erledigt' %}
+  {# „Alles abgehakt" wäre gelogen, sobald etwas im Laden fehlte (WB-373).
+     Eine Bestellung, die ehrlich Lücken nennt, ist fertig; eine, die
+     Vollständigkeit behauptet, ist es nicht. #}
+  {% if fehlt %}
+<p class="fertig" role="status">Fertig — {{ geholt }} geholt,
+  {{ fehlt }} gab's nicht. Erledigt {{ bestellung.done_at }}.</p>
+  {% else %}
 <p class="fertig" role="status">Alles abgehakt — erledigt {{ bestellung.done_at }}.</p>
+  {% endif %}
 {% else %}
-<p class="stand" role="status">Noch {{ offen }} zu holen.</p>
+<p class="stand" role="status">Noch {{ offen }} zu holen.{% if fehlt %}
+  {{ fehlt }} gab's nicht.{% endif %}</p>
 {% endif %}
 
 {% for g in gruppen %}
@@ -17,15 +26,21 @@
        hier steht jemand im Laden vor dem Regal und scrollt, und ein Band ganz
        oben ist genau dann nicht mehr im Bild. Er muss es lesen, BEVOR er
        sucht — sonst ist die vergebliche Suche schon passiert. #}
-    <li class="pickzeile{% if i.gepickt %} ab{% endif %}{% if i.nicht_im_katalog %} fehlt-im-katalog{% endif %}">
+    <li class="pickzeile{% if i.gepickt %} ab{% endif %}{% if i.fehlt %} gabs-nicht{% endif %}{% if i.nicht_im_katalog %} fehlt-im-katalog{% endif %}">
       {# Das Ziel trägt den GEWÜNSCHTEN Zustand, nicht den aktuellen: so ist
          der Klick auch dann eindeutig, wenn zwei Handys dieselbe Liste offen
-         haben. Ohne JavaScript schickt derselbe Knopf dasselbe ab. #}
-      {% set ziel = "/pick/" ~ bestellung.id ~ "/posten/" ~ i.id ~ "?gepickt=" ~ (0 if i.gepickt else 1) %}
+         haben. Ohne JavaScript schickt derselbe Knopf dasselbe ab.
+
+         `hx-indicator` und `hx-disabled-elt` sind hier kein Schmuck (WB-373):
+         ohne sie sieht ein Haken, der im Funkloch zwischen Kühlregal und
+         Kasse verlorengeht, genau aus wie einer, der ankam. #}
+      {% set ziel = "/pick/" ~ bestellung.id ~ "/posten/" ~ i.id ~ "?stand=" ~ ("offen" if i.gepickt else "gepickt") %}
       <form method="post" action="{{ ziel }}" hx-post="{{ ziel }}"
-            hx-trigger="change, submit" hx-target="#pickliste" hx-swap="innerHTML">
+            hx-trigger="change, submit" hx-target="#pickliste" hx-swap="innerHTML"
+            hx-indicator="#pick-laeuft" hx-disabled-elt="find input">
         <label class="haken">
-          <input type="checkbox" {% if i.gepickt %}checked{% endif %}>
+          <input type="checkbox" {% if i.gepickt %}checked{% endif %}
+                 aria-label="{{ i.name }} abhaken">
           {% if i.bild_url %}
             <img class="bild" src="{{ i.bild_url }}" alt="" loading="lazy" width="56" height="56">
           {% else %}
@@ -36,6 +51,17 @@
             <span class="menge">
               {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}{% endif %}
             </span>
+            {# Was gerechnet wurde (WB-362), endlich dort, wofür es gerechnet
+               wurde: „1000 ml gebraucht — 2 × Pomito 500 g" beantwortet vor
+               dem Regal die einzige Frage, die sich dort stellt — reicht das,
+               was ich in der Hand habe? Im Warenkorb steht der Satz seit
+               WB-362, im Laden fehlte er (WB-373). #}
+            {% if i.bedarf_satz %}
+            <span class="hinweis">{{ i.bedarf_satz }}</span>
+            {% endif %}
+            {% if i.fehlt %}
+            <span class="vermisst">Gab's nicht — zählt als erledigt.</span>
+            {% endif %}
             {% if i.nicht_im_katalog %}
             <span class="ausgemustert">Nicht mehr im Katalog — such nicht
               lange, nimm etwas Ähnliches oder lass es weg.</span>
@@ -44,6 +70,24 @@
         </label>
         <noscript><button class="mini" type="submit">ok</button></noscript>
       </form>
+      {# Der dritte Stand (WB-373). Er steht als eigener Knopf neben dem Haken
+         und nicht in einem Menü: vor dem leeren Regal ist das der Moment, in
+         dem entschieden wird, und ein zusätzlicher Tipp zum Aufklappen ist
+         einer zu viel. Zurücknehmen ist derselbe Knopf rückwärts. #}
+      {% set weg = "/pick/" ~ bestellung.id ~ "/posten/" ~ i.id ~ "?stand=" ~ ("offen" if i.fehlt else "fehlt") %}
+      <span class="stellen">
+        <form method="post" action="{{ weg }}" hx-post="{{ weg }}"
+              hx-target="#pickliste" hx-swap="innerHTML"
+              hx-indicator="#pick-laeuft" hx-disabled-elt="find button">
+          {% if i.fehlt %}
+          <button class="mini zurueck" type="submit"
+                  aria-label="{{ i.name }} doch wieder offen">zurück</button>
+          {% else %}
+          <button class="mini nein" type="submit"
+                  aria-label="{{ i.name }} gab's nicht">gab's nicht</button>
+          {% endif %}
+        </form>
+      </span>
     </li>
     {% endfor %}
   </ul>

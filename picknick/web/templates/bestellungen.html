@@ -16,9 +16,16 @@
   <li class="bestellung {{ b.state }}" id="b{{ b.id }}">
     <a class="zweig" href="/pick/{{ b.id }}">
       <span class="text">
+        {# Was im Laden nicht zu bekommen war, steht hier mit eigener Zahl
+           (WB-373): „9 geholt, 2 gab's nicht" ist eine ehrliche erledigte
+           Bestellung. Ohne die zweite Zahl sähe sie aus wie eine, in der
+           alles im Wagen lag. #}
         <span class="name">
           {%- if b.state == 'offen' -%}
             offen · {{ b.n_offen }} von {{ b.n_posten }} noch zu holen
+            {%- if b.n_fehlt %}, {{ b.n_fehlt }} gab's nicht{% endif -%}
+          {%- elif b.n_fehlt -%}
+            erledigt · {{ b.n_geholt }} geholt, {{ b.n_fehlt }} gab's nicht
           {%- else -%}
             erledigt · {{ b.n_posten }} Posten
           {%- endif -%}

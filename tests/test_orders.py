@@ -405,6 +405,100 @@ def test_unbekannter_posten_wird_nicht_abgehakt(con):
 
 
 # --------------------------------------------------------------------------
+# „Gab's nicht": der dritte Stand eines Postens (WB-373)
+#
+# Vorher wurde eine Bestellung ausschliesslich dadurch fertig, dass JEDER
+# Posten abgehakt war. Wer vor einem leeren Regal stand, hatte zwei
+# Möglichkeiten: falsch abhaken — dann lügt die Historie — oder die Bestellung
+# für immer offen lassen. Der häufigste Fall des Einkaufens war der einzige,
+# den die Liste nicht kannte.
+
+def test_ein_nicht_bekommener_posten_schliesst_die_bestellung_ab(
+        con, bestellung_mit_drei):
+    zeilen = orders.posten(con, bestellung_mit_drei)
+    for zeile in zeilen[:-1]:
+        orders.abhaken(con, zeile["id"])
+    assert _zustand(con, bestellung_mit_drei) == "offen"
+
+    stand = orders.setze_stand(con, zeilen[-1]["id"], "fehlt")
+    assert stand["state"] == "erledigt"
+    assert stand["done_at"]
+
+
+def test_gabs_nicht_laesst_sich_zuruecknehmen(con, bestellung_mit_drei):
+    """Der Fehlgriff ist im Laden wahrscheinlicher als sonstwo (WB-361)."""
+    zeilen = orders.posten(con, bestellung_mit_drei)
+    for zeile in zeilen[:-1]:
+        orders.abhaken(con, zeile["id"])
+    orders.setze_stand(con, zeilen[-1]["id"], "fehlt")
+
+    zurueck = orders.setze_stand(con, zeilen[-1]["id"], "offen")
+    assert zurueck["state"] == "offen"
+    assert zurueck["done_at"] is None
+    assert orders.posten(con, bestellung_mit_drei)[-1]["stand"] == "offen"
+
+
+def test_ein_posten_ist_nie_abgehakt_und_vermisst_zugleich(
+        con, bestellung_mit_drei):
+    """Beides zugleich wäre im Laden nicht darstellbar und nicht zählbar."""
+    item = orders.posten(con, bestellung_mit_drei)[0]["id"]
+    orders.abhaken(con, item)
+    orders.setze_stand(con, item, "fehlt")
+    zeile = orders.posten(con, bestellung_mit_drei)[0]
+    assert zeile["picked_at"] is None and zeile["missing_at"]
+    assert zeile["stand"] == "fehlt" and zeile["gepickt"] is False
+
+    orders.abhaken(con, item)
+    zeile = orders.posten(con, bestellung_mit_drei)[0]
+    assert zeile["missing_at"] is None and zeile["picked_at"]
+    assert zeile["stand"] == "gepickt"
+
+
+def test_ein_erfundener_stand_wird_abgelehnt(con, bestellung_mit_drei):
+    item = orders.posten(con, bestellung_mit_drei)[0]["id"]
+    with pytest.raises(orders.UngueltigerPosten):
+        orders.setze_stand(con, item, "ausverkauft")
+    assert orders.posten(con, bestellung_mit_drei)[0]["stand"] == "offen"
+
+
+def test_im_warenkorb_gibt_es_auch_kein_gabs_nicht(con):
+    item = orders.einlegen(con, product_id=_pid(con, MILCH))
+    with pytest.raises(orders.UngueltigerPosten):
+        orders.setze_stand(con, item, "fehlt")
+
+
+def test_ein_vermisster_posten_zaehlt_in_seiner_gruppe_nicht_als_offen(
+        con, bestellung_mit_drei):
+    zeilen = orders.posten(con, bestellung_mit_drei)
+    orders.setze_stand(con, zeilen[0]["id"], "fehlt")
+    rewe = orders.nach_laden(con, bestellung_mit_drei)[0]
+    assert rewe["n_offen"] == 0
+    assert rewe["n_fehlt"] == 1 and rewe["n_geholt"] == 0
+
+
+def test_die_uebersicht_zaehlt_geholt_und_vermisst_getrennt(
+        con, bestellung_mit_drei):
+    """„9 geholt, 2 nicht bekommen" braucht beide Zahlen.
+
+    `n_geholt` ist NICHT `n_posten - n_offen`: dazwischen liegt genau das,
+    was im Laden fehlte. Ohne die eigene Zahl sähe eine Bestellung mit Lücken
+    aus wie eine, in der alles im Wagen lag.
+    """
+    zeilen = orders.posten(con, bestellung_mit_drei)
+    orders.abhaken(con, zeilen[0]["id"])
+    orders.setze_stand(con, zeilen[1]["id"], "fehlt")
+
+    b = orders.bestellungen(con, "offen")[0]
+    assert (b["n_posten"], b["n_offen"], b["n_geholt"], b["n_fehlt"]) \
+        == (3, 1, 1, 1)
+
+    orders.abhaken(con, zeilen[2]["id"])
+    b = orders.bestellungen(con, "erledigt")[0]
+    assert (b["n_posten"], b["n_offen"], b["n_geholt"], b["n_fehlt"]) \
+        == (3, 0, 2, 1)
+
+
+# --------------------------------------------------------------------------
 # Bestellübersicht: offene oben, erledigte darunter (Spec 9)
 
 def test_uebersicht_sortiert_offene_vor_erledigte(con):

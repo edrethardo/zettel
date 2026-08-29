@@ -1088,6 +1088,11 @@ def create_app(db_path: str | Path | None = None,
         return {"bestellung": orders.bestellung(c, order_id),
                 "gruppen": gruppen,
                 "offen": sum(g["n_offen"] for g in gruppen),
+                # Beide Zahlen bis in die Vorlage, damit die Fertigmeldung
+                # „7 geholt, 2 gab's nicht" sagen kann statt „alles abgehakt"
+                # (WB-373) — letzteres wäre bei einem leeren Regal gelogen.
+                "geholt": sum(g["n_geholt"] for g in gruppen),
+                "fehlt": sum(g["n_fehlt"] for g in gruppen),
                 "auswahl": [b for b in orders.offene(c) if b["id"] != order_id]}
 
     @app.get("/pick")
@@ -1116,12 +1121,26 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/pick/{order_id}/posten/{item_id}")
-    async def pick_abhaken(request: Request, order_id: int, item_id: int):
+    async def pick_stand(request: Request, order_id: int, item_id: int):
+        """Setzt einen Posten auf `gepickt`, `fehlt` oder wieder `offen`.
+
+        EIN Weg für alle drei Stände und nicht zwei Adressen: es ist dieselbe
+        Entscheidung über dieselbe Zeile, und der gewünschte Stand steht in der
+        Adresse — so ist der Tipp auch dann eindeutig, wenn zwei Telefone
+        dieselbe Liste offen haben (WB-373).
+        """
         werte = await eingaben(request)
+        stand = werte.get("stand", "gepickt")
+        # Getrennt von der 404 unten: ein Posten, den es nicht gibt, und ein
+        # Stand, den es nicht gibt, sind zwei verschiedene Irrtümer, und wer
+        # den zweiten als „nicht gefunden" gemeldet bekommt, sucht am
+        # falschen Ende.
+        if stand not in orders.POSTEN_STAENDE:
+            return Response(status_code=400)
         c = con()
         try:
             try:
-                orders.abhaken(c, item_id, gepickt=werte.get("gepickt") != "0")
+                orders.setze_stand(c, item_id, stand)
             except orders.UngueltigerPosten:
                 return Response(status_code=404)
             if ist_htmx(request):

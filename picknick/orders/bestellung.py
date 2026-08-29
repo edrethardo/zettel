@@ -73,12 +73,23 @@ def _mit_zaehlern(con: sqlite3.Connection, state: str) -> list[dict]:
     Die Zähler kommen aus derselben Abfrage statt aus einem Aufruf je
     Bestellung: die Übersicht zeigt beide Zahlen an jeder Zeile, und N+1
     Abfragen für eine Zahl, die SQLite nebenbei mitliefert, wären Verschwendung.
+
+    Seit WB-373 sind es drei Zahlen und nicht zwei, und `n_geholt` ist nicht
+    `n_posten - n_offen`: dazwischen liegen die Posten, die es im Laden nicht
+    gab. Ohne die eigene Zahl liesse sich „9 geholt, 2 gab's nicht" nicht
+    schreiben — und genau das ist der Unterschied zwischen einer ehrlichen
+    erledigten Bestellung und einer, die vollständig aussieht.
     """
     rows = con.execute(
         "SELECT o.id, o.state, o.note, o.created_at, o.submitted_at, o.done_at,"
         "       count(i.id) AS n_posten,"
-        "       coalesce(sum(CASE WHEN i.picked_at IS NULL THEN 1 ELSE 0 END), 0)"
-        "           AS n_offen"
+        "       coalesce(sum(CASE WHEN i.picked_at IS NULL"
+        "                          AND i.missing_at IS NULL"
+        "                         THEN 1 ELSE 0 END), 0) AS n_offen,"
+        "       coalesce(sum(CASE WHEN i.picked_at IS NOT NULL"
+        "                         THEN 1 ELSE 0 END), 0) AS n_geholt,"
+        "       coalesce(sum(CASE WHEN i.missing_at IS NOT NULL"
+        "                         THEN 1 ELSE 0 END), 0) AS n_fehlt"
         "  FROM orders o LEFT JOIN order_item i ON i.order_id = o.id"
         " WHERE o.state = ?"
         " GROUP BY o.id", (state,)).fetchall()
@@ -148,7 +159,8 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     """
     rows = con.execute(
         "SELECT i.id, i.order_id, i.product_id, i.free_text, i.qty, i.store,"
-        "       i.picked_at, i.need_amount, i.need_unit, i.hand_qty,"
+        "       i.picked_at, i.missing_at,"
+        "       i.need_amount, i.need_unit, i.hand_qty,"
         "       coalesce(p.name, i.free_text) AS name,"
         "       p.unit_text, p.price_cents, p.image_path, p.active"
         "  FROM order_item i LEFT JOIN product p ON p.id = i.product_id"
@@ -160,6 +172,13 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
     for r in rows:
         e = markiere_katalogstand(dict(r))
         e["gepickt"] = e["picked_at"] is not None
+        e["fehlt"] = e["missing_at"] is not None
+        # Ein Feld statt zweier Flaggen, damit Vorlage und Test denselben
+        # Namen benutzen wie die Zustandsmaschine in `pick.py` — und damit
+        # „abgehakt und vermisst zugleich" auch dann nicht darstellbar ist,
+        # wenn eine fremde Hand die Datenbank anfasst: `gepickt` gewinnt.
+        e["stand"] = ("gepickt" if e["gepickt"]
+                      else "fehlt" if e["fehlt"] else "offen")
         # Was gerechnet wurde, steht an der Zeile und nicht nur im Trace
         # (WB-362, Regel 6): eine stumme 2 im Mengenfeld ist genau das, was
         # dieses Ticket verhindern soll. Der Satz entsteht in `mengen` und

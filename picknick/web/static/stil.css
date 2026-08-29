@@ -386,11 +386,18 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: var(--grund); border-bottom: 2px solid var(--tinte);
 }
 .pickliste { list-style: none; margin: 0; padding: 0; }
-.pickzeile { border-bottom: 1px solid var(--linie); }
+/* Die Zeile trägt seit WB-373 zwei Entscheidungen — den Haken und „gab's
+   nicht" — und ist deshalb selbst die Reihe. `flex-wrap` wie an der Korbzeile:
+   auf 360 px rutscht der Knopf lieber unter den Namen, als dass der Name
+   abgeschnitten wird. Was im Regal gesucht werden soll, muss lesbar sein. */
+.pickzeile { display: flex; align-items: center; flex-wrap: wrap;
+             border-bottom: 1px solid var(--linie); }
 .pickzeile form { display: flex; align-items: center; margin: 0; }
+.pickzeile > form { flex: 1 1 14rem; min-width: 0; }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
-  flex: 1 1 auto; min-height: 64px;     /* deutlich über 44 px: hier wird im
+  flex: 1 1 auto; min-width: 0; min-height: 64px;
+                                        /* deutlich über 44 px: hier wird im
                                            Gehen getippt */
   padding: 6px 4px; cursor: pointer;
 }
@@ -400,8 +407,17 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .pickzeile .name { font-size: 18px; }
 .pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
+.pickzeile .text { min-width: 0; }
 .pickzeile.ab { opacity: 0.55; }
 .pickzeile.ab .name { text-decoration: line-through; color: var(--gedaempft); }
+/* „Gab's nicht" (WB-373): Beere wie das „Nein" am Chat-Vorschlag, denn es ist
+   dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
+   Zeichen: vor dem Regal wird nicht geraten, was ein Symbol bedeutet. */
+.pickzeile .stellen .mini { font-size: 15px; white-space: nowrap; }
+.pickzeile.gabs-nicht { background: var(--beere-hell); border-radius: 10px; }
+.pickzeile.gabs-nicht .name { color: var(--gedaempft); }
+.vermisst { font-size: 14px; line-height: 1.3; white-space: normal;
+            color: var(--beere); font-weight: 600; }
 
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
    weil es dieselbe Sache ist. */
@@ -426,7 +442,7 @@ button:disabled { opacity: 0.5; cursor: default; }
    Rezeptzeile — es ist dieselbe Sorte Nebensatz: leiser als der Name, aber
    lesbar, und im Umbruch statt abgeschnitten. Kein eigener Ton und keine
    eigene Grösse: das Gestaltungssystem aus WB-360 hat beides schon. */
-.zeile .hinweis, .kachel .hinweis {
+.zeile .hinweis, .kachel .hinweis, .pickzeile .hinweis {
   font-size: 13px; color: var(--gedaempft); line-height: 1.35;
   white-space: normal;
 }
@@ -678,6 +694,20 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    ein zweites Mal — htmx blendet dieses Stück für die Anfrage ein. */
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }
+
+/* Rückmeldung auf der Pick-Liste (WB-373). Sie klebt unten am Bildrand, weil
+   im Laden gescrollt wird und der Daumen unten ist — eine Meldung am
+   Seitenkopf ist genau dann aus dem Bild, wenn ein Haken schiefgeht. Farben
+   und Radius kommen aus dem System (`.fehler` färbt die Fehlermeldung), hier
+   steht nur, WO sie steht. */
+.pick-meldung {
+  position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5;
+  margin: 0; padding: 10px 14px; border-radius: var(--radius);
+  box-shadow: var(--schatten); text-align: center; font-weight: 600;
+  animation: auftauchen 0.25s ease;
+}
+#pick-laeuft { background: var(--karte); border: 1px solid var(--linie);
+               color: var(--gedaempft); }
 
 /* Statusseite (WB-331): dieselbe Karten-Liste, nur ohne Bild. */
 .laeufe { list-style: none; margin: 0; padding: 0 10px;

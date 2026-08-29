@@ -263,7 +263,7 @@ def erledigte_bestellung(client, con):
     client.post("/warenkorb/abschicken", follow_redirects=False)
     b = orders.bestellungen(con, "offen")[0]["id"]
     for p in orders.posten(con, b):
-        client.post(f"/pick/{b}/posten/{p['id']}?gepickt=1", headers=HTMX)
+        client.post(f"/pick/{b}/posten/{p['id']}?stand=gepickt", headers=HTMX)
     assert orders.bestellung(con, b)["state"] == "erledigt"
     return b
 
