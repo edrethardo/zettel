@@ -116,6 +116,38 @@ scrape_run   (id, source, started_at, finished_at, status, n_products, error)
 werden — eine Falle, die jedes Folgeticket einmal gestellt hätte. Alle Spalten
 sind unverändert.
 
+**Abweichung, nachträglich (Stand 2026-08-29):** Das Schema oben ist der
+Entwurf vom ersten Tag und beschreibt den Kern richtig — aber es ist nicht
+mehr vollständig. Sieben Tabellen und vierundzwanzig Spalten sind seither
+dazugekommen, jede in einem eigenen Ticket begründet. **Die Wahrheit steht in
+`picknick/db.py`**; die folgende Liste sagt nur, wo etwas herkam, damit
+niemand den Entwurf für den Stand hält.
+
+| dazugekommen | Ticket | wofür |
+|---|---|---|
+| `chat_kandidat` |  | die Alternativen, die die Suche vorlegte, statt nur die gewählte |
+| `chat_sorte` |  | die Sorten eines Oberbegriffs („Aufschnitt" → Salami, Kochschinken …) |
+| `chat_entwurf` |  | der Rezeptentwurf eines Chat-Zugs, bis zum Abschicken |
+| `dish` |  | der Zwischenspeicher für geholte Gerichte samt Fristen |
+| `recipe_ingredient` |  | die Zutatenliste der Quelle, getrennt von den verknüpften Produkten |
+| `receipt`, `receipt_item` |  | die Kassenbons aus der Rewe-/Lidl-App |
+| `order_item.need_amount/need_unit` |  | die benötigte Menge neben der Packungszahl |
+| `order_item.hand_qty` |  | was ausdrücklich verlangt wurde, gegen die gerechnete Zahl |
+| `order_item.missing_at` |  | „gab's nicht" — sonst wird die Bestellung nie fertig |
+| `chat_suggestion.corrected_from` |  | die Korrektur zeigt auf die Zeile, die sie ersetzt |
+| `chat_suggestion.eingelegt_at` |  | war diese Zeile schon im Korb — der Schutz gegen den Doppeltipp |
+| `chat_suggestion.zurueckgenommen` |  | wie oft danebengetippt wurde |
+| `chat_suggestion.need_amount/need_unit` |  | Chefkochs Mengenangabe statt der geratenen Packungszahl |
+| `chat_suggestion.dish_item` |  | gehört zum Gericht, herausgenommen, oder gar nicht dazu |
+| `recipe_item.amount/unit` |  | die Zutatenmenge, aus der die Packungszahl entsteht |
+| `recipe.*` (zwölf Spalten) |  | Zubereitung, Zeiten, Herkunft und Bewertung von Chefkoch |
+
+**Warum das hier steht und nicht bloss im Code:** Eine Spec, die von sich
+behauptet vollständig zu sein und es nicht ist, ist schädlicher als eine, die
+ihre eigene Grenze benennt. Der Entwurf hat gehalten — kein Kern wurde
+umgestossen, alles Neue hängt daran. Das ist die Aussage, die diese Tabelle
+belegen soll.
+
 Entwurfsentscheidungen mit Begründung:
 
 **Der Warenkorb ist eine Bestellung im Zustand `draft`.** Zustände:
