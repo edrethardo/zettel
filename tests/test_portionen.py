@@ -412,3 +412,84 @@ def test_eine_unsinnige_menge_wird_nicht_zu_null(con, pomito):
     recipes.zutat_hinzufuegen(con, r, product_id=pomito, amount="viel",
                               unit="g")
     assert recipes.zutaten(con, r)[0]["amount"] is None
+
+
+def test_die_menge_zu_loeschen_loescht_die_einheit_nicht_mit(con, pomito):
+    """WB-375: der Kern der stillen Verfälschung.
+
+    Vorher liefen Menge und Einheit gemeinsam durch `in_grundeinheit()`, das
+    bei leerer Menge `None` liefert — die Einheit fiel mit. Weil sie nur
+    versteckt im Formular stand, kam sie nie zurück, und aus „500 g" wurde
+    beim Neutippen „500 Stk".
+    """
+    r = recipes.anlegen(con, "Sugo", servings=4)
+    item = recipes.zutat_hinzufuegen(con, r, product_id=pomito, amount=500,
+                                     unit="g")
+    recipes.zutat_menge_setzen(con, item, amount="")
+    z = recipes.zutaten(con, r)[0]
+    assert (z["amount"], z["unit"]) == (None, "g")
+
+    recipes.zutat_menge_setzen(con, item, amount="500", unit="g")
+    assert recipes.zutaten(con, r)[0]["unit"] == "g", "nicht mehr Gramm"
+
+
+def test_eine_leere_einheit_nimmt_sie_ausdruecklich_weg(con, pomito):
+    """Fehlend heisst „lass stehen", leer heisst „weg". Ohne den Unterschied
+    liesse sich eine falsch geratene Einheit nicht mehr loswerden."""
+    r = recipes.anlegen(con, "Sugo", servings=4)
+    item = recipes.zutat_hinzufuegen(con, r, product_id=pomito, amount=2,
+                                     unit="Bund")
+    recipes.zutat_menge_setzen(con, item, amount="2", unit="")
+    assert recipes.zutaten(con, r)[0]["unit"] is None
+
+
+def test_die_einheit_wird_beim_setzen_umgerechnet(con, pomito):
+    r = recipes.anlegen(con, "Sugo", servings=4)
+    item = recipes.zutat_hinzufuegen(con, r, product_id=pomito, amount=500,
+                                     unit="g")
+    recipes.zutat_menge_setzen(con, item, amount="1,5", unit="kg")
+    z = recipes.zutaten(con, r)[0]
+    assert (z["amount"], z["unit"]) == (1500.0, "g")
+
+
+def test_das_einheitenfeld_behauptet_nichts_wo_nichts_steht(con, pomito):
+    """`einheit_text` schreibt „Stk", auch wo NULL steht — als Vorbelegung
+    eines Feldes wäre das eine Behauptung, die sich selbst wahr macht."""
+    r = recipes.anlegen(con, "Sugo", servings=4)
+    recipes.zutat_hinzufuegen(con, r, product_id=pomito)
+    z = recipes.zutaten(con, r)[0]
+    assert z["einheit_text"] == "Stk"
+    assert z["einheit_feld"] == ""
+
+
+# --------------------------------------------------------------------------
+# Die Rezeptliste zählt beides (WB-375)
+
+def _rezeptzutaten(con, rid, namen):
+    for pos, name in enumerate(namen):
+        con.execute("INSERT INTO recipe_ingredient (recipe_id, pos, raw_name,"
+                    " name) VALUES (?, ?, ?, ?)", (rid, pos, name, name))
+    con.commit()
+
+
+def test_die_liste_zaehlt_zutaten_und_verknuepfte_getrennt(con, pomito):
+    """Ein geholtes Rezept hat eine Zutatenliste und noch keine verknüpften
+    Produkte — die alte Liste meldete davon „0 Zutaten"."""
+    r = recipes.anlegen(con, "Pho Bo", servings=4)
+    _rezeptzutaten(con, r, ["Rinderbrühe", "Reisnudeln", "Ingwer"])
+    zeile = recipes.rezepte(con)[0]
+    assert (zeile["n_rezeptzutaten"], zeile["n_zutaten"]) == (3, 0)
+
+    recipes.zutat_hinzufuegen(con, r, product_id=pomito)
+    zeile = recipes.rezepte(con)[0]
+    assert (zeile["n_rezeptzutaten"], zeile["n_zutaten"]) == (3, 1)
+
+
+def test_die_zutatenliste_multipliziert_die_verknuepften_nicht(con, pomito,
+                                                               knoblauch):
+    """Zwei LEFT JOINs auf dasselbe Rezept ergäben 3 × 2 = 6 verknüpfte."""
+    r = recipes.anlegen(con, "Pho Bo", servings=4)
+    _rezeptzutaten(con, r, ["Rinderbrühe", "Reisnudeln", "Ingwer"])
+    recipes.zutat_hinzufuegen(con, r, product_id=pomito)
+    recipes.zutat_hinzufuegen(con, r, product_id=knoblauch)
+    assert recipes.rezepte(con)[0]["n_zutaten"] == 2

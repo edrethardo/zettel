@@ -352,7 +352,10 @@ verlängert.
   `categories.by_category()` kann blättern, die Oberfläche benutzt es nicht.
   Wer in einer grossen Warengruppe stöbert, sieht die ersten sechzig
   alphabetisch und danach nichts. Auf dem Handy ist das erträglich, richtig
-  ist es nicht.
+  ist es nicht. Seit WB-375 sagt die Liste es wenigstens („60 von 657") —
+  geschwiegen hat sie vorher, und das war die schlimmere Hälfte: wer sein
+  Produkt nicht sah, hielt den Katalog für lückenhaft statt seine Suche für zu
+  weit.
 * **Ein noch unbekanntes Gericht kostet ZWEI Modellläufe** (WB-367). Der
   Gerichtsname steht nirgends im Satz markiert; er kommt aus Stufe 1, und die
   ist ein Modelllauf von 20 bis 35 s. Erst danach lässt sich das Rezept

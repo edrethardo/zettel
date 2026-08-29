@@ -521,14 +521,25 @@ def create_app(db_path: str | Path | None = None,
     def con() -> sqlite3.Connection:
         return db.connect(app.state.db_path)
 
-    def _liste(c, q, l1, l2, l3):
+    def _liste(c, q, l1, l2, l3) -> dict:
         """Suche ODER Kategorie — nie beides. Ein Suchbegriff schlägt die
-        Kategorie, weil er die frischere Absicht der Nutzerin ist."""
+        Kategorie, weil er die frischere Absicht der Nutzerin ist.
+
+        Gibt `produkte` UND `gesamt` zurück (WB-375). `gesamt` ist die Zahl
+        aller Treffer, nicht die der gezeigten — nur mit ihr kann die Liste
+        sagen, dass sie bei `SEITE` geschnitten wurde. Ohne diesen Satz
+        verspricht das Abzeichen an der Kategorie („Aufschnitt 240") mehr, als
+        der Zweig liefert, und die Suche nach „Milch" sieht aus, als hätte der
+        Katalog nur 60 davon.
+        """
         if q and q.strip():
             treffer = search.search(c, q, limit=SEITE)
+            gesamt = search.count(c, q)
         else:
             treffer = categories.by_category(c, l1, l2, l3, limit=SEITE)
-        return _mit_bild(treffer, app.state.image_dir)
+            gesamt = categories.count_by_category(c, l1, l2, l3)
+        return {"produkte": _mit_bild(treffer, app.state.image_dir),
+                "gesamt": gesamt}
 
     @app.get("/")
     def start(request: Request):
@@ -602,7 +613,7 @@ def create_app(db_path: str | Path | None = None,
         try:
             return vorlagen.TemplateResponse(request, "katalog.html", {
                 **_rahmen(request, c),
-                "produkte": _liste(c, q, l1, l2, l3),
+                **_liste(c, q, l1, l2, l3),
                 "baum": categories.tree(c),
                 "hinweis": katalog_hinweis(c),
                 "q": q, "l1": l1, "l2": l2, "l3": l3})
@@ -620,7 +631,7 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "_produkte.html", {
-                "produkte": _liste(c, q, l1, l2, l3),
+                **_liste(c, q, l1, l2, l3),
                 "q": q, "l1": l1, "l2": l2, "l3": l3})
         finally:
             c.close()

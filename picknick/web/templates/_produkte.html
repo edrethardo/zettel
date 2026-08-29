@@ -1,6 +1,23 @@
 {# Nur die Trefferliste. Wird beim ersten Aufruf mit ausgeliefert und danach
    von HTMX gegen genau dieses Stück getauscht — eine Vorlage für beide Wege,
    damit sich Suche und Erstansicht nicht auseinanderentwickeln. #}
+{% if gesamt and gesamt > produkte | length %}
+{# Spec 11 sinngemäss: die Oberfläche schweigt nicht, wenn etwas fehlt. Der
+   Schnitt bei `app.SEITE` ist Absicht — auf dem Telefon scrollt niemand durch
+   657 Kacheln. Verschwiegen wird er trotzdem zur Falschaussage: wer sein
+   Produkt nicht sieht, hält den Katalog für lückenhaft statt seine Suche für
+   zu weit. Und er erklärt zugleich das Abzeichen am Kategoriezweig, hinter
+   dessen „240" nur 60 stehen (WB-375).
+
+   Oben und nicht unten: der Satz soll die Liste einordnen, bevor jemand sie
+   für vollständig hält — nicht erst, wenn er unten angekommen ist. #}
+<p class="gekappt" role="status">
+  {{ produkte | length }} von {{ gesamt }}{% if q %} Treffern zu „{{ q }}"{% endif %} —
+  {% if q %}tipp genauer, dann wird die Liste kürzer und besser{%
+    else %}such nach dem Produkt oder steig eine Ebene tiefer{% endif %}.
+</p>
+{% endif %}
+
 {% if not produkte %}
   <p class="leer">
     {% if q %}Nichts gefunden zu „{{ q }}".{% else %}Hier steht noch nichts.{% endif %}

@@ -192,6 +192,13 @@ def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
     # Dieselbe Einheit ohne die Zahl — für das Feld, in dem die Menge
     # geändert wird: dort steht die Zahl schon im Eingabefeld.
     z["einheit_text"] = mengen.schreibe(1, z.get("unit")).split(" ", 1)[-1]
+    # Dasselbe noch einmal als FELDINHALT — und leer, wo keine Einheit
+    # gespeichert ist (WB-375). `einheit_text` taugt dafür nicht: es schreibt
+    # „Stk", auch wenn in der Spalte NULL steht. Ein vorbelegtes Feld ist aber
+    # keine Anzeige, sondern der Wert, der beim nächsten Abschicken
+    # zurückkommt — es darf nichts behaupten, was nicht in der Datenbank
+    # steht.
+    z["einheit_feld"] = z["einheit_text"] if z.get("unit") else ""
     if z["name"] is None:
         # Kann nur passieren, wenn eine Produktzeile trotz Fremdschlüssel
         # verschwunden ist. Dann ist der Name weg — aber die Zeile bleibt
@@ -254,11 +261,21 @@ def rezepte(con: sqlite3.Connection) -> list[dict]:
     `n_ausgemustert` steht schon in der Liste und nicht erst in der Ansicht:
     wer ein Rezept in den Korb legen will, soll vorher sehen, dass eine Zutat
     nicht mehr im Katalog ist — nicht erst im Laden.
+
+    **Zwei Zahlen, nicht eine (WB-375).** `n_zutaten` sind die verknüpften
+    PRODUKTE, `n_rezeptzutaten` die Zutatenliste, wie das Rezept sie schreibt.
+    Bei einem geholten Rezept (WB-338) ist die erste 0 und die zweite 23 — die
+    Liste behauptete dann „0 Zutaten" von einem Rezept, das eine volle Seite
+    davon hat. Als Unterabfrage und nicht als zweiter LEFT JOIN: zwei Joins auf
+    dasselbe Rezept multiplizieren sich, und `count(ri.id)` zählte danach 23×
+    zu viel.
     """
     rows = con.execute(
         "SELECT r.id, r.name, r.servings, r.note, r.source, r.source_url,"
         "       r.prep_minutes, r.cook_minutes,"
         "       (r.instructions IS NOT NULL) AS hat_zubereitung,"
+        "       (SELECT count(*) FROM recipe_ingredient zi"
+        "         WHERE zi.recipe_id = r.id) AS n_rezeptzutaten,"
         "       count(ri.id) AS n_zutaten,"
         "       coalesce(sum(CASE WHEN ri.product_id IS NOT NULL"
         "                          AND coalesce(p.active, 0) <> 1"
@@ -350,16 +367,26 @@ def zutat_menge_setzen(con: sqlite3.Connection, item_id: int, amount=None,
     in diesem Ticket geht. Eine leere Angabe LÖSCHT die Menge — dann skaliert
     die Zutat nicht mehr und zählt wieder als Packung, und das muss
     rücknehmbar sein.
+
+    **Menge und Einheit hängen dabei nicht mehr aneinander (WB-375).** Vorher
+    lief beides durch `in_grundeinheit()`, und weil das bei leerer Menge
+    `None` liefert, löschte ein geleertes Mengenfeld die EINHEIT gleich mit.
+    Wer „500 g" korrigieren wollte, bekam nach dem Neutippen „500 Stk" — eine
+    stille Verfälschung der Mengenrechnung, gegen die Zurücknehmen nicht half.
+    Ein `unit=None` heisst darum ausdrücklich „nicht mitgeschickt, lass die
+    bisherige stehen"; nur ein leerer String nimmt die Einheit weg.
     """
     zeile = _zutat(con, item_id)
-    normiert = mengen.in_grundeinheit(_amount(amount), unit)
+    menge = _amount(amount)
+    roh = zeile["unit"] if unit is None else str(unit).strip()
+    basis = mengen.grundeinheit(roh) if roh else None
+    neue_einheit, faktor = basis if basis else (None, 1.0)
+    neue_menge = None if menge is None else menge * faktor
     con.execute("UPDATE recipe_item SET amount = ?, unit = ? WHERE id = ?",
-                (normiert[0] if normiert else None,
-                 normiert[1] if normiert else None, item_id))
+                (neue_menge, neue_einheit, item_id))
     con.commit()
-    return {"id": int(zeile["id"]),
-            "amount": normiert[0] if normiert else None,
-            "unit": normiert[1] if normiert else None}
+    return {"id": int(zeile["id"]), "amount": neue_menge,
+            "unit": neue_einheit}
 
 
 def _zutat(con: sqlite3.Connection, item_id: int) -> sqlite3.Row:

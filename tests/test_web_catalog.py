@@ -296,3 +296,68 @@ def test_bild_route_liefert_404_statt_einer_fremden_datei(client, bild_dir):
 
 def test_bild_route_bei_unbekanntem_produkt(client):
     assert client.get("/bild/999999").status_code == 404
+
+
+# --------------------------------------------------------------------------
+# Die Liste sagt, dass sie geschnitten wurde (WB-375)
+#
+# Der Schnitt bei `SEITE` ist Absicht — auf dem Telefon scrollt niemand durch
+# 657 Kacheln. Ihn zu verschweigen ist es nicht: „Milch" hatte am echten
+# Katalog 657 Treffer und zeigte 60, und 44 der 138 Kategorien trugen ein
+# Abzeichen, hinter dem weniger stand, als es versprach.
+
+@pytest.fixture
+def enge_seite(monkeypatch):
+    """`SEITE` klein genug, dass die Fixture-Produkte sie überschreiten.
+
+    `_liste` liest die Zahl beim Aufruf aus dem Modul, nicht beim Bauen der
+    App — ein Ersetzen hier wirkt also auch für einen längst gebauten Client.
+    """
+    monkeypatch.setattr(webapp, "SEITE", 3)
+    return 3
+
+
+def test_gekappte_suche_nennt_die_wahre_zahl(client, enge_seite):
+    r = client.get("/produkte", params={"q": "milch"})
+    assert "3 von 26" in r.text
+    assert "milch" in r.text
+
+
+def test_gekappte_kategorie_nennt_die_zahl_die_am_zweig_steht(client,
+                                                              enge_seite):
+    """Die schlimmere Hälfte: das Abzeichen am Zweig versprach 8, der Zweig
+    lieferte 3. Die Zahl im Satz muss dieselbe sein wie die am Abzeichen."""
+    zweig = "Milch, Molkerei & Butter"
+    liste = client.get("/produkte", params={"l1": zweig}).text
+    treffer = re.search(r"(\d+) von (\d+)", liste)
+    assert treffer, "die gekappte Kategorie schweigt"
+    assert int(treffer.group(1)) == 3
+
+    # Dieselbe Zahl, die im Kategoriebaum als Abzeichen hängt.
+    baum = client.get("/katalog").text
+    abzeichen = baum.split(zweig.replace("&", "&amp;"), 1)[1][:200]
+    assert f'<span class="anzahl">{treffer.group(2)}</span>' in abzeichen
+
+
+def test_eine_vollstaendige_liste_schweigt(client):
+    """Kein Satz, wo nichts fehlt — sonst liest ihn irgendwann niemand mehr."""
+    assert " von 26" not in client.get("/produkte", params={"q": "milch"}).text
+    assert " von " not in client.get("/produkte").text.split("<ul", 1)[0]
+
+
+def test_die_gekappte_suche_zaehlt_nicht_die_ausgeschlossenen_kategorien(
+        db_datei, bild_dir, enge_seite):
+    """Tierfutter ist aus dem Katalog verbannt (WB-343). Es in der Gesamtzahl
+    mitzuzählen wäre eine zweite Falschaussage an derselben Stelle."""
+    con = db.connect(db_datei)
+    con.execute("UPDATE product SET category_l1 = ? WHERE id IN"
+                " (SELECT id FROM product LIMIT 5)",
+                (next(iter(webapp.search.AUSGESCHLOSSENE_KATEGORIEN)),))
+    con.commit()
+    vorher = webapp.search.count(con, "milch")
+    con.close()
+    with TestClient(webapp.create_app(db_path=db_datei,
+                                      image_dir=bild_dir)) as c:
+        text = c.get("/produkte", params={"q": "milch"}).text
+    assert f"3 von {vorher}" in text
+    assert vorher < 26

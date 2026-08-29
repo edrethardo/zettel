@@ -742,3 +742,31 @@ def test_ein_schon_vorgelegtes_produkt_verbraucht_keinen_platz_doppelt(con):
     # Suche mit `limit=1`.
     assert [t["name"] for t in gekuerzt] == [t["name"] for t in klein]
     assert len(gekuerzt) == 1
+
+
+# --------------------------------------------------------------------------
+# Die Gesamtzahl der Treffer (WB-375)
+
+def test_count_zaehlt_genau_das_was_eine_unbegrenzte_suche_faende(con):
+    """Sonst behauptete der Satz „60 von 657" eine Zahl, die es nie gibt."""
+    assert search.count(con, "milch") == len(search.search(con, "milch",
+                                                           limit=10_000))
+
+
+def test_count_folgt_dem_limit_nicht(con):
+    """Der ganze Zweck: die Zahl bleibt, wenn die Liste geschnitten wird."""
+    assert len(search.search(con, "milch", limit=3)) == 3
+    assert search.count(con, "milch") > 3
+
+
+def test_count_zaehlt_inaktive_und_ausgeschlossene_nicht_mit(con):
+    vorher = search.count(con, "milch")
+    con.execute("UPDATE product SET active = 0 WHERE id ="
+                " (SELECT id FROM product WHERE name LIKE '%Milch%' LIMIT 1)")
+    con.commit()
+    assert search.count(con, "milch") == vorher - 1
+
+
+def test_count_ohne_brauchbaren_begriff_ist_null(con):
+    assert search.count(con, "") == 0
+    assert search.count(con, '"') == 0

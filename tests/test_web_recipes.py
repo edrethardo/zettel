@@ -470,3 +470,146 @@ def test_die_menge_einer_zutat_laesst_sich_korrigieren(client, con):
     assert recipes.zutaten(con, rid)[0]["amount"] is None
     # Und die Packungszahl bleibt davon unberührt — es sind zwei Grössen.
     assert recipes.zutaten(con, rid)[0]["qty"] == 1
+
+
+# --------------------------------------------------------------------------
+# Die Einheit ist ein Feld und keine versteckte Fracht (WB-375)
+#
+# Vorher reiste sie als `<input type="hidden">` mit. Ein geleertes Mengenfeld
+# löschte sie mit, danach war das Hidden-Feld leer, und beim Neutippen wurde
+# aus „500 g" ein „500 Stk" — die Zutat rechnete ab da falsch, still, und auf
+# der ganzen Seite gab es kein Feld, mit dem sich das hätte richten lassen.
+
+def _einheitenfeld(text: str) -> str:
+    """Das `unit`-Feld AUS DEM BEDARF-FORMULAR.
+
+    Nicht das erste `name="unit"` der Seite: das Suchformular trägt die Menge
+    der Rezeptzutat versteckt mit ins Verknüpfen, und das ist ein anderer
+    Vorgang — dort ist versteckt richtig, weil nichts daran zu ändern ist.
+    """
+    stueck = text.split('class="bedarf"', 1)[1].split("</form>", 1)[0]
+    return re.search(r'<input[^>]*name="unit"[^>]*>', stueck).group(0)
+
+
+def test_die_einheit_steht_als_eigenes_feld_auf_der_seite(client, con):
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=500&unit=ml",
+                headers=HTMX)
+
+    feld = _einheitenfeld(client.get(f"/rezepte/{rid}").text)
+    assert 'type="hidden"' not in feld, "Einheit wieder versteckt"
+    assert 'type="text"' in feld
+    assert 'value="ml"' in feld, "das Feld zeigt die Einheit nicht"
+
+
+def test_menge_leeren_und_neu_eintragen_behaelt_die_einheit(client, con):
+    """Der Griff, den WB-362 verspricht — und der vorher eine Einbahnstrasse
+    war: „500 g" -> Feld leeren -> „500" -> stand auf „500 Stk"."""
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=500&unit=ml",
+                headers=HTMX)
+    item = recipes.zutaten(con, rid)[0]["id"]
+
+    # Feld leeren — die Einheit steht dabei weiter im (jetzt sichtbaren) Feld.
+    client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                data={"amount": "", "unit": "ml"}, headers=HTMX)
+    z = recipes.zutaten(con, rid)[0]
+    assert z["amount"] is None
+    assert z["unit"] == "ml", "die Einheit ging mit der Menge verloren"
+
+    # Und neu eintippen ergibt wieder Milliliter, nicht Stück.
+    client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                data={"amount": "500", "unit": "ml"}, headers=HTMX)
+    z = recipes.zutaten(con, rid)[0]
+    assert (z["amount"], z["unit"]) == (500.0, "ml")
+
+
+def test_ohne_mitgeschickte_einheit_bleibt_die_gespeicherte_stehen(client, con):
+    """Ein Aufrufer, der `unit` gar nicht schickt, meint „lass sie stehen" —
+    nicht „lösch sie". Das ist der Unterschied zwischen fehlend und leer."""
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=500&unit=ml",
+                headers=HTMX)
+    item = recipes.zutaten(con, rid)[0]["id"]
+
+    client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                data={"amount": "250"}, headers=HTMX)
+    z = recipes.zutaten(con, rid)[0]
+    assert (z["amount"], z["unit"]) == (250.0, "ml")
+
+
+def test_die_einheit_laesst_sich_ueber_das_feld_aendern(client, con):
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}&amount=2&unit=Stk",
+                headers=HTMX)
+    item = recipes.zutaten(con, rid)[0]["id"]
+
+    client.post(f"/rezepte/{rid}/zutaten/{item}/bedarf",
+                data={"amount": "1", "unit": "l"}, headers=HTMX)
+    z = recipes.zutaten(con, rid)[0]
+    assert (z["amount"], z["unit"]) == (1000.0, "ml"), "Liter wurden nicht umgerechnet"
+
+
+def test_ohne_gespeicherte_einheit_behauptet_das_feld_keine(client, con):
+    """Ein leeres Feld ist ehrlich: in der Spalte steht NULL. Ein vorbelegtes
+    „Stk" wäre eine Behauptung, die beim nächsten Abschicken wahr würde."""
+    pid = _pid(con, MILCH)
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={pid}", headers=HTMX)
+
+    feld = _einheitenfeld(client.get(f"/rezepte/{rid}").text)
+    assert 'value=""' in feld
+
+
+# --------------------------------------------------------------------------
+# Die Rezeptliste nennt beide Zahlen (WB-375)
+
+def _rezeptzutaten(con, rid, namen):
+    """Trägt eine Zutatenliste ein, wie ein geholtes Rezept sie mitbringt."""
+    for pos, name in enumerate(namen):
+        con.execute("INSERT INTO recipe_ingredient (recipe_id, pos, raw_name,"
+                    " name) VALUES (?, ?, ?, ?)", (rid, pos, name, name))
+    con.commit()
+
+
+def test_ein_geholtes_rezept_meldet_nicht_null_zutaten(client, con):
+    """Vorher zählte die Liste nur die verknüpften PRODUKTE — ein Rezept mit
+    23 Zutaten stand als „0 Zutaten" da."""
+    rid = _rid(client, "Pho Bo")
+    _rezeptzutaten(con, rid, ["Rinderbrühe", "Reisnudeln", "Ingwer"])
+
+    text = client.get("/rezepte").text
+    assert "0 Zutaten" not in text
+    assert "3 Zutaten" in text
+    assert "noch nichts verknüpft" in text
+
+
+def test_die_liste_nennt_die_verknuepften_neben_den_zutaten(client, con):
+    rid = _rid(client, "Pho Bo")
+    _rezeptzutaten(con, rid, ["Rinderbrühe", "Reisnudeln", "Ingwer"])
+    client.post(f"/rezepte/{rid}/zutaten?product_id={_pid(con, MILCH)}",
+                headers=HTMX)
+
+    text = client.get("/rezepte").text
+    assert "3 Zutaten" in text
+    assert "1 verknüpft" in text
+
+
+def test_ohne_zutatenliste_bleibt_die_zahl_der_verknuepften_stehen(client, con):
+    """Ein von Hand gebautes Rezept hat keine `recipe_ingredient`-Zeilen. Dann
+    sind die verknüpften Produkte die einzigen Zutaten, die es gibt."""
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/zutaten?product_id={_pid(con, MILCH)}",
+                headers=HTMX)
+    assert "1 Zutat" in client.get("/rezepte").text
+
+
+def test_die_portionszahl_hat_ein_bezugswort(client, con):
+    rid = _rid(client)
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Milchreis", "servings": "4"})
+    assert "für 4 Portionen" in client.get("/rezepte").text
