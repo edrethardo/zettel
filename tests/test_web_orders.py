@@ -647,11 +647,40 @@ def test_die_annahme_bleibt_an_der_pickzeile_stehen(client, con,
 def test_ein_freitextposten_bleibt_wie_er_war(client, offene_bestellung):
     """Er hat kein Produkt und damit keine Packungsgrösse — nur seine Zahl,
     und die darf nicht verschwinden, bloss weil es nichts zu multiplizieren
-    gibt."""
+    gibt.
+
+    Dieser hier wurde von Hand eingetippt und hat nie eine Menge gehabt.
+    Dann steht auch keine da: „gebraucht" ohne Zahl wäre eine Behauptung
+    über ein Rezept, das es nicht gibt. Der Fall MIT Menge steht darunter.
+    """
     zeile = _zeile(client.get("/pick").text, "Klopapier")
     assert "1× Klopapier" in zeile
     assert "Freitext" in zeile
     assert "gebraucht" not in zeile
+
+
+def test_ein_freitextposten_mit_menge_zeigt_sie_im_laden(client, con,
+                                                         offene_bestellung):
+    """„Sternanis, 3 Stk gebraucht" steht auf der Einkaufsliste (WB-385).
+
+    Die Zeile dafür steht seit WB-381 (`bedarf_text` als Hauptangabe,
+    `gebinde_text` als Nebenangabe) — es kam nur nie eine Menge an, weil
+    `korb.einlegen()` sie beim Freitext verwarf. Erfunden wird dabei nichts:
+    an der Stelle der Packungsangabe steht weiterhin „Freitext" und keine
+    Packungszahl, die es nicht gibt.
+    """
+    freitext = [p for p in orders.posten(con, offene_bestellung)
+                if p["ist_freitext"]][0]
+    con.execute("UPDATE order_item SET need_amount = 3, need_unit = 'Stk'"
+                " WHERE id = ?", (freitext["id"],))
+    con.commit()
+
+    zeile = _zeile(client.get("/pick").text, "Klopapier")
+    assert '<span class="menge">3 Stk gebraucht</span>' in zeile
+    assert '<span class="gebinde">Freitext</span>' in zeile
+    # Keine erfundene Packungsgrösse und kein Mangel, den es nicht gibt.
+    assert "1 ×" not in zeile
+    assert "Packungsgrösse" not in zeile
 
 
 def test_die_hauptangabe_ist_im_stil_auch_die_hauptangabe(client):

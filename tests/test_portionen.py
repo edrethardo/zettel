@@ -277,6 +277,10 @@ def test_freitextposten_werden_nicht_zusammengezaehlt(con):
     Er bleibt eine Zeile mit einer Stückzahl — und das ist richtig so: zwei
     Freitexte lassen sich nicht gegeneinander rechnen, und einer gegen ein
     Produkt schon gar nicht.
+
+    Das gilt für die PACKUNGSZAHL und seit WB-385 ausdrücklich nicht mehr
+    für die Menge (die Tests darunter). Hier wird keine mitgegeben, also
+    steht auch keine da — ein Griff ins Regal bleibt ein Griff ins Regal.
     """
     orders.einlegen(con, free_text="Hefe vom Bäcker", qty=1)
     orders.einlegen(con, free_text="Hefe vom Bäcker", qty=1)
@@ -288,6 +292,103 @@ def test_freitextposten_werden_nicht_zusammengezaehlt(con):
     assert hefe["qty"] == 2
     assert hefe["need_amount"] is None
     assert hefe["bedarf_satz"] is None
+
+
+def test_ein_freitextposten_behaelt_seine_menge(con):
+    """„Sternanis, 3 Stk gebraucht" — die Auskunft, auf die es im Laden
+    ankommt (WB-385).
+
+    Hier verlor sie sich bis dahin: `einlegen()` warf `menge` und `einheit`
+    weg, sobald keine Produkt-ID dabei war. Gemessen an 64 Gerichten (WB-380)
+    traf das 115 Zeilen in 37 Gerichten — und es war das einzige Glied der
+    Kette, an dem eine Menge verlorenging, die dastand.
+
+    Ausgerechnet beim Freitext wiegt der Verlust am schwersten: er ist das,
+    was der Katalog nicht führt, muss also anderswo besorgt werden — und
+    ohne Menge steht im Laden nur ein Wort.
+    """
+    orders.einlegen(con, free_text="Sternanis", menge=3, einheit="Stk")
+
+    zeile = _zeile(con, "Sternanis")
+    assert zeile["need_amount"] == 3.0
+    assert zeile["need_unit"] == "Stk"
+    assert zeile["bedarf_text"] == "3 Stk gebraucht"
+
+
+def test_aus_der_menge_eines_freitexts_entsteht_keine_packungszahl(con):
+    """Die Zusicherung aus WB-362 bleibt: „wie viele Packungen kaufe ich"
+    ist beim Freitext unbeantwortbar.
+
+    Ohne Produkt gibt es keine Packungsgrösse, gegen die sich rechnen liesse.
+    `qty` ist deshalb weiterhin die Stückzahl, die verlangt wurde, und nicht
+    aus 300 g eine erfundene 3 — die Menge wird ERINNERT, nicht verrechnet.
+    """
+    orders.einlegen(con, free_text="Sternanis", qty=1, menge=300, einheit="g")
+
+    zeile = _zeile(con, "Sternanis")
+    assert zeile["need_amount"] == 300.0
+    assert zeile["qty"] == 1
+    assert zeile["hand_qty"] == 1
+    assert zeile["rechnung"].packungen is None
+    assert zeile["gebinde_text"] is None
+
+
+def test_zwei_gleiche_freitexte_zaehlen_ihre_mengen_nicht_zusammen(con):
+    """Ein Wortlaut ist keine Produkt-ID.
+
+    Zwei „Sternanis" aus zwei Rezepten sind EINE Zeile (der Vergleich läuft
+    über `free_text`), aber ob wirklich zweimal dasselbe gemeint war, kann
+    niemand nachprüfen — bei einem Produkt sagt es die ID, hier sagt es nur
+    die Schreibweise. Im Zweifel wird nicht addiert: der ältere Bedarf bleibt
+    stehen, der neue zählt als Packung, genau wie zwei Bedarfe, die sich
+    nicht zusammenzählen lassen.
+    """
+    orders.einlegen(con, free_text="Sternanis", menge=3, einheit="Stk")
+    orders.einlegen(con, free_text="Sternanis", menge=2, einheit="Stk")
+
+    assert len(_korb(con)) == 1
+    zeile = _zeile(con, "Sternanis")
+    assert zeile["need_amount"] == 3.0
+    assert zeile["qty"] == 2
+
+
+def test_eine_freitextzutat_wird_mitskaliert(con):
+    """Der ganze Weg: Rezept für 4, gekocht wird für 8 (WB-385).
+
+    Skaliert wird in `recipes.in_den_korb`, und dass am Ende kein Produkt
+    steht, ändert daran nichts: 3 Stk werden 6. Vorher kam die verdoppelte
+    Menge am Korb an und wurde dort weggeworfen.
+    """
+    r = recipes.anlegen(con, "Pho", servings=4, zutaten=[
+        {"free_text": "Sternanis", "amount": 3, "unit": "Stk"}])
+    bericht = recipes.in_den_korb(con, r, portionen=8)
+
+    zeile = _zeile(con, "Sternanis")
+    assert zeile["need_amount"] == 6.0
+    assert zeile["qty"] == 1
+    # Und die Meldung sagt es auch: was der Katalog nicht führt, muss anderswo
+    # besorgt werden — dafür ist die Menge die einzige Angabe, die es gibt.
+    assert "Sternanis (6 Stk)" in bericht["meldung"]
+
+
+def test_ein_freitext_bekommt_keinen_mangel_untergeschoben(con):
+    """Kein Produkt zu haben ist beim Freitext kein Fehler, sondern die
+    Bauart der Zeile (WB-385).
+
+    Der Satz von der „nicht lesbar am Produkt" stehenden Packungsgrösse
+    stimmt für ein Produkt ohne brauchbares Gebinde. An einer Zeile, die gar
+    kein Produkt hat, ist er schlicht unwahr — dieselbe Unterscheidung, die
+    `assistant.vorschlaege._mengensatz` im Chat längst macht.
+    """
+    orders.einlegen(con, free_text="Sternanis", menge=3, einheit="Stk")
+
+    zeile = _zeile(con, "Sternanis")
+    assert zeile["bedarf_satz"] == "3 Stk gebraucht."
+    assert "Produkt" not in zeile["bedarf_satz"]
+    # Im Laden steht „Freitext" an der Stelle der Packungsangabe und sagt es
+    # damit selbst; ein Nachsatz darunter wäre dieselbe Auskunft ein zweites
+    # Mal.
+    assert zeile["bedarf_nachsatz"] is None
 
 
 def test_ein_griff_ins_regal_rechnet_nichts_aus(con, knoblauch):

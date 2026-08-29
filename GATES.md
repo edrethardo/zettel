@@ -117,7 +117,7 @@ an `eingelegt_at` und nicht mehr an der letzten Entscheidung — sonst wäre der
 Rückweg ein Loch in ihm); und ein zurückgenommener Fehltipp hinterlässt **kein
 Eval-Label**, nur den Zähler `withdrawn`.
 
-**Portionen und die Reihenfolge der Rechenschritte** (3, WB-362) — am
+**Portionen und die Reihenfolge der Rechenschritte** (4, WB-362) — am
 HTTP-Rand geklickt, weil die Reihenfolge eine Eigenschaft des WEGES ist und
 keine einer Hilfsfunktion: ein Rezept für 4, für 8 Portionen in den Korb
 gelegt, verdoppelt die Zutatenmenge (250 g -> 500 g) und ergibt 2 × 250 g;
@@ -126,6 +126,11 @@ zwei Rezepte mit je 100 g ergeben zusammen 200 g und damit **eine** Packung à
 1-kg-Netz bleibt auch für 8 Portionen ein Netz — geprüft wird dabei
 ausdrücklich BEIDES, dass auf 2 Stück skaliert wurde und dass die Packungszahl
 trotzdem 1 ist, samt der Begründung „gegen ‚1 kg' nicht ausrechenbar".
+Der vierte Check ist die Gegenrichtung (WB-385): eine Zutat, die der Katalog
+NICHT führt, kommt mit ihrer skalierten Menge auf der Einkaufsliste an — „6 Stk
+gebraucht" —, und aus ihr wird trotzdem keine Packungszahl erfunden. Auch hier
+wird BEIDES geprüft; ein Check, der nur die 6 sieht, bliebe grün, wenn der Shop
+daraus sechs Packungen machte.
 
 **Der Chat-Weg trägt Mengen** (2, WB-369) — am HTTP-Rand geklickt, weil die
 Kette genau dort riss: WB-362 rechnete am gespeicherten Rezept, der

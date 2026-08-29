@@ -184,8 +184,13 @@ def posten(con: sqlite3.Connection, order_id: int) -> list[dict]:
         # dieses Ticket verhindern soll. Der Satz entsteht in `mengen` und
         # nicht in der Vorlage, damit die Tests denselben prüfen, den die
         # Nutzerin liest.
+        # `freitext` ändert nichts an der Rechnung — ohne Produkt gibt es
+        # keine Packungsgrösse, also so oder so keine Packungszahl —, wohl
+        # aber an den Sätzen: eine Zeile ohne Produkt darf nicht lesen, die
+        # Packungsgrösse stehe „nicht lesbar am Produkt" (WB-385).
         rechnung = mengen.rechne(e["need_amount"], e["need_unit"],
-                                 e["unit_text"])
+                                 e["unit_text"],
+                                 freitext=e["ist_freitext"])
         e["rechnung"] = rechnung
         e["bedarf_satz"] = mengen.satz(rechnung, produkt=e["name"],
                                        unit_text=e["unit_text"],

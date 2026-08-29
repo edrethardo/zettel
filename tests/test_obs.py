@@ -804,6 +804,36 @@ def test_nicht_ausrechenbar_steht_ausdruecklich_im_span(con, spans):
     assert "1 kg" in a["picknick.reason"]
 
 
+def test_ein_freitext_steht_mit_seiner_menge_im_span(con, spans):
+    """Seit WB-385 hat auch eine Zeile ohne Produkt eine Menge — und damit
+    einen Span.
+
+    Vorher fiel sie aus dem Trace heraus, bevor irgendetwas zu messen war:
+    `korb.einlegen()` verwarf die Menge. Gerade diese Zeilen sind die
+    interessanten — sie sind das, was der Katalog nicht führt und was
+    anderswo besorgt werden muss. Der Grund sagt das und schiebt der Zeile
+    keinen Produktmangel unter.
+    """
+    from picknick import mengen
+
+    rid = recipes.anlegen(con, "Pho", servings=4, zutaten=[
+        {"free_text": "Sternanis", "amount": 3, "unit": "Stk"}])
+    recipes.in_den_korb(con, rid, portionen=8)
+
+    a = _einer(spans, "korb.menge").attributes
+    # Der Posten heisst im Trace, wie er überall sonst heisst.
+    assert a[SpanAttributes.INPUT_VALUE] == "Sternanis"
+    # Kein Produkt — daran ist ein Freitext-Span zu erkennen.
+    assert "picknick.product_id" not in a
+    assert a["picknick.need_added"] == 6.0     # 3 Stk für 4 -> 6 für 8
+    assert a["picknick.need_amount"] == 6.0
+    assert a["picknick.computable"] is False
+    assert "picknick.packages" not in a
+    assert a["picknick.reason"] == mengen.FREITEXT_GRUND
+    assert a["picknick.qty"] == 1
+    assert "6 Stk gebraucht" in a[SpanAttributes.OUTPUT_VALUE]
+
+
 def test_ein_griff_ins_regal_erzeugt_keinen_rechenspan(con, spans):
     """Ein „+" an der Kachel rechnet nichts aus. Ein Span, der so aussähe, als
     hätte er es getan, wäre ein leerer Span mit einer Behauptung."""
