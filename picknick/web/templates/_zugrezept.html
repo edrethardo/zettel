@@ -1,0 +1,115 @@
+{# Das vorgeschlagene Rezept, im Chat und nicht nur als Satz darüber (WB-383).
+
+   **Die Reihenfolge hier ist die ganze Entscheidung.** Der Nutzer will das
+   Rezept sehen, „damit man weiß worauf man sich einlassen würde" — das ist
+   eine Frage vor dem „Ja" und kein Nachschlagen. Also steht oben, was sie
+   beantwortet:
+
+       1. die GESAMTZEIT, als eine Zahl        Pho Bo: 9½ Stunden
+       2. wie viele Zutaten, und wie viele     23 Zutaten, 8 nicht auf
+          davon nicht auf dem Zettel stehen    dem Zettel
+       3. Schwierigkeit, Portionen, Bewertung
+       4. erst danach die Zutatenliste
+       5. und eingeklappt die Zubereitung
+
+   Der Chat nannte bisher die Zutatenzahl und die Bewertung — genau die beiden
+   Zahlen, die am wenigsten entscheiden. Neuneinhalb Stunden gegen
+   fünfunddreissig Minuten ist der Unterschied zwischen „heute Abend" und
+   „nächstes Wochenende".
+
+   **Die Zeit wird nie eingeklappt.** Sie ist der Grund, warum jemand „nein"
+   sagt. Eingeklappt ist die ZUBEREITUNG, und sie wird beim Aufklappen
+   nachgeladen: Pho Bos Zubereitung sind 3.924 Zeichen, und drei Rezeptzüge im
+   Verlauf hätten die Ersparnis aus WB-372 (215 KB -> 45 KB) wieder
+   aufgefressen. Ein `<details>` allein hätte daran nichts geändert — es
+   versteckt nur, was trotzdem übertragen wurde.
+
+   Fehlt eine Angabe, steht sie nicht da. Kein Platzhalter, keine geschätzte
+   Zeit: ein selbst angelegtes Rezept hat weder Zeiten noch Bewertung, und der
+   Modellweg hat überhaupt kein Rezept — dort erscheint diese Karte nie. #}
+<section class="zugrezept">
+  <h3>{{ r.name }}</h3>
+
+  {%- if r.zeitsatz %}
+  {# Eine Zahl, nicht drei Felder. „prep 90, cook 480" ist eine
+     Datenbankzeile; die Ruhezeit steht sichtbar daneben, weil sie der Grund
+     ist, warum aus 90 Minuten neuneinhalb Stunden werden. #}
+  <p class="gesamtzeit">{{ r.zeitsatz }}
+    {%- if r.ruhesatz %} <span class="ruhe">davon {{ r.ruhesatz }} Ruhezeit</span>{% endif %}</p>
+  {%- endif %}
+
+  {%- if r.n_zutaten %}
+  <p class="deckung">{{ r.n_zutaten }} {{ "Zutat" if r.n_zutaten == 1 else "Zutaten" }}
+    {%- if r.n_fehlt %}, {{ r.n_fehlt }} davon nicht auf dem Zettel{% endif %}
+    {%- if r.n_ohne_produkt %} · {{ r.n_ohne_produkt }} {{ "Zeile" if r.n_ohne_produkt == 1 else "Zeilen" }}
+      ohne Katalogprodukt{% endif %}</p>
+  {%- endif %}
+
+  {%- if r.difficulty or r.servings or r.source_rating or r.source_url %}
+  <p class="rezeptherkunft">
+    {%- if r.difficulty %}<span class="zeit">Schwierigkeit {{ r.difficulty }} von 3</span>{% endif %}
+    {%- if r.servings %}<span class="zeit">{{ r.servings }} Portionen</span>{% endif %}
+    {%- if r.source_rating %}<span class="zeit">{{ "%.2f"|format(r.source_rating) }} aus {{ r.source_votes or 0 }} Stimmen</span>{% endif %}
+    {%- if r.source_url %}
+    {# Die Herkunft nennen und verlinken — das ist fremde Arbeit. Der
+       Vorbehalt aus dem README gilt weiter: robots.txt erlaubt die zwei
+       benutzten Endpunkte, die Nutzungsbedingungen wurden nicht gelesen. Das
+       hier ist eine Angabe der Herkunft und keine Behauptung einer Erlaubnis. #}
+    <a class="quelle" href="{{ r.source_url }}" target="_blank" rel="noopener noreferrer">Original auf {{ r.source | capitalize if r.source else "der Quellseite" }}</a>
+    {%- endif %}
+  </p>
+  {%- endif %}
+
+  {%- if r.zutaten %}
+  {# Die Zutaten, WIE DIE QUELLE SIE SCHREIBT — mit Mengen. Das ist der
+     Vergleich, den die Vorschlagsliste darunter nicht liefert: „500 ml
+     passierte Tomaten" gegen „Kitchin Tomaten passiert, 500 g".
+
+     Die Leerraumsteuerung (`{%-`) ist hier kein Schönheitsfehler, sondern die
+     Nebenbedingung des Tickets: 23 Zutaten mal acht Zeilen Einrückung sind
+     ein Drittel der ganzen Karte, und die Seite darf nach WB-372 nicht
+     zurückwachsen. #}
+  <ul class="rezeptzutaten">
+    {%- for z in r.zutaten %}
+    {%- if z.gruppe and (loop.first or z.gruppe != r.zutaten[loop.index0 - 1].gruppe) %}
+    <li class="gruppe">{{ z.gruppe }}</li>
+    {%- endif %}
+    <li><span class="menge">{% if z.amount %}{{ z.amount | menge }}{% endif %} {{ z.unit or "" }}</span>
+      <span class="name">{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</span></li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+
+  {%- if r.n_schritte %}
+  <details class="zubereitung-klapp">
+    <summary>Zubereitung — {{ r.n_schritte }} {{ "Schritt" if r.n_schritte == 1 else "Schritte" }}</summary>
+    {# Nachgeladen und nicht mitgeschickt: siehe oben. Ohne JavaScript wird
+       hier nie gefragt — dann bleibt der Satz stehen, und er nennt den Weg,
+       auf dem dasselbe vollständig zu lesen ist. #}
+    <div hx-get="/rezepte/{{ r.id }}/zubereitung"
+         hx-trigger="toggle once from:closest details"
+         hx-swap="innerHTML">
+      <p class="fussnote">Wird beim Aufklappen nachgeladen — sie steht auch
+        auf der <a href="/rezepte/{{ r.id }}">Rezeptseite</a>.</p>
+    </div>
+  </details>
+  {%- endif %}
+
+  {# Der Zusammenhang mit dem Entwurf (WB-337): das hier ist nicht ein
+     zweites Ding, das zufällig denselben Namen trägt. Was unten bestätigt
+     wird, landet beim Abschicken in genau diesem Rezept. #}
+  {%- if m.entwurf and m.entwurf.saved_at %}
+  <p class="fussnote">Steht in deiner Sammlung.
+    <a href="/rezepte/{{ r.id }}">Ansehen</a></p>
+  {%- elif m.entwurf and not m.entwurf.verworfen %}
+  <p class="fussnote">Beim Abschicken kommen die Zeilen, die du unten mit
+    „Ja“ bestätigst, als Zutaten in genau dieses Rezept.</p>
+  {%- else %}
+  {# Kein Entwurf: der Rezeptweg (das Rezept gibt es längst) oder ein Zug, in
+     dem keine Zutat des Gerichts übrig blieb. Beides Mal ist nur EINES
+     sicher — dieses Rezept steht in der Sammlung. Mehr zu behaupten hiesse,
+     den Weg zu raten, den der Zug genommen hat. #}
+  <p class="fussnote"><a href="/rezepte/{{ r.id }}">Das ganze Rezept
+    ansehen</a></p>
+  {%- endif %}
+</section>

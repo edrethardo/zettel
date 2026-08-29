@@ -57,6 +57,15 @@
         „{{ m.faecher.wort }}“ suchen</button>
     </form>
     {% endif %}
+    {# Das vorgeschlagene Rezept (WB-383) — ÜBER der Vorschlagsliste, weil es
+       die Frage beantwortet, die vor dem ersten „Ja" steht: will ich das
+       heute überhaupt kochen? Neuneinhalb Stunden für Pho Bo entscheiden
+       das, nicht die Zutatenzahl. Es steht auch über den Mengen, mit denen
+       es verglichen werden soll: „500 ml passierte Tomaten" hier, das
+       Katalogprodukt gleich darunter. #}
+    {%- for r in m.rezepte or [] %}
+    {% include "_zugrezept.html" %}
+    {%- endfor -%}
     {% if m.vorschlaege %}
     <ul class="vorschlaege">
       {% for v in m.vorschlaege %}

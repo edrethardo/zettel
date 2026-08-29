@@ -22,6 +22,13 @@ Gemessen werden drei Dinge GETRENNT, weil verschiedene Hebel daran hängen:
 `--grenze alle` schaltet die Kürzung ab und lässt nur das Tauschziel wirken;
 so ist zu sehen, welcher Hebel wie viel bringt.
 
+`--rezept` hängt einen echten Chefkoch-Zug hinten an (WB-383): Pho Bo, 23
+Zutaten, 90 + 480 Minuten, 3.924 Zeichen Zubereitung. Er kostet die
+Rezeptkarte, und genau die soll messbar sein. **Ohne die Schalter misst die
+Probe unverändert das, was WB-372 gemessen hat** — sonst wären die Zahlen von
+damals nicht mehr vergleichbar. Das Rezept kommt aus derselben aufgezeichneten
+Antwort wie in der Testsuite; auch diese Probe geht nicht ins Netz.
+
 **Die Zeile „Seite" von WB-372 ist seit WB-382 zwei Zeilen.** Damals trug eine
 Seite beides; die Zahl 45 KB von damals ist mit der CHATSEITE zu vergleichen,
 denn dort steht jetzt der Verlauf. Der Korb ist der Rest — und der ist klein.
@@ -40,6 +47,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 from picknick import db, orders  # noqa: E402
 from picknick.assistant import chat as chatmodul  # noqa: E402
 from picknick.assistant import vorschlaege as vorschlagsliste  # noqa: E402
+from picknick.assistant import zugrezept  # noqa: E402
+from picknick.gerichte import lauf  # noqa: E402
 from picknick.llm import wake  # noqa: E402
 from picknick.scrapers import knuspr  # noqa: E402
 from picknick.web import app as webapp  # noqa: E402
@@ -90,6 +99,58 @@ class _Antwort:
         return self._payload
 
 
+class ChefkochVorlage:
+    """Die aufgezeichnete Chefkoch-Antwort — dieselbe wie in der Testsuite."""
+
+    #: Das Rezept, das die Gewichtung aus der aufgezeichneten Suche wählt.
+    PHO_BO = "3595991540759513"
+
+    def __init__(self):
+        self.seiten = {
+            "/v2/recipes?": _fixture("chefkoch_pho_suche.json"),
+            f"/v2/recipes/{self.PHO_BO}": _fixture("chefkoch_pho_rezept.json"),
+        }
+
+    def get(self, url):
+        for teil, payload in self.seiten.items():
+            if teil in url:
+                return _Antwort(payload)
+        raise AssertionError(f"Unerwartete URL: {url}")
+
+
+def _fixture(name: str):
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+def rezeptzug(pfad: Path) -> None:
+    """Hängt EINEN Chefkoch-Zug hinten an — mit Rezeptkarte (WB-383).
+
+    Kein Modell und keine Suche: die Vorschlagszeilen werden von Hand
+    geschrieben, weil hier nicht der ZUG gemessen wird, sondern die ANSICHT.
+    Was zählt, ist die Verknüpfung `chat_rezept` — an ihr hängt die Karte.
+    """
+    con = db.connect(pfad)
+    lauf.hole_eines(con, ChefkochVorlage(), "Pho", pause_s=0,
+                    schreib=lambda _: None)
+    recipe_id = con.execute(
+        "SELECT id FROM recipe ORDER BY id DESC LIMIT 1").fetchone()["id"]
+    korb = orders.warenkorb(con)
+    produkte = [r["id"] for r in
+                con.execute("SELECT id FROM product ORDER BY id").fetchall()]
+    vorschlagsliste.nachricht(con, korb, vorschlagsliste.ROLLE_NUTZERIN,
+                              "alles für Pho")
+    mid = vorschlagsliste.nachricht(
+        con, korb, vorschlagsliste.ROLLE_AGENT,
+        "„Pho Bo“ von Chefkoch — 23 Zutaten im Rezept.")
+    for i in range(JE_ZUG):
+        vorschlagsliste.vorschlag(con, mid, product_id=produkte[i],
+                                  qty=1, search_term=f"Zutat {i}",
+                                  rang=-1.5, dish_item=1)
+    zugrezept.merken(con, mid, [recipe_id])
+    con.commit()
+    con.close()
+
+
 def baue(pfad: Path) -> list[int]:
     """Legt Katalog, Verlauf und Korb an. Gibt die offenen Vorschläge zurück."""
     con = db.connect(pfad)
@@ -137,7 +198,22 @@ def messe(pfad: Path, offene: list[int], bilder: Path):
     sid = offene[len(offene) // 2]
     tipp = client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
                        headers=HTMX).text
-    return chatseite, korbseite, tipp
+    # Die mittlere Tauschgrösse: ein ganzer ZUG. Sie trägt seit WB-383 auch
+    # die Rezeptkarte — deshalb steht sie hier und nicht nur der Tipp.
+    mid = _letzter_zug(pfad)
+    zug = client.post(f"/chat/{mid}/alle?decision=kept", headers=HTMX).text
+    return chatseite, korbseite, tipp, zug
+
+
+def _letzter_zug(pfad: Path) -> int:
+    con = db.connect(pfad)
+    try:
+        return con.execute(
+            "SELECT id FROM chat_message WHERE role = ?"
+            " ORDER BY id DESC LIMIT 1",
+            (vorschlagsliste.ROLLE_AGENT,)).fetchone()["id"]
+    finally:
+        con.close()
 
 
 def bytes_(text: str) -> int:
@@ -150,18 +226,23 @@ def main() -> None:
         wert = sys.argv[sys.argv.index("--grenze") + 1]
         grenze = None if wert == "alle" else int(wert)
         webapp.VERLAUF_ZUEGE = grenze
+    mit_rezept = "--rezept" in sys.argv
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         pfad = tmp / "picknick.db"
         offene = baue(pfad)
-        chatseite, korbseite, tipp = messe(pfad, offene, tmp / "bilder")
+        if mit_rezept:
+            rezeptzug(pfad)
+        chatseite, korbseite, tipp, zug = messe(pfad, offene, tmp / "bilder")
     chat = chatseite[chatseite.find('<section class="chat"'):]
     print(f"Verlaufsgrenze:     {grenze}")
+    print(f"Rezeptzug dabei:    {'ja' if mit_rezept else 'nein'}")
     print(f"Seite /chat:        {bytes_(chatseite):>9,} Bytes")
     print(f"  davon #chat:      {bytes_(chat):>9,} Bytes")
     print(f"Seite /warenkorb:   {bytes_(korbseite):>9,} Bytes")
     print(f"beide zusammen:     {bytes_(chatseite) + bytes_(korbseite):>9,} Bytes")
     print(f"Tipp  Ja/Nein:      {bytes_(tipp):>9,} Bytes")
+    print(f"Zug   (Sammelknopf):{bytes_(zug):>9,} Bytes")
     print(f"Formulare /chat:    {chatseite.count('<form'):>9,}")
     print(f"Formulare /korb:    {korbseite.count('<form'):>9,}")
     print(f"Formulare Tipp:     {tipp.count('<form'):>9,}")
