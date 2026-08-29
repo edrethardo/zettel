@@ -377,13 +377,21 @@ und Rosenkohl". Passen Satz und Rezept nicht zusammen, lehnt das Modell
 **jeden einzelnen** Kandidaten ab — auch Milch, Butter und Zwiebeln, die
 vorgelegt dastanden. Es ist kein Ausrutschen, sondern ein Alles-oder-nichts.
 
-Die Kontrollzeile im Dataset zeigt, dass schon der Satzbau die Hälfte davon
-ausmacht:
+Die Kontrollzeile im Dataset schien zu zeigen, dass schon der Satzbau die
+Hälfte davon ausmacht:
 
 ```
 „Salat"                   -> 0 von 9 Begriffen mit Produkt
 „alles für Salat"         -> 6 von 9      (dasselbe Rezept, derselbe Katalog)
 ```
+
+> **Nachtrag, 2026-08-29 (WB-386): der Satzbau war es nicht.** An
+> eingefrorenen Kandidaten gemessen liefern „Salat" und „alles für Salat" im
+> Prompt von Stufe 3 **dieselbe** Zahl (6 von 9, dreimal gleich). Der
+> Unterschied dieser Kontrollzeile lag also nicht an Stufe 3, sondern davor:
+> die beiden Sätze holten verschiedene Begriffe und damit verschiedene
+> Kandidaten. Die Diagnose „Stufe 3 wählt gegen den Satz" bleibt richtig, die
+> Erklärung über den Satzbau war falsch. Der nächste Abschnitt misst es.
 
 ### Was diese Messung NICHT sagt
 
@@ -409,6 +417,153 @@ ausmacht:
   benutzt.
 * **Keine Zielquote.** Diese Messung war die erste; eine Schwelle vorher
   gesetzt wäre geraten gewesen.
+
+## Der Satz im Prompt von Stufe 3 (WB-386)
+
+WB-380 fand drei Gerichte, die **alles** verloren: Salat 0 von 9,
+Kartoffelpürree 0 von 11, Königsberger Klopse 0 von 16 Begriffen mit einem
+Katalogprodukt. Nicht wenig — nichts. Die Vermutung dort: Stufe 3 wählt gegen
+den Satz statt gegen das Rezept, und passen die beiden nicht zusammen, lehnt
+das Modell auch Milch und Butter ab.
+
+**Die Vermutung stimmte im Ergebnis und nicht in der Begründung.** Gemessen
+wurde sie mit einer zweiten Probe, die den Rest des Zuges festhält:
+
+```bash
+.venv/bin/python scripts/satz_probe.py --einfrieren --db kopie.db \
+    --nach vorlagen.json          # Rezept, Stufe 1, Suche — einmal, echt
+.venv/bin/python scripts/satz_probe.py --messen --aus vorlagen.json --wdh 3
+```
+
+Eingefroren wird genau das, was Stufe 3 vorgelegt bekommt: Begriffe, Mengen
+und Kandidaten. Danach ändert sich **nur noch ein String im Prompt**. Ohne
+das Einfrieren misst ein Vergleich zweier Sätze auch zwei Zutatenlisten, zwei
+Begriffslisten und zwei Kandidatenmengen mit.
+
+### Zehn Vorlagen, sechs Prompt-Varianten, je dreimal
+
+Median gewählter Begriffe, 2026-08-29, `Qwen3.8-27B-Instruct`. Jede Zeile ist
+eine eingefrorene Vorlage, jede Spalte eine Fassung desselben Prompts.
+`satz` ist der Stand vor diesem Ticket.
+
+| Vorlage | Beg | satz | satz_ganz | ohne_satz | regel | rezept | rezept_satz |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| Salat | 9 | 6 | 6 | **8** | 8 | 7 | 7 |
+| Kartoffelpürree | 10 | **0** | **0** | **10** | 10 | 10 | **0** |
+| Auflauf | 8 | 8 | 8 | 8 | 8 | 8 | 8 |
+| Suppe | 11 | 10 | 10 | 10 | 10 | 10 | 10 |
+| Eintopf | 11 | 10 | 10 | 10 | 10 | 10 | 10 |
+| alles für Salat | 9 | 6 | 6 | **8** | 6 | 7 | 7 |
+| alles für Königsberger Klopse | 15 | 14 | 14 | 13 | 14 | 11 | 14 |
+| alles für Lasagne | 13 | 13 | 13 | 13 | 13 | 13 | 13 |
+| alles für Chili con Carne | 10 | 8 | 8 | 8 | 8 | 8 | 8 |
+| alles für Apfelkuchen | 6 | 6 | 6 | 6 | 6 | 6 | 6 |
+| **Summe** | **102** | **81** | **81** | **94** | 93 | 90 | 83 |
+
+Die Varianten: `satz` wie bisher („Anfrage: Salat"), `satz_ganz` derselbe
+Satz als ganzer Satz, `ohne_satz` gar keine Anfragezeile, `regel` der Satz
+plus eine Zeile in der Anweisung („Milch bleibt Milch"), `rezept` der
+Rezeptname **statt** der Anfrage, `rezept_satz` beides.
+
+**Drei Läufe je Feld, dreimal dieselbe Zahl — in jedem einzelnen Feld ausser
+einem.** Auf eingefrorener Vorlage ist die Box bei Temperatur 0
+reproduzierbar; das Rauschen aus WB-380 (Bibimbap 0 gegen 7) sass also nicht
+in Stufe 3.
+
+### Was daraus folgt
+
+* **Der Satz ist die Ursache, nicht der Widerspruch zum Rezept.**
+  Kartoffelpürree: 0 von 10 mit Satz, 10 von 10 ohne — dieselben Kandidaten,
+  dieselben Begriffe, ein String Unterschied.
+* **Den Rezeptnamen danebenzustellen hilft nicht.** `rezept_satz` steht bei
+  Kartoffelpürree wieder auf 0. Solange der Satz dasteht, prüft das Modell
+  gegen ihn; mehr Kontext übertönt ihn nicht.
+* **Der Satzbau ist es nicht.** `satz` und `satz_ganz` sind in allen zehn
+  Zeilen gleich. Die Kontrollzeile aus WB-380 („Salat" 0, „alles für Salat" 6)
+  misst also einen Unterschied **vor** Stufe 3 — verschiedene Begriffe,
+  verschiedene Kandidaten.
+* **Eine Regelzeile reicht fast, aber nicht ganz.** `regel` rettet
+  Kartoffelpürree und lässt „alles für Salat" auf 6 stehen. Eine Zeile mehr
+  Prompt für ein schlechteres Ergebnis ist kein Handel.
+* **Königsberger Klopse ist der Gegenfall, den die Vermutung nicht erklärt.**
+  Satz und Rezept passen dort perfekt zusammen — und im Lauf stand das
+  Gericht trotzdem auf 0 von 16. Auf eingefrorener Vorlage steht es auf 14
+  von 15. Der Alles-oder-nichts-Ausfall hängt also am Satz im Prompt, nicht
+  daran, ob er zum Rezept passt.
+
+### Geändert wurde eine Zeile
+
+Auf dem **Rezeptweg** bekommt Stufe 3 keinen Satz mehr
+(`chat.Chat._aus_quelle`). Der Modellweg behält ihn: dort kommen die Begriffe
+aus dem Satz, er ist der einzige Kontext, den die Stufe hat („Milch" ist nicht
+entscheidbar, „Milch für den Kaffee" schon) — und für diesen Weg liegt keine
+Messung vor, also wurde er nicht angefasst. Die gewählte Sorte (WB-368)
+behält ihren eigenen Prompt.
+
+**Die Zusicherung der Stufe ist unberührt:** gewählt wird nur aus den
+vorgelegten Kandidaten, eine nicht vorgelegte ID wird verworfen und nicht
+repariert (`tests/test_gerichte.py::test_auch_ohne_satz_wird_nur_vorgelegtes_gewaehlt`).
+
+### Vorher und nachher, über alle 64 Gerichte
+
+Zweimal `scripts/breite_probe.py --messen` auf derselben vorgewärmten Kopie,
+2026-08-29, dazwischen nur diese Änderung:
+
+```
+                                  vorher      nachher
+Begriffe mit Katalogprodukt       412/541     446/540      76 % -> 83 %
+Freitext                          129         94           24 % -> 17 %
+Quote je Gericht, Median          83 %        89 %
+Quote je Gericht, Mittel          79 %        84 %
+Gerichte unter 50 %               5           1
+Gerichte bei 0 %                  4           1
+Gerichte mit Fehler               0           0
+```
+
+Je Gericht: **13 besser, 10 schlechter, 38 gleich.** Die Verbesserungen sind
+gross, die Verschlechterungen sind je ein Begriff:
+
+```
++12  Königsberger Klopse       0/16 -> 12/16
++10  Kartoffelpürree           0/11 -> 10/11
+ +8  Salat                      0/9 ->   8/9
+ +3  Okonomiyaki                3/8 ->   6/8
+ +2  Gnocchi mit Salbeibutter   3/6 ->   5/6
+ +2  Massaman Curry            7/11 ->  9/11
+ +2  Salat als ganzer Satz       6/9 ->  8/9
+ -1  Käse-Lauch-Suppe            6/6 ->  5/6
+ -1  Petersilienpesto            6/6 ->  5/6
+ -1  Knoblauchsuppe              6/8 ->  5/8
+ …   sechs weitere mit -1
+```
+
+Und die Abnahme des Tickets, wörtlich:
+
+```
+„Salat"            0 von 9  ->  8 von 9
+„alles für Salat"  6 von 9  ->  8 von 9
+```
+
+Beide Sätze liefern jetzt dieselbe Zahl. Das war der Punkt: ein schiefes
+Rezept darf ein schiefes Rezept sein, aber es darf nicht die Zutatenliste
+mitreissen.
+
+### Was diese Messung NICHT sagt
+
+* **Der Modellweg ist ungemessen.** Alle zehn Vorlagen sind Rezeptwege. Ob
+  der Satz dort trägt, was ihm zugeschrieben wird („Milch für den Kaffee"),
+  ist eine Behauptung aus WB-340 und steht weiter unbewiesen da — nur wurde
+  sie hier auch nicht angetastet.
+* **Zehn Vorlagen sind keine 64.** Die Prompt-Varianten sind an zehn
+  eingefrorenen Vorlagen entschieden, die Breitenmessung prüft danach nur die
+  gewählte. `regel` und `rezept` über alle 64 zu fahren hätte zwei weitere
+  Läufe gekostet.
+* **Die zehn Gerichte mit −1 sind nicht einzeln nachgesehen.** Ob dort ein
+  Begriff wirklich am fehlenden Satz hängt oder an einer anderen Zutatenliste
+  aus Stufe 1 (die von Lauf zu Lauf schwankt), ist offen. Die Summe trägt die
+  Entscheidung, die einzelne Zeile nicht.
+* **Ein Lauf je Stand.** Wie in WB-380: 64 Gerichte fangen einen Ausreisser
+  auf, ein einzelnes Gericht nicht.
 
 ## Was hier schwächer ist, als es aussieht
 

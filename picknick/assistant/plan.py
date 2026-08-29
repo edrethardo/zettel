@@ -841,7 +841,8 @@ def kandidat_kurz(p: dict) -> dict:
 
 def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
            system: str = SYSTEM_CHOOSE, temperatur: float = TEMPERATUR,
-           max_tokens: int = MAX_TOKENS, denken: bool = DENKEN) -> Auswahl:
+           max_tokens: int = MAX_TOKENS, denken: bool = DENKEN,
+           gericht: str | None = None) -> Auswahl:
     """Wählt je Begriff höchstens ein vorgelegtes Produkt.
 
     `aufgaben` ist `[{"begriff", "menge", "kandidaten": [Produkt, …]}, …]` —
@@ -869,7 +870,8 @@ def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
                                {"begriff": aufgabe["begriff"], "produkt": p,
                                 "menge": aufgabe.get("menge", 1)})
 
-    antwort = _frage(zugang, system, _choose_prompt(satz, mit_kandidaten),
+    antwort = _frage(zugang, system,
+                     _choose_prompt(satz, mit_kandidaten, gericht),
                      SCHEMA_CHOOSE, "auswahl", guided, temperatur, max_tokens,
                      denken)
     roh = _eintraege(antwort, ("auswahl", "produkte", "items", "liste"))
@@ -907,17 +909,37 @@ def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
     return Auswahl(gewaehlt=gewaehlt, verworfen=verworfen, roh=antwort)
 
 
-def _choose_prompt(satz: str, aufgaben: list[dict]) -> str:
-    """Der Benutzerteil von Stufe 3: Satz, Begriffe, Kandidaten als JSON.
+def _choose_prompt(satz: str, aufgaben: list[dict],
+                   gericht: str | None = None) -> str:
+    """Der Benutzerteil von Stufe 3: Satz, Gericht, Begriffe, Kandidaten.
 
     Der ursprüngliche Satz steht mit dabei, weil „Milch" allein nicht
     entscheidbar ist und „Milch für den Kaffee" schon.
+
+    **Ein leerer `satz` lässt die Anfragezeile ganz weg** (WB-386), und das
+    ist keine Bequemlichkeit, sondern das Ergebnis: mit dem Satz im Prompt
+    wählte das Modell zu „Kartoffelpürree" 0 von 10 Begriffen, ohne ihn 10
+    von 10 — dieselben Kandidaten. Der Rezeptweg nutzt es, der Modellweg
+    nicht (siehe `chat.Chat._aus_quelle`).
+
+    `gericht` — der Name des Rezepts, aus dem die Begriffe stammen — ist eine
+    MESSSTELLE und kein Weg des Shops: `scripts/satz_probe.py` fährt damit
+    die Varianten „Rezeptname statt Satz" und „Rezeptname zusätzlich".
+    Gemessen am 2026-08-29 hat beides nicht getragen (90 bzw. 83 gewählte
+    Begriffe gegen 94 ohne jeden Kopf), deshalb ruft der Shop ohne auf. Die
+    Zeile steht hier, damit sich das nachfahren lässt, statt beim nächsten
+    Verdacht neu erfunden zu werden.
     """
     liste = [{"begriff": a["begriff"], "menge": a.get("menge", 1),
               "kandidaten": [kandidat_kurz(p) for p in a["kandidaten"]]}
              for a in aufgaben]
-    return (f"Anfrage: {satz.strip()}\n\n"
-            "Vorgelegte Kandidaten:\n"
+    kopf = []
+    if gericht and gericht.strip():
+        kopf.append(f"Rezept: {gericht.strip()}")
+    if satz and satz.strip():
+        kopf.append(f"Anfrage: {satz.strip()}")
+    return ("\n".join(kopf) + ("\n\n" if kopf else "")
+            + "Vorgelegte Kandidaten:\n"
             + json.dumps(liste, ensure_ascii=False, indent=1))
 
 

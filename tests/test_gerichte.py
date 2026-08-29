@@ -442,6 +442,125 @@ def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
     assert ergebnis.rest_angehaengt is True
 
 
+# --------------------------------------------------------------------------
+# Ein schiefes Rezept reisst die Zutatenliste nicht mit (WB-386)
+
+def _schiefes_rezept(con):
+    """Ein Gericht, dessen geholtes Rezept NICHT zum Wort passt.
+
+    Genau die Lage aus WB-380: unter „Salat" steht „KFC Coleslaw", unter
+    „Kartoffelpürree" ein Schweinefilet. Hier steht unter „Salat" das
+    aufgezeichnete Pho — der `FakeHTTP` antwortet auf jede Suche mit
+    derselben Fixture, und das ist für diesen Test kein Mangel, sondern das
+    Mittel: schief ist schief.
+    """
+    lauf.hole_eines(con, echtes_chefkoch(), "Salat", pause_s=0,
+                    schreib=lambda _: None)
+
+
+def test_ein_schiefes_rezept_reisst_die_zutatenliste_nicht_mit(con):
+    """**Der Kerntest von WB-386.** Stufe 3 sieht den Satz nicht mehr.
+
+    Gemessen am 2026-08-29 gegen die echte Box, an eingefrorenen Kandidaten
+    (`scripts/satz_probe.py`): mit dem Satz im Prompt wählte das Modell zu
+    „Kartoffelpürree" 0 von 10 Begriffen, ohne ihn 10 von 10 — dieselben
+    Kandidaten, dieselben Begriffe, ein String Unterschied. Über zehn
+    Vorlagen: 81 gewählte Begriffe mit Satz, 94 ohne.
+
+    Geprüft wird beides — dass der Satz nicht mehr im Prompt steht UND dass
+    die vorgelegten Produkte ankommen. Die erste Zusicherung allein wäre
+    eine Prompt-Behauptung, die zweite allein liefe auch ohne die Änderung
+    durch.
+    """
+    _schiefes_rezept(con)
+    llm = FakeLLM(
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1),
+                 (("Mie Nudeln", "Nudeln"), 1)),
+        _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
+                ("Ingwer", _pid(con, "Ingwer"), 1),
+                ("Mie Nudeln", _pid(con, "Mie Nudeln"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
+    ergebnis = agent.turn(con, "Salat")
+
+    assert ergebnis.weg == chatmodul.WEG_QUELLE
+    assert ergebnis.n_produkte == 3
+
+    stufe3 = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    assert "Anfrage:" not in stufe3
+    assert "Salat" not in stufe3
+    # Was Stufe 3 stattdessen sieht: die Begriffe und ihre Kandidaten. Ohne
+    # diese Zeile bestünde der Test auch gegen einen leeren Prompt.
+    assert "Vorgelegte Kandidaten:" in stufe3
+    assert "Rinderfilet 400 g" in stufe3
+
+
+def test_auch_ohne_satz_wird_nur_vorgelegtes_gewaehlt(con):
+    """Die Zusicherung der Stufe ist von WB-386 unberührt.
+
+    Der Satz ist aus dem Prompt verschwunden, die Grenze der Wahl nicht: eine
+    ID, die nicht vorgelegt wurde, wird verworfen und nicht auf das
+    ähnlichste Produkt gebogen. Der Begriff geht trotzdem nicht verloren — er
+    steht als Freitext da.
+    """
+    _schiefes_rezept(con)
+    llm = FakeLLM(
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1)),
+        _choose(("Rinderfilet", 999_999, 1),
+                ("Ingwer", _pid(con, "Ingwer"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
+    ergebnis = agent.turn(con, "Salat")
+
+    assert [v["produkt_id"] for v in ergebnis.verworfen] == [999_999]
+    assert ergebnis.verworfen[0]["grund"] == "nicht vorgelegt"
+    namen = [v["name"] for v in ergebnis.vorschlaege]
+    assert "Ingwer frisch" in namen
+    assert "Rinderfilet" in namen           # als Freitext, ohne Produkt
+    assert [v["product_id"] for v in ergebnis.vorschlaege
+            if v["name"] == "Rinderfilet"] == [None]
+
+
+def test_der_modellweg_behaelt_den_satz_im_prompt(con):
+    """Die Gegenprobe — WB-386 ändert NUR den Rezeptweg.
+
+    Auf dem Modellweg kommen die Begriffe aus dem Satz, und er ist der
+    einzige Kontext, den Stufe 3 hat: „Milch" allein ist nicht entscheidbar,
+    „Milch für den Kaffee" schon. Gemessen wurde dieser Weg in WB-386 nicht,
+    also wurde er auch nicht angefasst — und diese Zeile hält das fest.
+    """
+    llm = FakeLLM(
+        _extract((("Ingwer",), 1)),
+        _choose(("Ingwer", _pid(con, "Ingwer"), 1)))
+    agent = chatmodul.Chat(llm, wecker=Box(),
+                           quelle=quelle.Quelle(holer=quelle.nicht_holen))
+    ergebnis = agent.turn(con, "Ingwer für den Tee")
+
+    assert ergebnis.weg == chatmodul.WEG_LLM
+    stufe3 = llm.aufrufe[1]["nachrichten"][-1]["content"]
+    assert "Anfrage: Ingwer für den Tee" in stufe3
+
+
+def test_ein_leerer_satz_laesst_die_anfragezeile_weg():
+    """Der Prompt selbst, ohne Modell und ohne Datenbank.
+
+    Die beiden Tests darüber gehen durch den ganzen Zug; diese Zeile sagt,
+    woran es liegt — und sie bricht, wenn jemand die Anfragezeile wieder
+    bedingungslos schreibt.
+    """
+    aufgaben = [{"begriff": "Milch", "menge": 1,
+                 "kandidaten": [{"id": 7, "name": "Vollmilch",
+                                 "unit_text": "1 l", "price_cents": 99}]}]
+    mit = plan._choose_prompt("Salat", aufgaben)
+    ohne = plan._choose_prompt("", aufgaben)
+
+    assert mit.startswith("Anfrage: Salat\n\nVorgelegte Kandidaten:")
+    assert ohne.startswith("Vorgelegte Kandidaten:")
+    # Die Kandidatenliste ist in beiden dieselbe — nur der Kopf fehlt.
+    assert mit.split("Vorgelegte Kandidaten:")[1] == \
+        ohne.split("Vorgelegte Kandidaten:")[1]
+
+
 def _erster_zug(con, holer, satz="alles für Pho", *, gericht="Pho",
                 zusatz=()):
     """Ein Chat-Zug zu einem Gericht, das noch in keinem Speicher steht.
