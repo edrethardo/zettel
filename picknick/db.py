@@ -157,6 +157,18 @@ SCHEMA = [
         store      TEXT NOT NULL DEFAULT 'egal'
                         CHECK (store IN ('rewe', 'lidl', 'egal')),
         picked_at  TEXT,
+        -- Der dritte Stand eines Postens (WB-373): im Laden nicht bekommen.
+        -- Eine eigene Spalte neben `picked_at` und nicht ein Wert darin, weil
+        -- beide dasselbe sagen wollen wie `picked_at` schon sagt — WANN es
+        -- passiert ist — und weil eine ältere Datenbank die Spalte per
+        -- ADD COLUMN bekommt: NULL heisst dort richtigerweise „nicht
+        -- vermisst".
+        --
+        -- Dass nie beide zugleich stehen, sichert `orders.setze_stand()` und
+        -- ausdrücklich kein CHECK: ADD COLUMN kann keine Tabellenbedingung
+        -- nachtragen, und eine Zusicherung, die nur in frisch angelegten
+        -- Datenbanken gilt, ist schlimmer als keine.
+        missing_at TEXT,
         -- Genau eines von beidem, nie beides und nie keines: das Freitext-
         -- Ventil ist gleichwertig, nicht ein Sonderfall (Spec 4).
         CHECK ((product_id IS NULL) <> (free_text IS NULL))
@@ -764,6 +776,11 @@ NACHGETRAGENE_SPALTEN = (
     # überleben, sonst ist nach einem „Nein" nicht mehr zu sagen, welche
     # Zutat gemeint war.
     ("chat_suggestion", "dish_item", "INTEGER"),
+    # WB-373: „gab's nicht". Ohne Nachtrag für den Altbestand, und zwar
+    # richtigerweise: ein Posten aus der Zeit davor wurde entweder abgehakt
+    # oder er steht noch offen — vermisst wurde keiner, denn es gab den Weg
+    # nicht. NULL ist hier die Wahrheit und keine Lücke.
+    ("order_item", "missing_at", "TEXT"),
 )
 
 

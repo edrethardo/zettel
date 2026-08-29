@@ -4,6 +4,53 @@
 {% if bestellung %}
   <h1>Einkauf Nr. {{ bestellung.id }}</h1>
   <div id="pickliste">{% include "_pick.html" %}</div>
+
+  {# Beide Meldungen stehen AUSSERHALB von `#pickliste`: der Austausch nach
+     jedem Tipp ersetzt dessen Inhalt, und eine Rückmeldung, die mit der
+     Antwort verschwindet, auf die sie wartet, gibt es nicht.
+
+     Und beide kleben unten am Bildrand statt oben an der Seite: im Laden wird
+     gescrollt, der Daumen ist unten, und eine Meldung am Seitenkopf ist genau
+     dann aus dem Bild, wenn sie gebraucht wird. #}
+  <p id="pick-laeuft" class="htmx-indicator pick-meldung" role="status">
+    Wird gespeichert …</p>
+  <p id="pick-fehler" class="pick-meldung fehler" role="alert" hidden>
+    Nicht gespeichert — wahrscheinlich kein Netz. Der Haken ist
+    zurückgesprungen; nochmal tippen, sobald du wieder Empfang hast.</p>
+
+  {# Ohne dieses Stück sieht ein Haken, der nicht ankam, aus wie einer, der
+     ankam: HTMX tauscht bei einem Fehler nichts, und die Checkbox bleibt
+     optisch gesetzt (WB-373). Zwei Dinge müssen passieren — das Kästchen
+     springt zurück (`form.reset()` stellt den Stand aus dem HTML wieder her,
+     also den, den der Server wirklich kennt), und es steht jemand da.
+
+     Die Ereignisse werden am Behälter abgefangen und nicht an jedem der N
+     Formulare: sie steigen auf, und `#pickliste` überlebt jeden Austausch. #}
+  <script>
+    (function () {
+      var liste = document.getElementById('pickliste');
+      var fehler = document.getElementById('pick-fehler');
+      if (!liste || !fehler) { return; }
+      function daneben(ev) {
+        var form = ev.detail && ev.detail.elt;
+        if (form && typeof form.reset === 'function') { form.reset(); }
+        fehler.hidden = false;
+      }
+      /* responseError: der Server hat geantwortet, aber mit 4xx/5xx.
+         sendError: es kam gar keine Antwort — das Funkloch im Kühlregal.
+         Nur Blockkommentare: ein doppelter Schrägstrich ist im
+         ausgelieferten HTML der Anfang einer fremden Adresse, und genau
+         darauf sieht der Test aus WB-323 nach. */
+      liste.addEventListener('htmx:responseError', daneben);
+      liste.addEventListener('htmx:sendError', daneben);
+      liste.addEventListener('htmx:timeout', daneben);
+      /* Ein geglückter Austausch ist die einzige Nachricht, die den Fehler
+         wirklich widerlegt — also nimmt erst er ihn weg. */
+      liste.addEventListener('htmx:afterSwap', function () {
+        fehler.hidden = true;
+      });
+    })();
+  </script>
 {% else %}
   <h1>Pick-Liste</h1>
   <p class="leer">Nichts zu holen — es ist keine Bestellung offen.</p>

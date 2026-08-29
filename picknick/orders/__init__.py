@@ -17,7 +17,8 @@ from picknick.orders.bestellung import (  # noqa: F401
     UngueltigerPosten, bestellung, bestellungen, jetzt,
     markiere_katalogstand, posten, wechsle)
 from picknick.orders.pick import (  # noqa: F401
-    LADEN_TITEL, abhaken, naechste, nach_laden, offene)
+    LADEN_TITEL, POSTEN_STAENDE, abhaken, naechste, nach_laden, offene,
+    setze_stand)
 from picknick.orders.korb import (  # noqa: F401
     LADEN_VORGABE, abschicken, einlegen, entfernen, gebinde, genau_eines,
     inhalt, korb_anzahl, laden_setzen, menge_setzen, rechnung,
@@ -25,10 +26,11 @@ from picknick.orders.korb import (  # noqa: F401
 
 __all__ = [
     "UEBERGAENGE", "BestellFehler", "FalscherZustand", "LeererWarenkorb",
-    "UngueltigerPosten", "LADEN_TITEL", "LADEN_VORGABE",
+    "UngueltigerPosten", "LADEN_TITEL", "LADEN_VORGABE", "POSTEN_STAENDE",
     "abhaken", "abschicken", "bestellung", "bestellungen", "einlegen",
     "entfernen", "gebinde", "genau_eines", "inhalt", "jetzt", "korb_anzahl",
     "laden_setzen", "markiere_katalogstand", "menge_setzen", "nach_laden",
     "naechste", "offene", "posten", "rechnung",
-    "vorbelegter_laden", "warenkorb", "warenkorb_id", "wechsle",
+    "setze_stand", "vorbelegter_laden", "warenkorb", "warenkorb_id",
+    "wechsle",
 ]

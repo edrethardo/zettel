@@ -222,7 +222,7 @@ def test_freitext_laeuft_ueber_die_oberflaeche_vollstaendig_durch(client, con):
     seite = client.get("/pick").text
     assert "Klopapier" in seite and "Lidl" in seite
 
-    r = client.post(f"/pick/{b['id']}/posten/{item}?gepickt=1", headers=HTMX)
+    r = client.post(f"/pick/{b['id']}/posten/{item}?stand=gepickt", headers=HTMX)
     assert r.status_code == 200
     assert "erledigt" in r.text
     assert orders.bestellung(con, b["id"])["state"] == "erledigt"
@@ -268,7 +268,7 @@ def test_uebersicht_stellt_offene_ueber_erledigte(client, con):
     alt_item = orders.inhalt(con)[0]["id"]
     client.post("/warenkorb/abschicken", follow_redirects=False)
     alt = orders.bestellungen(con, "offen")[0]["id"]
-    client.post(f"/pick/{alt}/posten/{alt_item}?gepickt=1", headers=HTMX)
+    client.post(f"/pick/{alt}/posten/{alt_item}?stand=gepickt", headers=HTMX)
 
     client.post("/warenkorb/einlegen", data={"free_text": "neu"}, headers=HTMX)
     client.post("/warenkorb/abschicken", follow_redirects=False)
@@ -333,7 +333,7 @@ def test_abhaken_setzt_den_haken_und_zeigt_den_stand(client, con,
                                                      offene_bestellung):
     zeilen = orders.posten(con, offene_bestellung)
     r = client.post(
-        f"/pick/{offene_bestellung}/posten/{zeilen[0]['id']}?gepickt=1",
+        f"/pick/{offene_bestellung}/posten/{zeilen[0]['id']}?stand=gepickt",
         headers=HTMX)
     assert r.status_code == 200
     assert "Noch 2 zu holen." in r.text
@@ -345,7 +345,7 @@ def test_alles_abgehakt_macht_die_bestellung_erledigt(client, con,
                                                       offene_bestellung):
     for zeile in orders.posten(con, offene_bestellung):
         r = client.post(
-            f"/pick/{offene_bestellung}/posten/{zeile['id']}?gepickt=1",
+            f"/pick/{offene_bestellung}/posten/{zeile['id']}?stand=gepickt",
             headers=HTMX)
     assert "Alles abgehakt" in r.text
     b = orders.bestellung(con, offene_bestellung)
@@ -359,10 +359,10 @@ def test_haken_wieder_wegnehmen_oeffnet_die_bestellung(client, con,
                                                        offene_bestellung):
     zeilen = orders.posten(con, offene_bestellung)
     for zeile in zeilen:
-        client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}?gepickt=1",
+        client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}?stand=gepickt",
                     headers=HTMX)
     r = client.post(
-        f"/pick/{offene_bestellung}/posten/{zeilen[0]['id']}?gepickt=0",
+        f"/pick/{offene_bestellung}/posten/{zeilen[0]['id']}?stand=offen",
         headers=HTMX)
     assert "Noch 1 zu holen." in r.text
     assert orders.bestellung(con, offene_bestellung)["state"] == "offen"
@@ -371,7 +371,7 @@ def test_haken_wieder_wegnehmen_oeffnet_die_bestellung(client, con,
 def test_abhaken_ohne_htmx_fuehrt_zurueck_zur_liste(client, con,
                                                     offene_bestellung):
     zeile = orders.posten(con, offene_bestellung)[0]
-    r = client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}?gepickt=1",
+    r = client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}?stand=gepickt",
                     follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"] == f"/pick/{offene_bestellung}"
@@ -379,8 +379,127 @@ def test_abhaken_ohne_htmx_fuehrt_zurueck_zur_liste(client, con,
 
 def test_unbekannte_bestellung_und_posten_ergeben_404(client, offene_bestellung):
     assert client.get("/pick/999999").status_code == 404
-    assert client.post(f"/pick/{offene_bestellung}/posten/999999?gepickt=1",
+    assert client.post(f"/pick/{offene_bestellung}/posten/999999?stand=gepickt",
                        headers=HTMX).status_code == 404
+
+
+# --------------------------------------------------------------------------
+# „Gab's nicht" (WB-373): der Ausweg vor dem leeren Regal
+#
+# Der Name steht im Laden auf einem Telefon. „Ausverkauft" wäre eine
+# Behauptung über den Laden, die er im Vorbeigehen nicht prüfen kann —
+# „gab's nicht" ist das, was er hinterher sagt.
+
+def test_gabs_nicht_steht_an_jeder_pickzeile(client, con, offene_bestellung):
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    item = orders.posten(con, offene_bestellung)[0]["id"]
+    assert "gab's nicht" in zeile
+    assert f'/pick/{offene_bestellung}/posten/{item}?stand=fehlt' in zeile
+
+
+def test_ein_nicht_bekommener_posten_schliesst_die_bestellung_ab(
+        client, con, offene_bestellung):
+    zeilen = orders.posten(con, offene_bestellung)
+    for zeile in zeilen[:-1]:
+        client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}"
+                    "?stand=gepickt", headers=HTMX)
+    r = client.post(f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}"
+                    "?stand=fehlt", headers=HTMX)
+
+    assert r.status_code == 200
+    assert orders.bestellung(con, offene_bestellung)["state"] == "erledigt"
+    # Und die Meldung behauptet NICHT, es sei alles abgehakt gewesen.
+    assert "Alles abgehakt" not in r.text
+    assert "2 geholt" in r.text and "1 gab's nicht" in r.text
+
+
+def test_gabs_nicht_laesst_sich_im_laden_zuruecknehmen(client, con,
+                                                       offene_bestellung):
+    zeilen = orders.posten(con, offene_bestellung)
+    for zeile in zeilen[:-1]:
+        client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}"
+                    "?stand=gepickt", headers=HTMX)
+    client.post(f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}"
+                "?stand=fehlt", headers=HTMX)
+
+    r = client.post(f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}"
+                    "?stand=offen", headers=HTMX)
+    assert "Noch 1 zu holen." in r.text
+    assert orders.bestellung(con, offene_bestellung)["state"] == "offen"
+    assert orders.posten(con, offene_bestellung)[-1]["stand"] == "offen"
+
+
+def test_die_historie_zeigt_beide_zahlen(client, con, offene_bestellung):
+    """„offen seit drei Tagen" ist keine ehrliche Bestellung, das hier schon."""
+    zeilen = orders.posten(con, offene_bestellung)
+    for zeile in zeilen[:-1]:
+        client.post(f"/pick/{offene_bestellung}/posten/{zeile['id']}"
+                    "?stand=gepickt", headers=HTMX)
+    client.post(f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}"
+                "?stand=fehlt", headers=HTMX)
+
+    text = client.get("/bestellungen").text
+    assert "2 geholt, 1 gab's nicht" in text
+    assert "3 Posten" not in text
+
+
+def test_ein_erfundener_stand_wird_abgelehnt(client, con, offene_bestellung):
+    """400 und nicht 404: der Posten existiert, der Stand nicht."""
+    item = orders.posten(con, offene_bestellung)[0]["id"]
+    r = client.post(f"/pick/{offene_bestellung}/posten/{item}"
+                    "?stand=ausverkauft", headers=HTMX)
+    assert r.status_code == 400
+    assert orders.posten(con, offene_bestellung)[0]["stand"] == "offen"
+
+
+# --------------------------------------------------------------------------
+# Ein Haken, der nicht ankommt, darf nicht aussehen wie einer, der ankam
+
+def test_der_haken_gibt_rueckmeldung_und_sperrt_sich_solange(
+        client, offene_bestellung):
+    zeile = _zeile(client.get("/pick").text, MILCH)
+    assert 'hx-indicator="#pick-laeuft"' in zeile
+    assert 'hx-disabled-elt="find input"' in zeile
+
+
+def test_ein_gescheiterter_haken_bleibt_nicht_stumm(client, offene_bestellung):
+    """Ohne diese drei Stücke tauscht HTMX bei einem Fehler nichts, und die
+    Checkbox bleibt optisch gesetzt, obwohl nichts gespeichert wurde."""
+    text = client.get("/pick").text
+    assert 'id="pick-fehler"' in text and "Nicht gespeichert" in text
+    # Beide Fehlerwege: der Server sagt Nein, und der Server sagt gar nichts.
+    assert "htmx:responseError" in text and "htmx:sendError" in text
+    # Und das Kästchen springt zurück, sonst lügt es weiter.
+    assert "reset" in text
+    # Die Meldung steht AUSSERHALB der Liste, die bei jedem Haken getauscht
+    # wird — sonst verschwände sie mit der Antwort, auf die sie wartet.
+    assert text.index('id="pickliste"') < text.index('id="pick-fehler"')
+    assert 'id="pick-fehler"' not in text.split('id="pickliste"', 1)[1] \
+        .split("</div>", 1)[0]
+
+
+# --------------------------------------------------------------------------
+# Die Mengenrechnung gehört vor das Regal (WB-362 gerechnet, WB-373 gezeigt)
+
+def test_der_bedarfssatz_steht_auf_der_pickzeile(client, con,
+                                                 offene_bestellung):
+    """Gerechnet wurde er für genau diesen Moment; gezeigt wurde er nur im
+    Warenkorb."""
+    item = orders.posten(con, offene_bestellung)[0]
+    con.execute("UPDATE order_item SET need_amount = 1000, need_unit = 'ml'"
+                " WHERE id = ?", (item["id"],))
+    con.commit()
+
+    satz = orders.posten(con, offene_bestellung)[0]["bedarf_satz"]
+    assert satz and "1000 ml gebraucht" in satz
+    assert satz in _zeile(client.get("/pick").text, MILCH)
+
+
+def test_ohne_bedarf_bleibt_die_pickzeile_still(client, offene_bestellung):
+    """Ein von Hand eingelegter Posten HAT keine benötigte Menge — eine Zeile,
+    die trotzdem etwas behauptet, wäre schlimmer als keine."""
+    zeile = _zeile(client.get("/pick").text, "Klopapier")
+    assert "gebraucht" not in zeile
 
 
 def test_ohne_offene_bestellung_bleibt_der_weg_zum_katalog(client):
@@ -469,7 +588,7 @@ def test_der_hinweis_ueberlebt_den_htmx_austausch(client, con,
     _ausmustern(con, MILCH)
     zeilen = orders.posten(con, offene_bestellung)
     frisch = client.post(
-        f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}?gepickt=1",
+        f"/pick/{offene_bestellung}/posten/{zeilen[-1]['id']}?stand=gepickt",
         headers=HTMX)
     assert "Nicht mehr im Katalog" in _zeile(frisch.text, MILCH)
 
@@ -510,3 +629,17 @@ def test_die_kennzeichnung_ist_im_stil_wirklich_sichtbar(client, con):
     assert ".fehlt-im-katalog {" in stil
     assert ".ausgemustert {" in stil
     assert ".pickzeile .ausgemustert" in stil
+
+
+def test_die_neuen_zustaende_der_pickzeile_sind_im_stil_sichtbar():
+    """Eine Klasse ohne Regel im Stylesheet ist keine Kennzeichnung (WB-373).
+
+    Und die Rückmeldung muss dort stehen, wo im Laden hingesehen wird: unten
+    am Bildrand, nicht am Seitenkopf, an dem längst vorbeigescrollt ist.
+    """
+    stil = STIL.read_text(encoding="utf-8")
+    assert ".pickzeile.gabs-nicht {" in stil
+    assert ".vermisst {" in stil
+    assert ".pickzeile .hinweis" in stil
+    block = stil.split(".pick-meldung {", 1)[1].split("}", 1)[0]
+    assert "position: fixed" in block and "bottom:" in block

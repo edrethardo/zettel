@@ -20,6 +20,20 @@ from picknick.orders.bestellung import (UngueltigerPosten, bestellung,
 #: können und deshalb keine eigene Fahrt begründen.
 LADEN_TITEL = {"rewe": "Rewe", "lidl": "Lidl", "egal": "Egal wo"}
 
+#: Was ein Posten im Laden sein kann (WB-373). Zwei Stände reichten nicht: vor
+#: einem leeren Regal ist „nicht abgehakt" keine Aussage mehr, sondern eine
+#: Sackgasse — die Bestellung wurde ausschliesslich dadurch fertig, dass jeder
+#: Posten abgehakt war, und wer nichts bekam, musste lügen oder die Bestellung
+#: für immer offen lassen.
+#:
+#: `fehlt` heisst in der Oberfläche „Gab's nicht" und ausdrücklich nicht
+#: „ausverkauft": ausverkauft ist eine Behauptung über den Laden, die er im
+#: Vorbeigehen gar nicht prüfen kann — vielleicht stand es woanders, vielleicht
+#: führt der Laden es nie, vielleicht hat er es nicht gefunden. „Gab's nicht"
+#: ist das, was er hinterher sagt, ist kurz genug für einen Daumen im Gehen und
+#: behauptet nichts, was er nicht weiss.
+POSTEN_STAENDE = ("offen", "gepickt", "fehlt")
+
 
 def nach_laden(con: sqlite3.Connection, order_id: int) -> list[dict]:
     """Die Posten einer Bestellung, gruppiert nach Laden.
@@ -37,7 +51,12 @@ def nach_laden(con: sqlite3.Connection, order_id: int) -> list[dict]:
             "store": laden,
             "titel": LADEN_TITEL.get(laden, laden),
             "posten": zeilen,
-            "n_offen": sum(1 for z in zeilen if not z["gepickt"]),
+            # Ein vermisster Posten ist NICHT offen: er ist erledigt, nur
+            # anders. Zählte er weiter mit, stünde über dem Regal für immer
+            # „1 offen" für etwas, das dort nicht liegt.
+            "n_offen": sum(1 for z in zeilen if z["stand"] == "offen"),
+            "n_geholt": sum(1 for z in zeilen if z["stand"] == "gepickt"),
+            "n_fehlt": sum(1 for z in zeilen if z["stand"] == "fehlt"),
         })
     return gruppen
 
@@ -53,12 +72,27 @@ def naechste(con: sqlite3.Connection) -> int | None:
     return liste[0]["id"] if liste else None
 
 
-def abhaken(con: sqlite3.Connection, item_id: int, gepickt: bool = True) -> dict:
-    """Setzt oder löscht den Haken an einem Posten und zieht den Stand nach.
+def setze_stand(con: sqlite3.Connection, item_id: int,
+                stand: str = "gepickt") -> dict:
+    """Setzt einen Posten auf `offen`, `gepickt` oder `fehlt`.
 
     Gibt die Bestellung zurück, wie sie danach dasteht — die Oberfläche muss
-    unmittelbar zeigen können, dass mit dem letzten Haken alles fertig war.
+    unmittelbar zeigen können, dass mit dem letzten Griff alles fertig war.
+
+    Der Stand wird VOLLSTÄNDIG geschrieben und nicht schrittweise: beide
+    Zeitspalten bekommen bei jedem Aufruf ihren Wert, damit es den Zustand
+    „abgehakt UND vermisst" gar nicht erst geben kann. Ein Posten, der beides
+    ist, wäre im Laden nicht darstellbar und in der Historie nicht zählbar.
+
+    Jeder Stand ist von jedem aus erreichbar, also ist auch jeder rücknehmbar
+    (WB-361): der Fehlgriff ist im Laden wahrscheinlicher als sonst irgendwo,
+    und wer „gab's nicht" tippt und es zwei Regale weiter doch findet, hakt es
+    einfach ab.
     """
+    if stand not in POSTEN_STAENDE:
+        raise UngueltigerPosten(
+            f"{stand!r} ist kein Stand eines Postens — erlaubt sind "
+            f"{POSTEN_STAENDE}.")
     row = con.execute(
         "SELECT i.id, i.order_id, o.state FROM order_item i"
         "  JOIN orders o ON o.id = i.order_id WHERE i.id = ?",
@@ -69,10 +103,22 @@ def abhaken(con: sqlite3.Connection, item_id: int, gepickt: bool = True) -> dict
         raise UngueltigerPosten(
             "Im Warenkorb wird nichts abgehakt — erst abschicken, dann "
             "einkaufen.")
-    con.execute("UPDATE order_item SET picked_at = ? WHERE id = ?",
-                (jetzt() if gepickt else None, item_id))
+    con.execute(
+        "UPDATE order_item SET picked_at = ?, missing_at = ? WHERE id = ?",
+        (jetzt() if stand == "gepickt" else None,
+         jetzt() if stand == "fehlt" else None, item_id))
     con.commit()
     return _stand_nachziehen(con, row["order_id"])
+
+
+def abhaken(con: sqlite3.Connection, item_id: int, gepickt: bool = True) -> dict:
+    """Setzt oder löscht den Haken an einem Posten.
+
+    Der Sonderfall von `setze_stand()` mit dem Namen, unter dem ihn das ganze
+    Projekt kennt — die Checkbox kann nur zwei Dinge, und ihre Aufrufer sollen
+    nicht so tun, als könnten sie drei.
+    """
+    return setze_stand(con, item_id, "gepickt" if gepickt else "offen")
 
 
 def _stand_nachziehen(con: sqlite3.Connection, order_id: int) -> dict:
@@ -86,10 +132,16 @@ def _stand_nachziehen(con: sqlite3.Connection, order_id: int) -> dict:
     Der Rückweg gehört dazu. Ein Haken, der im Laden versehentlich gesetzt
     wurde, muss sich wegnehmen lassen, und die Bestellung ist dann wieder
     offen — kein zusätzlicher Zustand, nur derselbe Übergang rückwärts.
+
+    „Offen" heisst seit WB-373: weder abgehakt noch vermisst. Ein Posten, den
+    es im Laden nicht gab, hält die Bestellung nicht mehr auf — sonst bliebe
+    genau die ehrliche Bestellung ewig unerledigt und nur die erlogene würde
+    fertig.
     """
     stand = con.execute(
         "SELECT count(*) AS n,"
-        "       coalesce(sum(CASE WHEN picked_at IS NULL THEN 1 ELSE 0 END), 0)"
+        "       coalesce(sum(CASE WHEN picked_at IS NULL"
+        "                          AND missing_at IS NULL THEN 1 ELSE 0 END), 0)"
         "           AS offen"
         "  FROM order_item WHERE order_id = ?", (order_id,)).fetchone()
     aktuell = bestellung(con, order_id)
