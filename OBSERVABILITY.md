@@ -270,10 +270,10 @@ Er beantwortet die eine Frage, die man später an einen Warenkorb stellt:
 
 | Attribut | Typ | Bedeutung |
 |---|---|---|
-| `input.value` | Text | der Produktname |
+| `input.value` | Text | der Produktname — beim Freitext dessen Wortlaut |
 | `output.value` | Text | der Satz, den die Nutzerin an der Zeile liest: „1000 ml gebraucht — 2 × Pomito 500 g." |
 | `picknick.item_id` | int | die Zeile in `order_item` |
-| `picknick.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird |
+| `picknick.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird; **fehlt beim Freitext**, und genau daran ist er zu erkennen |
 | `picknick.search_term` | Text | der Suchbegriff, über den dieses Produkt in die Liste kam (WB-369); leer, wenn jemand am Regal auf „+" getippt hat |
 | `picknick.servings` | int | für wie viele Portionen dieses Einlegen gerechnet hat |
 | `picknick.need_added` | float | der Beitrag **dieses** Einlegens, schon skaliert |
@@ -296,6 +296,15 @@ Erst ihr Unterschied macht das Zusammenzählen sichtbar: zwei Züge mit je
 Beweis, dass nach dem Zusammenzählen aufgerundet wurde und nicht davor. Stünde
 nur eine der beiden Zahlen da, sähe ein einzelner Span in beiden Welten gleich
 aus.
+
+**Seit WB-385 entsteht dieser Span auch für einen Freitext.** Vorher konnte
+er das nicht: `korb.einlegen()` verwarf die Menge, bevor irgendetwas zu messen
+war — 115 Zeilen in 37 von 64 Gerichten (WB-380) fielen damit aus dem Trace
+heraus, obwohl eine Menge dastand. Ein solcher Span hat kein
+`picknick.product_id`, kein `pack_*`, `computable = false` und als `reason`
+immer denselben Satz: **„ein Freitext hat keine Packung"**. Das ist kein
+Mangel, sondern die Bauart der Zeile, und der Filter darauf ist die Antwort
+auf „was muss ich anderswo besorgen, und wie viel davon?".
 
 **`computable = false` ist ein eigenes Feld und nicht bloss ein fehlendes
 `packages`.** Genau diese Fälle will man in Phoenix suchen: dort stammt die

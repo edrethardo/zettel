@@ -260,13 +260,25 @@ class Rechnung:
     grund: str | None = None
     #: Die Annahme, unter der gerechnet wurde (`DICHTE_ANNAHME`), sonst `None`.
     annahme: str | None = None
+    #: Diese Zeile hat gar kein Produkt (Freitext). Dann ist die fehlende
+    #: Packungsgrösse kein Mangel, sondern die Bauart der Zeile — und die
+    #: Sätze weiter unten dürfen ihr keinen unterschieben (WB-385).
+    freitext: bool = False
 
     @property
     def ausrechenbar(self) -> bool:
         return self.packungen is not None
 
 
-def rechne(bedarf, einheit, unit_text) -> Rechnung:
+#: Warum an einem Freitext keine Packungszahl entsteht. Kein Mangel: es gibt
+#: kein Produkt, an dem eine Packungsgrösse stehen könnte. Der Satz von der
+#: unlesbaren Packungsgrösse „am Produkt" schöbe einer Zeile einen Fehler
+#: unter, die gar kein Produkt hat — dieselbe Begründung wie in
+#: `assistant.vorschlaege._mengensatz`.
+FREITEXT_GRUND = "ein Freitext hat keine Packung"
+
+
+def rechne(bedarf, einheit, unit_text, *, freitext: bool = False) -> Rechnung:
     """Benötigte Menge gegen Packungsgrösse -> Packungszahl, aufgerundet.
 
     **Das ist der letzte Schritt und wird als letzter aufgerufen.** Wer diese
@@ -276,22 +288,29 @@ def rechne(bedarf, einheit, unit_text) -> Rechnung:
 
     Aufgerundet wird immer auf mindestens 1: wer 10 g Butter braucht, kauft
     kein Zehntel Päckchen.
+
+    `freitext=True` sagt, dass die Zeile gar kein Produkt hat. An der
+    Rechnung ändert das nichts — ohne Packungsgrösse gibt es so oder so keine
+    Packungszahl —, wohl aber am Grund und damit an jedem Satz, der ihn
+    zitiert: „die Packungsgrösse steht nicht lesbar am Produkt" ist bei einer
+    Zeile ohne Produkt schlicht unwahr (WB-385).
     """
     gebraucht = in_grundeinheit(bedarf, einheit)
     if gebraucht is None:
-        return Rechnung()
+        return Rechnung(freitext=freitext)
     menge, menge_einheit = gebraucht
     gebinde = packungsgroesse(unit_text)
     if gebinde is None:
         return Rechnung(
-            bedarf=menge, bedarf_einheit=menge_einheit,
-            grund=(f"die Packungsgrösse steht nicht lesbar am Produkt"
+            bedarf=menge, bedarf_einheit=menge_einheit, freitext=freitext,
+            grund=(FREITEXT_GRUND if freitext else
+                   f"die Packungsgrösse steht nicht lesbar am Produkt"
                    f"{_zitat(unit_text)}"))
     packung, packung_einheit = gebinde
     passt = vergleichbar(menge_einheit, packung_einheit)
     if passt is None:
         return Rechnung(
-            bedarf=menge, bedarf_einheit=menge_einheit,
+            bedarf=menge, bedarf_einheit=menge_einheit, freitext=freitext,
             packung=packung, packung_einheit=packung_einheit,
             # Zitiert wird der `unit_text`, wie er am Produkt steht, und nicht
             # die umgerechnete Grundeinheit: an der Packung steht „1 kg", und
@@ -307,13 +326,13 @@ def rechne(bedarf, einheit, unit_text) -> Rechnung:
     umrechnung, annahme = passt
     if packung <= 0:
         return Rechnung(
-            bedarf=menge, bedarf_einheit=menge_einheit,
+            bedarf=menge, bedarf_einheit=menge_einheit, freitext=freitext,
             packung=packung, packung_einheit=packung_einheit,
             grund="die Packungsgrösse ist null")
     zahl = max(1, math.ceil(_rund(menge * umrechnung / packung)))
     return Rechnung(bedarf=menge, bedarf_einheit=menge_einheit,
                     packung=packung, packung_einheit=packung_einheit,
-                    packungen=zahl, annahme=annahme)
+                    packungen=zahl, annahme=annahme, freitext=freitext)
 
 
 #: Fliesskomma frisst genau diesen Fall: 3 × 0,1 l sind 0,30000000000000004 l,
@@ -475,7 +494,13 @@ def nachsatz(rechnung: Rechnung, unit_text: str | None = None,
     if rechnung.bedarf is None:
         return None
     teile = []
-    if not rechnung.ausrechenbar and not _gebinde(rechnung, unit_text):
+    # Beim Freitext bleibt der Grund weg (WB-385): dass hier nichts gerechnet
+    # wurde, sagt die Zeile schon selbst — sie trägt „Freitext" an der
+    # Stelle, an der sonst die Packungsangabe steht. Ein Satz darunter, der
+    # dasselbe noch einmal erklärt, ist auf einem Telefon im Laden eine Zeile
+    # zu viel.
+    if not rechnung.ausrechenbar and not rechnung.freitext \
+            and not _gebinde(rechnung, unit_text):
         grund = rechnung.grund or ""
         teile.append(f"{grund[:1].upper()}{grund[1:]}, "
                      "die Menge bleibt, wie sie ist.")
@@ -503,6 +528,12 @@ def satz(rechnung: Rechnung, produkt: str | None = None,
     gebraucht = bedarf_text(rechnung)
     if gebraucht is None:
         return None
+    if rechnung.freitext and not rechnung.ausrechenbar:
+        # „3 Stk gebraucht." und sonst nichts (WB-385). Der Zusatz „die Menge
+        # bleibt, wie sie ist" antwortet auf eine Rechnung, die nicht aufging
+        # — beim Freitext war nie eine im Gang, und der Grund dahinter
+        # erklärt eine Lücke, die keine ist.
+        return f"{gebraucht}."
     if not rechnung.ausrechenbar:
         return (f"{gebraucht} — {rechnung.grund}, die Menge bleibt, "
                 "wie sie ist.")

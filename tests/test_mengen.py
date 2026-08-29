@@ -148,6 +148,35 @@ def test_ohne_lesbare_packungsgroesse_wird_nicht_gerechnet():
     assert r.bedarf == 200
 
 
+def test_ein_freitext_hat_keine_packung_und_das_ist_kein_mangel():
+    """`freitext=True` ändert nichts an der Rechnung, aber alles am Grund.
+
+    Ohne Packungsgrösse gibt es so oder so keine Packungszahl — nur heisst
+    „die Packungsgrösse steht nicht lesbar am Produkt" an einer Zeile ohne
+    Produkt, dass dort etwas fehlt, das nie hingehörte (WB-385). Der Grund
+    wird zitiert: im Trace (`picknick.reason`) und in jedem Satz darunter.
+    """
+    r = mengen.rechne(3, "Stk", None, freitext=True)
+    assert r.bedarf == 3 and r.packungen is None
+    assert r.grund == mengen.FREITEXT_GRUND
+    assert "Produkt" not in r.grund
+    # Die Gegenprobe: dasselbe an einem Produkt bleibt, wie es war.
+    assert "am Produkt" in mengen.rechne(3, "Stk", None).grund
+
+
+def test_der_satz_am_freitext_bleibt_die_menge():
+    """„3 Stk gebraucht." — und kein Wort über eine Rechnung, die nie lief.
+
+    „Die Menge bleibt, wie sie ist" antwortet auf eine Packungsrechnung, die
+    nicht aufging. Beim Freitext war keine im Gang, und der Zusatz liest sich
+    dort wie ein Vorwurf an eine Zeile, die nichts falsch gemacht hat.
+    """
+    r = mengen.rechne(3, "Stk", None, freitext=True)
+    assert mengen.satz(r, produkt="Sternanis") == "3 Stk gebraucht."
+    assert mengen.gebinde_text(r, unit_text=None, qty=1) is None
+    assert mengen.nachsatz(r, qty=1) is None
+
+
 def test_ohne_bedarf_gibt_es_gar_keine_rechnung():
     """Ein von Hand eingelegter Posten hat keine benötigte Menge."""
     r = mengen.rechne(None, None, "500 g")

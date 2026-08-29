@@ -150,6 +150,12 @@ def _gerechnet(zeile: dict) -> str:
             f"das sind {r.packungen} × {gebinde}")
 
 
+def _bedarf(zeile: dict) -> str:
+    """Die gebrauchte Menge einer Zeile als Text: „6 Stk"."""
+    r = zeile["rechnung"]
+    return mengen.schreibe(r.bedarf, r.bedarf_einheit)
+
+
 def _meldung(bericht: dict) -> str:
     """Ein Satz für die Oberfläche, aus dem Bericht gebaut.
 
@@ -183,13 +189,27 @@ def _meldung(bericht: dict) -> str:
                      + "; ".join(_gerechnet(z) for z in gerechnet) + ".")
     offen = [z for z in bericht.get("zeilen") or []
              if z["rechnung"].bedarf is not None
-             and not z["rechnung"].ausrechenbar]
+             and not z["rechnung"].ausrechenbar
+             and not z["rechnung"].freitext]
     if offen:
         # Regel 4: nicht raten, aber auch nicht verschweigen. Wer nicht liest,
         # dass die Menge unverändert blieb, hält die Zahl im Korb für
         # ausgerechnet.
         teile.append("Nicht ausrechenbar und deshalb unverändert: " + "; ".join(
             f"{z['name']} ({z['rechnung'].grund})" for z in offen) + ".")
+    # Die Freitexte stehen eigens da und nicht in der Liste darüber (WB-385):
+    # seit sie ihre Menge behalten, wären sie dort die Mehrheit, und N-mal
+    # derselbe Grund („ein Freitext hat keine Packung") sagt beim zweiten Mal
+    # nichts mehr. Ausserdem ist es hier eine andere Auskunft: sie sind das,
+    # was der Katalog nicht führt und was anderswo besorgt werden muss —
+    # dafür ist die Menge die einzige Angabe, die es überhaupt gibt.
+    ohne_katalog = [z for z in bericht.get("zeilen") or []
+                    if z["rechnung"].freitext
+                    and z["rechnung"].bedarf is not None]
+    if ohne_katalog:
+        namen = "; ".join(f"{z['name']} ({_bedarf(z)})" for z in ohne_katalog)
+        teile.append("Der Katalog führt sie nicht, die Menge steht trotzdem "
+                     f"am Posten: {namen}.")
     if bericht["ausgemustert"]:
         namen = ", ".join(z["name"] for z in bericht["ausgemustert"])
         teile.append(

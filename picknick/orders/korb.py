@@ -167,7 +167,8 @@ def rechnung(con: sqlite3.Connection, item_id: int) -> mengen.Rechnung:
     if row is None:
         return mengen.Rechnung()
     return mengen.rechne(row["need_amount"], row["need_unit"],
-                         gebinde(con, row["product_id"]))
+                         gebinde(con, row["product_id"]),
+                         freitext=row["product_id"] is None)
 
 
 def _neu_rechnen(con: sqlite3.Connection, item_id: int) -> int:
@@ -216,10 +217,15 @@ def _bedarf_span(con: sqlite3.Connection, item_id: int, *,
         return
     row = con.execute(
         "SELECT i.qty, i.hand_qty, i.need_amount, i.need_unit, i.product_id,"
-        "       p.name, p.unit_text FROM order_item i"
+        # Seit WB-385 hat auch ein Freitext einen Bedarf und damit einen Span.
+        # Ohne `coalesce` stünde dessen `input.value` leer im Trace — der
+        # Posten heisst dort, wie er überall sonst heisst (`orders.posten`).
+        "       coalesce(p.name, i.free_text) AS name, p.unit_text"
+        "  FROM order_item i"
         "  LEFT JOIN product p ON p.id = i.product_id WHERE i.id = ?",
         (item_id,)).fetchone()
-    r = mengen.rechne(row["need_amount"], row["need_unit"], row["unit_text"])
+    r = mengen.rechne(row["need_amount"], row["need_unit"], row["unit_text"],
+                      freitext=row["product_id"] is None)
     with obs.chain("korb.menge", eingabe=str(row["name"] or "")) as span:
         obs.setze(span, {
             "picknick.item_id": item_id,
@@ -292,10 +298,33 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
     Produkt in die Liste kam. Er ändert an der Rechnung nichts und
     beantwortet im Span die Frage, welche Zutat diese Packung verlangt hat.
 
-    **Freitext bekommt keine Menge.** Ein Posten ohne Produkt hat keine
-    Packungsgrösse, gegen die sich rechnen liesse — er bleibt eine Zeile mit
-    einer Stückzahl, und das ist richtig so (Ticket: „Freitext-Posten lassen
-    sich nicht zusammenzählen").
+    **Ein Freitext behält seine Menge, bekommt aber keine Packungszahl**
+    (WB-385). Hier standen bis dahin zwei Zeilen, die `menge` und `einheit`
+    für jeden Posten ohne Produkt verwarfen, mit dieser Begründung:
+
+        „Ein Freitext hat keine Packungsgrösse, gegen die sich rechnen
+         liesse — er bleibt eine Zeile mit einer Stückzahl."
+
+    Der Satz stimmt, aber er beantwortet die andere der beiden Fragen.
+    **„Wie viele Packungen kaufe ich" ist beim Freitext unbeantwortbar,
+    „wie viel wird gebraucht" nicht** — und im Laden zählt die zweite. Gerade
+    dort: ein Freitext ist das, was der Katalog NICHT führt, muss also
+    anderswo besorgt werden, und „Sternanis" ohne Menge ist unbrauchbarer als
+    „Butter" ohne Menge, weil es für Butter eine Packung gibt, an der man
+    sich orientieren kann. Gemessen an 64 Gerichten (WB-380) verloren so 115
+    Zeilen in 37 Gerichten eine Menge, die dastand.
+
+    Die alte Zusicherung bleibt trotzdem: aus der Menge entsteht kein
+    Aufrunden. Ohne Produkt gibt es keine Packungsgrösse, `rechnung()` ist
+    nie `ausrechenbar`, und die Zeile fällt unten in denselben Zweig wie ein
+    Griff ins Regal — `qty` bleibt die Stückzahl, die verlangt wurde.
+
+    **Zusammengezählt wird beim Freitext nicht.** Zwei gleiche Wortlaute sind
+    zwar eine Zeile (der Vergleich läuft über `free_text`), aber ein Wortlaut
+    ist keine Produkt-ID: zwei „Sternanis" aus zwei Rezepten sind nicht
+    sicher dasselbe, und niemand kann das nachprüfen. Der ältere Bedarf
+    bleibt deshalb stehen und der neue zählt als Packung — genau wie bei zwei
+    Bedarfen, die sich nicht addieren lassen.
 
     Gibt die id des Postens zurück.
     """
@@ -308,8 +337,6 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
         # altes Kachel-Formular im Browser zeigt danach ins Leere.
         raise UngueltigerPosten(f"Produkt {pid} gibt es nicht.")
     packungen = max(1, int(qty))
-    if pid is None:
-        menge, einheit = None, None
     laden = store if store in db.STORES else vorbelegter_laden(con, pid, text)
     korb = warenkorb(con)
 
@@ -331,7 +358,13 @@ def einlegen(con: sqlite3.Connection, product_id=None, free_text=None,
         hand = int(vorhanden["hand_qty"] or 0)
 
     if menge is not None:
-        summe = mengen.summiere(alt_menge, alt_einheit, menge, einheit)
+        # Beim Freitext wird ab dem ZWEITEN Bedarf nicht mehr zusammengezählt
+        # (WB-385): über einen Wortlaut lässt sich nicht belegen, dass zweimal
+        # dasselbe gemeint war. Der erste Bedarf läuft durch `summiere` wie
+        # jeder andere — gegen `None` ist er seine eigene Summe und wird dabei
+        # in die Grundeinheit gebracht.
+        summe = (None if pid is None and alt_menge is not None
+                 else mengen.summiere(alt_menge, alt_einheit, menge, einheit))
         if summe is None:
             # Zwei Bedarfe, die sich nicht zusammenzählen lassen — „4 Stangen"
             # und „200 g" am selben Produkt. Addiert wird nicht: eine Zahl

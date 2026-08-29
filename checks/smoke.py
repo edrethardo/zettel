@@ -1389,6 +1389,12 @@ def checks_portionen(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
                      lambda: _erst_zaehlen_dann_runden(client, con, butter))
             b.pruefe("1 Zwiebel aus dem 1-kg-Netz bleibt 1 Netz, auch für 8",
                      lambda: _zwiebeltest(client, con, zwiebel))
+            # Zuletzt, weil dieser Check abschickt: danach steht kein `draft`
+            # mehr, und die Prüfungen darüber brauchen einen.
+            b.pruefe("ein Freitext behält seine Menge bis auf die "
+                     "Einkaufsliste — „6 Stk gebraucht“, ohne erfundene "
+                     "Packung (WB-385)",
+                     lambda: _freitext_behaelt_seine_menge(client, con))
         finally:
             con.close()
 
@@ -1466,6 +1472,43 @@ def _zwiebeltest(client, con, zwiebel: int) -> str:
     wahr("Nicht ausrechenbar" in text and "1 kg" in text,
          "Die Oberfläche sagt nicht, warum die Menge unverändert blieb.")
     return "2 Stk gebraucht, gegen „1 kg“ nicht ausrechenbar -> 1 Netz"
+
+
+def _freitext_behaelt_seine_menge(client, con) -> str:
+    """Der ganze Weg für das, was der Katalog NICHT führt (WB-385).
+
+    Bis dahin warf `korb.einlegen()` Menge und Einheit weg, sobald keine
+    Produkt-ID dabei war — gemessen an 64 Gerichten (WB-380) traf das 115
+    Zeilen in 37 Gerichten. Geprüft wird am HTTP-Rand und in beide
+    Richtungen: dass die skalierte Menge ankommt UND dass daraus keine
+    Packungszahl erfunden wird. Ein Check, der nur die 6 sieht, bliebe auch
+    dann grün, wenn der Shop daraus 6 Packungen machte.
+    """
+    _leeren(con)
+    antwort = client.post("/rezepte", data={"name": "Pho"},
+                          follow_redirects=False)
+    rid = int(antwort.headers["location"].rsplit("/", 1)[1])
+    client.post(f"/rezepte/{rid}/bearbeiten",
+                data={"name": "Pho", "servings": "4"}, follow_redirects=False)
+    client.post(f"/rezepte/{rid}/zutaten",
+                data={"free_text": "Sternanis", "amount": "3", "unit": "Stk"},
+                headers={"HX-Request": "true"})
+    _in_den_korb(client, rid, 8)
+
+    zeile = next(z for z in orders.inhalt(con) if z["name"] == "Sternanis")
+    gleich((zeile["need_amount"], zeile["need_unit"], zeile["qty"]),
+           (6.0, "Stk", 1), "Korbzeile")
+
+    client.post("/warenkorb/abschicken", follow_redirects=False)
+    text = client.get("/pick").text
+    stueck = next(st for st in text.split("<li") if "Sternanis" in st)
+    wahr('<span class="menge">6 Stk gebraucht</span>' in stueck,
+         "Die Einkaufsliste zeigt die gebrauchte Menge nicht.")
+    wahr('<span class="gebinde">Freitext</span>' in stueck,
+         "An der Stelle der Packungsangabe steht nicht „Freitext“.")
+    wahr("Packungsgrösse" not in stueck,
+         "Der Zeile wird ein Mangel untergeschoben, den sie nicht hat.")
+    return "6 Stk gebraucht, 1 Zeile, keine Packungszahl"
 
 
 # --------------------------------------------------------------------------

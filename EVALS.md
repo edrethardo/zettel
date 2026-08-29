@@ -329,6 +329,14 @@ wie viel. 115 Zeilen in 37 der 64 Gerichte. Die Rechnung geht exakt auf:
 485 Vorschläge mit Menge − 375 Korbposten − 110 Freitext = 0 auf dem
 Chefkoch-Weg. Es gibt keinen unerklärten Verlust.
 
+> **Nachtrag, 2026-08-29 (WB-385): Glied 4 ist behoben.** `korb.einlegen()`
+> behält die Menge eines Freitextpostens; eine Packungszahl wird daraus
+> weiterhin nicht gerechnet. Die Zahlen in dieser Tabelle sind die des Laufs
+> vom 2026-08-29 und bleiben stehen, wie sie gemessen wurden — **neu gemessen
+> wurde nicht**, das kostet einen vollen Lauf gegen Netz und Modell. Was
+> geprüft ist: der Weg vom Rezept bis auf die Einkaufsliste trägt die Menge
+> jetzt (`checks/smoke.py`, Abschnitt Portionen; `tests/test_portionen.py`).
+
 **Glied 3 ist grösser als gedacht und trifft etwas anderes als vermutet.**
 Von den Mengen, die es auf die Liste schaffen, sind nur 157 von 485 gegen die
 Packung rechenbar. Die Einheiten dahinter:
