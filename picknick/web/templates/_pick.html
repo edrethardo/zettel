@@ -8,9 +8,9 @@
      Vollständigkeit behauptet, ist es nicht. #}
   {% if fehlt %}
 <p class="fertig" role="status">Fertig — {{ geholt }} geholt,
-  {{ fehlt }} gab's nicht. Erledigt {{ bestellung.done_at }}.</p>
+  {{ fehlt }} gab's nicht. Erledigt {{ bestellung.done_at | zeit }}.</p>
   {% else %}
-<p class="fertig" role="status">Alles abgehakt — erledigt {{ bestellung.done_at }}.</p>
+<p class="fertig" role="status">Alles abgehakt — erledigt {{ bestellung.done_at | zeit }}.</p>
   {% endif %}
 {% else %}
 <p class="stand" role="status">Noch {{ offen }} zu holen.{% if fehlt %}

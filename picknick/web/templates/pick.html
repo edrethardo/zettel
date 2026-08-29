@@ -63,7 +63,7 @@
   {% for b in auswahl %}
   <li class="bestellung offen">
     <a class="zweig" href="/pick/{{ b.id }}">Nr. {{ b.id }} · {{ b.n_offen }} zu holen
-      <span class="anzahl">{{ b.submitted_at }}</span></a>
+      <span class="anzahl">{{ b.submitted_at | zeit }}</span></a>
   </li>
   {% endfor %}
 </ul>

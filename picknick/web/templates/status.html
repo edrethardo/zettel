@@ -106,10 +106,10 @@
     ({{ (trace_luecke.anteil * 100) | round | int }} %).</p>
   {% endif %}
   {% if trace_luecke.letzter_mit %}
-  <p class="stand">Letzter Zug MIT Trace: {{ trace_luecke.letzter_mit }}.</p>
+  <p class="stand">Letzter Zug MIT Trace: {{ trace_luecke.letzter_mit | zeit }}.</p>
   {% endif %}
   {% if trace_luecke.letzter_ohne %}
-  <p class="stand">Letzter Zug OHNE Trace: {{ trace_luecke.letzter_ohne }}.</p>
+  <p class="stand">Letzter Zug OHNE Trace: {{ trace_luecke.letzter_ohne | zeit }}.</p>
   {% endif %}
   <p class="fussnote">Warum eine Zeile leer blieb, steht nirgends: Tracing
     abgeschaltet und Phoenix nicht erreichbar hinterlassen dieselbe leere
@@ -164,7 +164,7 @@
   <p>Gefragt würde <code>{{ modell.endpunkt }}</code>.</p>
   {% endif %}
   {% if modell.letzter_zug %}
-  <p class="stand">Letzter Chat-Zug: {{ modell.letzter_zug }}.</p>
+  <p class="stand">Letzter Chat-Zug: {{ modell.letzter_zug | zeit }}.</p>
   {% else %}
   <p class="leer">Noch kein Chat-Zug in dieser Datenbank.</p>
   {% endif %}
@@ -182,7 +182,7 @@
   <p><strong>{{ produkte }}</strong> aktive Produkte.</p>
   {% if letzter_ok %}
   <p class="stand">Letzter erfolgreicher Lauf:
-    {{ letzter_ok.finished_at or letzter_ok.started_at }}
+    {{ (letzter_ok.finished_at or letzter_ok.started_at) | zeit }}
     ({{ letzter_ok.n_products }} Produkte).</p>
   {% else %}
   <p class="leer">Es gibt noch keinen erfolgreichen Lauf — der Katalog ist nie
@@ -201,7 +201,7 @@
   <ul class="laeufe">
     {% for l in verworfen %}
     <li class="lauf verworfen">
-      <span class="name">{{ l.started_at }} — {{ l.status or 'ohne Abschluss' }}</span>
+      <span class="name">{{ l.started_at | zeit }} — {{ l.status or 'ohne Abschluss' }}</span>
       <span class="menge">{{ l.grund }}</span>
       {% if l.n_products is not none %}
       <span class="menge">{{ l.n_products }} Produkte im Lauf gefunden;
@@ -223,10 +223,10 @@
   <ul class="laeufe">
     {% for l in laeufe %}
     <li class="lauf {{ l.status or 'offen' }}">
-      <span class="name">{{ l.started_at }} — {{ l.status or 'ohne Abschluss' }}</span>
+      <span class="name">{{ l.started_at | zeit }} — {{ l.status or 'ohne Abschluss' }}</span>
       <span class="menge">
         {%- if l.n_products is not none %}{{ l.n_products }} Produkte{% else %}—{% endif -%}
-        {%- if l.finished_at %} · fertig {{ l.finished_at }}{% endif -%}
+        {%- if l.finished_at %} · fertig {{ l.finished_at | zeit }}{% endif -%}
       </span>
     </li>
     {% endfor %}
