@@ -390,36 +390,128 @@ def _zitat(text) -> str:
     return f" („{sauber}“)" if sauber else ""
 
 
-def satz(rechnung: Rechnung, produkt: str | None = None,
-         unit_text: str | None = None, qty: int | None = None) -> str | None:
-    """Der Satz, den die Oberfläche zeigt — oder `None`, wenn es nichts zu
-    sagen gibt.
+def bedarf_text(rechnung: Rechnung) -> str | None:
+    """`„1000 ml gebraucht"` — die GEBRAUCHTE Menge, oder `None`.
 
-    Regel 6 des Tickets in einer Funktion: „1000 ml gebraucht — 2 × Pomito
-    500 g". Er steht hier und nicht in der Vorlage, damit die Tests denselben
-    Satz prüfen, den die Nutzerin liest (dieselbe Begründung wie bei
-    `recipes.uebernahme._meldung`).
+    Die Hauptangabe einer Einkaufszeile (WB-381). Vor dem Regal ist sie die
+    einzige Frage, die sich dort stellt; was auf der Packung steht, liest man
+    dort ohnehin ab. `None` heisst „an diesem Posten wurde nie eine Menge
+    ausgerechnet" — dann steht dort nichts, und vor allem rückt keine
+    Packungsgrösse an ihre Stelle.
     """
     if rechnung.bedarf is None:
         return None
-    gebraucht = f"{schreibe(rechnung.bedarf, rechnung.bedarf_einheit)} gebraucht"
+    return f"{schreibe(rechnung.bedarf, rechnung.bedarf_einheit)} gebraucht"
+
+
+def _gebinde(rechnung: Rechnung, unit_text=None) -> str:
+    """Wie die Packung heisst: der Text am Produkt, sonst die gerechnete Grösse.
+
+    Der Text am Produkt gewinnt, weil er im Laden am Regal steht: „0,7 kg"
+    steht auf der Dose, „700 g" auf keiner.
+    """
+    return str(unit_text or "").strip() or schreibe(rechnung.packung,
+                                                    rechnung.packung_einheit)
+
+
+def gebinde_text(rechnung: Rechnung, unit_text: str | None = None,
+                 qty: int | None = None) -> str | None:
+    """`„dafür 2 × 1 kg"` — die Packungsangabe als NEBENangabe, oder `None`.
+
+    Die Packungszahl steht hier und nicht mehr vor dem Namen (WB-381): sie
+    multipliziert die Packungsgrösse und nichts sonst. Neben ihr kann „2 ×"
+    nicht mehr als „zwei Kilo" gelesen werden, und verschwiegen ist sie
+    trotzdem nicht — im Laden ist sie das, was in den Wagen wandert.
+
+    „dafür" schreibt nur, wer es belegen kann: es bindet die Zahl an den
+    Bedarf, und das gilt allein, wenn sie wirklich aus ihm gerechnet wurde.
+    Wo nicht gerechnet werden konnte, sagt die Angabe das selbst — „1 × 1 Stk
+    — nicht ausrechenbar" gegen „6 Stange gebraucht" ist die bekannte Lücke
+    aus WB-362 und liest sich sonst wie ein Rechenfehler.
+    """
+    gebinde = _gebinde(rechnung, unit_text)
+    if not gebinde:
+        return None
+    if qty is None:
+        return gebinde
+    text = f"{int(qty)} × {gebinde}"
+    if rechnung.bedarf is not None and not rechnung.ausrechenbar:
+        return f"{text} — nicht ausrechenbar"
+    if rechnung.ausrechenbar and int(qty) == rechnung.packungen:
+        return f"dafür {text}"
+    return text
+
+
+def _handsatz(rechnung: Rechnung, qty) -> str | None:
+    """„Im Korb liegen 3 — von Hand dazugelegt.", oder `None`.
+
+    Im Korb liegt etwas anderes, als die Rechnung verlangt: jemand hat von
+    Hand nachgelegt oder heruntergetippt. Das zu verschweigen hiesse, eine
+    Zahl anzuzeigen, die nicht im Korb steht — und im Laden stünde dann
+    jemand vor der falschen.
+    """
+    if qty is None or not rechnung.ausrechenbar or qty == rechnung.packungen:
+        return None
+    wort = "liegt" if qty == 1 else "liegen"
+    woher = "von Hand dazugelegt" if qty > rechnung.packungen \
+        else "von Hand heruntergesetzt"
+    return f"Im Korb {wort} {qty} — {woher}."
+
+
+def nachsatz(rechnung: Rechnung, unit_text: str | None = None,
+             qty: int | None = None) -> str | None:
+    """Was NEBEN Bedarf und Packungsangabe noch zu sagen bleibt, oder `None`.
+
+    Der Rest von `satz()` für eine Zeile, die ihre beiden Zahlen schon selbst
+    zeigt (WB-381): dort wäre der ganze Satz eine Wiederholung im
+    Kleingedruckten — sie macht die Zeile länger und die Aussage nicht
+    wahrer, und die Zeile ist ein Tap-Ziel auf einem Telefon.
+
+    Übrig bleiben die drei Dinge, die aus den beiden Angaben nicht
+    hervorgehen: dass von Hand nachgelegt wurde, unter welcher Annahme
+    gerechnet wurde — und WARUM nicht gerechnet werden konnte, aber nur,
+    wenn es gar keine Packungsangabe gibt, die es selbst sagen könnte.
+    """
+    if rechnung.bedarf is None:
+        return None
+    teile = []
+    if not rechnung.ausrechenbar and not _gebinde(rechnung, unit_text):
+        grund = rechnung.grund or ""
+        teile.append(f"{grund[:1].upper()}{grund[1:]}, "
+                     "die Menge bleibt, wie sie ist.")
+    hand = _handsatz(rechnung, qty)
+    if hand:
+        teile.append(hand)
+    if rechnung.annahme:
+        teile.append(f"({rechnung.annahme}).")
+    return " ".join(teile) or None
+
+
+def satz(rechnung: Rechnung, produkt: str | None = None,
+         unit_text: str | None = None, qty: int | None = None) -> str | None:
+    """Der ganze Satz am Stück — oder `None`, wenn es nichts zu sagen gibt.
+
+    Regel 6 des WB-362-Tickets in einer Funktion: „1000 ml gebraucht — 2 ×
+    Pomito 500 g". Er steht hier und nicht in der Vorlage, damit die Tests
+    denselben Satz prüfen, den die Nutzerin liest (dieselbe Begründung wie
+    bei `recipes.uebernahme._meldung`).
+
+    Wo eine Zeile Bedarf und Packungsangabe schon getrennt zeigt (die
+    Pick-Liste seit WB-381), gehört nicht dieser Satz darunter, sondern nur
+    sein Rest: `nachsatz()`.
+    """
+    gebraucht = bedarf_text(rechnung)
+    if gebraucht is None:
+        return None
     if not rechnung.ausrechenbar:
         return (f"{gebraucht} — {rechnung.grund}, die Menge bleibt, "
                 "wie sie ist.")
-    gebinde = str(unit_text or "").strip() or schreibe(rechnung.packung,
-                                                       rechnung.packung_einheit)
     name = f" {produkt}" if produkt else ""
-    teile = [f"{gebraucht} — {rechnung.packungen} ×{name} {gebinde}".rstrip()
-             + "."]
-    if qty is not None and qty != rechnung.packungen:
-        # Im Korb liegt etwas anderes, als die Rechnung verlangt: jemand hat
-        # von Hand nachgelegt oder heruntergetippt. Das zu verschweigen hiesse,
-        # eine Zahl anzuzeigen, die nicht im Korb steht — und im Laden stünde
-        # dann jemand vor der falschen.
-        wort = "liegt" if qty == 1 else "liegen"
-        woher = "von Hand dazugelegt" if qty > rechnung.packungen \
-            else "von Hand heruntergesetzt"
-        teile.append(f"Im Korb {wort} {qty} — {woher}.")
+    teile = [f"{gebraucht} — {rechnung.packungen} ×{name} "
+             f"{_gebinde(rechnung, unit_text)}".rstrip() + "."]
+    hand = _handsatz(rechnung, qty)
+    if hand:
+        teile.append(hand)
     if rechnung.annahme:
         teile.append(f"({rechnung.annahme}).")
     return " ".join(teile)
