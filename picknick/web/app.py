@@ -31,6 +31,7 @@ from picknick.assistant import chat as chatmodul
 from picknick.assistant import entwurf as entwuerfe
 from picknick.assistant import oberbegriffe
 from picknick.assistant import vorschlaege as vorschlagsliste
+from picknick.assistant import zugrezept as zugrezepte
 from picknick.catalog import categories, search
 from picknick.llm import wake
 from picknick.web import multipart
@@ -1053,6 +1054,12 @@ def create_app(db_path: str | Path | None = None,
         # an denen fehlten die Bilder.
         zeile["entwurf"] = entwuerfe.zu_nachricht(c, zeile["id"],
                                                   zeile["vorschlaege"])
+        # Das vorgeschlagene Rezept selbst (WB-383) — nicht nur ein Satz
+        # darüber. Dieselbe Übergabe der Vorschlagsliste wie beim Entwurf:
+        # daraus entsteht die Deckungszahl („23 Zutaten, 8 davon nicht auf
+        # dem Zettel") ohne eine zweite Abfrage je Zug.
+        zeile["rezepte"] = zugrezepte.zum_zug(c, zeile["id"],
+                                              zeile["vorschlaege"])
         return zeile
 
     def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
@@ -1761,6 +1768,29 @@ def create_app(db_path: str | Path | None = None,
                     _WEGE_REZEPT)
             return vorlagen.TemplateResponse(request, "rezept.html", {
                 **_rahmen(request, c), **kontext})
+        finally:
+            c.close()
+
+    @app.get("/rezepte/{recipe_id}/zubereitung")
+    def rezept_zubereitung(request: Request, recipe_id: int):
+        """Nur die Schritte — das Stück, das die Rezeptkarte im Chat nachlädt.
+
+        **Der Grund ist die Seitengrösse** (WB-372, WB-383). Pho Bos
+        Zubereitung sind 3.924 Zeichen; stünde sie in jedem Rezeptzug des
+        Verlaufs, wäre die Ersparnis von 215 KB auf 45 KB wieder aufgebraucht.
+        Ein blosses `<details>` hilft dagegen nicht — es versteckt, was
+        trotzdem übertragen wurde.
+
+        Ohne JavaScript wird hier nie gefragt; dort steht in der Karte ein
+        Link auf die Rezeptseite, auf der dasselbe vollständig steht.
+        """
+        c = con()
+        try:
+            if not _gibt_es(c, recipe_id):
+                return Response(status_code=404)
+            r = recipes.rezept(c, recipe_id)
+            return vorlagen.TemplateResponse(request, "_zubereitung.html", {
+                "rezept": r})
         finally:
             c.close()
 

@@ -83,7 +83,7 @@ from dataclasses import dataclass, field
 
 from picknick import gerichte, mengen, obs, orders
 from picknick.assistant import (entwurf, herkunft, oberbegriffe, plan,
-                                rezeptweg, vorschlaege)
+                                rezeptweg, vorschlaege, zugrezept)
 from picknick.catalog import search
 from picknick.llm import wake
 from picknick.llm.client import ModellNichtErreichbar
@@ -464,7 +464,13 @@ class Chat:
                 # sich die beiden Wege in Phoenix vergleichen lassen: `rest`
                 # heisst auf beiden dasselbe.
                 zusatz = {"rest": treffer.rest,
-                          "rest_angehaengt": True if treffer.rest else None}
+                          "rest_angehaengt": True if treffer.rest else None,
+                          # Welche Rezepte der Satz getroffen hat (WB-383).
+                          # Sie stehen hier zum ersten Mal fest — ohne diese
+                          # Zeile hätte der Zug hinterher keinen Weg zurück
+                          # zu dem Rezept, das er vorgeschlagen hat.
+                          "rezept_ids": [int(r["id"])
+                                         for r in treffer.rezepte]}
             elif faecher is not None:
                 # Ein Oberbegriff, aus dem Katalog erkannt: keine Suche, kein
                 # Modell, keine Vorschläge — die Sorten und die Frage, welche
@@ -735,7 +741,10 @@ class Chat:
                          f"({notbehelf}) — die Begriffe kommen roh aus dem "
                          "Rezept.")
         teile.extend(self._meldung_auswahl(auswahl, choose_kaputt))
-        teile.append("Die Zubereitung steht unter Rezepte.")
+        # Seit WB-383 steht das Rezept IM Chat und nicht nur ein Satz
+        # darüber — der Verweis nach `/rezepte` schickte die Nutzerin dorthin,
+        # wo es vor dem Abschicken nur halb steht.
+        teile.append("Zeiten, Zutaten und Zubereitung stehen gleich darunter.")
         gericht = gefunden.rezepte[0]["query"]
         n_zutaten = sum(1 for z in zeilen if z.get("zum_gericht"))
         teile.append(self._meldung_entwurf(gericht, n_zutaten, namen))
@@ -743,6 +752,11 @@ class Chat:
                   "quelle_name": titel,
                   "quelle_url": erstes.get("source_url"),
                   "quelle_recipe_id": int(erstes["id"]),
+                  # ALLE geholten Rezepte des Zugs (WB-383), nicht nur das
+                  # erste: „alles für Bolognese und Kartoffelsalat" holt
+                  # zwei, und beide wurden vorgeschlagen. Der Entwurf hängt
+                  # weiter am ersten — er ist eine andere Frage.
+                  "rezept_ids": [int(q["id"]) for q in quellen],
                   # Der Entwurf hängt am ERSTEN Gericht (WB-337) und an dessen
                   # Rezept — dort steht die Zubereitung, dort kommen die
                   # Produkte dazu.
@@ -1372,7 +1386,7 @@ class Chat:
                    abruf=None, faecher=None, kategorie=None,
                    gewaehlte_sorten=None, sorten_verworfen=None,
                    entwurf_name=None, rest=None,
-                   rest_angehaengt=None) -> Ergebnis:
+                   rest_angehaengt=None, rezept_ids=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -1425,6 +1439,11 @@ class Chat:
                 # ist, oder ein leerer Begriff. Kostet eine Zeile, nicht den
                 # ganzen Zug.
                 continue
+        # Welches Rezept dieser Zug ZEIGT (WB-383) — auf dem Quellenweg und
+        # auf dem Rezeptweg. Vor dem Entwurf, weil es nicht an ihm hängt: den
+        # gibt es nur auf dem Quellenweg, und der Rezeptweg hat trotzdem ein
+        # Rezept zu zeigen.
+        zugrezept.merken(con, antwort_id, rezept_ids)
         # Der Rezeptentwurf (WB-337) — nach den Zeilen, weil er ohne sie
         # keiner wäre, und nur, wenn wirklich Gerichtszutaten dabei sind.
         # Kein Gericht im Satz heisst kein Entwurf, und dann läuft alles wie

@@ -1,0 +1,18 @@
+{# Die Zubereitung als eigenes Stück (WB-383) — nachgeladen, nicht mitgeschickt.
+
+   Dieselben nummerierten Schritte wie auf der Rezeptseite und aus derselben
+   Quelle (`recipes.rezept` -> `chefkoch.schritte`): ein Absatz mit 3.924
+   Zeichen als Wand ist auf einem Telefon am Herd unbrauchbar.
+
+   Steht keine Zubereitung im Rezept, steht hier auch keine — kein Platzhalter
+   und keine Entschuldigung. Die Karte im Chat bietet den Aufklapper dann gar
+   nicht erst an; wer diese Adresse trotzdem aufruft, bekommt die Wahrheit. #}
+{% if rezept.zubereitung %}
+<ol class="zubereitung">
+  {% for schritt in rezept.zubereitung %}
+  <li>{{ schritt }}</li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="fussnote">Zu diesem Rezept ist keine Zubereitung gespeichert.</p>
+{% endif %}

@@ -489,6 +489,34 @@ SCHEMA = [
         created_at      TEXT NOT NULL
     )
     """,
+    # Welches Rezept ein Chat-Zug ZEIGT (WB-383).
+    #
+    # **Nicht dasselbe wie `chat_entwurf.recipe_id`, und deshalb eine eigene
+    # Tabelle.** Der Entwurf sagt, wohin beim Abschicken gespeichert WIRD; er
+    # entsteht nur auf dem Quellenweg und kann sein Ziel noch wechseln. Hier
+    # steht, was in diesem Zug vorgeschlagen wurde — und das gibt es auch auf
+    # dem Rezeptweg (`weg = recipe`), der gar keinen Entwurf hat, weil das
+    # Rezept dort längst existiert. Ohne diese Zeile sähe genau der schnelle
+    # Weg ärmer aus als der langsame.
+    #
+    # Mehrere Zeilen je Zug sind möglich und keine Ausnahme: „alles für
+    # Bolognese und Kartoffelsalat" trifft zwei Rezepte. `pos` hält die
+    # Reihenfolge, in der sie im Satz standen.
+    #
+    # ON DELETE CASCADE auf BEIDEN Seiten: Der Zug ist ohne seine Chatzeile
+    # nichts, und ein gelöschtes Rezept hat nichts mehr zu zeigen — anders
+    # als beim Entwurf, der ohne sein Rezept weiterlebt und beim Abschicken
+    # ein neues anlegt.
+    """
+    CREATE TABLE IF NOT EXISTS chat_rezept (
+        chat_message_id INTEGER NOT NULL
+                            REFERENCES chat_message(id) ON DELETE CASCADE,
+        recipe_id       INTEGER NOT NULL
+                            REFERENCES recipe(id) ON DELETE CASCADE,
+        pos             INTEGER NOT NULL,
+        PRIMARY KEY (chat_message_id, recipe_id)
+    )
+    """,
     # ----------------------------------------------------------------------
     # Kassenbons (WB-358). Eigene Tabellen, ausdrücklich NICHT `orders`:
     #
@@ -655,7 +683,7 @@ TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
     "recipe_ingredient", "dish",
     "chat_message", "chat_suggestion", "chat_kandidat", "chat_sorte",
-    "chat_entwurf",
+    "chat_entwurf", "chat_rezept",
     "receipt", "receipt_item",
     "scrape_run", "product_fts",
 )
@@ -835,6 +863,31 @@ def _hand_menge_nachtragen(con: sqlite3.Connection) -> None:
     con.execute("UPDATE order_item SET hand_qty = qty WHERE hand_qty IS NULL")
 
 
+def _tabellen(con: sqlite3.Connection) -> set[str]:
+    return {r[0] for r in con.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table'")}
+
+
+def _zug_rezepte_nachtragen(con: sqlite3.Connection) -> None:
+    """Füllt `chat_rezept` für Züge, die vor WB-383 entstanden sind.
+
+    Für den Quellenweg ist die Antwort schon da: `chat_entwurf.recipe_id`
+    zeigt auf genau das Rezept, das dieser Zug vorgeschlagen hat. Ohne diesen
+    Nachtrag stünde die neue Rezeptkarte an keinem einzigen der 270 Züge, die
+    die Datenbank schon trägt — und das Ticket wäre für den vorhandenen
+    Bestand wirkungslos.
+
+    Für die Züge des REZEPTWEGES gibt es nichts nachzutragen: dort wurde nie
+    festgehalten, welches Rezept getroffen wurde, und es aus dem Satz noch
+    einmal zu erraten hiesse, eine Herkunft zu behaupten. Sie bleiben ohne
+    Karte — das ist die Wahrheit über eine Zeit, in der niemand mitschrieb.
+    """
+    con.execute(
+        "INSERT OR IGNORE INTO chat_rezept (chat_message_id, recipe_id, pos)"
+        " SELECT chat_message_id, recipe_id, 0 FROM chat_entwurf"
+        "  WHERE recipe_id IS NOT NULL")
+
+
 def _fts_nachziehen(con: sqlite3.Connection) -> bool:
     """Wirft einen veralteten FTS-Index weg. Gibt zurück, ob neu gebaut wurde.
 
@@ -856,6 +909,9 @@ def _fts_nachziehen(con: sqlite3.Connection) -> bool:
 
 def migrate(con: sqlite3.Connection) -> None:
     """Legt das vollständige Schema an. Mehrfach aufrufbar."""
+    # Vor dem Anlegen gefragt, sonst gibt es die Tabelle gleich und der
+    # Nachtrag liefe entweder nie oder bei jedem Start.
+    rezeptzuege_neu = "chat_rezept" not in _tabellen(con)
     for stmt in SCHEMA:
         con.execute(stmt)
     _norm_spalten_nachziehen(con)
@@ -864,6 +920,8 @@ def migrate(con: sqlite3.Connection) -> None:
         _eingelegt_nachtragen(con)
     if ("order_item", "hand_qty") in neue_spalten:
         _hand_menge_nachtragen(con)
+    if rezeptzuege_neu:
+        _zug_rezepte_nachtragen(con)
     neu_gebaut = _fts_nachziehen(con)
     for stmt in FTS_SCHEMA:
         con.execute(stmt)

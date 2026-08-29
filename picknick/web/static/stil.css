@@ -811,6 +811,52 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .entwurf-menge input[name="menge"] { width: 5.5em; }
 .entwurf-menge input[name="einheit"] { width: 4.5em; }
 
+/* Das vorgeschlagene Rezept im Chat (WB-383). Eine Karte ÜBER der
+   Vorschlagsliste — sie beantwortet die Frage, die vor dem ersten „Ja" steht:
+   will ich das heute kochen?
+
+   Die ZEIT ist deshalb das Grösste darin und nie eingeklappt; sie ist der
+   Grund, warum jemand „nein" sagt (Pho Bo: 9½ Stunden). Der Rest ist ruhig
+   und klein — die Karte soll gelesen und nicht bedient werden, hier gibt es
+   keinen einzigen Knopf ausser dem Aufklapper für die Zubereitung. */
+.zugrezept {
+  margin: 0 0 var(--rand); padding: 12px 14px; background: var(--karte);
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  box-shadow: var(--schatten);
+}
+.zugrezept h3 { margin: 0 0 6px; font-size: 16px; }
+/* Eine eigene Klasse und nicht das `.zeit` der Rezeptseite: dort ist es die
+   kleine Pille in `.rezeptherkunft`, und die steht in dieser Karte auch —
+   beide gleich zu benennen hiesse, „6 Portionen" in 22 px zu setzen. */
+.zugrezept .gesamtzeit {
+  margin: 0 0 4px; font-size: 22px; font-weight: 700; line-height: 1.2;
+  color: var(--akzent-tinte);
+}
+/* Die Ruhezeit gehört zur Zahl und nicht daneben: sie ist die Erklärung
+   dafür, dass aus 90 Minuten neuneinhalb Stunden werden. */
+.zugrezept .gesamtzeit .ruhe {
+  display: block; font-size: 14px; font-weight: 500; color: var(--gedaempft);
+}
+.zugrezept .deckung { margin: 0 0 8px; font-size: 15px; color: var(--tinte); }
+.zugrezept .rezeptherkunft { margin: 0 0 10px; font-size: 14px; }
+.zugrezept .rezeptzutaten { margin: 0 0 8px; font-size: 15px; }
+.zugrezept .rezeptzutaten li { padding: 5px 2px; }
+/* Ohne Suchgriff und deshalb ohne Tap-Höhe: hier wird gelesen, nicht
+   getippt — 23 Zeilen à 44 px wären eine halbe Bildschirmlänge Luft. */
+.zugrezept .rezeptzutaten .name { flex: 1 1 auto; color: var(--tinte); }
+.zugrezept .rezeptzutaten .menge { flex: 0 0 7ch; }
+.zugrezept .fussnote { margin: 0; }
+
+/* Der einzige eingeklappte Teil. Die Schritte werden beim Aufklappen
+   NACHGELADEN (WB-383) — ein `<details>` versteckt sonst nur, was trotzdem
+   übertragen wurde, und Pho Bos Zubereitung sind 3.924 Zeichen. */
+.zubereitung-klapp { margin: 0 0 10px; }
+.zubereitung-klapp > summary {
+  min-height: var(--tap); display: flex; align-items: center;
+  font-size: 15px; color: var(--gedaempft); cursor: pointer;
+}
+.zubereitung-klapp .zubereitung { margin: 4px 0 0; font-size: 15px; }
+
 /* Die Sorten eines Oberbegriffs (WB-368): Kästchen, die mit dem Daumen zu
    treffen sind — eine Zeile je Sorte, das ganze Feld ist das Ziel, und die
    echte Stückzahl steht als Pille daneben. Mehrere gehen: „Aufschnitt"
