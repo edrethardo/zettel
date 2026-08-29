@@ -5,6 +5,11 @@ Zahlen unten sind gemessen — am 2026-08-28, gegen `Qwen3.8-27B-Instruct` auf
 der lokalen vLLM-Box und den echten Katalog (2.498 Produkte). Was daran
 schwach ist, steht am Ende und ist nicht kurz.
 
+Dazu kommt seit dem 2026-08-29 die **Breitenmessung des ganzen Rezeptwegs**
+über 64 Gerichte (WB-380, `scripts/breite_probe.py`) — sie steht weiter unten
+und misst etwas anderes: nicht vier Varianten an zwölf Anfragen, sondern
+einen Zug an vielen Gerichten, bis auf die Einkaufsliste.
+
 ## Nachfahren
 
 ```bash
@@ -218,6 +223,184 @@ Der Gewinn bei der Vollständigkeit (0,611 → 0,750) ist dagegen sauber: er
 kommt aus „ich koche eine Tomatensauce selbst" — Basis lieferte nur `Tomaten`
 (1 von 3), Prompt B `Tomaten, Zwiebeln, Knoblauch, Basilikum` (3 von 3). Das
 ist genau der Befund, gegen den Prompt B geschrieben wurde.
+
+## Die Breitenmessung des Rezeptwegs (WB-380)
+
+Das oben ist der MODELLWEG an zwölf Anfragen. Das hier ist der **ganze
+Rezeptweg an 64 Gerichten** — Satz → Zutat → Suchbegriff → Produkt →
+Korbposten → Einkaufsliste, zum ersten Mal in der Breite:
+
+```bash
+sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"
+.venv/bin/python scripts/breite_probe.py --messen --db kopie.db --json roh.json
+.venv/bin/python scripts/breite_probe.py --achsen     # nur die Gerichtsliste
+```
+
+Lauf vom **2026-08-29**, `Qwen3.8-27B-Instruct`, 10.361 aktive Produkte,
+sechs Züge parallel, 2,9 min Chefkoch (seriell, mit Pause) und 6,6 min
+Messung. **Kein Lauf ist gescheitert.**
+
+### Die Gerichte sind gestreut, nicht gesammelt
+
+64 Gerichte über zwölf Achsen. Nicht „viele Gerichte", sondern Gerichte, die
+verschiedene Dinge kaputtmachen können — eine lange Liste ähnlicher Gerichte
+wäre die schlechtere Messung gewesen.
+
+| Achse | n | Beg | Kat | Quote | Zeilen mit Menge |
+|---|--:|--:|--:|--:|--:|
+| Backen | 6 | 44 | 40 | **91 %** | 84 % |
+| vegetarisch/vegan | 6 | 62 | 55 | 89 % | 84 % |
+| zählbare Einheiten | 6 | 45 | 40 | 89 % | 84 % |
+| Alltagsküche | 8 | 76 | 62 | 82 % | 75 % |
+| international, im Katalog | 7 | 56 | 46 | 82 % | 71 % |
+| Einwort-Gericht | 6 | 56 | 44 | 79 % | 73 % |
+| Schreibweise/Tippfehler | 6 | 46 | 34 | 74 % | 65 % |
+| Fantasiename | 3 | 7 | 5 | 71 % | **0 %** |
+| mehrdeutig | 6 | 57 | 37 | 65 % | 65 % |
+| international, exotisch | 7 | 84 | 48 | **57 %** | **51 %** |
+| bereits gespeichert | 3 | — | 19 | — | 76 % |
+| *mit Zusatzartikel (quer)* | 8 | 67 | 59 | 88 % | 58 % |
+
+Der Rezeptweg hat keine Begriffe (seine Produkte stehen schon im Rezept) und
+deshalb keine Katalogquote.
+
+Der Zusatzartikel liegt quer über die Achsen — „alles für X, und Klopapier"
+ist kein eigenes Gericht, sondern ein Zusatz auf acht von ihnen. Er kam
+achtmal von acht im Korb an. Die Probe zählt nur sieben, und das ist ein
+Fehler IHRER Zählung und nicht des Shops: bei „Glibberschmarrn" lief der
+Modellweg, und der übersetzte „Klopapier" zu „Toilettenpapier" — im Korb
+liegt „Moddia Toilettenpapier 3-lagig", der Wortvergleich der Probe erkennt
+es nicht. Die Ausgabe nennt den Fall deshalb namentlich, statt eine zu
+niedrige Zahl unwidersprochen stehen zu lassen.
+
+### Die Zahlen über alle 64
+
+```
+Wege                    58× chefkoch, 3× llm, 3× recipe
+Chefkoch (Phase A)      54× ok, 7× aus dem Speicher, 3× „kennt es nicht“
+Katalogtreffer          411 von 533 Begriffen (77 %)
+Freitext                122 von 533 (23 %)
+Rezeptentwurf           58 von 64 Zügen (91 %), zusammen 512 Zutaten
+Zusatzartikel im Korb   8 von 8 (7 wörtlich, 1 übersetzt — siehe unten)
+Dauer je Gericht        Median 34 s, 2 s bis 71 s
+Auffächerung            0 von 64 — sie springt bei keinem Einwort-Gericht an
+```
+
+**Die Verteilung, nicht der Mittelwert.** 79 % im Schnitt heisst hier wenig:
+
+```
+Katalogtreffer je Gericht        Zeilen mit Menge je Gericht
+  0– 20 %  ████ 4                  0– 20 %  ██████ 6
+ 20– 40 %  █ 1                    20– 40 %  ██ 2
+ 40– 60 %  █████ 5                40– 60 %  ███████████ 11
+ 60– 80 %  ██████████████████ 18  60– 80 %  █████████████████ 17
+ 80–100 %  █████████████ 33       80–100 %  ████████████ 28
+ Median 83 %, Spanne 0–100 %      Median 79 %, Spanne 0–100 %
+```
+
+Zwei Drittel der Gerichte liegen über 80 %, und vier liegen bei null. Der
+Mittelwert liegt dazwischen und beschreibt keines von beiden.
+
+### Die Mengen bis auf die Einkaufsliste
+
+Die Frage des Nutzers war: „Schau vor allem, ob die Mengenangaben beim
+Einkauf drin sind."
+
+```
+558 Vorschlagszeilen  ->  558 Korbposten  ->  558 Einkaufslistenzeilen
+                                               davon 394 mit Menge (71 %)
+```
+
+**Keine einzige Zeile geht verloren.** 164 Mengen schon, und sie verteilen
+sich sauber auf zwei Ursachen und keine dritte:
+
+| Glied | Zahl | Was da passiert |
+|---|--:|---|
+| 1 · Die Quelle nennt keine Menge | 119 von 732 Zutaten (16 %) | „Salz und Pfeffer n. B." — Chefkochs `0.0` ist keine Menge, und sie durchzureichen ergäbe eine gekaufte Packung für nichts |
+| 2 · Die Zuordnung findet die Zutat nicht | 136 von 613 (22 %) | WB-369/WB-371. Nach oben verzerrt: fallen zwei Zutaten auf einen Begriff, zählt eine hier als verloren, obwohl ihre Menge in der Summe steckt |
+| 3 · Die Einheit ist nicht rechenbar | 328 von 485 Zeilen (68 %) | WB-362. **Die Menge steht trotzdem auf der Liste** — nur die Packungszahl ist eine 1 statt einer Rechnung |
+| 4 · Etwas dazwischen verliert sie | **115 Zeilen** | `orders.korb.einlegen`: ein Posten ohne Produkt bekommt keine Menge. Der Vorschlag zeigt „500 g gebraucht", die Einkaufsliste zeigt nichts |
+| Korbposten → Einkaufsliste | **375 → 375** | kein Verlust. Die Anzeige aus WB-381 gibt weiter, was dasteht |
+
+Glied 4 ist der einzige echte Bruch, und er ist ausgerechnet dort, wo die
+Menge am meisten wert wäre: eine Zutat, die der Katalog nicht führt, muss
+irgendwo anders besorgt werden — und genau dann steht im Laden nicht mehr,
+wie viel. 115 Zeilen in 37 der 64 Gerichte. Die Rechnung geht exakt auf:
+485 Vorschläge mit Menge − 375 Korbposten − 110 Freitext = 0 auf dem
+Chefkoch-Weg. Es gibt keinen unerklärten Verlust.
+
+**Glied 3 ist grösser als gedacht und trifft etwas anderes als vermutet.**
+Von den Mengen, die es auf die Liste schaffen, sind nur 157 von 485 gegen die
+Packung rechenbar. Die Einheiten dahinter:
+
+```
+rechenbar        g 110, ml 39, Stk 13
+nicht rechenbar  Stk 95, EL 40, TL 16, Pck 11, Scheibe 8, Zehe 8,
+                 Stange 7, Bund 6, Becher 5, Dose 5, …
+```
+
+WB-362 nannte „4 Zehen gegen 100 g" als den Fall. Zehe kommt achtmal vor.
+Der grosse Fall ist **„2 Zwiebeln" gegen „1 kg Netz"** — Stück gegen Gramm,
+95-mal — und danach der Esslöffel.
+
+### Die zehn schlechtesten Gerichte, namentlich
+
+| Gericht | Note | Grund |
+|---|--:|---|
+| Salat | 0,00 | 9 von 9 ohne Katalogprodukt, keine Menge auf der Liste |
+| Kartoffelpürree | 0,00 | 11 von 11 ohne Katalogprodukt |
+| Bibimbap | 0,00 | 8 von 8 ohne Katalogprodukt — **Ausreisser**, einzeln nachgefahren 7 von 8 |
+| Schrumpelfrikandel | 0,00 | Fantasiename: Chefkoch kennt nichts, das Modell nennt „Frikadellen", der Katalog findet nichts |
+| Kartoffelsalat | 0,50 | Rezeptweg; 5 von 10 Zeilen sind Freitext und verlieren die Menge (Glied 4) |
+| Okonomiyaki | 0,62 | 5 von 8 ohne Katalogprodukt: Bonitoflocken, Nori, Okonomiyaki-Sauce |
+| Zwuckelpfanne mit Gnubbeln | 0,80 | Fantasiename — das Modell **erfindet** ein Gericht und legt vier Produkte in den Korb |
+| Gnocchi mit Salbeibutter | 0,83 | Eigelb, Grieß und Salbei fehlen im Katalog |
+| Ratatouille | 0,91 | Rezeptweg, eine Freitextzeile ohne Menge |
+| Glibberschmarrn | 1,00 | Fantasiename; im Korb liegt nur das Klopapier daneben |
+
+Die Note ist Katalogquote plus Mengenquote, höchstens 2,0. Ein Fehler wäre
+−1, es gab keinen.
+
+**Salat und Kartoffelpürree haben denselben, reproduzierbaren Grund, und er
+ist der interessanteste Befund dieser Messung: Stufe 3 wählt gegen den SATZ,
+nicht gegen das Rezept.** „Salat" holt bei Chefkoch „KFC Coleslaw",
+„Kartoffelpürree" holt „Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus
+und Rosenkohl". Passen Satz und Rezept nicht zusammen, lehnt das Modell
+**jeden einzelnen** Kandidaten ab — auch Milch, Butter und Zwiebeln, die
+vorgelegt dastanden. Es ist kein Ausrutschen, sondern ein Alles-oder-nichts.
+
+Die Kontrollzeile im Dataset zeigt, dass schon der Satzbau die Hälfte davon
+ausmacht:
+
+```
+„Salat"                   -> 0 von 9 Begriffen mit Produkt
+„alles für Salat"         -> 6 von 9      (dasselbe Rezept, derselbe Katalog)
+```
+
+### Was diese Messung NICHT sagt
+
+* **Sie misst den warmen Speicher.** Phase A holt jedes Gericht vorher bei
+  Chefkoch, seriell und mit Pause. Gemessen ist damit der zweite und jeder
+  weitere Satz zu einem Gericht, nicht der allererste (der holt im Request,
+  WB-367, ~100 ms).
+* **Sie sagt „hat ein Produkt gefunden", nicht „hat das richtige gefunden".**
+  Dieselbe Warnung wie oben. Der Fantasiename „Zwuckelpfanne mit Gnubbeln"
+  hat 4 von 5 Begriffen im Katalog — und das Gericht gibt es nicht.
+* **„Ja" auf jede Zeile.** Das ist die günstigste Annahme für die Mengen: wer
+  Zeilen wegtippt, bekommt weniger. Die 71 % sind eine Obergrenze.
+* **Ein Lauf, keine Wiederholung.** Bibimbap zeigt, was das wert ist: dasselbe
+  Gericht stand einmal auf 0 und einmal auf 7 von 8. Bei 64 Gerichten fällt
+  ein Ausreisser auf; bei drei fiele er nicht auf.
+* **Der Rezeptweg musste erst hergestellt werden.** Keines der fünf Rezepte
+  der echten Datenbank hat verknüpfte Produkte (`recipe_item` ist überall
+  leer), weil alle aus Chefkoch stammen — `rezeptweg.erkenne` übergeht sie,
+  der Weg `recipe` ist auf dieser Datenbank gar nicht erreichbar. Die Probe
+  legt ihn deshalb vorher an, auf dem Weg, auf dem er im Betrieb entsteht:
+  ein Chefkoch-Zug, „Ja", abschicken (WB-337). **Das ist selbst ein Befund**:
+  der schnellste und verlässlichste Weg des Shops wird heute von niemandem
+  benutzt.
+* **Keine Zielquote.** Diese Messung war die erste; eine Schwelle vorher
+  gesetzt wäre geraten gewesen.
 
 ## Was hier schwächer ist, als es aussieht
 
