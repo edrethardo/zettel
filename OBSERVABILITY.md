@@ -200,6 +200,7 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
 | `picknick.dish_draft` | Text | der Name des Rezeptentwurfs, den dieser Zug angeboten hat (WB-337) — gesetzt heisst „daraus KANN ein Rezept werden“, nicht „es ist eines geworden“ |
 | `picknick.dish_items` | int | wie viele Vorschlagszeilen als Zutat des Gerichts erkannt wurden. Die Zeilen daneben (das Klopapier) zählen hier nicht mit |
+| `picknick.dish_switch` | Text | **das Rezept, das ein Mensch ANSTELLE der Vorauswahl genommen hat** (WB-387). Chefkoch liefert zwölf Rezepte je Suche; gesetzt heisst „am besten bewertet war nicht, was ich gemeint habe“ — die Zahl, an der sich die Schlagseite der Gewichtung messen lässt |
 | `picknick.rest` | Text | **was neben dem Gericht im Satz stand** (WB-370): „alles für Spaghetti Bolognese, und Klopapier“ -> `Klopapier`. Die andere Hälfte des Satzes zu `dish`; fehlt, wenn nichts danebenstand |
 | `picknick.rest_added` | bool | ob dieser Zug eine eigene Zeile dafür angelegt hat. `False` heisst „stand schon auf dem Zettel“ — der Rest fiel mit einer Zutat des Rezepts zusammen |
 | `picknick.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |

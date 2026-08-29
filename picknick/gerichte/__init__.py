@@ -3,14 +3,16 @@
 Vier Teile:
 
 * `chefkoch` — der Client. **Geht ins Netz**, kennt die zwei Endpunkte und
-  wählt das bestbewertete Rezept.
+  wählt das bestbewertete Rezept — legt seit WB-387 aber die übrigen elf
+  Treffer derselben Antwort daneben, statt sie wegzuwerfen.
 * `speicher` — der Zwischenspeicher in der Datenbank. Ein Treffer daraus
   braucht kein Netz, und das ist der Normalfall: ein Gericht wird einmal
   geholt und danach 90 Tage lang gelesen.
 * `lauf` — der Abruf. `hole_jetzt()` im Request, `--gericht`/`--alle` von
   Hand zum Vorwärmen und Nachholen.
-* `quelle` — was der Chat davon sieht: lesen, und bei einem Fehlschlag im
-  Speicher HOLEN statt raten (WB-367).
+* `quelle` — was der Chat davon sieht: lesen, bei einem Fehlschlag im
+  Speicher HOLEN statt raten (WB-367) — und ein anderes Rezept WÄHLEN, wenn
+  ein Mensch die Vorauswahl nicht meinte (WB-387).
 
 **Der erste Satz zu einem neuen Gericht nimmt schon das Rezept.** Bis WB-367
 tat er das nicht: der Shop trug einen Wunsch ein, startete einen eigenen
@@ -26,33 +28,38 @@ from picknick.gerichte.chefkoch import (
     detail_url,
     gewicht,
     hole,
+    hole_detail,
     parse_rezept,
     parse_treffer,
     parse_zutaten,
     schritte,
     such_url,
+    zur_wahl,
     zutat_kette,
 )
-from picknick.gerichte.lauf import hole_jetzt
+from picknick.gerichte.lauf import hole_jetzt, waehle_jetzt
 from picknick.gerichte.quelle import Quelle, nicht_holen
 from picknick.gerichte.speicher import (
     FEHLER,
     LEER,
     OFFEN,
     OK,
+    angeboten,
     bereit,
     gericht,
     merken,
     offene,
     schluessel,
+    treffer,
     vermerken,
     wunsch,
 )
 
 __all__ = [
     "ChefkochFehler", "FEHLER", "LEER", "OFFEN", "OK", "Quelle", "SOURCE",
-    "bereit", "bestes", "detail_url", "gericht", "gewicht", "hole",
-    "hole_jetzt", "merken",
+    "angeboten", "bereit", "bestes", "detail_url", "gericht", "gewicht",
+    "hole", "hole_detail", "hole_jetzt", "merken",
     "nicht_holen", "offene", "parse_rezept", "parse_treffer", "parse_zutaten",
-    "schluessel", "schritte", "such_url", "vermerken", "wunsch", "zutat_kette",
+    "schluessel", "schritte", "such_url", "treffer", "vermerken",
+    "waehle_jetzt", "wunsch", "zur_wahl", "zutat_kette",
 ]

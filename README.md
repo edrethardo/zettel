@@ -131,6 +131,11 @@ prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
 * **zwei Anfragen je Gericht, dann nie wieder** — das Ergebnis wird in `dish`
   zwischengespeichert (90 Tage; „kennt Chefkoch nicht" sieben Tage, eine
   Störung eine Stunde). Ein Gericht wird nicht bei jedem Chat-Zug neu geholt.
+* **eine dritte, wenn ein Mensch ein anderes Rezept wählt**. Die
+  Suche liefert zwölf Rezepte in einer Antwort; sie werden seither
+  mitgespeichert (`dish_treffer`) und zur Wahl gestellt. **Gesucht wird
+  dafür nicht noch einmal** — geholt wird allein das Detail des gewählten
+  Rezepts, und ein schon geholtes kostet gar keine Anfrage.
 * **1,5 s Pause** zwischen zwei Anfragen im Lauf von Hand (`chefkoch.PAUSE_S`).
   Im Chat-Request entfällt sie: dort fallen genau zwei Anfragen an, einmal im
   Leben dieses Gerichts, und ein Mensch wartet darauf.
@@ -157,7 +162,14 @@ Das Kommando von Hand bleibt — zum Vorwärmen und zum Nachholen:
 ```bash
 .venv/bin/python -m picknick.gerichte.lauf --gericht "Pho"   # ein Gericht
 .venv/bin/python -m picknick.gerichte.lauf --alle            # offene Wünsche
+.venv/bin/python -m picknick.gerichte.lauf --ohne-treffer    # Altbestand
 ```
+
+`--ohne-treffer` holt die Gerichte neu, ohne Trefferliste: zu
+ihnen wurde keine Trefferliste mitgeschrieben, und aus einem gespeicherten
+Rezept lassen sich die elf anderen nicht zurückgewinnen. **Das holt
+bestehende Rezepte neu**, und dabei kann ein inzwischen besser bewertetes
+gewinnen — genau das, was nach 90 Tagen ohnehin geschieht.
 
 Zurücknehmen lässt sich der Abruf an einer Stelle: `Chat(quelle=Quelle(
 holer=gerichte.nicht_holen))` liest weiter den Speicher, holt aber nichts

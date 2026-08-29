@@ -178,6 +178,13 @@ class Ergebnis:
     #: kann ein Artikel neben dem Gericht stehen.
     rest: str | None = None
     rest_angehaengt: bool | None = None
+    #: Ein Mensch hat das vorausgewählte Rezept verworfen und ein anderes aus
+    #: derselben Suchantwort genommen (WB-387) — hier steht dessen Titel. Nur
+    #: auf dem Zug, den diese Wahl ausgelöst hat. **Die Zahl, um die es im
+    #: Ticket geht:** die Gewichtung wählt für „Lasagne" die vegetarische
+    #: Spinatlasagne, und ohne dieses Feld wäre später nicht zu sehen, wie oft
+    #: das nicht gemeint war.
+    gewechselt: str | None = None
 
     @property
     def n_produkte(self) -> int:
@@ -370,7 +377,8 @@ class Chat:
     def turn(self, con: sqlite3.Connection, satz: str,
              span_id: str | None = None, *,
              auffaechern: bool | None = None,
-             aus_sorten: tuple[str, list[str]] | None = None) -> Ergebnis:
+             aus_sorten: tuple[str, list[str]] | None = None,
+             gewechselt: str | None = None) -> Ergebnis:
         """Ein Satz -> eine Vorschlagsliste. Legt nichts in den Warenkorb.
 
         Wirft `ChatFehler`, wenn der Satz leer ist, und `ChatNichtVerfuegbar`,
@@ -389,6 +397,12 @@ class Chat:
         ist der Weg zurück in den Freitext: wer den Oberbegriff überspringt,
         soll nach „Aufschnitt" suchen können, ohne dass ihm dieselbe Frage
         noch einmal gestellt wird.
+
+        `gewechselt` ist der Titel des Rezepts, das ein Mensch anstelle der
+        Vorauswahl genommen hat (WB-387). Er ändert am Ablauf NICHTS — das
+        Gericht zeigt zu diesem Zeitpunkt bereits auf das gewählte Rezept, und
+        der Zug ist derselbe wie jeder andere. Er steht im Trace, damit später
+        zu sehen ist, wie oft die Gewichtung danebengriff.
         """
         text = " ".join((satz or "").split())
         if not text:
@@ -498,6 +512,8 @@ class Chat:
                 # nicht geraten wurde.
                 weg = zusatz.pop("weg", WEG_LLM)
 
+            if gewechselt:
+                zusatz["gewechselt"] = gewechselt
             ergebnis = self._schreiben(
                 con, order_id, text, weg, plan_zeilen, meldung,
                 # Die echte Span-ID, ausser ein Aufrufer gibt eine vor. Damit
@@ -599,6 +615,12 @@ class Chat:
             # Artikel, der still verschwindet, hinterlässt sonst nichts.
             "picknick.rest": ergebnis.rest,
             "picknick.rest_added": ergebnis.rest_angehaengt,
+            # Das Rezept, das ein Mensch ANSTELLE der Vorauswahl genommen hat
+            # (WB-387) — dasselbe Vokabular wie `dish` daneben, und die Zahl,
+            # an der sich die Schlagseite der Gewichtung messen lässt: ein Zug
+            # mit gesetztem `dish_switch` ist einer, in dem „am besten
+            # bewertet" nicht „was ich gemeint habe" war.
+            "picknick.dish_switch": ergebnis.gewechselt,
         })
         obs.setze_ausgabe(span, [
             {"product_id": v["product_id"], "name": v["name"],
@@ -757,6 +779,10 @@ class Chat:
                   # zwei, und beide wurden vorgeschlagen. Der Entwurf hängt
                   # weiter am ersten — er ist eine andere Frage.
                   "rezept_ids": [int(q["id"]) for q in quellen],
+                  # Und die Gerichte dazu, in derselben Reihenfolge (WB-387).
+                  # An ihnen hängen die übrigen Treffer derselben Suche —
+                  # ohne diesen Verweis fände die Karte sie nicht wieder.
+                  "dish_ids": [int(g["id"]) for g in gerichte_daten],
                   # Der Entwurf hängt am ERSTEN Gericht (WB-337) und an dessen
                   # Rezept — dort steht die Zubereitung, dort kommen die
                   # Produkte dazu.
@@ -1386,7 +1412,8 @@ class Chat:
                    abruf=None, faecher=None, kategorie=None,
                    gewaehlte_sorten=None, sorten_verworfen=None,
                    entwurf_name=None, rest=None,
-                   rest_angehaengt=None, rezept_ids=None) -> Ergebnis:
+                   rest_angehaengt=None, rezept_ids=None, dish_ids=None,
+                   gewechselt=None) -> Ergebnis:
         """Nachrichten und Vorschläge in einem Zug — erst wenn alles steht.
 
         Die Vorschläge hängen an der Antwortzeile und nicht an der Frage: sie
@@ -1443,7 +1470,10 @@ class Chat:
         # auf dem Rezeptweg. Vor dem Entwurf, weil es nicht an ihm hängt: den
         # gibt es nur auf dem Quellenweg, und der Rezeptweg hat trotzdem ein
         # Rezept zu zeigen.
-        zugrezept.merken(con, antwort_id, rezept_ids)
+        # `dish_ids` ist die Klammer zu den Alternativen (WB-387): daran
+        # findet die Karte die übrigen Treffer derselben Suche wieder. Auf
+        # dem Rezeptweg gibt es kein Gericht und damit keine.
+        zugrezept.merken(con, antwort_id, rezept_ids, dish_ids)
         # Der Rezeptentwurf (WB-337) — nach den Zeilen, weil er ohne sie
         # keiner wäre, und nur, wenn wirklich Gerichtszutaten dabei sind.
         # Kein Gericht im Satz heisst kein Entwurf, und dann läuft alles wie
@@ -1467,4 +1497,5 @@ class Chat:
             sorten_herkunft=(faecher.herkunft if faecher is not None else None),
             sorten_verworfen=sorten_verworfen,
             gewaehlte_sorten=list(gewaehlte_sorten or []),
-            rest=rest, rest_angehaengt=rest_angehaengt)
+            rest=rest, rest_angehaengt=rest_angehaengt,
+            gewechselt=gewechselt)

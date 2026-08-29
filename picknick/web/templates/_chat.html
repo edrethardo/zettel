@@ -40,6 +40,17 @@
       hast, liegt weiter drin.</span></p>
   {% endif %}
 
+  {% if gewechselt %}
+  {# Das gewechselte Rezept (WB-387). Der zweite Satz ist der wichtigere — er
+     ist dieselbe Zusage wie beim Leeren des Verlaufs: der Korb gehört dem
+     Korb. Wer nach dem Wechsel nachrechnen müsste, ob ihm eben etwas
+     herausgeflogen ist, wechselt beim nächsten Mal nicht mehr. #}
+  <p class="band" role="status">Das Rezept ist jetzt „{{ gewechselt }}“ —
+    der Zug steht unten neu.
+    <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im
+      Korb; die alten Vorschläge stehen unverändert im Verlauf.</span></p>
+  {% endif %}
+
   {% if aeltere %}
   {# Der eingeklappte Teil. Er sagt, WIE VIEL er verbirgt und wie viele
      Entscheidungen darin stecken — „ältere Züge" allein liesse offen, ob dort

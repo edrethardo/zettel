@@ -264,6 +264,64 @@ SCHEMA = [
         fetched_at   TEXT
     )
     """,
+    # Die ÜBRIGEN Treffer derselben Suche (WB-387).
+    #
+    # Chefkoch liefert je Suche zwölf Rezepte in EINER Antwort; bis zu diesem
+    # Ticket nahm `chefkoch.bestes()` genau eines und die anderen elf
+    # verschwanden, bevor ein Mensch sie sehen konnte. Gemessen an „Lasagne"
+    # (2026-08-29) sind das keine Varianten desselben Rezepts, sondern
+    # verschiedene Gerichte: klassisch mit Hack, vegetarisch mit Spinat,
+    # Zucchini, Filoteig mit Ziegenkäse. Welches gemeint war, weiss nur der
+    # Mensch — und ein besserer Sortierschlüssel löst das nicht.
+    #
+    # **Eine eigene Tabelle am GERICHT und nicht am Chat-Zug.** Die zwölf
+    # sind die Antwort auf die Suche und gehören dorthin, wo auch die Frage
+    # steht: an `dish`. Damit kann ein zweiter Zug zu demselben Gericht
+    # dieselbe Auswahl anbieten, ohne noch einmal zu suchen — und genau das
+    # ist die Zusage des Tickets (die Wahl kostet keinen zweiten Suchabruf).
+    # An der Chatzeile (wie `chat_sorte`) lägen sie je Zug ein zweites Mal.
+    #
+    # Gespeichert wird, was die SUCHE hergibt, und keine Zeile mehr: Titel,
+    # Bewertung mit Stimmen, Arbeitszeit, Schwierigkeit, `isPlus`. **Koch-
+    # und Ruhezeit und die Zutatenzahl stehen NICHT darin** — die Suchantwort
+    # trägt sie nicht, und sie nachzuholen kostete elf weitere Anfragen. Wo
+    # ein Treffer bereits geholt wurde, stehen sie in `recipe` und werden von
+    # dort dazugeholt (Verbund über `source_id`).
+    """
+    CREATE TABLE IF NOT EXISTS dish_treffer (
+        id           INTEGER PRIMARY KEY,
+        dish_id      INTEGER NOT NULL REFERENCES dish(id) ON DELETE CASCADE,
+        -- Die Rezept-ID der Quelle. KEIN Fremdschlüssel auf `recipe`: die
+        -- allermeisten dieser Treffer sind nie geholt worden, und genau das
+        -- ist ihr Zweck — sie stehen zur Wahl, bevor jemand sie holt.
+        source_id    TEXT NOT NULL,
+        source_title TEXT NOT NULL,
+        source_url   TEXT,
+        rating       REAL,
+        votes        INTEGER,
+        -- Chefkochs `preparationTime`: die ARBEITSZEIT, nicht die
+        -- Gesamtzeit. Pho Bo steht hier mit 90 Minuten und braucht in
+        -- Wahrheit 9½ Stunden — die 480 Minuten Kochzeit stehen erst im
+        -- Detail. Die Spalte heisst deshalb wie das Feld und nicht wie die
+        -- Auskunft, die sie NICHT gibt.
+        prep_minutes INTEGER,
+        difficulty   INTEGER,
+        -- Chefkoch-Plus. Diese Treffer tragen erfundene Stimmenzahlen
+        -- (`numVotes: 255`, siehe `chefkoch.PLUS_UEBERGEHEN`) und werden
+        -- nicht angeboten. Gespeichert werden sie trotzdem: sonst stünde
+        -- hier eine Liste, die anders aussieht als die Antwort der Quelle.
+        plus         INTEGER NOT NULL DEFAULT 0,
+        -- Die gewichtete Note, nach der vorausgewählt wird. Mitgeschrieben,
+        -- damit die Reihenfolge des Angebots dieselbe ist wie die der Wahl
+        -- und nicht bei jedem Anzeigen neu gerechnet wird.
+        gewicht      REAL,
+        -- Die Stelle in der Antwort der Quelle.
+        pos          INTEGER NOT NULL,
+        -- Dasselbe Rezept zweimal zu einem Gericht wäre dieselbe Zeile
+        -- zweimal auf dem Handy.
+        UNIQUE (dish_id, source_id)
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS recipe_item (
         id         INTEGER PRIMARY KEY,
@@ -514,6 +572,20 @@ SCHEMA = [
         recipe_id       INTEGER NOT NULL
                             REFERENCES recipe(id) ON DELETE CASCADE,
         pos             INTEGER NOT NULL,
+        -- Welches GERICHT dieses Rezept in diesem Zug vertreten hat (WB-387).
+        -- Daran hängen die Alternativen: die übrigen Treffer derselben Suche
+        -- stehen in `dish_treffer` am Gericht, und ohne diesen Verweis fände
+        -- die Karte sie nicht wieder. Über `dish.recipe_id` ginge es nicht —
+        -- das zeigt auf das ZULETZT gewählte Rezept, und ein älterer Zug im
+        -- Verlauf verlöre seine Liste genau dann, wenn jemand gewechselt
+        -- hat.
+        --
+        -- Nullable, und das ist der Normalfall: der Rezeptweg hat gar kein
+        -- Gericht, und jeder Zug aus der Zeit vor diesem Ticket hat keines
+        -- mehr, das sich ohne Raten zuordnen liesse. ON DELETE SET NULL —
+        -- wer ein Gericht aus dem Zwischenspeicher wirft, soll nicht die
+        -- Rezeptkarte eines Chat-Zugs mitnehmen.
+        dish_id         INTEGER REFERENCES dish(id) ON DELETE SET NULL,
         PRIMARY KEY (chat_message_id, recipe_id)
     )
     """,
@@ -681,7 +753,7 @@ FTS_TRIGGER = ("product_fts_ai", "product_fts_ad", "product_fts_au")
 #: damit eine vergessene Tabelle auffällt und nicht erst im Betrieb.
 TABLES = (
     "product", "orders", "order_item", "recipe", "recipe_item",
-    "recipe_ingredient", "dish",
+    "recipe_ingredient", "dish", "dish_treffer",
     "chat_message", "chat_suggestion", "chat_kandidat", "chat_sorte",
     "chat_entwurf", "chat_rezept",
     "receipt", "receipt_item",
@@ -809,6 +881,13 @@ NACHGETRAGENE_SPALTEN = (
     # oder er steht noch offen — vermisst wurde keiner, denn es gab den Weg
     # nicht. NULL ist hier die Wahrheit und keine Lücke.
     ("order_item", "missing_at", "TEXT"),
+    # WB-387: welches Gericht das Rezept eines Zugs vertreten hat. Ohne
+    # Nachtrag für den Altbestand, und richtigerweise: die 270 Züge, die die
+    # Datenbank schon trägt, entstanden ohne gespeicherte Trefferliste — es
+    # gäbe dort nichts anzubieten, und ein geratener Verweis behauptete eine
+    # Herkunft. NULL heisst hier „dazu wurde nichts mitgeschrieben".
+    ("chat_rezept", "dish_id",
+     "INTEGER REFERENCES dish(id) ON DELETE SET NULL"),
 )
 
 

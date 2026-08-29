@@ -8,6 +8,9 @@ Zwei Dinge, und beide gehen über die Datenbank:
 2. **Holen** — `holen()` ruft Chefkoch AB, jetzt, in dem Prozess, der gerade
    fragt. Mit kurzer Frist, und was dabei herauskommt (Rezept, „kennt
    Chefkoch nicht", Störung), steht danach in `dish`.
+3. **Wählen** — `waehlen()` tauscht das Rezept eines Gerichts gegen ein
+   anderes aus DERSELBEN Suchantwort (WB-387). Das kostet eine Anfrage (das
+   Detail) oder gar keine, aber nie eine zweite Suche.
 
 **Warum das ein Umbau ist und keine Ausgangslage.** WB-338 baute genau hier
 einen Riegel ein: dieses Modul kannte keine URL, trug nur einen WUNSCH ein
@@ -65,20 +68,25 @@ def nicht_holen(con, name, **_) -> None:
 class Quelle:
     """Die Gerichtequelle, wie der Chat sie sieht.
 
-    Alles Injizierbare an einer Stelle: `holer` (was abruft), `uhr` (wovon
-    „zu alt" abhängt) und `frist_s` (wie lange gewartet wird). Ein Test
-    schiebt einen Holer unter, der gegen die aufgezeichneten Antworten
-    arbeitet oder eine Zeitüberschreitung spielt — **kein Test geht ins
-    Netz** (Spec 13).
+    Alles Injizierbare an einer Stelle: `holer` (was abruft), `waehler` (was
+    ein vom Menschen gewähltes Rezept nachholt, WB-387), `uhr` (wovon „zu
+    alt" abhängt) und `frist_s` (wie lange gewartet wird). Ein Test schiebt
+    einen Holer unter, der gegen die aufgezeichneten Antworten arbeitet oder
+    eine Zeitüberschreitung spielt — **kein Test geht ins Netz** (Spec 13).
     """
 
-    def __init__(self, *, holer=None, uhr=time.time,
+    def __init__(self, *, holer=None, waehler=None, uhr=time.time,
                  frist_s: float = chefkoch.TIMEOUT_SYNC_S):
         # `None` bleibt `None` und wird erst beim Abruf zu `lauf.hole_jetzt`
         # aufgelöst. Sonst hinge in jeder `Quelle` das Funktionsobjekt vom
         # Zeitpunkt ihres Baus ab — und die Sperre der Testsuite, die genau
         # diese Funktion ersetzt, griffe je nach Reihenfolge oder nicht.
         self._holer = holer
+        # Der zweite Eingang (WB-387): ein Mensch wählt ein anderes Rezept
+        # aus derselben Suchantwort. Ein eigener Einspritzpunkt, weil er
+        # etwas anderes tut als `holer` — EINE Anfrage statt zweier, und
+        # ausdrücklich keine Suche.
+        self._waehler = waehler
         self._uhr = uhr
         self._frist_s = frist_s
 
@@ -95,6 +103,15 @@ class Quelle:
     def zeile(self, con: sqlite3.Connection, name: str):
         """Die `dish`-Zeile zu einem Gerichtsnamen, oder `None`."""
         return speicher.zeile(con, name)
+
+    def treffer(self, con: sqlite3.Connection, dish_id: int) -> list[dict]:
+        """Die Rezepte, die zu diesem Gericht zur Wahl stehen (WB-387)."""
+        return speicher.treffer(con, dish_id)
+
+    def angeboten(self, con: sqlite3.Connection, dish_id: int,
+                  source_id: str) -> dict | None:
+        """Der angebotene Treffer zu dieser Rezept-ID, oder `None`."""
+        return speicher.angeboten(con, dish_id, source_id)
 
     # -- Holen (jetzt, mit Frist) -----------------------------------------
 
@@ -131,4 +148,43 @@ class Quelle:
             # `offen` und niemand wüsste, warum nichts kommt.
             speicher.vermerken(con, frage, speicher.FEHLER,
                                f"{type(e).__name__}: {e}", self._uhr)
+            return speicher.FEHLER
+
+    def waehlen(self, con: sqlite3.Connection, name: str,
+                treffer: dict) -> str:
+        """Ein anderes Rezept aus DERSELBEN Suchantwort (WB-387).
+
+        `treffer` muss aus `angeboten()` stammen — was nicht angeboten wurde,
+        wird auch nicht geholt.
+
+        **Es wird nicht noch einmal gesucht.** Die zwölf Treffer liegen seit
+        dem ersten Abruf im Speicher; fehlt nur das Detail des gewählten
+        Rezepts, und das ist genau eine Anfrage. Ist dieses Rezept schon
+        einmal geholt worden — weil jemand hin und her gewechselt hat —,
+        kostet die Wahl gar keine.
+
+        Gibt `ok` oder `fehler` zurück und wirft nicht: was hier schiefgeht,
+        kostet den Wechsel und nicht den Chat-Zug. Der Zwischenspeicher bleibt
+        dabei unangetastet — das bisherige Rezept steht weiter da.
+        """
+        frage = " ".join((name or "").split())
+        if not frage or not treffer:
+            return speicher.FEHLER
+        vorhanden = speicher.rezept_zur_quelle(con, treffer["rezept_id"])
+        if vorhanden is not None:
+            # Schon geholt. Dann ist der Wechsel eine Zeile in `dish` und
+            # keine Anfrage — hin und zurück kostet nichts.
+            speicher.zeigt_auf(con, frage, int(vorhanden["id"]), self._uhr)
+            return speicher.OK
+        waehler = self._waehler if self._waehler is not None \
+            else lauf.waehle_jetzt
+        try:
+            return waehler(con, frage, treffer, frist_s=self._frist_s)
+        except Exception as e:                   # noqa: BLE001 — bewusst breit
+            # Wie in `holen()`: ein Chat-Zug darf an einem kaputten Abruf
+            # nicht zerbrechen. Vermerkt wird hier aber NICHTS — anders als
+            # beim ersten Abruf steht ein gültiges Rezept in `dish`, und ein
+            # `fehler` darüber nähme dem Nutzer für einen Fehlgriff der
+            # Quelle auch noch das, was er schon hatte.
+            del e
             return speicher.FEHLER

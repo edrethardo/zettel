@@ -59,6 +59,23 @@ def _kein_test_ruft_chefkoch_an(monkeypatch):
 
     monkeypatch.setattr(lauf, "hole_jetzt", _nur_mit_doppelgaenger)
 
+    # Dieselbe Sperre für den zweiten Eingang (WB-387): die Wahl einer
+    # Alternative holt EIN Detail, und auch das wäre ohne Doppelgänger ein
+    # Socket. Ohne diese Zeile hätte das Ticket ein Loch in genau die
+    # Zusicherung gerissen, die darüber steht.
+    echt_waehlen = lauf.waehle_jetzt
+
+    def _wahl_nur_mit_doppelgaenger(con, gericht, treffer, *, http=None,
+                                    **kwargs):
+        if http is None:
+            raise AssertionError(
+                f"Ein Test wollte ein Rezept zu {gericht!r} wirklich bei "
+                "Chefkoch holen. Reich einen `waehler` an `Quelle` oder ein "
+                "`http` an `waehle_jetzt` herein.")
+        return echt_waehlen(con, gericht, treffer, http=http, **kwargs)
+
+    monkeypatch.setattr(lauf, "waehle_jetzt", _wahl_nur_mit_doppelgaenger)
+
 
 @pytest.fixture(autouse=True)
 def _kein_tracer_uebrig():
