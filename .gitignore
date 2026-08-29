@@ -9,3 +9,7 @@ data/images/
 # Hochgeladene Kassenbons (WB-344). Wie data/images/: Nutzdaten, keine
 # Quelle. Sie gehoeren dem Haushalt und nicht dem Repo.
 data/bons/
+
+# Private Betriebswerte (WB-388): die echte Adresse der vLLM-Box steht in
+# dieser Datei statt im Code. Sie darf nie Teil des Repos werden.
+picknick.env

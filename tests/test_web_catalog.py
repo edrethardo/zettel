@@ -12,6 +12,7 @@ Die Bindung wird an der Konfiguration geprüft, nicht am echten Socket: ein Test
 der wirklich auf 0.0.0.0 bindet, um zu sehen, dass es nicht geht, tut genau das,
 was er verhindern soll.
 """
+import ipaddress
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -211,7 +212,7 @@ def test_bindung_auf_alle_schnittstellen_wird_verweigert(host):
 @pytest.mark.parametrize("host", [
     "192.168.2.163",        # LAN — im fremden WLAN erreichbar
     "10.0.0.5",
-    "user-laptop",         # ein Name kann sich auf alles auflösen
+    "irgendein-laptop",     # ein Name kann sich auf alles auflösen
     "",
     "  ",
 ])
@@ -221,15 +222,40 @@ def test_fremde_adressen_werden_verweigert(host):
 
 
 @pytest.mark.parametrize("host", ["localhost", "127.0.0.1", "::1",
-                                  "100.64.0.1", "100.64.0.1"])
+                                  "100.101.102.103", "100.64.0.1"])
 def test_loopback_und_tailnet_sind_erlaubt(host):
     assert webapp.pruefe_host(host) == host
 
 
 def test_vorgabe_bindet_nicht_auf_alle_schnittstellen():
+    """Die Vorgabe wird seit WB-388 erfragt statt hinterlegt — was auch
+    immer die Erfragung liefert: loopback ist dabei, 0.0.0.0 nie, und alles
+    andere liegt im Tailnet."""
     hosts = webapp.hosts_aus_umgebung({})
     assert "0.0.0.0" not in hosts
-    assert hosts == ["100.64.0.1", "127.0.0.1"]
+    assert hosts[-1] == "127.0.0.1"
+    for host in hosts[:-1]:
+        assert ipaddress.ip_address(host) in webapp.TAILNET
+
+
+def test_vorgabe_ist_tailnet_plus_loopback(monkeypatch):
+    """Mit Tailnet-Adresse dieselbe Zusammensetzung und Reihenfolge wie die
+    frühere feste Vorgabe — ein Neustart ändert die Adressen nicht."""
+    monkeypatch.setattr(webapp, "eigene_tailnet_adresse", lambda: "100.64.0.7")
+    assert webapp.hosts_aus_umgebung({}) == ["100.64.0.7", "127.0.0.1"]
+
+
+def test_vorgabe_ohne_tailnet_ist_nur_loopback(monkeypatch):
+    monkeypatch.setattr(webapp, "eigene_tailnet_adresse", lambda: None)
+    assert webapp.hosts_aus_umgebung({}) == ["127.0.0.1"]
+
+
+def test_tailnet_erkennung_liefert_tailnet_oder_nichts():
+    """Die echte Erfragung, gegen die echte Maschine: entweder eine Adresse
+    aus 100.64.0.0/10 oder None — nie etwas Drittes, das dann gebunden
+    würde."""
+    adresse = webapp.eigene_tailnet_adresse()
+    assert adresse is None or ipaddress.ip_address(adresse) in webapp.TAILNET
 
 
 def test_umgebung_kann_die_adresse_setzen():

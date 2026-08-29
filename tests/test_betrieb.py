@@ -9,6 +9,7 @@ dieser Maschine echte Timer scharf machen.
 """
 import json
 import sqlite3
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -462,16 +463,16 @@ def test_der_statusbericht_geht_nicht_ins_netz(db_datei):
 
 def test_eine_kaputte_modelladresse_steht_auf_der_seite(db_datei, tmp_path,
                                                         monkeypatch):
-    """Die alte IP der Box ist keine Netzstörung, sondern eine Altlast — und
-    das ist die einzige Aussage über das Modell, die ohne Netzaufruf sicher
-    zu treffen ist."""
-    monkeypatch.setenv("PICKNICK_LLM_ENDPOINT", "http://192.168.2.219:8000/v1")
+    """Ein Endpunkt, der keine Adresse sein kann, ist eine Altlast der
+    Konfiguration und keine Netzstörung — und das ist die einzige Aussage
+    über das Modell, die ohne Netzaufruf sicher zu treffen ist."""
+    monkeypatch.setenv("PICKNICK_LLM_ENDPOINT", "ftp://alte-box/v1")
     bilder = tmp_path / "bilder"
     bilder.mkdir()
     with TestClient(webapp.create_app(db_path=db_datei, image_dir=bilder,
                                       chat=WeckenderChat())) as c:
         text = c.get("/status").text
-    assert "192.168.2.219" in text
+    assert "ftp://alte-box/v1" in text
     assert "nicht benutzbar" in text
 
 
@@ -607,8 +608,48 @@ def test_units_tragen_installationsabschnitte():
 
 
 def test_readme_nennt_linger_und_die_installationsbefehle():
-    """`Linger=no` heisst: der Dienst endet beim Abmelden (gemessen)."""
+    """`Linger=no` heisst: der Dienst endet beim Abmelden (gemessen).
+
+    Der Befehl steht mit Platzhalter statt Benutzername im README — das Repo
+    ist zur Veröffentlichung gedacht (WB-388), die Zusicherung bleibt: der
+    Satz muss da sein.
+    """
     readme = (WURZEL / "README.md").read_text(encoding="utf-8")
-    assert "loginctl enable-linger user" in readme
+    assert "loginctl enable-linger <benutzer>" in readme
     assert "systemctl --user enable --now picknick-crawl.timer" in readme
     assert "schläft" in readme
+
+
+# --------------------------------------------------------------------------
+# Veröffentlichungsfähig (WB-388): nichts Privates in getrackten Dateien
+
+def test_keine_privaten_angaben_im_repo():
+    """Die Tailnet-Adresse des Geräts, der Hostname der vLLM-Box und der
+    Benutzername sind privat und stehen in keiner getrackten Datei mehr.
+
+    Die verbotenen Wörter sind zusammengesetzt, damit dieser Test sich nicht
+    selbst meldet. Der Benutzername wird klein geschrieben gesucht — der
+    Klarname im LICENSE ist gewollt und beginnt gross.
+    """
+    verboten = ["100.117." + "80.100", "sphe" + "ron", "aar" + "on"]
+    ergebnis = subprocess.run(["git", "ls-files", "-z"], cwd=WURZEL,
+                              capture_output=True, check=True)
+    funde = []
+    for name in ergebnis.stdout.decode("utf-8").split("\0"):
+        if not name:
+            continue
+        try:
+            inhalt = (WURZEL / name).read_bytes().decode("utf-8",
+                                                         errors="ignore")
+        except OSError:
+            continue  # im Index, aber gerade nicht auf der Platte
+        funde += [f"{name}: {wort}" for wort in verboten if wort in inhalt]
+    assert funde == []
+
+
+def test_picknick_env_ist_gitignort():
+    """`picknick.env` trägt die private Adresse der vLLM-Box. Sie darf unter
+    keinen Umständen Teil des Repos werden (WB-388)."""
+    ergebnis = subprocess.run(["git", "check-ignore", "-q", "picknick.env"],
+                              cwd=WURZEL)
+    assert ergebnis.returncode == 0

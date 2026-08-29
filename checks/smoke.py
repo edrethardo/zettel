@@ -1913,9 +1913,38 @@ def checks_bindung(b: Bericht) -> None:
         b.pruefe(f"erlaubt: {host}",
                  lambda h=host: gleich(webapp.pruefe_host(h), h, "host"))
 
-    b.pruefe("die Vorgabe enthält nur erlaubte Adressen",
-             lambda: gleich(webapp.hosts_aus_umgebung({}),
-                            ["100.64.0.1", "127.0.0.1"], "DEFAULT_HOSTS"))
+    def erkennung_fragt_das_system():
+        # Seit WB-388 steht keine Tailnet-Adresse mehr im Code — sie wird
+        # beim Start über einen Socket vom Betriebssystem erfragt. Unter der
+        # Netzsperre dieses Gates muss genau dieser Aufruf abgefangen werden;
+        # käme er durch, hätte sich irgendwo doch wieder eine feste Adresse
+        # (oder ein anderer Weg am Socket vorbei) eingeschlichen.
+        try:
+            webapp.eigene_tailnet_adresse()
+        except NetzVerboten:
+            return "die Routenfrage ist ein Socket-Aufruf, die Sperre greift"
+        raise AssertionError(
+            "eigene_tailnet_adresse() kam an der Netzsperre vorbei.")
+
+    b.pruefe("die Adress-Erkennung fragt das System, keinen festen Wert",
+             erkennung_fragt_das_system)
+
+    def vorgabe(tailnet):
+        # Die echte Erkennung ist hier gesperrt (siehe oben); geprüft wird
+        # die Zusammensetzung: mit Tailnet-Adresse beide, ohne nur loopback.
+        alt = webapp.eigene_tailnet_adresse
+        webapp.eigene_tailnet_adresse = lambda: tailnet
+        try:
+            hosts = webapp.hosts_aus_umgebung({})
+        finally:
+            webapp.eigene_tailnet_adresse = alt
+        erwartet = ([tailnet] if tailnet else []) + ["127.0.0.1"]
+        return gleich(hosts, erwartet, "Vorgabe")
+
+    b.pruefe("die Vorgabe: eigene Tailnet-Adresse, dann loopback",
+             lambda: vorgabe("100.64.0.7"))
+    b.pruefe("die Vorgabe ohne Tailnet: nur loopback",
+             lambda: vorgabe(None))
 
     def env_verboten():
         try:

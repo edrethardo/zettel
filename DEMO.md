@@ -40,8 +40,8 @@ print(db.connect('data/picknick.db').execute(
 
 **Prüfung:** drei Zeilen von uvicorn, endend mit `Application startup
 complete.`, und der Prozess bleibt im Vordergrund. Der Shop lauscht auf
-`http://100.64.0.1:8730` (Tailscale) **und** `http://127.0.0.1:8730` —
-nicht auf `0.0.0.0`.
+`http://<deine Tailnet-Adresse>:8730` (beim Start selbst erkannt) **und**
+`http://127.0.0.1:8730` — nicht auf `0.0.0.0`.
 
 Das ist der erste Punkt, den man laut sagen kann:
 

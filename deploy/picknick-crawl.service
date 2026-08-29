@@ -7,7 +7,7 @@
 
 [Unit]
 Description=Picknick — nächtlicher Katalog-Lauf und Sicherung
-Documentation=file:///home/user/code/picknick_klon/README.md
+Documentation=file://%h/code/picknick_klon/README.md
 
 [Service]
 Type=oneshot

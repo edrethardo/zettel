@@ -1,17 +1,19 @@
 """Zugang zum lokalen Modell auf der vLLM-Box (Spec 6, „Modellzugang").
 
-Die Box ist ein eigener Rechner im LAN — nicht dieser Laptop. Sie ist
-OpenAI-kompatibel, deshalb spricht der Shop sie über das offizielle
+Die Box kann ein eigener Rechner im LAN sein — in diesem Haushalt ist sie
+es. Sie ist OpenAI-kompatibel, deshalb spricht der Shop sie über das offizielle
 `openai`-SDK an und nicht über selbstgebautes HTTP: Spec 7.2 hängt den
 Phoenix-Tracer als `OpenAIInstrumentor` genau an dieses SDK. Ein eigener
 httpx-Aufruf wäre kürzer und im Trace unsichtbar.
 
 Zwei Dinge stehen hier bewusst NICHT im Code:
 
-* **die Adresse als IP.** Die Box ist am 2026-08-16 von `192.168.2.219` auf
-  `vllm-box.local` umgezogen. Jedes Werkzeug mit der alten IP scheiterte
-  danach mit „No route to host" — was wie ein Netzwerkfehler aussieht und in
-  Wahrheit veraltete Konfiguration ist.
+* **die Adresse der Box.** Sie ist am 2026-08-16 im LAN umgezogen; jedes
+  Werkzeug, das ihre alte IP hartkodiert hatte, scheiterte danach mit „No
+  route to host" — was wie ein Netzwerkfehler aussieht und in Wahrheit
+  veraltete Konfiguration ist. Die echte Adresse steht deshalb genau einmal,
+  ausserhalb des Repos: in `picknick.env` (gitignort) oder in der Umgebung
+  (WB-388) — im Code nur eine generische Vorgabe.
 * **das Modellkürzel.** Es hat auf dieser Box schon gewechselt
   (`Qwen3.6-35B-A3B-Instruct` -> `Qwen3.8-27B-Instruct`). Es wird über
   `/v1/models` erfragt, gemerkt, und lässt sich neu erfragen.
@@ -24,7 +26,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from ipaddress import ip_address
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import openai
@@ -34,20 +36,22 @@ from picknick import obs
 ENV_ENDPUNKT = "PICKNICK_LLM_ENDPOINT"
 ENV_SCHLUESSEL = "PICKNICK_LLM_API_KEY"
 
-#: Vorgabe laut Spec 6. Ein Name, keine IP — siehe Modul-Docstring.
-DEFAULT_ENDPUNKT = "http://vllm-box.local:8000/v1"
+#: Vorgabe: vLLMs Standardport auf derselben Maschine. Generisch mit
+#: Absicht — die Adresse einer echten Box ist die eines privaten Geräts und
+#: gehört nicht in ein veröffentlichtes Repo (WB-388). Wer die Box woanders
+#: betreibt, trägt sie in `picknick.env` oder die Umgebung ein.
+DEFAULT_ENDPUNKT = "http://localhost:8000/v1"
+
+#: Private Betriebswerte im Projektverzeichnis, Zeilen der Form `NAME=wert`.
+#: Gitignort, damit die echte Adresse nie im Repo landet. Gelesen wird die
+#: Datei nur für Werte, die nicht schon in der Prozessumgebung stehen — und
+#: nur, wenn wirklich die Prozessumgebung gemeint ist (siehe
+#: `endpunkt_aus_umgebung`).
+ENV_DATEI = Path(__file__).resolve().parents[2] / "picknick.env"
 
 #: vLLM prüft den Schlüssel nicht; irgendeine nicht-leere Zeichenkette genügt.
 #: Das SDK besteht aber auf einem, sonst sucht es `OPENAI_API_KEY`.
 DEFAULT_SCHLUESSEL = "1"
-
-#: Der Port, auf dem die vLLM-Box bedient — hier nur, um die Falle unten zu
-#: erkennen.
-VLLM_PORT = 8000
-
-#: Die alte Adresse der Box. Steht sie noch in einer Konfiguration, ist das
-#: kein Netzwerkfehler, sondern eine Altlast.
-ALTE_IP = "192.168.2.219"
 
 #: Verbindungsaufbau ins LAN: entweder es klappt sofort oder die Box schläft.
 TIMEOUT_VERBINDUNG_S = 5.0
@@ -68,59 +72,69 @@ class ModellNichtErreichbar(RuntimeError):
 def pruefe_endpunkt(url: str) -> str:
     """Gibt den Endpunkt zurück, wenn er benutzbar aussieht, sonst Fehler.
 
-    Geprüft wird nichts, was ein Netzzugriff beantworten müsste — nur die
-    zwei Schreibweisen, die hier schon Zeit gekostet haben (siehe die
-    Konstanten oben). Alles andere wird durchgelassen: ob unter einer Adresse
-    wirklich vLLM lauscht, beantwortet `wake.health()` und nicht ein Muster.
+    Geprüft wird nichts, was ein Netzzugriff beantworten müsste — nur, ob
+    die Schreibweise überhaupt eine Adresse sein kann (Schema, Host, Port).
+    Ob unter ihr wirklich vLLM lauscht, beantwortet `wake.health()` und nicht
+    ein Muster. Zwei Fallen dieses konkreten Haushalts (die alte IP der Box,
+    loopback als Verwechslung mit dem LAN-Rechner) standen bis WB-388
+    zusätzlich hier; sie gehörten der Maschine, nicht der Vorgabe für alle.
     """
     text = (url or "").strip().rstrip("/")
     if not text:
         raise KonfigurationsFehler(
             f"Leerer Modell-Endpunkt. Vorgabe ist {DEFAULT_ENDPUNKT}, "
-            f"überschreibbar mit {ENV_ENDPUNKT}.")
+            f"überschreibbar mit {ENV_ENDPUNKT} — in der Umgebung oder in "
+            "picknick.env.")
     teile = urlsplit(text)
     if teile.scheme not in ("http", "https") or not teile.hostname:
         raise KonfigurationsFehler(
             f"{text!r} ist keine brauchbare Adresse. Erwartet wird etwas wie "
             f"{DEFAULT_ENDPUNKT}.")
     try:
-        port = teile.port
+        teile.port  # noqa: B018 — nur die Lesbarkeit zählt
     except ValueError:
         raise KonfigurationsFehler(f"{text!r} hat keinen gültigen Port.") from None
-
-    if teile.hostname == ALTE_IP:
-        raise KonfigurationsFehler(
-            f"{ALTE_IP} war bis zum 2026-08-16 die Adresse der vLLM-Box und ist "
-            "es nicht mehr. Ein Aufruf dorthin scheitert mit „No route to host“ "
-            "und sieht dann aus wie ein Netzwerkfehler, obwohl nur die "
-            f"Konfiguration alt ist. Richtig ist {DEFAULT_ENDPUNKT}.")
-
-    if _ist_loopback(teile.hostname) and port == VLLM_PORT:
-        # Die teuerste Falle dieses Aufbaus: die Box ist ein EIGENER Rechner
-        # im LAN. Auf diesem Laptop lauscht auf 8000 nichts, jeder Aufruf
-        # scheitert mit „Connection error" — was wie ein Modellfehler aussieht
-        # und keiner ist. Der einzige lokale Forward, den es gibt, ist der
-        # No-Think-Shim auf 8011, und der gehört einem anderen Werkzeug.
-        raise KonfigurationsFehler(
-            f"{text} zeigt auf diesen Rechner. Auf {teile.hostname}:{VLLM_PORT} "
-            "lauscht hier nichts — die vLLM-Box ist ein eigener Rechner im LAN. "
-            f"Gemeint ist vermutlich {DEFAULT_ENDPUNKT}.")
     return text
 
 
-def _ist_loopback(host: str) -> bool:
-    if host == "localhost":
-        return True
+def _aus_env_datei(name: str) -> str | None:
+    """Ein Wert aus `picknick.env` — oder None.
+
+    Absichtlich winzig statt python-dotenv: gelesen werden Zeilen `NAME=wert`,
+    Leerzeilen und `#`-Kommentare. Mehr Format gibt es hier nicht zu können.
+    """
     try:
-        return ip_address(host).is_loopback
-    except ValueError:
-        return False
+        zeilen = ENV_DATEI.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for zeile in zeilen:
+        zeile = zeile.strip()
+        if not zeile or zeile.startswith("#"):
+            continue
+        schluessel, getrennt, wert = zeile.partition("=")
+        if getrennt and schluessel.strip() == name:
+            return wert.strip().strip("'\"") or None
+    return None
+
+
+def _ist_prozessumgebung(umgebung) -> bool:
+    """Nur die echte Prozessumgebung wird durch `picknick.env` ergänzt.
+
+    Eine injizierte Umgebung (Tests, Doppelgänger) gilt als vollständig —
+    sonst hinge jeder Testlauf am Inhalt einer privaten Datei der Maschine,
+    auf der er zufällig läuft.
+    """
+    return umgebung is None or umgebung is os.environ
 
 
 def endpunkt_aus_umgebung(umgebung=None) -> str:
-    """Der Endpunkt aus `PICKNICK_LLM_ENDPOINT`, sonst die Vorgabe."""
+    """Der Endpunkt: `PICKNICK_LLM_ENDPOINT`, sonst `picknick.env`, sonst Vorgabe."""
+    echt = _ist_prozessumgebung(umgebung)
     umgebung = os.environ if umgebung is None else umgebung
-    return pruefe_endpunkt(umgebung.get(ENV_ENDPUNKT) or DEFAULT_ENDPUNKT)
+    wert = umgebung.get(ENV_ENDPUNKT)
+    if not wert and echt:
+        wert = _aus_env_datei(ENV_ENDPUNKT)
+    return pruefe_endpunkt(wert or DEFAULT_ENDPUNKT)
 
 
 @dataclass(frozen=True)
@@ -157,11 +171,14 @@ class Modellzugang:
                  schluessel: str | None = None,
                  client=None, umgebung=None,
                  timeout_s: float = TIMEOUT_ANTWORT_S):
+        echt = _ist_prozessumgebung(umgebung)
         umgebung = os.environ if umgebung is None else umgebung
         self.endpunkt = (pruefe_endpunkt(endpunkt) if endpunkt is not None
                          else endpunkt_aus_umgebung(umgebung))
-        self.schluessel = (schluessel or umgebung.get(ENV_SCHLUESSEL)
-                           or DEFAULT_SCHLUESSEL)
+        schluessel = schluessel or umgebung.get(ENV_SCHLUESSEL)
+        if not schluessel and echt:
+            schluessel = _aus_env_datei(ENV_SCHLUESSEL)
+        self.schluessel = schluessel or DEFAULT_SCHLUESSEL
         self.timeout_s = timeout_s
         # Injizierbar, damit Tests einen HTTP-Doppelgänger unterschieben
         # können, ohne die Box zu wecken.
