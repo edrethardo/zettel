@@ -1419,12 +1419,23 @@ def create_app(db_path: str | Path | None = None,
 
     @app.get("/status")
     def status(request: Request):
-        """Statusseite: was der nächtliche Lauf getan hat (Spec 11, Spec 12).
+        """Statusseite: Tracer, Agent und nächtlicher Lauf (Spec 11, Spec 12).
 
         Die Seite ist absichtlich schlicht und absichtlich vollständig. Sie
         zeigt vor allem die VERWORFENEN Läufe mit ihrer Begründung — ein
         Crawler, der still scheitert, ist schlimmer als einer, der laut
         scheitert: der Katalog altert dann weiter und niemand weiss, warum.
+        Seit WB-377 gilt dasselbe für den Tracer, der der eigentliche
+        Gegenstand dieses Projekts ist.
+
+        **Diese Route ruft `app.state.chat.zustand()` nicht auf, und keine
+        künftige Fassung darf das tun.** Der Aufruf schickt ein Magic Packet
+        und weckt die vLLM-Box (siehe `/warenkorb/chat/zustand`) — eine Seite,
+        die jemand aufmacht, um nachzusehen, ob alles läuft, darf keinen
+        Rechner hochfahren. Was `betrieb.statusbericht()` liefert, kommt aus
+        der Datenbank und aus Prozesszählern, nichts davon aus dem Netz.
+        `tests/test_betrieb.py` hält das mit einem Doppelgänger fest, der beim
+        Fragen wirft.
         """
         c = con()
         try:

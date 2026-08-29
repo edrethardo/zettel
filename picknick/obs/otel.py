@@ -56,10 +56,13 @@ import logging
 import os
 import queue
 import threading
+import time
 from contextlib import contextmanager
+from datetime import datetime
 
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +95,12 @@ _provider = None
 _instrumentiert = False
 _sperre = threading.Lock()
 
+#: Wohin und unter welchem Namen zuletzt eingerichtet wurde, und seit wann.
+#: Nur zum Anzeigen (`tracerstand`) — der Betrieb liest das nirgends.
+_ziel: str | None = None
+_name: str | None = None
+_seit: float | None = None
+
 
 # --------------------------------------------------------------------------
 # Einrichtung
@@ -112,7 +121,7 @@ def einrichten(*, projekt: str | None = None, endpunkt: str | None = None):
     das nicht läuft — nichts davon darf den Shop am Hochfahren hindern. Der
     Grund wird protokolliert und der Chat läuft ohne Trace weiter.
     """
-    global _provider, _instrumentiert
+    global _provider, _instrumentiert, _ziel, _name, _seit
     with _sperre:
         if _provider is not None:
             return _provider
@@ -134,8 +143,13 @@ def einrichten(*, projekt: str | None = None, endpunkt: str | None = None):
             # hinter der Schlange — `add_span_processor` ersetzt den
             # Vorgabe-Prozessor von sich aus (Phoenix-eigene Erweiterung des
             # SDK-Providers).
-            provider.add_span_processor(
-                NichtBlockierend(SimpleSpanProcessor(endpoint=ziel)))
+            prozessor = SimpleSpanProcessor(endpoint=ziel)
+            # Zwischen Prozessor und Exporter, damit die Statusseite sagen
+            # kann, ob Phoenix die Spans wirklich genommen hat (WB-377). Der
+            # SimpleSpanProcessor schluckt das Ergebnis von `export()` selbst,
+            # nach ihm ist Erfolg von Fehlschlag nicht mehr zu unterscheiden.
+            prozessor.span_exporter = Buchfuehrend(prozessor.span_exporter)
+            provider.add_span_processor(NichtBlockierend(prozessor))
             bestuecke(provider)
 
             if not _instrumentiert:
@@ -152,6 +166,7 @@ def einrichten(*, projekt: str | None = None, endpunkt: str | None = None):
                         e.__class__.__name__, e)
             return None
         _provider = provider
+        _ziel, _name, _seit = ziel, name, time.time()
         log.info("Phoenix-Tracing an: Projekt %r auf %s", name, ziel)
         return provider
 
@@ -235,9 +250,145 @@ def flush(timeout_ms: int = 30_000) -> None:
 
 def abbauen() -> None:
     """Setzt alles zurück. Für Tests — im Betrieb gibt es das nicht."""
-    global _provider
+    global _provider, _ziel, _name, _seit
     with _sperre:
         _provider = None
+        _ziel = _name = None
+        _seit = None
+
+
+def _stempel(wann: float | None) -> str | None:
+    """Sekundengenau und ohne Zeitzone — wie jeder Zeitstempel im Projekt."""
+    if wann is None:
+        return None
+    return datetime.fromtimestamp(wann).replace(microsecond=0).isoformat(sep=" ")
+
+
+def tracerstand(provider=None) -> dict:
+    """Was der Shop über seinen eigenen Tracer sagen darf (WB-377).
+
+    **Rein aus dem Prozess. Kein Netzaufruf.** Das ist die harte Bedingung:
+    diese Auskunft hängt an einer Seite, die jemand aufmacht, um nachzusehen —
+    sie darf dabei weder Phoenix anfragen noch die vLLM-Box wecken. Alles hier
+    ist entweder Konfiguration oder ein Zähler, den der laufende Prozess selbst
+    hochgezählt hat.
+
+    Deshalb steht in `seit` der Zeitpunkt der Einrichtung: die Zähler gelten
+    ab da und nicht seit Anbeginn. Ein „0 verworfen" nach einem Neustart ist
+    kein Freispruch, und die Seite muss das sagen dürfen.
+
+    `gemessen` unterscheidet „nichts angekommen" von „darüber ist hier nichts
+    bekannt" — letzteres ist der Zustand mit einem fremd gesetzten Provider
+    (Tests, `setze_provider`), und eine 0 wäre dort erfunden.
+    """
+    provider = _provider if provider is None else provider
+    stand = {
+        "an": an(),
+        "eingerichtet": provider is not None,
+        # Auch im abgeschalteten Zustand ist die Frage „wohin denn?"
+        # beantwortbar — und genau dort ist sie interessant.
+        "endpunkt": _ziel or os.environ.get(ENV_ENDPUNKT) or ENDPUNKT,
+        "projekt": _name or os.environ.get(ENV_PROJEKT) or PROJEKT,
+        "seit": _stempel(_seit),
+        "wartend": 0,
+        "verworfen": 0,
+        "gemessen": False,
+        "angekommen": 0,
+        "gescheitert": 0,
+        "zuletzt_ok": None,
+        "zuletzt_fehler": None,
+        "grund": None,
+    }
+    if provider is None:
+        return stand
+    for p in _prozessoren(provider):
+        if not isinstance(p, NichtBlockierend):
+            continue
+        stand["wartend"] += p.wartend
+        stand["verworfen"] += p.verworfen
+        buch = p.buch
+        if buch is None:
+            continue
+        stand["gemessen"] = True
+        stand["angekommen"] += buch.angekommen
+        stand["gescheitert"] += buch.gescheitert
+        for feld, wert in (("zuletzt_ok", buch.zuletzt_ok),
+                           ("zuletzt_fehler", buch.zuletzt_fehler)):
+            if wert is not None and (stand[feld] is None or wert > stand[feld]):
+                stand[feld] = wert
+        if buch.grund:
+            stand["grund"] = buch.grund
+    stand["zuletzt_ok"] = _stempel(stand["zuletzt_ok"])
+    stand["zuletzt_fehler"] = _stempel(stand["zuletzt_fehler"])
+    return stand
+
+
+# --------------------------------------------------------------------------
+# Die Buchführung: was ist wirklich angekommen?
+
+class Buchfuehrend(SpanExporter):
+    """Zählt mit, was der eigentliche Exporter losgeworden ist (WB-377).
+
+    **Warum überhaupt.** Ohne diese Schicht kann der Shop über seinen eigenen
+    Tracer nur sagen, dass er eingerichtet ist — nicht, ob je ein Span in
+    Phoenix gelandet ist. Der `SimpleSpanProcessor` ruft `export()` auf,
+    verwirft das Ergebnis und protokolliert höchstens eine Ausnahme; danach
+    sind „angekommen" und „abgelehnt" nicht mehr zu unterscheiden. Eine
+    Statusseite, die daraufhin „Tracing läuft" behauptet, wäre genau die
+    stille Lüge, gegen die diese Seite gebaut ist.
+
+    **Was hier NICHT passiert:** kein Neuversuch, kein Puffer, keine
+    Veränderung am Ergebnis. Die Zähler sind eine Nebenwirkung, der Exportweg
+    bleibt derselbe — bis auf eine Ausnahme, die hier zu `FAILURE` wird statt
+    durch den Prozessor zu fliegen. Das ist kein Verschlucken: der Grund steht
+    danach in `grund` und auf der Statusseite, statt nur im Log.
+
+    Die Zähler sind Prozesszähler, keine Datenbank. Ein Neustart setzt sie auf
+    null, und die Seite sagt das dazu — sonst läse sich „0 verworfen" wie ein
+    Freispruch für die ganze Vergangenheit.
+    """
+
+    def __init__(self, inner: SpanExporter):
+        self._inner = inner
+        self._sperre = threading.Lock()
+        self.angekommen = 0
+        self.gescheitert = 0
+        self.zuletzt_ok: float | None = None
+        self.zuletzt_fehler: float | None = None
+        self.grund: str | None = None
+
+    def export(self, spans):
+        n = len(spans)
+        try:
+            ergebnis = self._inner.export(spans)
+        except Exception as e:  # noqa: BLE001
+            self._buche(0, n, f"{e.__class__.__name__}: {e}")
+            return SpanExportResult.FAILURE
+        if ergebnis is SpanExportResult.SUCCESS:
+            self._buche(n, 0, None)
+        else:
+            # Der OTLP-Exporter hat hier schon mehrfach vergeblich versucht zu
+            # senden und den eigentlichen Grund nur ins Log geschrieben.
+            self._buche(0, n, "Der Exporter meldet FAILURE — Phoenix nimmt "
+                              "die Spans nicht an (Grund steht im Log).")
+        return ergebnis
+
+    def _buche(self, ok: int, weg: int, grund: str | None) -> None:
+        jetzt = time.time()
+        with self._sperre:
+            if ok:
+                self.angekommen += ok
+                self.zuletzt_ok = jetzt
+            if weg:
+                self.gescheitert += weg
+                self.zuletzt_fehler = jetzt
+                self.grund = grund
+
+    def force_flush(self, timeout_millis: int = 30_000) -> bool:
+        return bool(self._inner.force_flush(timeout_millis))
+
+    def shutdown(self) -> None:
+        self._inner.shutdown()
 
 
 # --------------------------------------------------------------------------
@@ -267,6 +418,23 @@ class NichtBlockierend(SpanProcessor):
         self._thread = threading.Thread(
             target=self._arbeiten, name="picknick-spans", daemon=True)
         self._thread.start()
+
+    @property
+    def wartend(self) -> int:
+        """Wie viele Spans gerade in der Schlange stehen."""
+        return self._schlange.qsize()
+
+    @property
+    def buch(self) -> "Buchfuehrend | None":
+        """Die Buchführung hinter diesem Prozessor, falls es eine gibt.
+
+        Gesucht statt gemerkt: den Prozessor bauen auch Tests, und die hängen
+        einen In-Memory-Exporter ohne Buchführung hinein. `None` heisst dann
+        ehrlich „darüber ist hier nichts bekannt" und nicht „nichts
+        angekommen".
+        """
+        exporter = getattr(self._inner, "span_exporter", None)
+        return exporter if isinstance(exporter, Buchfuehrend) else None
 
     # on_start läuft im Request-Thread und ist billig (die Prozessoren setzen
     # dort höchstens Attribute) — er muss synchron bleiben, sonst wäre der

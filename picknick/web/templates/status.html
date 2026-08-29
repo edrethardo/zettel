@@ -4,8 +4,178 @@
 {# Spec 11: die Oberfläche schweigt nicht, wenn etwas fehlt. Diese Seite ist
    der Ort, an dem ein nächtlicher Lauf Rechenschaft ablegt — vor allem einer,
    der verworfen wurde. Ein Crawler, der still scheitert, lässt den Katalog
-   einfach altern, und niemand erfährt warum. #}
+   einfach altern, und niemand erfährt warum.
+
+   Seit WB-377 gilt derselbe Satz für den Agenten, und dort wiegt er schwerer:
+   dieses Projekt ist ein Vorführstück für Observability. Eine Statusseite, die
+   den Crawler ausweist und über den Tracer schweigt, widerlegt genau das, was
+   sie vorführen soll. Deshalb steht die Beobachtung jetzt OBEN und der
+   Katalog darunter.
+
+   **Keine Zeile dieser Seite fragt nach draussen.** Kein Phoenix, keine Box —
+   `chat.zustand()` würde per Wake-on-LAN einen Rechner im Nebenzimmer
+   aufwecken, und zwar jedes Mal, wenn jemand nachsehen will, ob alles läuft.
+   Hier steht der zuletzt belegte Stand mit Zeitpunkt; wer den aktuellen will,
+   macht den Chat auf. #}
 <h1>Status</h1>
+
+<section class="gruppe">
+  <h2>Beobachtung</h2>
+  {# Was steht, schlägt was konfiguriert ist: zuerst wird gefragt, ob ein
+     Exporter DA ist, und erst danach, was die Umgebung dazu sagt. Anders
+     herum behauptete die Seite „abgeschaltet", während ein von Hand gesetzter
+     Provider fleissig exportiert — eine falsche Auskunft an genau der Stelle,
+     die es besser wissen muss. #}
+  {% if not tracer.eingerichtet %}
+  {% if not tracer.an %}
+  <p class="fehler">Tracing ist abgeschaltet
+    (<code>PICKNICK_TRACING</code>). Kein Zug geht nach Phoenix, und daran
+    ändert sich ohne Neustart auch nichts mehr. Eingeschaltet gingen die Spans
+    nach <code>{{ tracer.projekt }}</code> auf
+    <code>{{ tracer.endpunkt }}</code>.</p>
+  {% else %}
+  <p class="fehler">Kein Exporter. Beim Hochfahren liess sich Phoenix auf
+    <code>{{ tracer.endpunkt }}</code> nicht einrichten — der Shop läuft
+    weiter, aber jeder Chat-Zug ab dann ist unbeobachtet. Der Grund steht im
+    Log des Prozesses; eingerichtet wird nur beim Start.</p>
+  {% endif %}
+  {% else %}
+  {# Die Überschrift richtet sich nach dem, was ankommt, und nicht danach, dass
+     ein Exporter da ist. „Spans gehen nach Phoenix" über einer Zeile, die
+     „4 abgelehnt" sagt, wäre der Selbstwiderspruch dieser Seite. #}
+  {% if tracer.gescheitert %}
+  <p class="fehler">Ein Exporter läuft, aber Phoenix nimmt die Spans nicht an:
+    <code>{{ tracer.projekt }}</code> auf
+    <code>{{ tracer.endpunkt }}</code>.</p>
+  {% else %}
+  <p class="fertig">Spans gehen nach <code>{{ tracer.projekt }}</code>
+    auf <code>{{ tracer.endpunkt }}</code>.</p>
+  {% endif %}
+  <ul class="laeufe">
+    {% if tracer.gemessen %}
+    <li class="lauf">
+      <span class="name">{{ tracer.angekommen }} Spans angekommen</span>
+      <span class="menge">
+        {%- if tracer.zuletzt_ok %}zuletzt {{ tracer.zuletzt_ok }}
+        {%- else %}noch keiner — seit dem Start ist nichts durchgegangen
+        {%- endif %}</span>
+    </li>
+    <li class="lauf {% if tracer.gescheitert %}verworfen{% endif %}">
+      <span class="name">{{ tracer.gescheitert }} Spans abgelehnt</span>
+      <span class="menge">
+        {%- if tracer.zuletzt_fehler %}zuletzt {{ tracer.zuletzt_fehler }} ·
+          {{ tracer.grund }}
+        {%- else %}Phoenix hat noch keinen zurückgewiesen.
+        {%- endif %}</span>
+    </li>
+    {% else %}
+    {# Ein fremd gesetzter Provider (Tests, `setze_provider`) hat keine
+       Buchführung. Eine 0 stünde hier für „nichts angekommen" und wäre
+       erfunden — „unbekannt" ist die einzige ehrliche Zahl. #}
+    <li class="lauf">
+      <span class="name">Angekommene Spans: unbekannt</span>
+      <span class="menge">An diesem Provider hängt keine Buchführung.</span>
+    </li>
+    {% endif %}
+    <li class="lauf {% if tracer.verworfen %}verworfen{% endif %}">
+      <span class="name">{{ tracer.verworfen }} Spans verworfen</span>
+      <span class="menge">Die Schlange fasst 10.000; was darüber hinaus
+        anfällt, geht verloren. Gerade warten {{ tracer.wartend }}.</span>
+    </li>
+  </ul>
+  <p class="fussnote">Diese Zähler laufen seit dem Start des Web-Prozesses
+    {%- if tracer.seit %} ({{ tracer.seit }}){% endif %} und nicht seit
+    Anbeginn — ein Neustart setzt sie auf null. Was davor verloren ging, steht
+    im Abschnitt darunter, denn das steht in der Datenbank.</p>
+  {% endif %}
+</section>
+
+<section class="gruppe">
+  <h2>Züge ohne Trace</h2>
+  {% if not trace_luecke.zuege %}
+  <p class="leer">Noch kein Chat-Zug — es kann noch nichts fehlen.</p>
+  {% elif not trace_luecke.ohne_trace %}
+  <p class="fertig">Alle <strong>{{ trace_luecke.zuege }}</strong> Züge tragen
+    eine Span-ID.</p>
+  {% else %}
+  <p class="fehler"><strong>{{ trace_luecke.ohne_trace }} von
+    {{ trace_luecke.zuege }}</strong> Zügen haben keine Span-ID — sie sind nie
+    in Phoenix angekommen. Es gibt keinen Trace zu ihnen und es wird keinen
+    mehr geben.</p>
+  <p class="stand">{{ trace_luecke.mit_trace }} Züge sind angekommen
+    ({{ (trace_luecke.anteil * 100) | round | int }} %).</p>
+  {% endif %}
+  {% if trace_luecke.letzter_mit %}
+  <p class="stand">Letzter Zug MIT Trace: {{ trace_luecke.letzter_mit }}.</p>
+  {% endif %}
+  {% if trace_luecke.letzter_ohne %}
+  <p class="stand">Letzter Zug OHNE Trace: {{ trace_luecke.letzter_ohne }}.</p>
+  {% endif %}
+  <p class="fussnote">Warum eine Zeile leer blieb, steht nirgends: Tracing
+    abgeschaltet und Phoenix nicht erreichbar hinterlassen dieselbe leere
+    Spalte. Nachträglich lässt sich das nicht mehr auseinanderhalten, und
+    geraten wird hier nicht.</p>
+</section>
+
+<section class="gruppe">
+  <h2>Zuordnungen</h2>
+  {% if not zuordnungen.vorgeschlagen %}
+  <p class="leer">Noch kein Vorschlag — es gibt nichts zu bewerten.</p>
+  {% else %}
+  {# Genau die Zahlen, aus denen die Eval-Labels entstehen (Spec 8.1): jedes
+     Ja und jedes Nein ist ein menschliches Urteil, gefällt beim Einkaufen. #}
+  <ul class="laeufe">
+    <li class="lauf">
+      <span class="name">{{ zuordnungen.behalten }} behalten</span>
+      <span class="menge">Label <code>kept</code></span>
+    </li>
+    <li class="lauf">
+      <span class="name">{{ zuordnungen.verworfen }} verworfen</span>
+      <span class="menge">Label <code>removed</code></span>
+    </li>
+    <li class="lauf">
+      <span class="name">{{ zuordnungen.offen }} offen</span>
+      <span class="menge">noch nicht entschieden — zählt weder als Treffer
+        noch als Fehlgriff</span>
+    </li>
+  </ul>
+  {% if zuordnungen.quote is none %}
+  <p class="stand">Noch keine Trefferquote: es wurde noch über keinen
+    Vorschlag entschieden.</p>
+  {% else %}
+  <p class="stand">Trefferquote
+    <strong>{{ (zuordnungen.quote * 100) | round | int }} %</strong>
+    ({{ zuordnungen.behalten }} von
+    {{ zuordnungen.behalten + zuordnungen.verworfen }} entschiedenen).</p>
+  {% endif %}
+  {% endif %}
+  <p class="fussnote">Offene Vorschläge stehen bewusst weder im Zähler noch im
+    Nenner: ein abgebrochener Einkauf ist kein Fehlgriff des Modells. Handkorrekturen
+    zählen gar nicht mit — wer nachbessert, soll damit nicht die Quote heben,
+    die den Fehlgriff misst.</p>
+</section>
+
+<section class="gruppe">
+  <h2>Modell</h2>
+  {% if modell.fehler %}
+  <p class="fehler">Die Modell-Konfiguration ist so nicht benutzbar:
+    {{ modell.fehler }}</p>
+  {% else %}
+  <p>Gefragt würde <code>{{ modell.endpunkt }}</code>.</p>
+  {% endif %}
+  {% if modell.letzter_zug %}
+  <p class="stand">Letzter Chat-Zug: {{ modell.letzter_zug }}.</p>
+  {% else %}
+  <p class="leer">Noch kein Chat-Zug in dieser Datenbank.</p>
+  {% endif %}
+  <p class="fussnote">Ob die Box in diesem Moment bedient, steht hier
+    absichtlich nicht: die Frage danach schickt ein Magic Packet und weckt
+    einen Rechner im Nebenzimmer. Sie wird genau dort gestellt, wo jemand das
+    Modell wirklich braucht — im <a href="/warenkorb">Warenkorb</a>. Und ob
+    beim letzten Zug überhaupt ein Modell gefragt wurde, steht nicht in der
+    Datenbank: der Rezeptweg schreibt dieselbe Zeile ohne einen einzigen
+    Modellaufruf.</p>
+</section>
 
 <section class="gruppe">
   <h2>Katalog</h2>
