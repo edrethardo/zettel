@@ -1452,6 +1452,55 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    @app.post("/chat/{mid}/portionen")
+    async def chat_portionen(request: Request, mid: int):
+        """Für wie viele Portionen dieser Zug rechnet (WB-384).
+
+        **Bis zu diesem Ticket gab es das Feld im Chat gar nicht.** Wer
+        „alles für Lasagne" schrieb, bekam Chefkochs Portionszahl und konnte
+        sie nicht ändern — die Mengen aus WB-369 wurden für eine Personenzahl
+        gerechnet, die niemand gewählt hatte. WB-369 hatte das bewusst
+        offengelassen (aus dem Satz zu raten wäre falsch gewesen: „in 35
+        echten Nutzersätzen kommt keine einzige Ziffer vor"), und ein Feld ist
+        kein Raten.
+
+        Geändert werden die Mengen der VORSCHLAGSZEILEN dieses Zugs, und zwar
+        über `mengen.skaliere` — es bleibt bei der einen Rechnung aus WB-362.
+        Das Rezept selbst bleibt unberührt: „diesmal für acht" ist eine
+        Aussage über diesen Einkauf.
+
+        **Ein bereits eingelegter Posten wird nicht nachgerechnet** (WB-361,
+        WB-387). Was bestätigt wurde, gehört dem Korb; die neue Zahl wirkt auf
+        das Nächste, und die Karte sagt es vorher wie nachher.
+
+        Die Antwort ist ein ZUG und nicht der ganze Verlauf (WB-372): es
+        ändern sich mehrere Zeilen auf einmal, aber nur die dieses Zugs.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            zeilen = vorschlagsliste.liste(c, mid)
+            karten = zugrezepte.zum_zug(c, mid, zeilen)
+            gewuenscht = (werte.get("rezept") or "").strip()
+            karte = next((k for k in karten
+                          if str(k["id"]) == gewuenscht), None)
+            if karte is None:
+                # Der Zug ist weg oder die Karte gehört nicht dazu. Dieselbe
+                # Regel wie bei der Rezeptwahl darüber: geändert werden kann
+                # nur, was angeboten wurde.
+                return _chat_antwort(
+                    request, c, fehler="Zu diesem Zug steht dieses Rezept "
+                                       "nicht (mehr) da.")
+            eigene = zugrezepte.zeilen_zur_karte(karte, zeilen, len(karten))
+            try:
+                bericht = zugrezepte.portionen_setzen(
+                    c, mid, int(karte["id"]), werte.get("portionen"), eigene)
+            except zugrezepte.ZugrezeptFehler as e:
+                return _zug_antwort(request, c, mid, fehler=str(e))
+            return _zug_antwort(request, c, mid, fehler=bericht["grund"])
+        finally:
+            c.close()
+
     def _andere_wahl(c: sqlite3.Connection, mid: int, source_id: str):
         """Die Rezeptkarte eines Zugs und der gewählte Treffer dazu.
 
@@ -1927,19 +1976,32 @@ def create_app(db_path: str | Path | None = None,
 
     @app.post("/rezepte/{recipe_id}/bearbeiten")
     async def rezept_bearbeiten(request: Request, recipe_id: int):
+        """Kopfdaten — und die Portionszahl, die alle Mengen mitnimmt (WB-384).
+
+        Bis zu diesem Ticket änderte dieses Feld eine Zahl und eine
+        Überschrift, nicht aber die Mengen darunter: „servings" von 4 auf 8,
+        und die Zutaten standen weiter bei 500,0 g unter der Zeile „Zutaten
+        laut Rezept (für 8 Portionen)". Jetzt rechnet `recipes.aendern` mit —
+        und sagt es, statt es geräuschlos zu tun.
+        """
         werte = await eingaben(request)
         c = con()
         try:
             if not _gibt_es(c, recipe_id):
                 return Response(status_code=404)
             try:
-                recipes.aendern(c, recipe_id, name=werte.get("name"),
-                                servings=werte.get("servings"),
-                                note=werte.get("note"))
+                r = recipes.aendern(c, recipe_id, name=werte.get("name"),
+                                    servings=werte.get("servings"),
+                                    note=werte.get("note"))
             except recipes.RezeptFehler as e:
                 # Der Name war leer: die Begründung muss stehen bleiben, sonst
                 # sieht die Nutzerin nur, dass nichts gespeichert wurde.
                 return _rezept_antwort(request, c, recipe_id, fehler=str(e))
+            if r.get("umgerechnet"):
+                # Eine Weiterleitung verlöre den Satz — und gerade dieser
+                # Handgriff hat mehr getan, als das Formular zeigt.
+                return _rezept_antwort(request, c, recipe_id,
+                                       meldung=r["umgerechnet"]["meldung"])
             return RedirectResponse(f"/rezepte/{recipe_id}", status_code=303)
         finally:
             c.close()

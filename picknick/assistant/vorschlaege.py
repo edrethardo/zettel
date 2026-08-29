@@ -537,10 +537,18 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
         # zählt `korb.einlegen` je Produkt zusammen und rundet erst danach
         # auf die Packungsgrösse. Ohne Menge legt es wie vorher `qty`
         # Packungen ein — der Weg für alles, was aus keinem Rezept stammt.
+        # Die Portionszahl wandert MIT in den Trace (WB-384). Sie ändert am
+        # Einlegen nichts — `korb.einlegen` benutzt sie allein für
+        # `picknick.servings` —, aber ohne sie bliebe ausgerechnet der Weg
+        # ohne die Zahl, die seit diesem Ticket gewählt werden kann. Lokal
+        # eingebunden, weil `zugrezept` eine Ebene über dieser Datei sitzt.
+        from picknick.assistant import zugrezept
         orders.einlegen(con, product_id=v["product_id"],
                         free_text=v["free_text"], qty=v["qty"],
                         menge=v["need_amount"], einheit=v["need_unit"],
-                        begriff=v["search_term"])
+                        begriff=v["search_term"],
+                        portionen=zugrezept.gewaehlte_portionen(
+                            con, v["chat_message_id"]))
         eingelegt = jetzt()
     else:
         eingelegt = v["eingelegt_at"]

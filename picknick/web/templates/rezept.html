@@ -30,6 +30,11 @@
 {# Die Zutaten, WIE DAS REZEPT SIE NENNT — mit Menge und Einheit. Nicht
    dasselbe wie die Liste darüber: dort stehen die Produkte, die dafür
    gekauft werden, hier steht, was in den Topf kommt. #}
+{# Die Überschrift nennt die Portionszahl, und seit WB-384 trägt sie die
+   Zahlen darunter auch: eine Änderung an den Kopfdaten rechnet die Mengen
+   mit (`recipes.aendern`). Vorher stand hier „für 8 Portionen" über
+   Chefkochs Mengen für 4 — direkt über einem Link auf die Quellseite, auf
+   der „für 4" steht. #}
 <h2>Zutaten laut Rezept{% if rezept.servings %} (für {{ rezept.servings }} Portionen){% endif %}</h2>
 <ul class="rezeptzutaten">
   {% for z in rezept.rezeptzutaten %}
@@ -93,9 +98,24 @@
 <form class="rezeptkopf" method="post" action="/rezepte/{{ rezept.id }}/bearbeiten">
   <label>Name
     <input type="text" name="name" value="{{ rezept.name }}" autocomplete="off"></label>
-  <label>Portionen
+  {# **Das zweite Feld, das „Portionen" hiess** (WB-384). Zwei Felder mit
+     demselben Wort bedeuteten Verschiedenes, und der Unterschied stand nur in
+     einem Quelltext-Kommentar: oben („Diesmal für wie viele Portionen?") geht
+     es um DIESEN Einkauf, hier um das Rezept selbst — dauerhaft und für jeden
+     nächsten Einkauf.
+
+     Der Satz darunter ist kein Schmuck: er ist die Zusage, die das Feld bis
+     zu diesem Ticket gebrochen hat. Wer die Zahl ändert, ändert die Mengen
+     mit. #}
+  <label>Für wie viele Portionen das Rezept gilt
     <input type="text" inputmode="numeric" name="servings"
-           value="{{ rezept.servings if rezept.servings is not none else '' }}"></label>
+           value="{{ rezept.servings if rezept.servings is not none else '' }}"
+           aria-describedby="portionen-hinweis"></label>
+  <p class="fussnote" id="portionen-hinweis">Dauerhaft, und alle Mengen
+    rechnen mit: aus „500 g" für 4 werden „1000 g" für 8 — in der Zutatenliste
+    wie an den verknüpften Produkten.
+    {%- if not rezept.servings %} Steht hier nichts, gibt es keinen Faktor,
+    und die Mengen bleiben, wie sie sind.{% endif %}</p>
   <label>Notiz
     <textarea name="note" rows="3">{{ rezept.note or '' }}</textarea></label>
   <button class="knopf" type="submit">Speichern</button>

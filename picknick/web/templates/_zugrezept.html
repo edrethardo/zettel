@@ -8,11 +8,16 @@
        1. die GESAMTZEIT, als eine Zahl        Pho Bo: 9½ Stunden
        2. wie viele Zutaten, und wie viele     23 Zutaten, 8 nicht auf
           davon nicht auf dem Zettel stehen    dem Zettel
-       3. Schwierigkeit, Portionen, Bewertung
+       3. Schwierigkeit und Bewertung
        4. die ANDEREN Rezepte derselben Suche  „Nicht gemeint? 5 andere
           (WB-387)                              Rezepte zu ‚Pho'"
-       5. erst danach die Zutatenliste
-       6. und eingeklappt die Zubereitung
+       5. für wie viele PORTIONEN (WB-384)     erst das Rezept, dann die Zahl
+       6. erst danach die Zutatenliste
+       7. und eingeklappt die Zubereitung
+
+   Die Portionszahl war bis WB-384 ein Merkposten neben der Schwierigkeit.
+   Sie ist keiner: an ihr hängt jede Menge darunter, und sie steht deshalb
+   als FELD unmittelbar über den Mengen, die sie ändert.
 
    **Punkt 4 steht vor Punkt 5, und das ist eine Entscheidung.** Die
    Zutatenliste ist die eines BESTIMMTEN Rezepts; wer sie liest, hat die Wahl
@@ -52,10 +57,9 @@
       ohne Katalogprodukt{% endif %}</p>
   {%- endif %}
 
-  {%- if r.difficulty or r.servings or r.source_rating or r.source_url %}
+  {%- if r.difficulty or r.source_rating or r.source_url %}
   <p class="rezeptherkunft">
     {%- if r.difficulty %}<span class="zeit">Schwierigkeit {{ r.difficulty }} von 3</span>{% endif %}
-    {%- if r.servings %}<span class="zeit">{{ r.servings }} Portionen</span>{% endif %}
     {%- if r.source_rating %}<span class="zeit">{{ "%.2f"|format(r.source_rating) }} aus {{ r.source_votes or 0 }} Stimmen</span>{% endif %}
     {%- if r.source_url %}
     {# Die Herkunft nennen und verlinken — das ist fremde Arbeit. Der
@@ -127,6 +131,56 @@
   </form>
   {%- endif %}
 
+  {# Für wie viele Portionen dieser Zug rechnet (WB-384). **Bis dahin gab es
+     das Feld im Chat gar nicht** — wer „alles für Lasagne" schrieb, bekam
+     Chefkochs Portionszahl und konnte sie nicht ändern; die Mengen aus WB-369
+     wurden für eine Personenzahl gerechnet, die niemand gewählt hatte.
+
+     **Es steht hier und nicht weiter oben**, und das ist dieselbe Anordnung
+     wie bei den Alternativen darüber: erst welches Rezept, dann für wie
+     viele. Direkt darunter beginnen die Mengen, die es ändert — die
+     Zutatenliste und, eine Bildschirmhöhe weiter, die Vorschläge.
+
+     Die Zahl steht am ZUG (`chat_rezept.portionen`) und nicht am Rezept:
+     „diesmal für acht" ist eine Aussage über diesen Einkauf, genau wie beim
+     Feld an „Alles in den Warenkorb" (WB-362). #}
+  {%- if r.zutaten or r.n_zettel %}
+  {%- if r.portionen_rezept %}
+  <form class="zugportionen" method="post"
+        action="/chat/{{ m.id }}/portionen"
+        hx-post="/chat/{{ m.id }}/portionen"
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-disabled-elt="find button">
+    <input type="hidden" name="rezept" value="{{ r.id }}">
+    <label>Für wie viele Portionen?
+      <input type="text" inputmode="numeric" name="portionen"
+             value="{{ r.portionen }}"
+             aria-label="Portionen für „{{ r.name }}“"></label>
+    <button class="mini" type="submit">Mengen neu rechnen</button>
+    {# Drei Sätze, die alle drei gesagt werden müssen. Der erste: wovon
+       abgewichen wird — ohne ihn wäre Chefkochs Zahl nach dem ersten Tippen
+       verschwunden. Der zweite: dass das Rezept selbst bleibt. Der dritte:
+       dass ein bestätigter Posten NICHT nachgerechnet wird (WB-361, WB-387)
+       — wer das nicht weiss, hält die Zahl im Korb für angepasst. #}
+    {# Zahl und Wort stehen auf EINER Zeile: Jinja liefert den Zeilenumbruch
+       sonst mit aus, und „6\n Portionen" ist im Quelltext nicht mehr
+       dieselbe Zeichenkette — die Zusicherung von WB-383 hing daran. #}
+    <p class="fussnote">
+      {%- if r.umgerechnet %}Hochgerechnet von {{ r.portionen_rezept }} {{ "Portion" if r.portionen_rezept == 1 else "Portionen" }} laut Rezept.
+      {%- else %}Das Rezept rechnet mit {{ r.portionen_rezept }} {{ "Portion" if r.portionen_rezept == 1 else "Portionen" }}.{% endif %}
+      Das Rezept selbst ändert sich davon nicht — und <strong>was schon im
+      Korb liegt, bleibt liegen</strong>; die neue Zahl gilt für das
+      Nächste.</p>
+  </form>
+  {%- else %}
+  {# Regel 4 des Tickets: ohne Portionszahl der Quelle gibt es keinen Faktor,
+     und geraten wird nicht. Ein Feld, das nichts bewirkt, wäre schlimmer als
+     keines — es verspräche eine Rechnung, die es nicht gibt. #}
+  <p class="fussnote">Am Rezept steht keine Portionszahl — dann gibt es
+    keinen Faktor, und die Mengen bleiben, wie sie sind.</p>
+  {%- endif %}
+  {%- endif %}
+
   {%- if r.zutaten %}
   {# Die Zutaten, WIE DIE QUELLE SIE SCHREIBT — mit Mengen. Das ist der
      Vergleich, den die Vorschlagsliste darunter nicht liefert: „500 ml
@@ -141,7 +195,7 @@
     {%- if z.gruppe and (loop.first or z.gruppe != r.zutaten[loop.index0 - 1].gruppe) %}
     <li class="gruppe">{{ z.gruppe }}</li>
     {%- endif %}
-    <li><span class="menge">{% if z.amount %}{{ z.amount | menge }}{% endif %} {{ z.unit or "" }}</span>
+    <li><span class="menge">{% if z.gerechnet %}{{ z.gerechnet | menge }}{% endif %} {{ z.unit or "" }}</span>
       <span class="name">{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</span></li>
     {%- endfor %}
   </ul>
