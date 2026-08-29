@@ -3,6 +3,10 @@
    damit genau dort entschieden wird, ob getauscht wird oder nicht. Dieselbe
    Bauart wie beim Korb in `_chat_antwort.html`.
 
+   Beide Knöpfe zeigen beim Antippen, dass es losgeht (WB-378): Indikator ist
+   der Zug, also genau das, was gleich getauscht wird. „Alles übernehmen" ist
+   der langsamste Tipp des Chats — er entscheidet eine ganze Liste auf einmal.
+
    Warum das überhaupt out-of-band mitmuss (WB-372): mit dem letzten „Ja" ist
    nichts mehr offen, und dann gehören die Knöpfe weg. Täte man das nicht,
    stünde unter einem fertig entschiedenen Zug weiter „Alles übernehmen" — ein
@@ -11,12 +15,16 @@
 <div class="sammel">
   <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
         hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
-        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}"
+        hx-disabled-elt="find button">
     <button class="mini" type="submit">Alles übernehmen</button>
   </form>
   <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
         hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
-        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}"
+        hx-disabled-elt="find button">
     <button class="mini" type="submit">Alles verwerfen</button>
   </form>
 </div>

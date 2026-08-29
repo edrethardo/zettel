@@ -32,6 +32,7 @@ from picknick.assistant import entwurf as entwuerfe
 from picknick.assistant import oberbegriffe
 from picknick.assistant import vorschlaege as vorschlagsliste
 from picknick.catalog import categories, search
+from picknick.llm import wake
 from picknick.web import multipart
 
 HIER = Path(__file__).parent
@@ -883,6 +884,25 @@ def create_app(db_path: str | Path | None = None,
                            if leeren_fragt and korb_id else None),
                 "leeren_fragt": leeren_fragt, "verlauf_geleert": geleert}
 
+    def _nicht_verfuegbar(e: chatmodul.ChatNichtVerfuegbar) -> str:
+        """Was am Eingabefeld stehen soll, wenn die Box nicht bedient (WB-378).
+
+        Bis hierher wurde in diesem Fall nur `zustand` gesetzt: das Band mit
+        dem Grund steht ÜBER dem ganzen Verlauf, das Eingabefeld darunter. Auf
+        dem Telefon heisst das — sie tippt „Fragen", und sichtbar passiert gar
+        nichts. Der technische Grund bleibt am Band; hier steht der Satz, den
+        sie an ihrem Knopf braucht.
+
+        `str(e)` wäre der Grund selbst („wake-vllm endete mit Code 1 …"). Er
+        ist richtig und für diese Stelle unbrauchbar.
+        """
+        if e.zustand.zustand == wake.WACHT_AUF:
+            return ("Das Modell wacht gerade auf — dein Satz steht noch im "
+                    "Feld. Gleich noch einmal „Fragen“ tippen.")
+        return ("Das Modell antwortet gerade nicht — dein Satz steht noch im "
+                "Feld. Ein gespeichertes Rezept beim Namen zu nennen, geht "
+                "auch ohne Modell.")
+
     def _alternativen(c: sqlite3.Connection, v: dict) -> list[dict]:
         """Die aufgehobenen Kandidaten einer verworfenen Zeile (WB-359).
 
@@ -1064,8 +1084,11 @@ def create_app(db_path: str | Path | None = None,
                 app.state.chat.turn(c, satz)
             except chatmodul.ChatNichtVerfuegbar as e:
                 # Nur der Chat ist betroffen (Spec 11). Der Satz bleibt im
-                # Feld stehen, damit er nicht noch einmal getippt werden muss.
-                return _chat_antwort(request, c, zustand=e.zustand, satz=satz)
+                # Feld stehen, damit er nicht noch einmal getippt werden muss —
+                # und die Meldung steht daneben (WB-378), nicht bloss oben am
+                # Band.
+                return _chat_antwort(request, c, zustand=e.zustand, satz=satz,
+                                     fehler=_nicht_verfuegbar(e))
             except chatmodul.ChatFehler as e:
                 return _chat_antwort(request, c, fehler=str(e), satz=satz)
             return _chat_antwort(request, c)
@@ -1108,7 +1131,8 @@ def create_app(db_path: str | Path | None = None,
                     aus_sorten=((faecher["kategorie"], gewaehlt)
                                 if gewaehlt else None))
             except chatmodul.ChatNichtVerfuegbar as e:
-                return _chat_antwort(request, c, zustand=e.zustand)
+                return _chat_antwort(request, c, zustand=e.zustand,
+                                     fehler=_nicht_verfuegbar(e))
             except chatmodul.ChatFehler as e:
                 return _chat_antwort(request, c, fehler=str(e))
             return _chat_antwort(request, c)

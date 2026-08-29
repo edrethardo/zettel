@@ -6,20 +6,34 @@
    anstösst — deshalb steht er nicht in jeder Ansicht, sondern nur dort, wo
    jemand den Chat vor sich hat.
 
-   Ist die Box am Aufwachen, holt sich dieses Stück alle fünf Sekunden selbst
-   neu; der Zähler läuft dabei herunter. Bedient sie, hört das Nachfragen auf. #}
+   **Es wird nachgefragt, solange die Box nicht bedient** — auch im Fehlerfall
+   (WB-378). Bis dahin pollte nur `wacht_auf`: kippte der Zustand auf
+   `nicht_erreichbar`, hörte das Nachfragen auf, und das Band stand bis zum
+   manuellen Neuladen da, auch wenn die Box längst wieder bediente. Die Box
+   schläft nach 120 Minuten Leerlauf — das ist der Normalfall dieses Shops,
+   nicht die Ausnahme, und eine Sackgasse an der häufigsten Stelle.
+
+   Der Abstand ist verschieden, weil die Lage verschieden ist: beim Aufwachen
+   läuft ein Zähler und fünf Sekunden sind richtig; nach einem
+   fehlgeschlagenen Weckruf wartet `wake.NEUVERSUCH_S` ohnehin eine Minute,
+   und häufiger zu fragen kostet nur `health()`-Timeouts. Dazu ein Knopf: wer
+   weiss, dass sie gerade hochgekommen ist, soll nicht auf den Takt warten. #}
+{% set laeuft = chat_zustand and chat_zustand.zustand == "wacht_auf" %}
 <div id="chat-zustand" {% if oob %}hx-swap-oob="true"{% endif %}
-     {% if chat_zustand and chat_zustand.zustand == "wacht_auf" %}
-     hx-get="/warenkorb/chat/zustand" hx-trigger="load delay:5s"
+     {% if chat_zustand and not chat_zustand.bedient %}
+     hx-get="/warenkorb/chat/zustand"
+     hx-trigger="load delay:{{ 5 if laeuft else 30 }}s"
      hx-swap="outerHTML"
      {% endif %}>
 {% if chat_zustand and not chat_zustand.bedient %}
   <p class="band chatband" role="status">
-    {% if chat_zustand.zustand == "wacht_auf" %}
+    {% if laeuft %}
       Modell wacht auf …
-      {%- if chat_zustand.rest_s is not none %} noch ~{{ chat_zustand.rest_s | round | int }} s{% endif %}
+      {%- if chat_zustand.rest_s is not none %} noch ~{{ chat_zustand.rest_s | round | int }} s
+      {%- elif chat_zustand.ueberfaellig %} — es dauert länger als sonst, es läuft aber weiter
+      {%- endif %}
     {% else %}
-      Das Modell antwortet gerade nicht.
+      Das Modell antwortet gerade nicht. Ich sehe weiter nach.
     {% endif %}
     {% if chat_zustand.grund %}<span class="fussnote">{{ chat_zustand.grund }}</span>{% endif %}
     {# Der Rezeptweg braucht kein Modell (Spec 6). Das gehört hierhin, sonst
@@ -27,5 +41,15 @@
     <span class="fussnote">Ein gespeichertes Rezept beim Namen zu nennen,
       funktioniert auch ohne Modell.</span>
   </p>
+  {% if not laeuft %}
+  {# Der Weg aus der Sackgasse von Hand. Ohne JavaScript lädt derselbe Knopf
+     den Warenkorb neu — dort holt sich das Band beim Laden ohnehin selbst. #}
+  <form class="zustand-nachsehen" method="get" action="/warenkorb"
+        hx-get="/warenkorb/chat/zustand"
+        hx-target="#chat-zustand" hx-swap="outerHTML"
+        hx-disabled-elt="find button">
+    <button class="mini" type="submit">Jetzt nachsehen</button>
+  </form>
+  {% endif %}
 {% endif %}
 </div>

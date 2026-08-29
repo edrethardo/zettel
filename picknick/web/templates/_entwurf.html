@@ -12,7 +12,16 @@
    im Korb liegt, ist schlicht falsch.
 
    Alle Formulare hier tauschen den ganzen ZUG und nicht eine Zeile: sie
-   ändern die Mengen und die Zugehörigkeit mehrerer Zeilen auf einmal. #}
+   ändern die Mengen und die Zugehörigkeit mehrerer Zeilen auf einmal. Und sie
+   tragen alle Indikator und Knopfsperre auf genau diesen Zug (WB-378) — was
+   blass wird, ist das, was gleich neu kommt.
+
+   **Der Anfangszustand ist kein Fehlschlag** (WB-378). Direkt nach dem Zug ist
+   noch nichts entschieden: früher stand dann an jeder Zeile „noch nicht
+   bestätigt — kommt nicht ins Rezept" und darunter „so entsteht kein Rezept" —
+   der Normalzustand beim ersten Anblick, geschrieben wie ein Scheitern. Eine
+   offene Zeile wartet, und das ist etwas anderes als verworfen: sie wird nicht
+   blass, und der Satz darunter sagt, wie sie hineinkommt. #}
 {% if m.entwurf %}
 <section class="entwurf">
   {% if m.entwurf.saved_at %}
@@ -27,7 +36,8 @@
   <form method="post"
         action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
         hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
-        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <button class="mini" type="submit">Doch ein Rezept daraus</button>
   </form>
   {% else %}
@@ -37,7 +47,8 @@
   <form class="entwurf-name" method="post"
         action="/warenkorb/chat/{{ m.id }}/entwurf/name"
         hx-post="/warenkorb/chat/{{ m.id }}/entwurf/name"
-        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <input type="text" name="name" autocomplete="off"
            value="{{ m.entwurf.name }}"
            aria-label="Name des Rezepts">
@@ -45,12 +56,21 @@
   </form>
   <ul class="entwurfsliste">
     {% for z in m.entwurf.zeilen %}
-    <li class="{{ 'raus' if not z.im_rezept or not z.behalten }}">
+    {# Dieselben drei Bedingungen wie `entwurf._geht_ins_rezept` — und der
+       Grund, warum eine Korrektur hier nicht blass werden darf: `behalten`
+       steht an ihr, nicht an der Zeile, die sie ersetzt. #}
+    {% set ersetzt = z.korrektur and z.korrektur.behalten %}
+    {% set drin = z.im_rezept and (z.behalten or ersetzt) %}
+    {% set wartet = z.offen and z.im_rezept and not ersetzt %}
+    <li class="{{ 'raus' if not drin and not wartet }}">
       <span class="text">
         <span class="name">{{ z.rezeptzeile.name }}</span>
-        {% if not z.behalten and not (z.korrektur and z.korrektur.behalten) %}
-        <span class="menge">{{ "verworfen" if not z.offen else
-          "noch nicht bestätigt" }} — kommt nicht ins Rezept</span>
+        {% if wartet %}
+        {# Nicht „kommt nicht ins Rezept": nichts ist entschieden, und der
+           Satz soll den Weg zeigen statt ein Urteil zu behaupten. #}
+        <span class="menge">wartet auf dein „Ja“ oben</span>
+        {% elif not z.offen and not z.behalten and not ersetzt %}
+        <span class="menge">verworfen — kommt nicht ins Rezept</span>
         {% elif not z.im_rezept %}
         <span class="menge">aus dem Entwurf genommen</span>
         {% endif %}
@@ -61,7 +81,8 @@
       <form class="entwurf-menge" method="post"
             action="/warenkorb/vorschlag/{{ z.id }}/bedarf"
             hx-post="/warenkorb/vorschlag/{{ z.id }}/bedarf"
-            hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+            hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+            hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
         <input type="text" name="menge" inputmode="decimal"
                autocomplete="off"
                value="{{ z.need_amount | menge }}"
@@ -78,7 +99,8 @@
       <form method="post"
             action="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
             hx-post="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
-            hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+            hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+            hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
         <button class="mini {{ 'zurueck' if z.im_rezept }}" type="submit">
           {{ "raus" if z.im_rezept else "wieder rein" }}</button>
       </form>
@@ -90,14 +112,22 @@
     „{{ m.entwurf.name }}“ mit {{ m.entwurf.n_drin }}
     {{ "Zutat" if m.entwurf.n_drin == 1 else "Zutaten" }} — nur die
     bestätigten, und nie das, was nicht zum Gericht gehört.</p>
+  {% elif m.entwurf.zeilen | selectattr("offen") | list %}
+  {# Der erste Anblick. Hier fehlt nichts — es hat nur noch niemand
+     hingesehen, und der Satz sagt, wie es weitergeht. #}
+  <p class="fussnote">So fängt das Rezept „{{ m.entwurf.name }}“ an: jedes
+    „Ja“ oben nimmt die Zutat hier auf. Gespeichert wird erst beim
+    Abschicken — bis dahin lässt sich alles noch ändern.</p>
   {% else %}
   <p class="fussnote">Es steht keine bestätigte Zutat im Entwurf —
-    so entsteht kein Rezept.</p>
+    so entsteht kein Rezept. Ein „rückgängig“ oben oder ein „wieder rein“
+    hier holt eine zurück.</p>
   {% endif %}
   <form method="post"
         action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
         hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
-        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
+        hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <button class="mini zurueck" type="submit">Kein Rezept daraus</button>
   </form>
   {% endif %}

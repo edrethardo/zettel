@@ -984,3 +984,172 @@ def test_jedes_tauschziel_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
     assert "chat" in ziele
     assert any(z.startswith("zug-") for z in ziele)
     assert any(z.startswith("vorschlag-") for z in ziele)
+
+
+# --------------------------------------------------------------------------
+# WB-378: der Chat sagt, dass etwas passiert — und führt nicht in Sackgassen
+#
+# Vier Stellen, an denen die Oberfläche vorher schwieg. Sie hängen zusammen:
+# überall geht es darum, dass ein Tipp am Telefon sichtbar etwas auslöst, und
+# zwar DORT, wo der Daumen gerade ist. Der Verlauf ist tausende Zeilen lang;
+# was am Seitenkopf oder am Seitenfuss blinkt, ist beim Tippen aus dem Bild.
+
+FORMULAR = re.compile(r"<form\b[^>]*>", re.S)
+
+
+def _formulare(text):
+    """Alle Formulare eines Stücks, als Rohtext ihres öffnenden Tags."""
+    return FORMULAR.findall(text)
+
+
+def test_jedes_chatformular_sperrt_seinen_knopf_beim_antippen(db_datei,
+                                                              tmp_path):
+    """Ohne sichtbares Warten tippt man ein zweites Mal.
+
+    Vor WB-378 trugen das nur das Sendefeld und die Sortenauswahl; die
+    Entscheidungsknöpfe — die man in Serie durch eine Liste von 157 Zeilen
+    drückt — trugen es nicht. Geprüft wird stumpf über alle Formulare des
+    Chats, damit ein neu dazukommendes nicht wieder durchrutscht.
+    """
+    ids = _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    # Ein „Nein" bringt Alternativen und Freitext mit ihren Formularen dazu.
+    _entscheiden(client, ids[-1][0], "removed")
+
+    chat = _chatteil(client.get("/warenkorb").text)
+    formulare = [f for f in _formulare(chat) if "hx-post" in f or "hx-get" in f]
+
+    assert formulare, "der Chat hat gar keine Formulare — der Test misst nichts"
+    ohne = [f for f in formulare if "hx-disabled-elt" not in f]
+    assert not ohne, f"ohne Knopfsperre: {ohne}"
+
+
+def test_die_entscheidungsknoepfe_zeigen_genau_das_stueck_das_sich_aendert(
+        db_datei, tmp_path):
+    """Der Indikator ist das Tauschziel — nicht der Streifen am Seitenfuss.
+
+    `#chat-laeuft` steht unter dem Eingabefeld, also am Ende von siebentausend
+    Zeilen. Für ein „Ja" mitten in der Liste ist er keine Rückmeldung.
+    """
+    ids = _langer_verlauf(db_datei, zuege=1, je_zug=2)
+    sid = ids[0][0]
+    client, _ = _client(db_datei, tmp_path)
+
+    chat = _chatteil(client.get("/warenkorb").text)
+    zeile = chat.split(f'id="vorschlag-{sid}"', 1)[1]
+    for entscheidung in ("kept", "removed"):
+        block = zeile.split(f"decision={entscheidung}", 1)[1].split("</form>", 1)[0]
+        assert f'hx-indicator="#vorschlag-{sid}"' in block
+        assert 'hx-disabled-elt="find button"' in block
+
+    # Und der Rückweg an der entschiedenen Zeile ebenso.
+    antwort = _entscheiden(client, sid, "kept").text
+    assert f'hx-indicator="#vorschlag-{sid}"' in antwort
+
+
+def test_jeder_indikator_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
+    """Dieselbe stumpfe Prüfung wie für die Tauschziele.
+
+    Ein `hx-indicator`, der ins Leere zeigt, blendet nichts ein — und sagt es
+    nicht: die Anfrage läuft normal, der Knopf sieht bloss weiter tot aus.
+    """
+    ids = _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+    _entscheiden(client, ids[-1][0], "removed")
+
+    seite = client.get("/warenkorb").text
+    vorhanden = set(re.findall(r'id="([\w-]+)"', seite))
+    indikatoren = set(re.findall(r'hx-indicator="#([\w-]+)"', seite))
+
+    assert indikatoren, "die Seite hat gar keine Indikatoren"
+    assert indikatoren <= vorhanden, \
+        f"zeigt ins Leere: {sorted(indikatoren - vorhanden)}"
+    assert any(i.startswith("vorschlag-") for i in indikatoren)
+    assert any(i.startswith("zug-") for i in indikatoren)
+
+
+def test_die_schlafende_box_meldet_sich_am_eingabefeld(db_datei, tmp_path):
+    """`ChatNichtVerfuegbar` setzte nur `zustand` — am Formular kam nichts an.
+
+    Das Band mit dem Grund steht ÜBER dem ganzen Verlauf. Wer unten „Fragen"
+    tippt, während die Box schläft, sah vorher: nichts.
+    """
+    client, _ = _client(db_datei, tmp_path,
+                        box=Box(wake.NICHT_ERREICHBAR, grund="Box antwortet nicht."))
+    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+                          headers=HTMX).text
+
+    unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
+    assert "Das Modell antwortet gerade nicht" in unten
+    # Und sie steht wirklich am Formular, nicht wieder oben.
+    assert antwort.index('id="chat-fehler-unten"') < antwort.index('class="chatform"')
+    assert antwort.index('id="chat-fehler"') < antwort.index('id="chat-fehler-unten"')
+    # Der technische Grund bleibt am Band — er gehört nicht an den Knopf.
+    assert "Box antwortet nicht." in antwort
+
+
+def test_die_wachende_box_sagt_am_feld_dass_es_gleich_geht(db_datei, tmp_path):
+    client, _ = _client(db_datei, tmp_path,
+                        box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
+    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+                          headers=HTMX).text
+    unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
+    assert "wacht gerade auf" in unten
+    assert 'value="Landmilch"' in antwort
+
+
+def test_ein_misslungener_tipp_traegt_die_meldung_an_beide_stellen_nach(
+        db_datei, tmp_path):
+    """Die Teilantwort tauscht nur eine Zeile — beide Hüllen müssen mit."""
+    ids = _langer_verlauf(db_datei, zuege=1, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+
+    antwort = _entscheiden(client, ids[0][0], "quatsch").text
+
+    assert 'id="chat-fehler" hx-swap-oob="true"' in antwort
+    assert 'id="chat-fehler-unten" hx-swap-oob="true"' in antwort
+    unten = antwort.split('id="chat-fehler-unten"', 1)[1]
+    assert 'class="fehler"' in unten
+
+
+def test_der_zustandsstreifen_fragt_auch_im_fehlerfall_weiter_nach(db_datei,
+                                                                   tmp_path):
+    """Die Box schläft nach 120 min — das ist der häufigste Zustand.
+
+    Vorher pollte nur `wacht_auf`. Kippte es auf `nicht_erreichbar`, hörte das
+    Nachfragen auf, und das Band blieb bis zum manuellen Neuladen stehen —
+    auch wenn die Box längst wieder bediente.
+    """
+    client, _ = _client(db_datei, tmp_path,
+                        box=Box(wake.NICHT_ERREICHBAR, grund="schläft"))
+    stueck = client.get("/warenkorb/chat/zustand").text
+
+    assert 'hx-get="/warenkorb/chat/zustand"' in stueck
+    # Mit grösserem Abstand als beim Aufwachen: `wake.NEUVERSUCH_S` wartet
+    # ohnehin eine Minute, und häufiger zu fragen kostet nur health-Timeouts.
+    assert 'hx-trigger="load delay:30s"' in stueck
+    # Und ein Weg von Hand, für den Fall, dass sie es besser weiss.
+    assert "Jetzt nachsehen" in stueck
+
+
+def test_beim_aufwachen_bleibt_der_kurze_takt(db_datei, tmp_path):
+    client, _ = _client(db_datei, tmp_path,
+                        box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
+    stueck = client.get("/warenkorb/chat/zustand").text
+    assert 'hx-trigger="load delay:5s"' in stueck
+    # Solange der Zähler läuft, braucht es keinen Knopf.
+    assert "Jetzt nachsehen" not in stueck
+
+
+def test_der_abgelaufene_zaehler_steht_nicht_bei_null(db_datei, tmp_path):
+    """„noch ~0 s" blieb unbegrenzt stehen (WB-378)."""
+
+    class AlteBox:
+        def zustand(self):
+            return wake.Zustand(wake.WACHT_AUF, seit_s=200.0,
+                                grund="Weckruf läuft.")
+
+    client, _ = _client(db_datei, tmp_path, box=AlteBox())
+    stueck = client.get("/warenkorb/chat/zustand").text
+    assert "~0 s" not in stueck
+    assert "dauert länger als sonst" in stueck

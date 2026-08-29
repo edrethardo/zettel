@@ -8,8 +8,11 @@
 
    * **der Korb** — ein „Ja" legt ein (Spec 6);
    * **die Zahl im Kopf** — sonst füllt sich der Korb unsichtbar;
-   * **die Fehlerzeile** — sonst bleibt die Begründung eines misslungenen
-     Tipps aus, und der Knopf sieht kaputt aus.
+   * **die Fehlerzeile, beide Male** — sonst bleibt die Begründung eines
+     misslungenen Tipps aus, und der Knopf sieht kaputt aus. Zwei Hüllen, weil
+     zwischen Chatkopf und Eingabefeld der ganze Verlauf liegt (WB-378); wer
+     nur die obere nachträgt, schreibt die Meldung dorthin, wo gerade niemand
+     hinsieht.
 
    Der Korb steht hier als ganzes Stück und nicht zeilenweise: er ist die
    kleine Liste (ein Einkauf, keine 150 Zeilen), und `orders.einlegen()` fasst
@@ -17,4 +20,7 @@
    erst hinterher fest. #}
 <div id="korb" hx-swap-oob="true">{% include "_korb.html" %}</div>
 <span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
-<div id="chat-fehler" hx-swap-oob="true">{% include "_chatfehler.html" %}</div>
+<div id="chat-fehler" hx-swap-oob="true">
+  {% with leise = true %}{% include "_chatfehler.html" %}{% endwith %}
+</div>
+<div id="chat-fehler-unten" hx-swap-oob="true">{% include "_chatfehler.html" %}</div>
