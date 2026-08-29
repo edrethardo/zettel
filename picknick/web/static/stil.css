@@ -4,19 +4,26 @@
       zusammenfällt.
    2. Tap-Ziele mindestens 44 px. Darunter trifft ein Daumen im Laden daneben.
    3. Nichts wird breiter als der Bildschirm: border-box überall, Umbruch auch
-      mitten im Wort.
+      mitten im Wort — nur nicht in Knöpfen.
 
-   Dazu seit WB-360 eine HALTUNG: Marktstand, nicht Formular.
-   - Grund ist warmes Papier, Inhalte liegen auf cremeweissen Karten; die
-     Produktfotos (weisser Fond ab Werk) liegen darauf wie auf Tellern.
-   - EINE Handlungsfarbe: Blattgrün. Rot nur fürs Wegnehmen, Honig für
-     Warnungen. Alles andere ist Tinte auf Papier.
-   - Formensprache: Pillen für Knöpfe, 14-px-Radien für Karten. Überschriften
-     in ui-rounded, wo es das gibt (iOS) — sonst Systemschrift.
-   - Bewegung nur an drei belohnenden Stellen: der grüne Plus-Knopf drückt
-     sich, die Korbzahl ploppt, die Rückmeldung taucht auf. Sonst Ruhe.
-   - Dunkelmodus ist ein zweiter Entwurf, kein Negativ: das Papier wird zu
-     dunklem Holz, die Fotos werden sanft gedimmt statt grell zu leuchten.
+   Seit WB-400 eine neue HALTUNG: der Zettel an der Kühlschranktür.
+   Der Shop heisst Zettel, und das Blatt nimmt das Wort beim Wort:
+   - HELL ist ein karierter Notizblock: kühles Papier mit feinem Karo,
+     weisse Blätter darauf, Tinte als Schriftfarbe. EINE Handlungsfarbe:
+     Tintenblau — der Kugelschreiber, mit dem geschrieben wird. Der Rotstift
+     streicht durch (wegnehmen, „gab's nicht"), der Textmarker hebt hervor
+     (Warnungen, Altes), der grüne Haken bestätigt (erledigt, im Korb).
+   - DUNKEL ist die Kreidetafel in der Küche: Schiefer statt Papier, Kreide
+     statt Tinte, dieselben Stifte als Kreidefarben. Ein zweiter Entwurf,
+     kein Negativ — die Fotos werden sanft gedimmt statt zu blenden.
+   - GERECHNETE ZAHLEN stehen in Monospace, wie von der Kasse gedruckt:
+     Preise, Stückzahlen, Bedarfsmengen. Der Zettel sagt die Wahrheit über
+     Mengen, und die Wahrheit hat hier eine eigene Schrift.
+   - FORMEN: Karten sind Blätter (12 px, feiner Rand, flacher Schatten),
+     Knöpfe sind gezeichnete Kästen (10 px), Abzeichen bleiben Pillen,
+     der Plus-Knopf bleibt ein Punkt. Vier Formen, jede mit einem Grund.
+   - BEWEGUNG nur an drei belohnenden Stellen: der Plus-Knopf drückt sich,
+     die Korbzahl ploppt, die Rückmeldung taucht auf. Sonst Ruhe.
    - Die Pick-Ansicht bleibt nüchtern: Grund statt Karten, grosse Zeilen,
      klebende Laden-Überschriften. Im Laden zählt Kontrast, nicht Charme.
 
@@ -33,109 +40,130 @@
 :root {
   --tap: 44px;
   --rand: 12px;
-  --radius: 14px;
+  --radius: 12px;        /* Karten: Blätter                   */
+  --radius-knopf: 10px;  /* Knöpfe und Felder: Kästen         */
 
   /* Papier und Tinte */
-  --grund: #f6f1e7;
-  --karte: #fffdf9;
-  --karte-tief: #efe8da;
-  --tinte: #33291a;
-  --gedaempft: #857866;
-  --linie: #e5dcc9;
+  --grund: #eef0f4;
+  --karte: #fdfdfc;
+  --karte-tief: #e7ebf1;
+  --tinte: #1d2733;
+  --gedaempft: #5d6b7c;
+  --linie: #d9dfe7;
+  --knopflinie: #c2ccd9;
+  --karo: rgba(45, 90, 170, 0.07);
 
-  /* Blattgrün — die eine Handlungsfarbe */
-  --akzent: #3e7d33;
+  /* Tintenblau — der Kugelschreiber, die eine Handlungsfarbe */
+  --akzent: #2456b8;
   --auf-akzent: #ffffff;
-  --akzent-tinte: #2c5d24;
-  --akzent-hell: #e4efdb;
+  --akzent-tinte: #1c4494;
+  --akzent-hell: #e3ebfa;
 
-  /* Tomate — wegnehmen, verwerfen */
-  --beere: #b23a2a;
-  --beere-hell: #f9e7e2;
+  /* Rotstift — wegnehmen, streichen, „gab's nicht" */
+  --beere: #c0382b;
+  --beere-hell: #fae8e4;
 
-  /* Honig — Warnung, alte Preise, ausgemustert */
-  --honig: #8a5a00;
-  --honig-hell: #fdf3d8;
-  --honig-linie: #ecd9a0;
+  /* Textmarker — Warnung, alte Preise, ausgemustert */
+  --honig: #6d5804;
+  --honig-hell: #fcf3c8;
+  --honig-linie: #eadf9d;
+  --merker: #f2c94c;
 
-  /* Rückmeldungen */
-  --fehler-text: #a03024;
-  --fehler-hell: #fbe9e4;
-  --fehler-linie: #eab6a8;
-  --ok-text: #2c5d24;
-  --ok-hell: #e4efdb;
-  --ok-linie: #b9d8a8;
+  /* Rückmeldungen: der grüne Haken und der rote Stift */
+  --fehler-text: #ab3325;
+  --fehler-hell: #fae9e4;
+  --fehler-linie: #eab9ab;
+  --ok-text: #22672f;
+  --ok-hell: #e2f2e4;
+  --ok-linie: #b5d9bb;
 
   --bildfond: #ffffff;
-  --schatten: 0 1px 2px rgba(72, 56, 28, 0.05), 0 4px 14px rgba(72, 56, 28, 0.07);
+  --schatten: 0 1px 2px rgba(29, 39, 51, 0.05), 0 3px 8px rgba(29, 39, 51, 0.06);
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
 }
 
-/* Abends auf dem Sofa: dunkles Holz statt Papier. Warm abgedunkelt, nicht
-   invertiert — Grün und Honig werden heller, damit sie auf dunklem Grund
-   lesbar bleiben, die Flächen dazu tiefer. */
+/* Abends in der Küche: die Kreidetafel. Schiefer statt Papier, Kreide statt
+   Tinte — warm abgedunkelt, nicht invertiert. Die Stifte werden zu
+   Kreidefarben: heller, weicher, auf dunklem Grund lesbar. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --grund: #191512;
-    --karte: #241f19;
-    --karte-tief: #2f2921;
-    --tinte: #f0e8d9;
-    --gedaempft: #a2957f;
-    --linie: #3a332a;
+    --grund: #12171e;
+    --karte: #1b232c;
+    --karte-tief: #26303b;
+    --tinte: #e8edf3;
+    --gedaempft: #93a1b1;
+    --linie: #313d4a;
+    --knopflinie: #43536a;
+    --karo: rgba(180, 205, 235, 0.045);
 
-    --akzent: #6fae5c;
-    --auf-akzent: #16230f;
-    --akzent-tinte: #a5d295;
-    --akzent-hell: #2b3a22;
+    --akzent: #82aaf5;
+    --auf-akzent: #0d1523;
+    --akzent-tinte: #aac6fa;
+    --akzent-hell: #223250;
 
-    --beere: #e08975;
-    --beere-hell: #3b241d;
+    --beere: #f0917d;
+    --beere-hell: #3e2019;
 
-    --honig: #dcb75e;
-    --honig-hell: #322913;
-    --honig-linie: #55471f;
+    --honig: #e5cf7d;
+    --honig-hell: #34301a;
+    --honig-linie: #564f2c;
+    --merker: #d9b84a;
 
-    --fehler-text: #f0a18e;
-    --fehler-hell: #3b211a;
-    --fehler-linie: #5c3226;
-    --ok-text: #a5d295;
-    --ok-hell: #263420;
-    --ok-linie: #3e5731;
+    --fehler-text: #f2a08c;
+    --fehler-hell: #3d211a;
+    --fehler-linie: #5e332a;
+    --ok-text: #9bd9ac;
+    --ok-hell: #1e3226;
+    --ok-linie: #3a5a45;
 
-    --bildfond: #e9e1d2;
-    --schatten: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+    --bildfond: #dfe2e4;
+    --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   /* Die Fotos haben weissen Fond ab Werk. Ungedimmt sind sie nachts das
-     hellste auf der Seite und blenden — leicht heruntergedreht wirken sie
+     hellste auf der Tafel und blenden — leicht heruntergedreht wirken sie
      wie angeleuchtet statt wie ein Loch im Dunkel. */
-  img.bild { filter: brightness(0.88); }
+  img.bild { filter: brightness(0.86); }
 }
 
+/* Das Karo des Blocks: zwei feine Linienraster auf dem Grund. Es liegt auf
+   dem BODY und nirgends sonst — Karten und klebende Stücke decken es ab wie
+   Blätter das Papier darunter. */
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 17px;              /* iOS zoomt Eingabefelder unter 16px heran */
   line-height: 1.45;
   color: var(--tinte);
-  background: var(--grund);
+  background:
+    linear-gradient(var(--karo) 1px, transparent 1px),
+    linear-gradient(90deg, var(--karo) 1px, transparent 1px),
+    var(--grund);
+  background-size: 26px 26px, 26px 26px, auto;
   overflow-wrap: anywhere;
 }
 
-main { padding: var(--rand) var(--rand) 32px; max-width: 680px; margin: 0 auto; }
+main { padding: var(--rand) var(--rand) 40px; max-width: 680px; margin: 0 auto; }
 
-/* Typografie-Skala: 28 / 20 / 17 / 15 / 13. Überschriften rund und schwer,
-   damit die Systemschrift einen Charakter bekommt, ohne eine Datei zu laden. */
+/* Typografie-Skala: 30 / 20 / 17 / 15 / 13. Überschriften eng und schwer —
+   die Systemschrift bekommt ihren Charakter über Gewicht und Laufweite,
+   nicht über eine Datei aus dem Netz. Gerechnete Zahlen: Monospace. */
 h1, h2 {
-  font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-weight: 800; letter-spacing: -0.02em;
+  font-weight: 800; letter-spacing: -0.03em;
 }
-h1 { font-size: 28px; margin: 18px 0 10px; }
-h2 { font-size: 20px; margin: 24px 0 8px; }
+h1 { font-size: 30px; margin: 20px 0 10px; }
+h2 { font-size: 20px; margin: 26px 0 8px; }
 
 :is(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid var(--akzent); outline-offset: 2px; border-radius: 8px;
 }
 input::placeholder { color: var(--gedaempft); opacity: 1; }
 button:disabled { opacity: 0.5; cursor: default; }
+/* In Knöpfen bricht kein Wort in der Mitte: „Frage\nn" ist kein Knopf mehr.
+   Das seitenweite `overflow-wrap: anywhere` ist das Sicherheitsnetz für
+   Fliesstext, nicht für Beschriftungen. */
+button, .knopf { overflow-wrap: normal; }
 
 /* Kopf ------------------------------------------------------------------ */
 .kopf {
@@ -144,24 +172,24 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: var(--karte); border-bottom: 1px solid var(--linie);
 }
 .kopf .marke {
-  font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-weight: 800; font-size: 20px; letter-spacing: -0.02em;
-  text-decoration: none; color: var(--akzent-tinte);
-  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
+  text-decoration: none; color: var(--tinte);
+  min-height: var(--tap); display: flex; align-items: center; gap: 7px;
   white-space: nowrap;
 }
-/* Der eine kleine Schmuck: eine grüne Beere hinter dem Namen. */
+/* Der eine kleine Schmuck: ein schief angepinnter gelber Merkzettel hinter
+   dem Namen. Er ist die ganze Marke — ein Zettel am Zettel. */
 .kopf .marke::after {
-  content: ""; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--akzent); margin-top: 6px;
+  content: ""; width: 9px; height: 9px; border-radius: 1.5px;
+  background: var(--merker); transform: rotate(-8deg);
+  box-shadow: 0 1px 1px rgba(29, 39, 51, 0.25);
+  margin-top: -8px;
 }
 /* Neun Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
    statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
 
-   Die Bildlaufleiste war ganz ausgeblendet — auf 375 px lagen „Bons" und
-   „Status" ausserhalb des Bildes, ohne ein Zeichen, dass da noch etwas kommt.
-   Jetzt ist sie dünn statt weg: ein 3-px-Strich, der die Leiste nicht höher
-   macht und trotzdem sagt, dass sie weitergeht. */
+   Die Bildlaufleiste ist dünn statt weg: ein 3-px-Strich, der die Leiste
+   nicht höher macht und trotzdem sagt, dass sie weitergeht. */
 .kopf nav {
   display: flex; gap: 2px; margin-left: auto; min-width: 0;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -174,7 +202,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .kopf nav::-webkit-scrollbar-track { background: transparent; }
 .kopf nav a {
   min-height: var(--tap); display: flex; align-items: center;
-  padding: 0 10px; border-radius: 999px;
+  padding: 0 10px; border-radius: var(--radius-knopf);
   color: var(--gedaempft); text-decoration: none;
   font-size: 15px; font-weight: 500; white-space: nowrap;
 }
@@ -187,7 +215,7 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: var(--akzent-hell); color: var(--akzent-tinte); font-weight: 700;
 }
 
-/* Hinweisband (Spec 11) -------------------------------------------------- */
+/* Hinweisband (Spec 11): der Textmarker quer über die Seite. -------------- */
 .band {
   margin: 0; padding: 10px var(--rand) 10px 34px; position: relative;
   background: var(--honig-hell); color: var(--honig);
@@ -203,17 +231,19 @@ button:disabled { opacity: 0.5; cursor: default; }
 .suche { display: flex; gap: 8px; margin: var(--rand) 0 16px; }
 .suche input {
   flex: 1 1 auto; min-width: 0;          /* sonst sprengt das Feld die Zeile */
-  min-height: var(--tap); padding: 0 16px;
+  min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .suche button, .knopf, .rollen button {
   min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; transition: transform 0.12s ease;
+  white-space: nowrap;
 }
+.suche button { flex: 0 0 auto; }
 .suche button:active, .knopf:active, .rollen button:active { transform: scale(0.96); }
 .rollen { display: flex; flex-direction: column; gap: 10px; }
 .rollen button { width: 100%; min-height: 56px; }
@@ -221,10 +251,8 @@ button:disabled { opacity: 0.5; cursor: default; }
                     color: var(--akzent-tinte); }
 
 /* Kategorien: eine Karte, in der die Äste aufklappen ---------------------
-   Die Karte selbst klappt jetzt zu (WB-379). 138 Zeilen à 44 px sind 6.100 px
-   zwischen dem Suchfeld und den Treffern; zugeklappt sind es eine Zeile. Das
-   Kartenkleid sitzt deshalb am `<details>` und nicht mehr an der Liste
-   darin — sonst wäre es eine Karte in einer Karte. */
+   Die Karte selbst klappt zu (WB-379). 138 Zeilen à 44 px sind 6.100 px
+   zwischen dem Suchfeld und den Treffern; zugeklappt sind es eine Zeile. */
 .kategorienkarte {
   margin-bottom: 16px; background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius);
@@ -262,11 +290,12 @@ button:disabled { opacity: 0.5; cursor: default; }
 .anzahl {
   margin-left: auto; color: var(--gedaempft); font-size: 13px;
   background: var(--karte-tief); border-radius: 999px; padding: 2px 9px;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-/* Kacheln: die Produktfotos sind das Beste am Shop und liegen jetzt gross
-   auf eigenen Karten — 88 px auf weissem Teller statt 72 px am Zeilenrand. */
+/* Kacheln: die Produktfotos sind das Beste am Shop und liegen gross auf
+   eigenen Blättern — 88 px auf weissem Teller. */
 .kacheln { list-style: none; margin: 0; padding: 0;
            display: flex; flex-direction: column; gap: 10px; }
 .kachel {
@@ -287,21 +316,26 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 .bild {
   width: 72px; height: 72px; flex: 0 0 72px; object-fit: contain;
-  border-radius: 12px; background: var(--bildfond); padding: 3px;
+  border-radius: 8px; background: var(--bildfond); padding: 3px;
 }
-.bild-fehlt { display: block; background: var(--karte-tief); }
+/* Kein Bild: ein leer gelassener, gestrichelter Rahmen — dieselbe Sprache
+   wie die leeren Zustände. Eine volle graue Kachel sah aus wie ein kaputtes
+   Foto; ein gestrichelter Rahmen sagt „hier ist absichtlich nichts". */
+.bild-fehlt { display: block; background: transparent;
+              border: 1.5px dashed var(--linie); }
 .text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .name { font-weight: 600; }
 .menge { color: var(--gedaempft); font-size: 15px; }
-.preis { white-space: nowrap; font-variant-numeric: tabular-nums;
-         font-weight: 700; }
+.preis { white-space: nowrap; font-family: var(--mono);
+         font-variant-numeric: tabular-nums; font-weight: 700;
+         font-size: 16px; }
 
 /* Leere Zustände sind gestaltet, nicht übrig: eine ruhige, gestrichelte
    Karte mit einem Satz, der sagt, was als Nächstes sinnvoll ist. */
 .leer {
   margin: 14px 0; padding: 26px 16px; text-align: center;
   color: var(--gedaempft); background: var(--karte);
-  border: 1.5px dashed var(--linie); border-radius: var(--radius);
+  border: 1.5px dashed var(--knopflinie); border-radius: var(--radius);
 }
 .leer .knopf { margin-top: 12px; }
 /* Zwei Wege aus dem leeren Korb (WB-382), und sie sind nicht gleich viel
@@ -310,21 +344,18 @@ button:disabled { opacity: 0.5; cursor: default; }
 .leer .knopf + .knopf { margin-left: 8px; }
 .knopf.still { font-weight: 500; color: var(--gedaempft);
                background: none; }
-/* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Nicht `.band`:
-   das ist das seitenbreite Hinweisband oben am Blatt, und hier gehört der Satz
-   in die Liste, zu der er gehört. Der Honigton verbindet die beiden trotzdem —
-   in diesem Blatt heisst honig „lies mich, es fehlt etwas". */
+/* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Der
+   Textmarker in der Liste: honig heisst in diesem Blatt „lies mich, es
+   fehlt etwas". */
 .gekappt {
   margin: 0 0 12px; padding: 8px 14px; font-size: 14px;
   color: var(--honig); background: var(--honig-hell);
-  border: 1px solid var(--honig-linie); border-radius: var(--radius);
+  border: 1px solid var(--honig-linie); border-radius: var(--radius-knopf);
 }
-/* Sprungziele bekommen Luft nach oben. Beide Wege enden an einer Liste, die
-   ohne diesen Abstand oben am Rand klebte: `#treffer` ist das Ziel, auf das
-   die Katalogsuche und jeder Kategoriezweig scrollen, `#rezept-treffer` das
-   des Ankers an einer Rezeptzutat. Beim zweiten sind es 96 px mit Absicht —
-   so bleiben die Überschrift, die Menge aus dem Rezept und das Suchfeld im
-   Bild, statt gerade eben herauszurutschen. */
+/* Sprungziele bekommen Luft nach oben. `#treffer` ist das Ziel der
+   Katalogsuche und jedes Kategoriezweigs, `#rezept-treffer` das des Ankers
+   an einer Rezeptzutat — dort 96 px, damit Überschrift, Menge und Suchfeld
+   im Bild bleiben. */
 #treffer { scroll-margin-top: 12px; }
 #rezept-treffer { scroll-margin-top: 96px; }
 
@@ -335,7 +366,7 @@ button:disabled { opacity: 0.5; cursor: default; }
    Tap-Ziele wiegen hier am schwersten: die Pick-Ansicht wird einhändig im
    Laden benutzt, mit dem Korb in der anderen Hand. */
 
-/* Der grüne Plus-Knopf: der eine Moment, der belohnt. Er ist rund, er ist
+/* Der blaue Plus-Knopf: der eine Moment, der belohnt. Er ist rund, er ist
    die Handlungsfarbe, und er drückt sich sichtbar ein. */
 .plus {
   width: var(--tap); height: var(--tap);
@@ -353,58 +384,75 @@ button:disabled { opacity: 0.5; cursor: default; }
   display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 4px;
   border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
   font-size: 14px; font-weight: 700; text-align: center;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
   animation: plopp 0.35s ease;
 }
 
-/* Warenkorbzeile: die Liste ist EINE Karte, die Zeilen trennen sich mit
-   feinen Linien — Karten je Zeile frässen auf dem Telefon zu viel Höhe. */
+/* Die Zeile: EIN Raster für Korb, Vorschläge und Rezeptzutaten -------------
+   Bis WB-400 war sie ein `flex-wrap`, und der Umbruch entschied je nach
+   Textlänge anders: mal stand der Name neben dem Bild, mal darunter, und
+   die Knöpfe landeten irgendwo. Ein Raster entscheidet es EINMAL:
+
+       [ Bild ] [ Text                    ]
+       [ Alternativen (nur wenn offen)    ]
+       [                        Knöpfe -> ]
+
+   Die Liste ist EINE Karte, die Zeilen trennen sich mit feinen Linien —
+   Karten je Zeile frässen auf dem Telefon zu viel Höhe. */
 .korb {
   list-style: none; margin: 0; padding: 0 10px;
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
 .zeile {
-  display: flex; align-items: center; gap: 8px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-areas: "bild text" "voll voll" "stellen stellen";
+  column-gap: 10px; row-gap: 4px; align-items: center;
   padding: 10px 4px; border-bottom: 1px solid var(--linie);
-  flex-wrap: wrap;              /* auf 360 px rutschen die Stellknöpfe in die
-                                   zweite Zeile, statt quer zu scrollen */
 }
 .korb > .zeile:last-child { border-bottom: none; }
+.zeile > .bild { grid-area: bild; }
+.zeile > .text { grid-area: text; }
+.zeile > .stellen { grid-area: stellen; }
+.zeile > .alternativen, .zeile > .korrektur { grid-area: voll; }
 .zeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
-.stellen { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.stellen { display: flex; align-items: center; gap: 6px; margin-left: auto;
+           flex-wrap: wrap; justify-content: flex-end; }
 .stellen form { margin: 0; }
 .mini {
   min-width: var(--tap); min-height: var(--tap); padding: 0 12px;
   font-size: 16px; font-weight: 600;
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); cursor: pointer;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease; white-space: nowrap;
 }
 .mini:active { transform: scale(0.94); }
 .mini.loeschen { color: var(--beere); }
 .stellen .anzahl { margin: 0; min-width: 2ch; text-align: center;
                    padding: 0; background: none; font-size: 17px;
-                   color: inherit; font-variant-numeric: tabular-nums;
+                   color: inherit; font-family: var(--mono);
+                   font-variant-numeric: tabular-nums;
                    font-weight: 600; }
 .stellen select {
   min-height: var(--tap); font-size: 16px; padding: 0 8px;
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte);
 }
 
 .freitext { display: flex; gap: 8px; margin: var(--rand) 0; }
 .freitext input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .freitext button, .abschicken .gross {
   min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); cursor: pointer;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease; white-space: nowrap;
 }
+.freitext button { flex: 0 0 auto; }
 .freitext button:active { transform: scale(0.96); }
 .abschicken { margin-top: 16px; }
 .abschicken .gross {
@@ -443,14 +491,16 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: var(--grund); border-bottom: 2px solid var(--tinte);
 }
 .pickliste { list-style: none; margin: 0; padding: 0; }
-/* Die Zeile trägt seit WB-373 zwei Entscheidungen — den Haken und „gab's
-   nicht" — und ist deshalb selbst die Reihe. `flex-wrap` wie an der Korbzeile:
-   auf 360 px rutscht der Knopf lieber unter den Namen, als dass der Name
-   abgeschnitten wird. Was im Regal gesucht werden soll, muss lesbar sein. */
+/* Die Zeile trägt zwei Entscheidungen — den Haken und „gab's nicht" (WB-373).
+   Der Haken bekommt die GANZE Breite, der Knopf rückt darunter nach rechts:
+   was im Regal gesucht werden soll, muss lesbar sein, und „Champignons"
+   mittendrin zu brechen war der Preis der alten Aufteilung. */
 .pickzeile { display: flex; align-items: center; flex-wrap: wrap;
              border-bottom: 1px solid var(--linie); }
 .pickzeile form { display: flex; align-items: center; margin: 0; }
-.pickzeile > form { flex: 1 1 14rem; min-width: 0; }
+.pickzeile > form { flex: 1 1 100%; min-width: 0; }
+.pickzeile .stellen { flex: 1 1 auto; margin-left: auto;
+                      padding: 0 4px 10px; }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
   flex: 1 1 auto; min-width: 0; min-height: 64px;
@@ -466,29 +516,29 @@ button:disabled { opacity: 0.5; cursor: default; }
 .pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
 .pickzeile .text { min-width: 0; }
 .pickzeile.ab { opacity: 0.55; }
-.pickzeile.ab .name { text-decoration: line-through; color: var(--gedaempft); }
-/* „Gab's nicht" (WB-373): Beere wie das „Nein" am Chat-Vorschlag, denn es ist
-   dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
+/* Abgehakt heisst durchgestrichen — mit dem dicken Stift, nicht mit der
+   Haarlinie: auf dem Zettel wird gestrichen, was im Wagen liegt. */
+.pickzeile.ab .name { text-decoration: line-through 2px; color: var(--gedaempft); }
+/* „Gab's nicht" (WB-373): Rotstift wie das „Nein" am Chat-Vorschlag, denn es
+   ist dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
    Zeichen: vor dem Regal wird nicht geraten, was ein Symbol bedeutet. */
 .pickzeile .stellen .mini { font-size: 15px; white-space: nowrap; }
-.pickzeile.gabs-nicht { background: var(--beere-hell); border-radius: 10px; }
+.pickzeile.gabs-nicht { background: var(--beere-hell); border-radius: var(--radius-knopf); }
 .pickzeile.gabs-nicht .name { color: var(--gedaempft); }
 .vermisst { font-size: 14px; line-height: 1.3; white-space: normal;
             color: var(--beere); font-weight: 600; }
 
 /* Die Hauptangabe der Einkaufszeile ist die GEBRAUCHTE Menge (WB-381) und
-   nicht die Packungsgrösse: vor dem Regal zählt, wie viel gebraucht wird —
-   was auf der Packung steht, liest man dort ab. Also trägt sie den Ton der
-   Zeile und nicht den gedämpften der Nebenangabe. */
-.pickzeile .menge { color: var(--tinte); font-size: 16px; font-weight: 600; }
+   nicht die Packungsgrösse. Sie ist gerechnet — also Monospace, wie von der
+   Kasse gedruckt: die Wahrheit über Mengen hat hier eine eigene Schrift. */
+.pickzeile .menge { color: var(--tinte); font-size: 16px; font-weight: 600;
+                    font-family: var(--mono); }
 /* Die Packungsangabe („dafür 2 × 1 kg"). Sie steht gross, SOLANGE sie die
-   einzige Mengenangabe der Zeile ist: ein von Hand eingelegter Posten hat
-   keine gebrauchte Menge, und dort wäre eine geflüsterte Zahl die einzige.
-   Steht die gebrauchte Menge darüber, rückt sie hinter sie zurück — das
-   Geschwisterzeichen ist genau diese Bedingung, ohne dass die Vorlage sie
-   noch einmal entscheiden müsste. */
+   einzige Mengenangabe der Zeile ist; steht die gebrauchte Menge darüber,
+   rückt sie hinter sie zurück. */
 .pickzeile .gebinde { font-size: 15px; color: var(--gedaempft);
-                      line-height: 1.35; white-space: normal; }
+                      line-height: 1.35; white-space: normal;
+                      font-family: var(--mono); }
 .pickzeile .menge + .gebinde { font-size: 13px; }
 
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
@@ -496,10 +546,10 @@ button:disabled { opacity: 0.5; cursor: default; }
 .rezeptzeile .zweig { align-items: flex-start; }
 
 /* Eine Zutat, die es im Katalog nicht mehr gibt (`active = 0`, Spec 5.3):
-   MARKIERT, nicht ausgeblendet — Honig, nicht Rot: kein Fehler, aber etwas,
-   das man wissen muss, BEVOR man im Laden steht. */
+   MARKIERT, nicht ausgeblendet — Textmarker, nicht Rotstift: kein Fehler,
+   aber etwas, das man wissen muss, BEVOR man im Laden steht. */
 .ausgemustert { color: var(--honig); font-weight: 600; }
-.fehlt-im-katalog { background: var(--honig-hell); border-radius: 10px; }
+.fehlt-im-katalog { background: var(--honig-hell); border-radius: var(--radius-knopf); }
 
 /* Im Warenkorb und auf der Pickliste (WB-335) hängt der Hinweis an der
    ZEILE, nicht an einem Band am Seitenkopf: im Laden wird gescrollt. */
@@ -509,22 +559,19 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* Abgehakt schlägt Warnung: was im Wagen liegt, muss niemand mehr suchen. */
 .pickzeile.ab .ausgemustert { color: var(--gedaempft); font-weight: 400; }
 
-/* Was gerechnet wurde (WB-362): „1000 ml gebraucht — 2 × Pomito 500 g.“
+/* Was gerechnet wurde (WB-362): „1000 ml gebraucht — 2 × Pomito 500 g."
    Derselbe `.hinweis` wie am Chat-Vorschlag, nur an der Korb- und
    Rezeptzeile — es ist dieselbe Sorte Nebensatz: leiser als der Name, aber
-   lesbar, und im Umbruch statt abgeschnitten. Kein eigener Ton und keine
-   eigene Grösse: das Gestaltungssystem aus WB-360 hat beides schon. */
+   lesbar, und im Umbruch statt abgeschnitten. */
 .zeile .hinweis, .kachel .hinweis, .pickzeile .hinweis {
   font-size: 13px; color: var(--gedaempft); line-height: 1.35;
   white-space: normal;
 }
 
 /* Die benötigte Menge an der Rezeptzutat (WB-362): ein schmales Feld und
-   ein Nebensatz, in derselben Zeile wie der Name — sie gehört zur Zutat und
-   nicht in ein eigenes Formular weiter unten. */
-/* `wrap`, seit die Einheit ein zweites Feld ist (WB-375): auf einem schmalen
-   Telefon bricht der Hinweis unter die beiden Felder, statt sie zu quetschen —
-   die Tap-Ziele bleiben so gross, wie `--tap` sie meint. */
+   ein Nebensatz, in derselben Zeile wie der Name. `wrap`, seit die Einheit
+   ein zweites Feld ist (WB-375): auf einem schmalen Telefon bricht der
+   Hinweis unter die beiden Felder, statt sie zu quetschen. */
 .bedarf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
           margin: 4px 0 0; }
 .bedarf .hinweis { flex: 1 1 12ch; }
@@ -533,13 +580,13 @@ button:disabled { opacity: 0.5; cursor: default; }
    wachsen mit. */
 .bedarf input[type="text"] {
   width: 5ch; min-height: var(--tap); text-align: right; font-size: 16px;
-  border: 1px solid var(--linie); border-radius: 10px; padding: 0 6px;
-  background: var(--karte); color: var(--tinte);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  padding: 0 6px; background: var(--karte); color: var(--tinte);
 }
-/* Die Einheit steht seit WB-375 als eigenes Feld neben der Zahl. Linksbündig
-   und etwas breiter als die Menge: dort steht Text („Scheibe"), keine Ziffer,
-   und rechtsbündig sähe er wie eine zweite Zahl aus. */
-.bedarf input.einheit { width: 7ch; text-align: left; }
+/* Die Einheit als eigenes Feld neben der Zahl (WB-375). Linksbündig und
+   breiter als die Menge: dort steht Text („Scheibe"), keine Ziffer — und
+   „m.-große" muss hineinpassen, ohne abgeschnitten zu werden. */
+.bedarf input.einheit { width: 9ch; text-align: left; }
 
 /* Die Portionszahl steht neben dem Korb-Knopf und nicht darüber: sie gehört
    zu diesem Griff. Auf dem Telefon bricht sie darüber um. */
@@ -552,8 +599,9 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .abschicken.portionen input {
   width: 4.5ch; min-height: 44px; text-align: center; font-size: 17px;
-  border: 1px solid var(--linie); border-radius: var(--radius);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 6px;
+  font-family: var(--mono);
 }
 .abschicken.portionen .gross { flex: 1 1 12ch; }
 .abschicken.portionen .hinweis {
@@ -568,8 +616,8 @@ button:disabled { opacity: 0.5; cursor: default; }
 .rezeptkopf input, .rezeptkopf textarea {
   min-height: var(--tap); padding: 10px 14px; font-size: 17px;
   color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: var(--radius); width: 100%;
-  font-family: inherit;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  width: 100%; font-family: inherit;
 }
 .rezeptkopf .knopf { align-self: flex-start; }
 .rezeptloeschen { margin: 24px 0; }
@@ -577,14 +625,18 @@ button:disabled { opacity: 0.5; cursor: default; }
                                   background: var(--beere-hell); }
 
 /* Ein geholtes Rezept (WB-338): Herkunft, Zeiten, Zutaten laut Rezept und
-   die Zubereitung. Alles davon ist zum LESEN AM HERD und nicht zum Tippen —
-   deshalb grosszügige Zeilenhöhe und nummerierte Schritte statt einer Wand. */
+   die Zubereitung — zum LESEN AM HERD, nicht zum Tippen. Die Angaben sind
+   kleine Blätter (Pillen), keine mit Punkten verketteten Halbsätze: die
+   Trennpunkte hingen beim Umbruch am Zeilenende in der Luft. */
 .rezeptherkunft {
-  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;
-  margin: 0 4px 12px; color: var(--gedaempft); font-size: 15px;
+  display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;
+  margin: 0 0 12px; color: var(--gedaempft); font-size: 15px;
 }
-.rezeptherkunft .zeit::after { content: " ·"; color: var(--linie); }
-.rezeptherkunft .zeit:last-child::after { content: ""; }
+.rezeptherkunft .zeit {
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: 999px; padding: 3px 12px; font-size: 14px;
+  white-space: nowrap;
+}
 .rezeptherkunft .quelle { color: var(--akzent-tinte); text-decoration: underline; }
 
 .rezeptzutaten { list-style: none; margin: 0 0 var(--rand); padding: 0; }
@@ -593,7 +645,9 @@ button:disabled { opacity: 0.5; cursor: default; }
   border-bottom: 1px solid var(--linie);
 }
 .rezeptzutaten li:last-child { border-bottom: none; }
-.rezeptzutaten .menge { flex: 0 0 8ch; text-align: right; color: var(--gedaempft); }
+.rezeptzutaten .menge { flex: 0 0 8ch; text-align: right;
+                        color: var(--gedaempft);
+                        font-family: var(--mono); font-size: 15px; }
 /* Der Griff „Zutat im Katalog suchen" ist ein Tap-Ziel wie jedes andere und
    hatte ~24 px — die Höhe der Textzeile. In diesem Blatt sind es 44 (WB-379).
    Volle Restbreite, damit auch neben einem kurzen Namen getroffen wird. */
@@ -613,28 +667,22 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* „Daraus ein Rezept machen" an der erledigten Bestellung (Spec 6). */
 .rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 10px; }
 .rezept-daraus input {
-  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 
-/* Chat (WB-327): Sprechblasen — ihre rechts in Blattgrün-Fläche, die
+/* Chat (WB-327): Sprechblasen — ihre rechts auf Tintenblau-Wäsche, die
    Antworten links auf Karte. Eine Vorschlagszeile ist eine kleine Karte, die
-   aussieht wie eine Korbzeile: dieselbe Sache, nur noch nicht bestätigt. */
-/* Kein Trennstrich mehr oben (WB-382): der war die Naht zum Korb, unter dem
-   der Chat bis dahin hing. Auf einer eigenen Seite trennte er ihn von nichts —
-   er hätte nur die Korbbrücke abgeschnitten, die zu ihm gehört. */
+   demselben Raster folgt wie eine Korbzeile: dieselbe Sache, nur noch nicht
+   bestätigt. */
 .chat { margin: 0; }
 .chat h2 { margin: 0 0 8px; }
 
-/* Die Korbbrücke (WB-382) — der Weg zwischen den beiden Seiten, die WB-382
-   getrennt hat, und zugleich die Rückmeldung, dass ein „Ja" angekommen ist.
-
-   Sie KLEBT auf der Chatseite oben. Das ist der ganze Grund, warum sie eine
-   eigene Regel braucht: die Entscheidungsknöpfe stehen mitten in einer Liste
-   von 150 Zeilen, und eine Zahl am Seitenkopf ist beim Tippen längst aus dem
-   Bild. Dieselbe Überlegung wie bei `.pick-meldung`, nur oben statt unten —
-   unten steht hier das Eingabefeld, und darüber darf nichts kleben.
+/* Die Korbbrücke (WB-382) — der Weg zwischen Chat und Korb, und zugleich die
+   Rückmeldung, dass ein „Ja" angekommen ist. Sie KLEBT auf der Chatseite
+   oben: die Entscheidungsknöpfe stehen mitten in einer Liste von 150 Zeilen,
+   und eine Zahl am Seitenkopf ist beim Tippen längst aus dem Bild.
 
    Unter dem Korb (`.unten`) klebt sie nicht: dort ist sie kein Statuslicht,
    sondern eine Tür, und eine Tür läuft nicht mit. */
@@ -649,14 +697,11 @@ button:disabled { opacity: 0.5; cursor: default; }
 .korbbruecke .knopf { font-size: 15px; }
 /* Der leere Korb bekommt keinen Knopf: ein Link auf eine leere Liste ist eine
    Sackgasse mit Einladung. Der Satz bleibt trotzdem stehen, damit die Stelle
-   nicht erst auftaucht, wenn etwas passiert — sonst springt der Verlauf beim
-   ersten „Ja" um eine Zeilenhöhe. */
+   nicht erst auftaucht, wenn etwas passiert. */
 .korbbruecke.leer-still { justify-content: flex-start; }
 
 /* Der Ankunftssatz an der Zeile (WB-382). Nur in der Antwort auf genau diesen
-   Tipp, nicht im Verlauf: er ist ein Ereignis und kein Zustand. Grün und
-   auftauchend wie jede andere Rückmeldung dieses Blattes — kein vierter
-   Bewegungsort, sondern derselbe wie am Plus-Knopf im Katalog. */
+   Tipp, nicht im Verlauf: er ist ein Ereignis und kein Zustand. */
 .zeile .hinweis.eben { color: var(--ok-text); font-weight: 600;
                        animation: auftauchen 0.3s ease; }
 .chatband { border: 1px solid var(--honig-linie); border-radius: var(--radius);
@@ -664,7 +709,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .chatband::before { animation: puls 1.6s ease-in-out infinite; }
 .chatband .fussnote { display: block; }
 
-.chatzeile { margin: 10px 0; padding: 10px 14px; border-radius: 16px;
+.chatzeile { margin: 10px 0; padding: 10px 14px; border-radius: 14px;
              max-width: 92%; width: fit-content; }
 .chatzeile.ich { background: var(--akzent-hell); color: var(--tinte);
                  margin-left: auto; border-bottom-right-radius: 4px; }
@@ -676,7 +721,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .vorschlaege > .zeile {
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
-  padding: 8px 10px; margin: 8px 0;
+  padding: 10px; margin: 8px 0;
 }
 .vorschlaege > .zeile.fehlt-im-katalog { background: var(--honig-hell);
                                          border-color: var(--honig-linie); }
@@ -691,9 +736,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* Der Rückweg (WB-361): kleiner als die Entscheidung, aber nicht kleiner als
    der Daumen. Die Grösse kommt von `.mini` und bleibt damit bei 44 px; hier
    werden nur Gewicht, Rahmen und Farbe zurückgenommen, damit „rückgängig"
-   neben „Ja"/„Nein" nicht wie eine dritte gleichrangige Wahl aussieht. Eine
-   eigene kleinere Pille wäre ein zweites Gestaltungssystem — und auf dem
-   Handy ein Tap-Ziel, das man dreimal trifft. */
+   neben „Ja"/„Nein" nicht wie eine dritte gleichrangige Wahl aussieht. */
 .mini.zurueck {
   font-size: 14px; font-weight: 500; padding: 0 10px;
   color: var(--gedaempft); background: none; border-color: transparent;
@@ -709,61 +752,76 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 /* Die Alternativen zu einer verworfenen Zeile (WB-359): klappen UNTER der
    Zeile auf, die Liste scrollt in sich (60vh), damit fünfzehn Kandidaten die
-   Seite nicht sprengen und man sieht, WOZU man auswählt. */
-.alternativen { flex-basis: 100%; margin-top: 8px; }
+   Seite nicht sprengen und man sieht, WOZU man auswählt.
+
+   `min-width: 0`: als Rasterzelle erbt der Block sonst die Mindestbreite
+   seines Inhalts — und die Liste ragte messbar 90 px über den rechten
+   Bildschirmrand hinaus (WB-400). */
+.alternativen { grid-area: voll; min-width: 0; margin-top: 4px; }
 .alternativen > summary {
-  min-height: var(--tap); display: flex; align-items: center;
+  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
   padding: 0 4px; font-size: 15px; color: var(--gedaempft); cursor: pointer;
+  list-style: none;
 }
+.alternativen > summary::-webkit-details-marker { display: none; }
+.alternativen > summary::before {
+  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
+}
+.alternativen[open] > summary::before { transform: rotate(90deg); }
 .altliste { max-height: 60vh; overflow-y: auto; margin: 0;
-            background: var(--karte-tief); border-radius: 10px; padding: 0 8px; }
+            background: var(--karte-tief); border-radius: var(--radius-knopf);
+            padding: 0 8px; }
+/* In der Alternativenliste bleibt die Zeile EINE Zeile: Bild, Text und der
+   eine Knopf nebeneinander — kleinere Bilder, denn das ist die zweite
+   Ebene, nicht die erste. */
 .altliste > .zeile { background: none; border: none; box-shadow: none;
                      border-radius: 0; margin: 0; padding: 8px 0;
-                     border-bottom: 1px solid var(--linie); }
+                     border-bottom: 1px solid var(--linie);
+                     grid-template-columns: 48px minmax(0, 1fr) auto;
+                     grid-template-areas: "bild text stellen"; }
 .altliste > .zeile:last-child { border-bottom: none; }
+.altliste .bild { width: 48px; height: 48px; flex: 0 0 48px; }
 
-/* „Nichts davon, ich schreibe es selbst" — bei einer Katalog-Lücke der
-   richtige Ausgang und nicht der Notausgang. */
+/* „Nichts davon, ich schreibe es selbst" — bei einer echten Katalog-Lücke
+   der richtige Ausgang und nicht der Notausgang. */
 .selbst { display: flex; gap: 8px; margin: 8px 0 4px; }
 .selbst input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
-.selbst button { white-space: nowrap; }
+.selbst button { white-space: nowrap; flex: 0 0 auto; }
 
-/* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359): Honig, nicht
-   Rot — kein Fehler, aber auch kein sicherer Treffer. */
+/* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359): Textmarker,
+   nicht Rotstift — kein Fehler, aber auch kein sicherer Treffer. */
 .vorschlag .schwach { font-size: 13px; color: var(--honig); }
 
 /* Nach einem zurückgenommenen „Ja" (WB-361): die Zeile bleibt im Korb, und
    das muss dastehen. Gedämpft und nicht rot — es ist keine Warnung, sondern
-   eine Auskunft über einen Zustand, den die Nutzerin sonst suchen müsste. */
+   eine Auskunft. */
 .vorschlag .hinweis { font-size: 13px; color: var(--gedaempft); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
 /* Der Sammelrückweg (WB-397). Der Satz gehört zum Knopf darüber und nicht in
    den Abstand danach — er sagt VOR dem Tipp, was „Doch nicht alles" NICHT
-   anfasst (einzeln Entschiedenes, den Korb). Die 20 px Vorlauf der
-   allgemeinen Fussnote rissen ihn vom Knopf los und machten aus der
-   Zusicherung eine Randnotiz. */
+   anfasst (einzeln Entschiedenes, den Korb). */
 .sammel + .fussnote { margin: -8px 0 var(--rand); }
 
 /* Der eingeklappte Teil des Verlaufs (WB-372). Er sieht wie eine Trennlinie
-   mit Aufschrift aus und nicht wie eine Handlung: was dort steht, ist
-   erledigt, und der Knopf ist ein Rückblick, kein nächster Schritt. Volle
-   Breite, weil die Aufschrift Zahlen trägt und umbrechen darf. */
+   mit Aufschrift aus und nicht wie eine Handlung. Volle Breite, weil die
+   Aufschrift Zahlen trägt und umbrechen darf. */
 .aeltere { margin: 0 0 var(--rand); }
 .aeltere button {
   width: 100%; height: auto; min-height: var(--tap); padding: 8px 14px;
   font-size: 14px; font-weight: 500; color: var(--gedaempft);
-  background: var(--karte-tief); border: 1px dashed var(--linie);
+  background: var(--karte-tief); border: 1.5px dashed var(--knopflinie);
+  white-space: normal;
 }
 
 /* Der Weg aus dem Verlauf heraus (WB-372). Ganz unten, gedämpft und einzeln:
-   er löscht Entscheidungen, aus denen später Eval-Labels werden, und darf
-   deshalb nicht neben den Knöpfen stehen, die man im Vorbeigehen tippt. */
+   er löscht Entscheidungen, aus denen später Eval-Labels werden. */
 .verlauf-leeren { margin: var(--rand) 0 8px; }
 
 /* Die Rückfrage davor. Sie erbt das Hinweisband und bekommt seinen Rahmen,
@@ -776,23 +834,20 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .band.frage .fussnote { display: block; margin-top: 4px; }
 .band.frage .sammel { margin: 0; }
 
-/* Der Rezeptentwurf (WB-337): eine ruhige Karte unter den Vorschlägen. Er ist
-   keine zweite Vorschlagsliste und sieht deshalb auch nicht so aus — hier
+/* Der Rezeptentwurf (WB-337): eine ruhige Karte unter den Vorschlägen. Hier
    wird nichts entschieden, hier wird nur beschrieben, was beim Abschicken
-   entsteht. Eine herausgenommene Zeile bleibt stehen und wird blass: sie
-   muss zurückholbar sein, und eine Liste, aus der Zeilen verschwinden,
-   erklärt nicht, warum sie kürzer wurde. */
+   entsteht. Eine herausgenommene Zeile bleibt stehen und wird blass. */
 .entwurf {
   margin: 0 0 var(--rand); padding: 12px; background: var(--karte-tief);
   border-radius: var(--radius);
 }
-.entwurf h3 { margin: 0 0 8px; font-size: 16px; }
+.entwurf h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: -0.01em; }
 .entwurf-name { display: flex; gap: 8px; margin-bottom: 8px; }
 .entwurf-name input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; font-weight: 600; color: var(--tinte);
-  background: var(--karte); border: 1.5px solid var(--linie);
-  border-radius: 999px;
+  background: var(--karte); border: 1.5px solid var(--knopflinie);
+  border-radius: var(--radius-knopf);
 }
 .entwurfsliste { list-style: none; margin: 0 0 8px; padding: 0; }
 .entwurfsliste > li {
@@ -803,74 +858,72 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .entwurfsliste .text { flex: 1 1 140px; min-width: 0; }
 .entwurfsliste .name { font-weight: 600; }
 .entwurfsliste .menge { display: block; font-size: 13px;
-                        color: var(--gedaempft); }
+                        color: var(--gedaempft); font-family: var(--mono); }
 .entwurfsliste > li.raus { opacity: 0.55; }
 .entwurf-menge { display: flex; gap: 4px; }
 /* 16 px und keinen Punkt weniger: Safari zoomt bei einem kleineren Feld beim
-   Hineintippen in die Seite — und zoomt NICHT zurück. Das passierte mitten in
-   der grössten Seite des Shops. Die Feldbreiten unten stehen in `em` und
-   wachsen einfach mit. */
+   Hineintippen in die Seite — und zoomt NICHT zurück. */
 .entwurf-menge input {
   min-height: var(--tap); padding: 0 10px; font-size: 16px;
   color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 10px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .entwurf-menge input[name="menge"] { width: 5.5em; }
 .entwurf-menge input[name="einheit"] { width: 4.5em; }
 
 /* Das vorgeschlagene Rezept im Chat (WB-383). Eine Karte ÜBER der
-   Vorschlagsliste — sie beantwortet die Frage, die vor dem ersten „Ja" steht:
-   will ich das heute kochen?
+   Vorschlagsliste — sie beantwortet die Frage, die vor dem ersten „Ja"
+   steht: will ich das heute kochen?
 
-   Die ZEIT ist deshalb das Grösste darin und nie eingeklappt; sie ist der
-   Grund, warum jemand „nein" sagt (Pho Bo: 9½ Stunden). Der Rest ist ruhig
-   und klein — die Karte soll gelesen und nicht bedient werden, hier gibt es
-   keinen einzigen Knopf ausser dem Aufklapper für die Zubereitung. */
+   Die ZEIT ist das Grösste darin und nie eingeklappt; sie ist der Grund,
+   warum jemand „nein" sagt (Pho Bo: 9½ Stunden). Der Rest ist ruhig und
+   klein — die Karte soll gelesen und nicht bedient werden. */
 .zugrezept {
-  margin: 0 0 var(--rand); padding: 12px 14px; background: var(--karte);
+  margin: 0 0 var(--rand); padding: 14px; background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius);
   box-shadow: var(--schatten);
 }
-.zugrezept h3 { margin: 0 0 6px; font-size: 16px; }
+.zugrezept h3 { margin: 0 0 6px; font-size: 19px; font-weight: 800;
+                letter-spacing: -0.02em; }
 /* Eine eigene Klasse und nicht das `.zeit` der Rezeptseite: dort ist es die
-   kleine Pille in `.rezeptherkunft`, und die steht in dieser Karte auch —
-   beide gleich zu benennen hiesse, „6 Portionen" in 22 px zu setzen. */
+   kleine Pille in `.rezeptherkunft`, und die steht in dieser Karte auch.
+   Monospace: die Zeit ist eine gerechnete Zahl, die grösste der Karte. */
 .zugrezept .gesamtzeit {
   margin: 0 0 4px; font-size: 22px; font-weight: 700; line-height: 1.2;
-  color: var(--akzent-tinte);
+  color: var(--akzent-tinte); font-family: var(--mono);
+  letter-spacing: -0.02em;
 }
 /* Die Ruhezeit gehört zur Zahl und nicht daneben: sie ist die Erklärung
    dafür, dass aus 90 Minuten neuneinhalb Stunden werden. */
 .zugrezept .gesamtzeit .ruhe {
-  display: block; font-size: 14px; font-weight: 500; color: var(--gedaempft);
+  display: block; font-size: 13px; font-weight: 500; color: var(--gedaempft);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0;
 }
 .zugrezept .deckung { margin: 0 0 8px; font-size: 15px; color: var(--tinte); }
 .zugrezept .rezeptherkunft { margin: 0 0 10px; font-size: 14px; }
 .zugrezept .rezeptzutaten { margin: 0 0 8px; font-size: 15px; }
 .zugrezept .rezeptzutaten li { padding: 5px 2px; }
 /* Ohne Suchgriff und deshalb ohne Tap-Höhe: hier wird gelesen, nicht
-   getippt — 23 Zeilen à 44 px wären eine halbe Bildschirmlänge Luft. */
-.zugrezept .rezeptzutaten .name { flex: 1 1 auto; color: var(--tinte); }
+   getippt — 23 Zeilen à 44 px wären eine halbe Bildschirmlänge Luft.
+   Und leise: eine Leseliste in lauter fetter Schrift war eine Wand. */
+.zugrezept .rezeptzutaten .name { flex: 1 1 auto; color: var(--tinte);
+                                  font-weight: 400; }
 .zugrezept .rezeptzutaten .menge { flex: 0 0 7ch; }
 .zugrezept .fussnote { margin: 0; }
 
 /* Die anderen Rezepte derselben Suche (WB-387). Sie stehen IN der Karte, vor
-   der Zutatenliste — die Wahl kommt vor dem Lesen, sonst liest man die
-   Zutaten eines Rezepts, das man gar nicht meinte.
-
-   Eine Zeile ist ein Knopf und nicht eine Zeile mit einem Knopf: der ganze
-   Streifen ist das Ziel, mit `--tap` als Untergrenze. Dieselbe Bauart wie
-   `.sortenliste` — das ist dieselbe Handlung eine Ebene höher, und zwei
-   Gestalten dafür wären zwei Sachen zum Lernen. */
+   der Zutatenliste — die Wahl kommt vor dem Lesen. Eine Zeile ist ein Knopf:
+   der ganze Streifen ist das Ziel, mit `--tap` als Untergrenze. */
 .andere { margin: 0 0 10px; }
 .andere-kopf { margin: 0 0 6px; font-size: 14px; color: var(--gedaempft); }
 .andereliste { list-style: none; margin: 0 0 6px; padding: 0; }
 .andereliste > li { margin: 6px 0; }
 .andereliste .wahl {
   display: flex; flex-direction: column; gap: 2px; width: 100%;
-  min-height: var(--tap); padding: 6px 12px; text-align: left;
+  min-height: var(--tap); padding: 8px 12px; text-align: left;
   background: var(--karte-tief); color: var(--tinte);
-  border: 1px solid var(--linie); border-radius: var(--radius);
+  border: 1.5px solid var(--linie); border-radius: var(--radius-knopf);
   font: inherit; cursor: pointer;
 }
 .andereliste button.wahl:active { transform: scale(0.99); }
@@ -882,20 +935,19 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .andereliste .name { font-size: 15px; font-weight: 600; }
 .andereliste .marke {
   font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
-  background: var(--karte); color: var(--gedaempft); white-space: nowrap;
+  background: var(--akzent-hell); color: var(--akzent-tinte);
+  white-space: nowrap;
 }
 .andereliste .zahlen {
-  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  display: flex; flex-wrap: wrap; gap: 2px 12px;
   font-size: 13px; color: var(--gedaempft);
+  font-family: var(--mono);
 }
-.andereliste .zahlen > span::after { content: " ·"; color: var(--linie); }
-.andereliste .zahlen > span:last-child::after { content: ""; }
 .andere .fussnote { margin: 0; }
 
 /* Für wie viele Portionen dieser Zug rechnet (WB-384). Dieselbe Gestalt wie
    das Feld an „Alles in den Warenkorb" (`.abschicken.portionen`) — es ist
-   dieselbe Frage an einem anderen Ort, und zwei Gestalten dafür wären zwei
-   Sachen zum Lernen. Es steht unmittelbar über den Mengen, die es ändert. */
+   dieselbe Frage an einem anderen Ort. */
 .zugportionen {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
   margin: 0 0 10px;
@@ -906,8 +958,9 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 }
 .zugportionen input {
   width: 4.5ch; min-height: var(--tap); text-align: center; font-size: 17px;
-  border: 1px solid var(--linie); border-radius: var(--radius);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 6px;
+  font-family: var(--mono);
 }
 .zugportionen .fussnote { flex-basis: 100%; margin: 0; }
 
@@ -916,24 +969,31 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    übertragen wurde, und Pho Bos Zubereitung sind 3.924 Zeichen. */
 .zubereitung-klapp { margin: 0 0 10px; }
 .zubereitung-klapp > summary {
-  min-height: var(--tap); display: flex; align-items: center;
+  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
   font-size: 15px; color: var(--gedaempft); cursor: pointer;
+  list-style: none;
 }
+.zubereitung-klapp > summary::-webkit-details-marker { display: none; }
+.zubereitung-klapp > summary::before {
+  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
+}
+.zubereitung-klapp[open] > summary::before { transform: rotate(90deg); }
 .zubereitung-klapp .zubereitung { margin: 4px 0 0; font-size: 15px; }
 
 /* Die Sorten eines Oberbegriffs (WB-368): Kästchen, die mit dem Daumen zu
    treffen sind — eine Zeile je Sorte, das ganze Feld ist das Ziel, und die
-   echte Stückzahl steht als Pille daneben. Mehrere gehen: „Aufschnitt"
-   heisst oft Salami UND Kochschinken. */
+   echte Stückzahl steht als Pille daneben. */
 .sortenliste { list-style: none; margin: 0 0 8px; padding: 0; }
 .sortenliste > li { margin: 8px 0; }
 .sortenliste label {
   display: flex; align-items: center; gap: 12px; min-height: var(--tap);
   padding: 4px 12px; background: var(--karte);
-  border: 1px solid var(--linie); border-radius: var(--radius);
+  border: 1px solid var(--linie); border-radius: var(--radius-knopf);
   box-shadow: var(--schatten); cursor: pointer;
 }
-.sortenliste input { width: 22px; height: 22px; flex: none; }
+.sortenliste input { width: 22px; height: 22px; flex: none;
+                     accent-color: var(--akzent); }
 .sortenliste .name { flex: 1 1 auto; font-weight: 600; }
 .sortenliste .anzahl {
   font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
@@ -943,16 +1003,17 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 .chatform { display: flex; gap: 8px; margin-top: var(--rand); }
 .chatform input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .chatform button {
   min-height: var(--tap); padding: 0 18px; font-size: 17px; font-weight: 700;
-  border: none; border-radius: 999px;
+  border: none; border-radius: var(--radius-knopf);
   background: var(--akzent); color: var(--auf-akzent);
   box-shadow: var(--schatten); cursor: pointer;
   transition: transform 0.12s ease;
+  white-space: nowrap; flex: 0 0 auto;
 }
 .chatform button:active { transform: scale(0.96); }
 
@@ -961,16 +1022,10 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: block; }
 
-/* Rückmeldung an JEDEM Tipp im Chat (WB-378), nicht nur am Sendefeld. Die
-   Entscheidungsknöpfe stehen mitten in einer Liste von 150 Zeilen; ein
-   Indikator am Seitenfuss ist beim Tippen längst aus dem Bild, und ohne
-   sichtbares Warten tippt man ein zweites Mal.
-
-   Blass wird deshalb genau das Stück, das gleich getauscht wird — die Zeile
-   bei „Ja"/„Nein", der ganze Zug bei allem, was mehrere Zeilen ändert. Dazu
-   `pointer-events: none`: `hx-disabled-elt` sperrt nur den einen Knopf, aber
-   während ein Zug unterwegs ist, sind auch die anderen Knöpfe darin ein
-   Rennen gegen die Antwort. Beides gilt nur für die Dauer der Anfrage. */
+/* Rückmeldung an JEDEM Tipp im Chat (WB-378): blass wird genau das Stück,
+   das gleich getauscht wird. Dazu `pointer-events: none` — während ein Zug
+   unterwegs ist, sind auch die anderen Knöpfe darin ein Rennen gegen die
+   Antwort. */
 .zeile.htmx-request, .zug.htmx-request { opacity: 0.5; pointer-events: none; }
 
 /* Der Weg aus dem Fehlerzustand von Hand (WB-378) — er sitzt unter dem Band
@@ -978,10 +1033,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .zustand-nachsehen { margin: -8px 0 var(--rand); }
 
 /* Rückmeldung auf der Pick-Liste (WB-373). Sie klebt unten am Bildrand, weil
-   im Laden gescrollt wird und der Daumen unten ist — eine Meldung am
-   Seitenkopf ist genau dann aus dem Bild, wenn ein Haken schiefgeht. Farben
-   und Radius kommen aus dem System (`.fehler` färbt die Fehlermeldung), hier
-   steht nur, WO sie steht. */
+   im Laden gescrollt wird und der Daumen unten ist. */
 .pick-meldung {
   position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5;
   margin: 0; padding: 10px 14px; border-radius: var(--radius);
@@ -999,32 +1051,33 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
         border-bottom: 1px solid var(--linie); }
 .laeufe > .lauf:last-child { border-bottom: none; }
 .lauf .name { font-weight: 600; }
-.lauf.verworfen { background: var(--honig-hell); border-radius: 10px; }
+.lauf.verworfen { background: var(--honig-hell); border-radius: var(--radius-knopf); }
 .lauf.error .name { color: var(--fehler-text); }
 code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
-       font-size: 15px; }
+       font-size: 15px; font-family: var(--mono); }
 
 /* Bons (WB-344): der Upload ist eine gestrichelte Ablagefläche — man legt
    etwas hinein. Eine Spalte, weil die Dateiauswahl des Telefons die volle
    Breite braucht. */
 .bonupload { display: flex; flex-direction: column; gap: 10px;
              margin-bottom: var(--rand); padding: 14px;
-             background: var(--karte); border: 1.5px dashed var(--linie);
+             background: var(--karte); border: 1.5px dashed var(--knopflinie);
              border-radius: var(--radius); }
-/* Auch hier 16 px (WB-379). Ein Dateifeld nimmt zwar keine Tastatur an, aber
-   die Regel „kein Eingabefeld unter 16" ohne Sonderfall ist die, die man beim
-   nächsten Feld noch kennt — und die ein Test halten kann. */
+/* Auch hier 16 px (WB-379): die Regel „kein Eingabefeld unter 16" ohne
+   Sonderfall ist die, die man beim nächsten Feld noch kennt. */
 .bonupload input[type="file"] {
   width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 16px;
   color: var(--tinte);
-  border: 1.5px solid var(--linie); border-radius: var(--radius);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--grund);
 }
 .bonupload button { width: 100%; min-height: 52px; font-size: 17px;
                     font-weight: 700; border: none;
-                    border-radius: 999px; background: var(--akzent);
+                    border-radius: var(--radius-knopf);
+                    background: var(--akzent);
                     color: var(--auf-akzent); box-shadow: var(--schatten);
-                    cursor: pointer; transition: transform 0.12s ease; }
+                    cursor: pointer; transition: transform 0.12s ease;
+                    white-space: nowrap; }
 .bonupload button:active { transform: scale(0.98); }
 .bons { list-style: none; margin: 0; padding: 0 10px;
         background: var(--karte); border: 1px solid var(--linie);
@@ -1042,14 +1095,13 @@ code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
 
 /* Eine Bon-Zeile korrigieren (WB-358): klappt UNTER der Zeile auf. */
 .korrektur:empty { display: none; }
-.korrektur { flex-basis: 100%; margin-top: 8px; }
+.korrektur { flex-basis: 100%; min-width: 0; margin-top: 8px; }
 .bonsuche { display: flex; gap: 8px; margin-bottom: 8px; }
 .bonsuche input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 16px;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
   font-size: 17px; color: var(--tinte); background: var(--karte);
-  border: 1.5px solid var(--linie); border-radius: 999px;
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
-.vorschlag { flex-wrap: wrap; }
 
 /* Bewegung: drei Belohnungen und ein Statuslicht — mehr nicht. Wer weniger
    Bewegung will, bekommt sie auch nicht. */
@@ -1080,20 +1132,17 @@ code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
 
 /* Ein Link, der ein Knopf ist. `.mini` gibt Grösse und Rand, aber es war
    bisher immer ein `<button>` — ein `<a>` ist `inline` und würde die 44 px
-   Höhe nicht einlösen, also träfe der Daumen daneben. Zerstörendes führt seit
-   WB-376 über eine Rückfrage, und ein GET ist dafür die richtige Methode. */
+   Höhe nicht einlösen, also träfe der Daumen daneben. */
 a.mini {
   display: inline-flex; align-items: center; justify-content: center;
   text-decoration: none; box-sizing: border-box;
 }
 
 /* Der Platzhalter, damit die Knopfposition nicht wandert: eine Bon-Zeile ohne
-   Auslesen-Knopf hält dessen Platz frei, sonst rutscht das Löschen dorthin,
-   wo eine Zeile weiter oben der harmlose Knopf sass. Unsichtbar, aber
-   raumnehmend — `visibility` statt `display: none`. */
+   Auslesen-Knopf hält dessen Platz frei. Unsichtbar, aber raumnehmend. */
 .stellen .platzhalter { visibility: hidden; }
 
-/* Die Rückfrage: Abbrechen zuerst, das Zerstörende zweit und in Beere. */
+/* Die Rückfrage: Abbrechen zuerst, das Zerstörende zweit und in Rotstift. */
 .bestaetigen { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
 .bestaetigen form { margin: 0; }
 .bestaetigen .knopf.loeschen {

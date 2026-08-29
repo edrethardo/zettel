@@ -12,9 +12,9 @@
      Formulare und Bildlaufleisten gleich mit umfärben darf, und färbt die
      Adressleiste des Telefons passend zum Kopf der Seite. #}
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fffdf9">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#241f19">
-  <title>{% block titel %}Picknick{% endblock %}</title>
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfdfc">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b232c">
+  <title>{% block titel %}Zettel{% endblock %}</title>
   <link rel="stylesheet" href="/static/stil.css">
   {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:
      ohne Internet wäre der Shop sonst genau dann tot, wenn nur das Tailnet
@@ -34,7 +34,7 @@
   {%- set hier = request.url.path if request else "" %}
   {%- macro wo(pfad) %}{% if hier == pfad or hier.startswith(pfad ~ "/") %} class="aktiv" aria-current="page"{% endif %}{% endmacro %}
   <header class="kopf">
-    <a class="marke" href="/">Picknick</a>
+    <a class="marke" href="/">Zettel</a>
     <nav id="hauptnavigation" aria-label="Hauptbereiche">
       <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
       {# Der Chat steht seit WB-382 hier — vorher war er ein Abschnitt der
