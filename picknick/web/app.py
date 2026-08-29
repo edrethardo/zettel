@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from picknick import betrieb, bons as bonmodul, db, obs, orders, recipes
+from picknick import betrieb, bons as bonmodul, db, miniaturen, obs, orders, recipes
 from picknick.assistant import chat as chatmodul
 from picknick.assistant import entwurf as entwuerfe
 from picknick.assistant import oberbegriffe
@@ -65,6 +65,20 @@ SEITE = 60
 
 #: Ab wann das Hinweisband erscheint (Spec 11).
 HINWEIS_AB_TAGEN = 3
+
+#: Wie lange ein Produktfoto im Browser liegen bleiben darf (WB-374). Sieben
+#: Tage, und das ist eine Abwägung: der Bildweg heisst `/bild/{id}` und trägt
+#: keine Version, also wäre `immutable` falsch — wechselt knuspr.de das Foto
+#: eines Produkts, zeigt das Telefon bis zu einer Woche das alte. Das ist bei
+#: Lebensmitteln folgenlos, und dafür fragt der Katalog innerhalb einer Woche
+#: gar nicht erst nach. Danach greift der ETag: die Antwort ist dann `304`
+#: ohne Rumpf, nicht das Bild noch einmal.
+BILD_MAX_AGE = 7 * 24 * 3600
+BILD_CACHE = f"public, max-age={BILD_MAX_AGE}"
+
+#: Nur für die Endungen, die Pythons `mimetypes` unter 3.10 nicht kennt. Alles
+#: andere darf Starlette selbst raten.
+BILD_TYPEN = {".webp": "image/webp"}
 
 #: Rollen-Cookie. Siehe `waehle_rolle()`: das ist KEINE Authentifizierung.
 COOKIE_ROLLE = "picknick_rolle"
@@ -316,6 +330,56 @@ def _posten_mit_bild(zeilen: list[dict], image_dir) -> list[dict]:
             if z.get("product_id") and bilddatei(image_dir, z.get("image_path"))
             else None)
     return zeilen
+
+
+def _etag_passt(kopf: str | None, etag: str) -> bool:
+    """Deckt `If-None-Match` den ausgelieferten ETag ab?
+
+    Der Kopf ist eine Liste (`"a", "b"`), darf `*` sein und darf jeden Eintrag
+    als schwachen Vergleich markieren (`W/"a"`). Für eine unveränderte Datei
+    ist schwach und stark dasselbe, also wird das Präfix schlicht abgestreift.
+    """
+    if not kopf:
+        return False
+    if kopf.strip() == "*":
+        return True
+    for teil in kopf.split(","):
+        teil = teil.strip()
+        if teil.startswith(("W/", "w/")):
+            teil = teil[2:]
+        if teil == etag:
+            return True
+    return False
+
+
+def _bild_antwort(request: Request, datei: Path) -> Response:
+    """Eine Bilddatei mit Zwischenspeicher-Köpfen und bedingter Antwort.
+
+    `FileResponse` allein liefert weder `Cache-Control` noch `304`: Starlette
+    beantwortet bedingte Anfragen nur in `StaticFiles`, nicht in einer
+    einzelnen Dateiantwort. Vor WB-374 lud deshalb jeder Aufruf des Katalogs
+    sämtliche Bilder erneut — gemessen 17,3 MB je Trefferliste, jedes Mal.
+
+    Der ETag kommt aus `stat()` (Zeitstempel und Grösse) und wird hier von
+    Starlette selbst gesetzt; `stat_result` wird nur deshalb mitgegeben, damit
+    er schon vor dem Senden feststeht und mit dem Kopf der Anfrage verglichen
+    werden kann.
+    """
+    antwort = FileResponse(
+        datei,
+        stat_result=datei.stat(),
+        # `.webp` kennt Pythons `mimetypes` unter 3.10 nicht; ohne diese Zeile
+        # geht die Miniatur als `application/octet-stream` raus und der Browser
+        # bietet sie zum Herunterladen an, statt sie in die Kachel zu setzen.
+        media_type=BILD_TYPEN.get(datei.suffix.lower()),
+        headers={"Cache-Control": BILD_CACHE})
+    etag = antwort.headers.get("etag", "")
+    if etag and _etag_passt(request.headers.get("if-none-match"), etag):
+        return Response(status_code=304, headers={
+            "ETag": etag,
+            "Cache-Control": BILD_CACHE,
+            "Last-Modified": antwort.headers.get("last-modified", "")})
+    return antwort
 
 
 # --------------------------------------------------------------------------
@@ -1673,21 +1737,48 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.get("/bild/{produkt_id}")
-    def bild(produkt_id: int):
+    def _bilddatei_zu(produkt_id: int) -> Path | None:
         c = con()
         try:
             row = c.execute("SELECT image_path FROM product WHERE id = ?",
                             (produkt_id,)).fetchone()
         finally:
             c.close()
-        datei = bilddatei(app.state.image_dir, row["image_path"] if row else None)
+        return bilddatei(app.state.image_dir, row["image_path"] if row else None)
+
+    @app.get("/bild/{produkt_id}")
+    def bild(request: Request, produkt_id: int):
+        """Das Bild für eine Kachel — die Miniatur, nicht das Original (WB-374).
+
+        Fehlt die Miniatur, geht das Original raus. Das ist der Zustand direkt
+        nach einem Crawl und zwischen zwei Läufen von `picknick.miniaturen`:
+        die Kachel ist dann richtig und nur teuer, statt leer zu bleiben.
+        """
+        datei = _bilddatei_zu(produkt_id)
         if datei is None:
             # 404 statt Platzhalterbild: die Vorlage fragt Bilder gar nicht
             # erst an, die es nicht gibt — kommt trotzdem eine Anfrage, ist
-            # das ein Fehler und soll wie einer aussehen.
-            return Response(status_code=404)
-        return FileResponse(datei)
+            # das ein Fehler und soll wie einer aussehen. Ausdrücklich NICHT
+            # zwischenspeicherbar: ein Bild, das der nächste Crawl nachliefert,
+            # soll nicht eine Woche lang als fehlend im Browser stehen.
+            return Response(status_code=404,
+                            headers={"Cache-Control": "no-store"})
+        return _bild_antwort(
+            request,
+            miniaturen.vorhandene(app.state.image_dir, datei) or datei)
+
+    @app.get("/bild/{produkt_id}/original")
+    def bild_original(request: Request, produkt_id: int):
+        """Das ungerechnete Originalfoto, falls jemand genauer hinsehen will.
+
+        Nicht die Vorgabe der Kachel und bewusst ein eigener Weg: `/bild/{id}`
+        soll das Billige liefern, ohne dass ein Aufrufer daran denken muss.
+        """
+        datei = _bilddatei_zu(produkt_id)
+        if datei is None:
+            return Response(status_code=404,
+                            headers={"Cache-Control": "no-store"})
+        return _bild_antwort(request, datei)
 
     return app
 

@@ -26,3 +26,9 @@ openinference-instrumentation-openai
 # `spans.get_spans_dataframe()`, und das gibt einen pandas-Dataframe zurück.
 # Der Shop selbst benutzt pandas nirgends.
 pandas
+
+# Miniaturen für die Produktkacheln (WB-374, picknick/miniaturen.py). Läuft im
+# Nachtlauf, nicht im Antwortweg des Shops — der Web-Prozess importiert das
+# Modul zwar, aber `PIL` erst innerhalb von `ableiten()`. Ein Shop ohne Pillow
+# startet und liefert weiter Bilder aus, nur eben die Originale.
+pillow
