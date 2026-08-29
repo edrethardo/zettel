@@ -8,8 +8,10 @@
 > fully traced, evaluated and reproducibly comparable in Arize Phoenix.
 > No cloud, no API keys: Qwen3.8-27B (open weights) served by a local vLLM,
 > FastAPI + HTMX, SQLite with FTS5. The engineering tour in English —
-> screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md).
-> The rest of this README is in German, the household's language.
+> screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md);
+> [`CASE-STUDY.md`](CASE-STUDY.md) is the English deep-dive on how a trace
+> acquitted the model and how one measured line took the eval from 76 % to
+> 83 %. The rest of this README is in German, the household's language.
 
 Ein privater Bestell-Shop für zwei Personen im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
