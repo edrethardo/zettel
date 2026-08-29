@@ -1336,3 +1336,187 @@ def test_eine_stehende_korrektur_blockiert_weiterhin(con):
 
     with pytest.raises(vorschlaege.VorschlagFehler):
         vorschlaege.korrigieren(con, sid, _pid(con, "Kerrygold irische Butter"))
+
+
+# --------------------------------------------------------------------------
+# „Doch nicht alles" — der Rückweg für den Sammelknopf (WB-397)
+#
+# WB-361 hat jeder einzelnen Zeile einen Rückweg gegeben; der Sammelknopf war
+# danach die einzige Entscheidung im Shop ohne einen. Die Falle liegt nicht im
+# Knopf, sondern in der Auswahl: der Sammelknopf rührt AUSDRÜCKLICH nur die
+# offenen Zeilen an, damit ein Tipp nicht die Labels umkippt, die die
+# Nutzerin einzeln gesetzt hat — und rückwärts muss dasselbe gelten. Ein
+# Rückweg, der die einzeln gesetzte Butter mitnähme, wäre derselbe Fehler in
+# die andere Richtung.
+
+def _vier_zeilen(con):
+    """Ein Zug mit vier Vorschlägen: zwei Produkte, zwei Freitexte.
+
+    Vier, weil der Kerntest zwei einzeln entschiedene Zeilen NEBEN den
+    gesammelten braucht — mit zweien liesse sich „nur die des Vorgangs" nicht
+    von „alle" unterscheiden.
+    """
+    agent, _ = _chat(con, _extract(("Landmilch", 1), ("Butter", 1),
+                                   ("Zahnstocher", 1), ("Alufolie", 1)),
+                     _choose(("Landmilch", _pid(con, MILCH), 1),
+                             ("Butter", _pid(con, "Weihenstephan Butter"), 1)))
+    ergebnis = agent.turn(con, "Landmilch, Butter, Zahnstocher, Alufolie")
+    return ergebnis.chat_message_id, [v["id"] for v in ergebnis.vorschlaege]
+
+
+def test_der_sammelrueckweg_laesst_einzeln_entschiedenes_stehen(con):
+    """**Der Kerntest des Tickets.**
+
+    Erst zwei Sachen einzeln, dann alles auf einmal, dann zurück zu den
+    zweien — genau die Geste, die im Video zu sehen sein soll.
+    """
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.entscheiden(con, sids[0], "kept")
+    vorschlaege.entscheiden(con, sids[1], "kept")
+
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+    assert [v["decision"] for v in vorschlaege.liste(con, mid)] == ["kept"] * 4
+
+    danach = vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert [v["decision"] for v in danach] == ["kept", "kept", "offen", "offen"]
+
+
+def test_der_sammelrueckweg_gilt_auch_fuer_alles_verwerfen(con):
+    """Beide Richtungen, dieselbe Geste — sonst wäre „Alles verwerfen" die
+    neue Sackgasse."""
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.entscheiden(con, sids[0], "removed")
+    vorschlaege.entscheiden(con, sids[1], "kept")
+
+    vorschlaege.alle_entscheiden(con, mid, "removed")
+    danach = vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert [v["decision"] for v in danach] == ["removed", "kept",
+                                               "offen", "offen"]
+
+
+def test_sammeln_zuruecknehmen_sammeln_legt_jede_sache_genau_einmal_ein(con):
+    """Der Schutz aus WB-361 muss auf dem Sammelweg genauso tragen.
+
+    Er hängt an `eingelegt_at` und nicht an der letzten Entscheidung; der
+    Rückweg führt deshalb Zeile für Zeile durch `entscheiden()` und nicht über
+    ein `UPDATE … WHERE sammel_nr = ?`, das die Spalte überginge.
+    """
+    mid, _ = _vier_zeilen(con)
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+    vorher = [(z["product_id"], z["free_text"], z["qty"])
+              for z in orders.inhalt(con)]
+    assert len(vorher) == 4
+
+    vorschlaege.alle_entscheiden(con, mid, "offen")
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+
+    assert [(z["product_id"], z["free_text"], z["qty"])
+            for z in orders.inhalt(con)] == vorher
+
+
+def test_der_sammelrueckweg_laesst_den_korb_stehen(con):
+    """Wie überall seit WB-361: `orders.einlegen()` fasst gleiche Zeilen
+    zusammen, die Korbzeile kann also längst eine sein, die sie selbst
+    aufgestockt hat."""
+    mid, _ = _vier_zeilen(con)
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+    vorher = [(z["product_id"], z["qty"]) for z in orders.inhalt(con)]
+
+    danach = vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert [(z["product_id"], z["qty"]) for z in orders.inhalt(con)] == vorher
+    # Und die Zeilen wissen es, damit die Oberfläche es sagen kann.
+    assert all(v["offen"] and v["im_korb"] for v in danach)
+
+
+def test_eine_einzeln_bestaetigte_zeile_verlaesst_den_sammelvorgang(con):
+    """Wer eine Zeile einzeln antippt, hat sie entschieden — auch wenn der
+    Tipp am Zustand nichts ändert.
+
+    Sonst nähme „Doch nicht alles" eine Entscheidung mit zurück, die sie
+    danach ausdrücklich selbst bestätigt hat.
+    """
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+    vorschlaege.entscheiden(con, sids[0], "kept")      # ändert nichts — fast
+
+    danach = vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert [v["decision"] for v in danach] == ["kept", "offen", "offen",
+                                               "offen"]
+
+
+def test_ohne_sammelvorgang_nimmt_der_rueckweg_nichts_zurueck(con):
+    """Ein Doppeltipp auf dem Handy darf keine Fehlermeldung ergeben — und
+    schon gar nicht die einzeln gesetzten Labels umkippen."""
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.entscheiden(con, sids[0], "kept")
+    vorschlaege.entscheiden(con, sids[1], "removed")
+
+    for _ in range(3):
+        danach = vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert [v["decision"] for v in danach] == ["kept", "removed", "offen",
+                                               "offen"]
+    assert [v["zurueckgenommen"] for v in danach] == [0, 0, 0, 0]
+
+
+def test_zwei_sammelvorgaenge_gehen_einzeln_zurueck(con):
+    """Vorgang für Vorgang rückwärts, so wie es kam — und nicht alles auf
+    einmal. Jeder Tipp nimmt genau einen Sammeltipp zurück."""
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.alle_entscheiden(con, mid, "kept")        # alle vier
+    vorschlaege.entscheiden(con, sids[3], "offen")        # eine einzeln zurück
+    vorschlaege.alle_entscheiden(con, mid, "removed")     # nur noch die eine
+
+    erste = vorschlaege.alle_entscheiden(con, mid, "offen")
+    assert [v["decision"] for v in erste] == ["kept", "kept", "kept", "offen"]
+
+    zweite = vorschlaege.alle_entscheiden(con, mid, "offen")
+    assert [v["decision"] for v in zweite] == ["offen"] * 4
+
+
+def test_der_sammelknopf_ueberschreibt_weiterhin_nichts(con):
+    """Die Zusicherung aus der Zeit vor dem Rückweg — sie ist die Hälfte, an
+    der der Rückweg hängt."""
+    mid, sids = _vier_zeilen(con)
+    vorschlaege.entscheiden(con, sids[0], "removed")
+
+    danach = vorschlaege.alle_entscheiden(con, mid, "kept")
+
+    assert [v["decision"] for v in danach] == ["removed", "kept", "kept",
+                                               "kept"]
+
+
+def test_eine_korrektur_nach_dem_sammeltipp_bleibt_stehen(con):
+    """Wer eine gesammelt verworfene Zeile korrigiert, hat sie entschieden.
+
+    Der Fehlgriff geht dabei durch `entscheiden()` auf `removed` — dieselbe
+    Entscheidung, die er schon trug, und trotzdem verlässt er den
+    Sammelvorgang. Sonst zöge „Doch nicht alles" ihn auf `offen`, während
+    daneben ein „stattdessen X" im Korb liegt: ein Zustand, den niemand
+    gemeint hat.
+    """
+    ergebnis, _ = _butter_zug(con)
+    mid = ergebnis.chat_message_id
+    sid = ergebnis.vorschlaege[0]["id"]
+    vorschlaege.alle_entscheiden(con, mid, "removed")
+    neu = vorschlaege.korrigieren(con, sid, _pid(con, "Weihenstephan Butter"))
+
+    vorschlaege.alle_entscheiden(con, mid, "offen")
+
+    assert vorschlaege.eine(con, sid)["decision"] == "removed"
+    assert vorschlaege.eine(con, neu["id"])["behalten"]
+    assert vorschlaege.korrektur(con, sid)["id"] == neu["id"]
+
+
+def test_eine_unbekannte_sammelentscheidung_wird_abgelehnt(con):
+    """Auch wenn nichts offen ist — vorher lief ein Tippfehler stumm ins
+    Leere."""
+    mid, _ = _vier_zeilen(con)
+    vorschlaege.alle_entscheiden(con, mid, "kept")
+
+    with pytest.raises(vorschlaege.VorschlagFehler):
+        vorschlaege.alle_entscheiden(con, mid, "vielleicht")

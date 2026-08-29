@@ -1231,6 +1231,120 @@ def _kein_label(client, con, sid: int) -> str:
 
 
 # --------------------------------------------------------------------------
+# „Doch nicht alles" — der Rückweg des Sammelknopfs (WB-397)
+
+def checks_sammelrueckweg(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
+    """Auch die Entscheidung über eine ganze Liste ist rücknehmbar.
+
+    Die Geste, um die es geht: erst zwei Sachen einzeln, dann alles auf
+    einmal, dann zurück zu den zweien. Sie führt vor, was den Shop ausmacht —
+    jede Entscheidung ist rücknehmbar —, und ausgerechnet sie fehlte.
+
+    Am HTTP-Rand geklickt, weil hier ZWEI Dinge kaputtgehen können, und das
+    zweite nur an der Oberfläche: der Knopf muss da stehen, wo eben noch der
+    Sammelknopf stand. Die beiden Sammelknöpfe verschwinden genau in dem
+    Augenblick, in dem der Rückweg gebraucht wird.
+    """
+    b.abschnitt("Auch „Alles übernehmen“ hat einen Rückweg (WB-397)")
+
+    con = db.connect(db_datei)
+    try:
+        butter = pid(con, "Salzbutter")
+        milch = pid(con, "Landmilch")
+        zwiebeln = pid(con, "Zwiebeln")
+    finally:
+        con.close()
+    # Vier Zeilen, davon eine ohne Produkt: der Rückweg muss auch den
+    # Freitext wieder öffnen, und mit zweien liesse sich „nur die des
+    # Vorgangs" nicht von „alle" unterscheiden.
+    agent = chatmodul.Chat(
+        _mock_zugang(_extract(("Butter", 1), ("Landmilch", 1),
+                              ("Zwiebeln", 1), ("Zahnstocher", 1)),
+                     _choose(("Butter", butter, 1), ("Landmilch", milch, 1),
+                             ("Zwiebeln", zwiebeln, 1))),
+        wecker=_Box())
+    app = webapp.create_app(db_path=db_datei, image_dir=bild_dir, chat=agent)
+    with TestClient(app) as client:
+        client.post("/chat", data={"satz": "Butter, Landmilch, Zwiebeln, "
+                                           "Zahnstocher"},
+                    headers={"HX-Request": "true"})
+        con = db.connect(db_datei)
+        try:
+            mid = int(con.execute("SELECT max(chat_message_id) AS m"
+                                  " FROM chat_suggestion").fetchone()["m"])
+            sids = [v["id"] for v in vorschlaege.liste(con, mid)]
+            b.pruefe("nach „Alles übernehmen“ steht der Rückweg da, wo eben "
+                     "der Sammelknopf stand",
+                     lambda: _rueckweg_steht_da(client, con, mid, sids))
+            b.pruefe("„Doch nicht alles“ lässt die zwei einzeln getroffenen "
+                     "Entscheidungen stehen",
+                     lambda: _nur_der_sammeltipp(client, con, mid, sids))
+            b.pruefe("Sammeln / zurücknehmen / Sammeln legt jede Sache genau "
+                     "einmal in den Korb",
+                     lambda: _sammeln_hin_und_her(client, con, mid))
+        finally:
+            con.close()
+
+
+def _alle(client, mid: int, decision: str) -> str:
+    antwort = client.post(f"/chat/{mid}/alle?decision={decision}",
+                          headers={"HX-Request": "true"})
+    gleich(antwort.status_code, 200, f"POST alle?decision={decision}")
+    return antwort.text
+
+
+def _rueckweg_steht_da(client, con, mid: int, sids: list) -> str:
+    """Der zweite Teil des Tickets: der Knopf muss sichtbar sein, wenn er
+    gebraucht wird."""
+    stueck = _alle(client, mid, "kept")
+    wahr("Alles übernehmen" not in stueck,
+         "Der Sammelknopf steht noch da, obwohl nichts mehr offen ist.")
+    wahr(f"Doch nicht alles ({len(sids)})" in stueck,
+         "Nach dem Sammeltipp gibt es keinen Rückweg — die leere Stelle, um "
+         "die es im Ticket geht.")
+    wahr(f"/chat/{mid}/alle?decision=offen" in stueck,
+         "Der Rückweg zeigt nicht auf `decision=offen`.")
+    # Und er sagt VOR dem Tipp, was er nicht anfasst.
+    wahr("und der Korb auch" in stueck,
+         "Der Rückweg verschweigt, dass der Korb stehen bleibt.")
+    _alle(client, mid, "offen")
+    return f"„Doch nicht alles ({len(sids)})“ an der Stelle des Sammelknopfs"
+
+
+def _nur_der_sammeltipp(client, con, mid: int, sids: list) -> str:
+    """Der Kern: die Zusicherung des Sammelknopfs gilt auch rückwärts."""
+    _entscheiden(client, sids[0], "kept")
+    _entscheiden(client, sids[1], "kept")
+    _alle(client, mid, "kept")
+    gleich([v["decision"] for v in vorschlaege.liste(con, mid)],
+           ["kept"] * len(sids), "nach dem Sammeltipp")
+    vorher = _korb(con)
+
+    stueck = _alle(client, mid, "offen")
+
+    gleich([v["decision"] for v in vorschlaege.liste(con, mid)],
+           ["kept", "kept"] + ["offen"] * (len(sids) - 2), "nach dem Rückweg")
+    gleich(_korb(con), vorher, "Korb nach dem Rückweg")
+    wahr("die Zeile bleibt im Korb" in stueck,
+         "Die Rücknahme verschweigt, dass die Korbzeilen stehen bleiben.")
+    _alle(client, mid, "offen")          # es gibt keinen Vorgang mehr
+    for sid in sids[:2]:
+        _entscheiden(client, sid, "offen")
+    return "2 einzelne bleiben, die übrigen sind wieder offen"
+
+
+def _sammeln_hin_und_her(client, con, mid: int) -> str:
+    """Der Doppeltipp-Schutz aus WB-361 auf dem Sammelweg."""
+    _alle(client, mid, "kept")
+    vorher = _korb(con)
+    wahr(len(vorher) >= 3, f"Zu wenig im Korb, um etwas zu zeigen: {vorher}")
+    _alle(client, mid, "offen")
+    _alle(client, mid, "kept")
+    gleich(_korb(con), vorher, "Korb nach Sammeln / zurück / Sammeln")
+    return f"{len(vorher)} Korbzeilen, jede Menge unverändert"
+
+
+# --------------------------------------------------------------------------
 # Portionen und die Reihenfolge der Rechenschritte (WB-362)
 
 def checks_zwei_orte(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
@@ -2002,6 +2116,12 @@ def main() -> int:
         zurueck_db = ordner / "zuruecknehmen.db"
         katalog_anlegen(zurueck_db)
         checks_zuruecknehmen(b, zurueck_db, bild_dir)
+        # Und noch eine: der Sammelrückweg füllt denselben Korb viermal und
+        # räumt ihn nie — genau das ist die Zusicherung, und in einem
+        # fremden Warenkorb wäre sie nicht mehr abzulesen.
+        sammel_db = ordner / "sammelrueckweg.db"
+        katalog_anlegen(sammel_db)
+        checks_sammelrueckweg(b, sammel_db, bild_dir)
         # Und noch eine: WB-382 schickt am Ende eine Bestellung ab, damit
         # der Verlauf nachweislich mitwandert — das hätte in den Warenkörben
         # oben nichts verloren.

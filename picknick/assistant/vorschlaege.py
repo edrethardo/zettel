@@ -50,6 +50,17 @@ gegen den Doppeltipp durfte nicht länger am Vergleich der letzten Entscheidung
 hängen.** „Ja, rückgängig, Ja" hätte zweimal eingelegt. Er hängt jetzt an
 `chat_suggestion.eingelegt_at` — „war diese Zeile schon einmal im Korb" — und
 das ist die Frage, die er die ganze Zeit stellen wollte.
+
+**Seit WB-397 gilt das auch für den Sammelknopf.** „Alles übernehmen" war die
+einzige Entscheidung im Shop ohne Rückweg — und ausgerechnet die, die eine
+ganze Liste auf einmal entscheidet; elf Zeilen einzeln zurückzunehmen sind elf
+Tipps auf einem Telefon. Der Rückweg heisst „Doch nicht alles"
+(`sammel_zuruecknehmen`) und nimmt AUSSCHLIESSLICH zurück, was der letzte
+Sammelvorgang entschieden hat. Dafür trägt jede so entschiedene Zeile die
+Nummer ihres Vorgangs (`sammel_nr`); ein einzelner Tipp löscht sie wieder,
+denn ab da gehört die Entscheidung der Nutzerin. Ein Rückweg, der die einzeln
+gesetzte Butter mitnähme, wäre derselbe Fehler wie ein Sammelknopf, der
+bestehende Entscheidungen überschreibt — nur in die andere Richtung.
 """
 from __future__ import annotations
 
@@ -153,7 +164,7 @@ _VORSCHLAG_SQL = (
     "SELECT s.id, s.chat_message_id, s.product_id, s.free_text, s.qty,"
     "       s.need_amount, s.need_unit,"
     "       s.search_term, s.rank AS rang, s.decision, s.decided_at,"
-    "       s.eingelegt_at, s.zurueckgenommen, s.dish_item,"
+    "       s.eingelegt_at, s.zurueckgenommen, s.sammel_nr, s.dish_item,"
     "       s.corrected_from, s.fallback_term,"
     "       coalesce(p.name, s.free_text) AS name,"
     "       p.unit_text, p.price_cents, p.image_path, p.active,"
@@ -215,6 +226,10 @@ def _auf(row: sqlite3.Row) -> dict:
     # stolpert.
     v.setdefault("n_alternativen", 0)
     v.setdefault("korrektur", None)
+    # Ob DIESE Zeile am Rückweg „Doch nicht alles" hängt (WB-397). Es ist
+    # eine Aussage über den Zug und nicht über die Zeile — welcher
+    # Sammelvorgang der jüngste ist, weiss nur, wer alle Zeilen sieht.
+    v.setdefault("sammel_rueckweg", False)
     if v["name"] is None:
         v["name"] = f"Produkt {v['product_id']} — nicht mehr auffindbar"
     return v
@@ -264,10 +279,28 @@ def liste(con: sqlite3.Connection, chat_message_id: int) -> list[dict]:
     # Oberfläche eine Korrektur an, die die Logik längst nicht mehr kennt.
     nach_quelle = {z["corrected_from"]: z
                    for z in zeilen if z["ist_korrektur"] and not z["offen"]}
+    # Der jüngste noch rücknehmbare Sammelvorgang (WB-397). Hier und nicht in
+    # `_auf()`, weil es eine Aussage über den ganzen Zug ist: eine Zeile
+    # allein kann nicht wissen, ob ihre Nummer die grösste ist.
+    letzter = _letzter_sammelvorgang(zeilen)
     for z in zeilen:
         z["n_alternativen"] = int(anzahl.get(z["id"], 0))
         z["korrektur"] = nach_quelle.get(z["id"])
+        z["sammel_rueckweg"] = (letzter is not None
+                                and z["sammel_nr"] == letzter)
     return zeilen
+
+
+def _letzter_sammelvorgang(zeilen: list[dict]) -> int | None:
+    """Die grösste vergebene `sammel_nr` — oder `None`.
+
+    Das ist der Sammelvorgang, den „Doch nicht alles" zurücknimmt. Die
+    grösste Nummer ist immer die jüngste: ein neuer Vorgang nimmt `max + 1`,
+    und weggenommen wird eine Nummer nur von oben (durch den Rückweg) oder
+    zeilenweise, wenn die Nutzerin eine Zeile einzeln antippt.
+    """
+    return max((z["sammel_nr"] for z in zeilen if z["sammel_nr"] is not None),
+               default=None)
 
 
 #: Wie viele Alternativen zu einer Zeile übrig sind: die aufgehobenen
@@ -495,8 +528,15 @@ def leeren(con: sqlite3.Connection, order_id: int) -> dict:
     return weg
 
 
+def _pruefe_entscheidung(entscheidung: str) -> None:
+    if entscheidung not in db.DECISIONS:
+        raise VorschlagFehler(
+            f"{entscheidung!r} ist keine Entscheidung. Erlaubt: "
+            f"{', '.join(db.DECISIONS)}.")
+
+
 def entscheiden(con: sqlite3.Connection, suggestion_id: int,
-                entscheidung: str) -> dict:
+                entscheidung: str, *, sammel: int | None = None) -> dict:
     """`kept` legt in den Korb, `removed` nicht. Gibt den Vorschlag zurück.
 
     **`offen` ist der Rückweg** (WB-361): jede Entscheidung lässt sich
@@ -522,13 +562,22 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
     Löschknopf — einen Tipp entfernt und ohne Rätselraten. Die Oberfläche sagt
     das nach einer Rücknahme ausdrücklich, statt es zu verschweigen
     (`im_korb`).
+
+    `sammel` trägt die Nummer des Sammelvorgangs, wenn dieser Tipp aus
+    `alle_entscheiden()` kommt (WB-397). Ohne sie ist es ein EINZELNER Tipp —
+    und der macht die Zeile zu ihrer eigenen: `sammel_nr` fällt auf NULL, und
+    „Doch nicht alles" lässt sie danach stehen. Das gilt auch, wenn der Tipp
+    am Zustand nichts ändert; wer eine gesammelt verworfene Zeile einzeln
+    bestätigt, hat sie bestätigt.
     """
-    if entscheidung not in db.DECISIONS:
-        raise VorschlagFehler(
-            f"{entscheidung!r} ist keine Entscheidung. Erlaubt: "
-            f"{', '.join(db.DECISIONS)}.")
+    _pruefe_entscheidung(entscheidung)
     v = eine(con, suggestion_id)
     if v["decision"] == entscheidung:
+        if sammel is None and v["sammel_nr"] is not None:
+            con.execute("UPDATE chat_suggestion SET sammel_nr = NULL"
+                        " WHERE id = ?", (suggestion_id,))
+            con.commit()
+            return eine(con, suggestion_id)
         return v
     # Der eigentliche Schutz: eingelegt wird, wenn diese Zeile noch NIE im
     # Korb war. Alles andere ist ein Label-Wechsel.
@@ -560,9 +609,10 @@ def entscheiden(con: sqlite3.Connection, suggestion_id: int,
     zurueck = v["zurueckgenommen"] + (1 if entscheidung == OFFEN else 0)
     con.execute(
         "UPDATE chat_suggestion SET decision = ?, decided_at = ?,"
-        "       eingelegt_at = ?, zurueckgenommen = ? WHERE id = ?",
+        "       eingelegt_at = ?, zurueckgenommen = ?, sammel_nr = ?"
+        " WHERE id = ?",
         (entscheidung, None if entscheidung == OFFEN else jetzt(),
-         eingelegt, zurueck, suggestion_id))
+         eingelegt, zurueck, sammel, suggestion_id))
     con.commit()
     return eine(con, suggestion_id)
 
@@ -723,10 +773,81 @@ def alle_entscheiden(con: sqlite3.Connection, chat_message_id: int,
     Nur die offenen: eine bereits getroffene Entscheidung wird von einem
     Sammelknopf nicht überschrieben — sonst kippt ein einziger Tipp die Labels
     um, die die Nutzerin einzeln gesetzt hat.
+
+    **`offen` ist auch hier der Rückweg** (WB-397) und führt nach
+    `sammel_zuruecknehmen()`. Dieselbe Adresse und kein vierter Wert, genau
+    wie bei der einzelnen Zeile in WB-361: es ist keine neue Sache, die man
+    mit einem Zug tun kann, sondern die dritte Entscheidung, die es seit
+    Spec 8.1 gibt. Wörtlich gelesen täte `offen` hier nichts — offene Zeilen
+    auf offen zu setzen ist Leerlauf —, und diese Bedeutung ist frei.
+
+    Jeder Vorgang bekommt eine eigene Nummer, damit der Rückweg weiss, was er
+    anfassen darf. War nichts offen, entsteht auch keine: ein Sammelvorgang
+    ohne Zeilen wäre ein Rückweg, der nichts zurücknimmt.
     """
+    _pruefe_entscheidung(entscheidung)
+    if entscheidung == OFFEN:
+        return sammel_zuruecknehmen(con, chat_message_id)
+    nummer = _naechste_sammelnummer(con, chat_message_id)
     for v in liste(con, chat_message_id):
         if v["decision"] == OFFEN:
-            entscheiden(con, v["id"], entscheidung)
+            entscheiden(con, v["id"], entscheidung, sammel=nummer)
+    return liste(con, chat_message_id)
+
+
+def _naechste_sammelnummer(con: sqlite3.Connection,
+                           chat_message_id: int) -> int:
+    """`max + 1` über die Zeilen DIESES Zugs.
+
+    Je Zug gezählt und nicht projektweit: der Rückweg steht am Zug, und
+    „welcher Sammelvorgang war hier der letzte" ist die einzige Frage, die je
+    gestellt wird. Nummern werden dabei wiederverwendet — nach einer Rücknahme
+    ist die grösste wieder frei, und weil immer nur von oben zurückgenommen
+    wird, bleibt die grösste trotzdem die jüngste.
+    """
+    row = con.execute(
+        "SELECT coalesce(max(sammel_nr), 0) + 1 AS nr FROM chat_suggestion"
+        " WHERE chat_message_id = ?", (chat_message_id,)).fetchone()
+    return int(row["nr"])
+
+
+def sammel_zuruecknehmen(con: sqlite3.Connection,
+                         chat_message_id: int) -> list[dict]:
+    """„Doch nicht alles" — der letzte Sammelvorgang dieses Zugs zurück.
+
+    **Ausschliesslich, was DIESER Vorgang entschieden hat.** Der Sammelknopf
+    rührt nur die offenen Zeilen an, damit ein einziger Tipp nicht die Labels
+    umkippt, die die Nutzerin einzeln gesetzt hat — und diese Zusicherung muss
+    rückwärts genauso gelten:
+
+        Butter einzeln „Ja"     -> kept   (ihre Entscheidung)
+        Spinat einzeln „Ja"     -> kept   (ihre Entscheidung)
+        „Alles übernehmen"      -> 9 weitere auf kept
+        „Doch nicht alles"      -> NUR diese 9 zurück auf offen
+
+    Ein Rückweg, der Butter und Spinat mitnähme, wäre derselbe Fehler wie ein
+    Sammelknopf, der bestehende Entscheidungen überschreibt — nur in die
+    andere Richtung. Deshalb hängt er an `sammel_nr` und nicht an
+    „alles, was gerade kept ist".
+
+    Der Weg führt Zeile für Zeile durch `entscheiden()` und nicht über ein
+    `UPDATE … WHERE sammel_nr = ?`. Das ist der Punkt, an dem der Schutz aus
+    WB-361 hängt: `eingelegt_at` bleibt stehen, der Korb wird nicht angerührt,
+    und die Rücknahmen werden gezählt — Sammeln, Zurücknehmen, Sammeln legt
+    dadurch jede Sache genau einmal ein.
+
+    Gibt es keinen Sammelvorgang, passiert nichts. Ein Doppeltipp auf dem
+    Handy soll keine Fehlermeldung ergeben; er hat schlicht nichts mehr zu
+    tun. Ein zweiter Tipp, NACHDEM ein neuer Vorgang darüberliegt, nimmt den
+    vorletzten zurück — Vorgang für Vorgang rückwärts, so wie es kam.
+    """
+    zeilen = liste(con, chat_message_id)
+    nummer = _letzter_sammelvorgang(zeilen)
+    if nummer is None:
+        return zeilen
+    for v in zeilen:
+        if v["sammel_nr"] == nummer:
+            entscheiden(con, v["id"], OFFEN)
     return liste(con, chat_message_id)
 
 
