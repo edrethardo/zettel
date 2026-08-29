@@ -211,10 +211,11 @@ Schnitt holt sich die Momente. `T` = Sekunden ab dem Klick auf **Fragen**.
 | T+29…31 | Links landet die Antwort, rechts vervollständigen `plan.choose` und `chat.turn` die Liste (18 Zeilen), nvtop fällt zurück. 3 s Ruhe. |
 | T+35 | Langsam zur Rezeptkarte scrollen; auf Zeit/Bewertung verweilen; die 5 Alternativ-Rezepte anreißen. |
 | T+50 | Portionen **3 → 6**, **Mengen neu rechnen** — die Spinat-Zeile springt sichtbar von „600 g … 2 ×" auf „1200 g … 3 ×". |
-| T+65 | **Ja** beim Spinat (auf „1200 g gebraucht — 3 × 0,54 kg" verweilen), dann runter zur Klopapier-Zeile: Cursor auf „Freitext", **Ja**. |
-| T+85 | Oben **Korb**: einmal durchscrollen (gerechnete Mengen, Klopapier als Freitext), **Bestellung abschicken**. |
-| T+100 | **Pick-Liste**: zwei Posten abhaken, bei einem **gab's nicht**. |
-| T+115 | Ins Phoenix-Fenster: den `chat.turn`-Span anklicken → Trace-Ansicht. Die Span-Kette ruhig zeigen (chat.turn → plan.extract → catalog.search ×15 → plan.choose), einen `catalog.search`-RETRIEVER-Span aufklappen, bis die bewerteten Dokumente stehen, über `picknick.rejected = 0` verweilen. 5 s halten, Aufnahme stoppen. |
+| T+65 | **Ja** beim Spinat (auf „1200 g gebraucht — 3 × 0,54 kg" verweilen), dann runter zur Klopapier-Zeile: Cursor auf „Freitext", **Ja**. Genau diese zwei einzeln — sie sind die, die den Sammelrückweg gleich überstehen müssen. |
+| T+85 | **Die Geste (WB-398).** Nach oben rollen: die Korbzahl im Kopf steht auf **2**. Wieder ans Listenende, **Alles übernehmen** — alle übrigen Zeilen gehen auf `kept`. Noch einmal nach oben: die Zahl ist **gesprungen**. Zurück ans Ende, den Satz unter dem Knopf lesen, **Doch nicht alles (n)** tippen. Die gesammelten Zeilen stehen wieder mit Ja/Nein da, **Spinat und Klopapier bleiben „im Korb"**. |
+| T+110 | Oben **Korb**: einmal durchscrollen (gerechnete Mengen, Klopapier als Freitext), **Bestellung abschicken**. |
+| T+125 | **Pick-Liste**: zwei Posten abhaken, bei einem **gab's nicht**. |
+| T+140 | Ins Phoenix-Fenster: den `chat.turn`-Span anklicken → Trace-Ansicht. Die Span-Kette ruhig zeigen (chat.turn → plan.extract → catalog.search ×15 → plan.choose), einen `catalog.search`-RETRIEVER-Span aufklappen, bis die bewerteten Dokumente stehen, über `picknick.rejected = 0` verweilen. 5 s halten, Aufnahme stoppen. |
 
 ## Der Schnitt — Shots, Voice-Over, Untertitel
 
@@ -229,10 +230,17 @@ sie bewusst voneinander ab.
 | 2 | 0:12–0:20 | Take A, T+0…2 **hart geschnitten auf** T+11…15: Spinner links, rechts schlagen die 16 Spans ein, nvtop auf 100 % | `Right side: Phoenix, tracing the agent live. Bottom: my 3090, at full power. No cloud. No API key.` | `Phoenix traces the agent live — on the 3090 under my TV. No cloud, no API key. (~29 s, cut)` |
 | 3 | 0:20–0:34 | Take A, T+29…60: Antwort, Rezeptkarte, Alternativen, Portionen 3 → 6 mit sichtbarer Neurechnung | `It found a real, top-rated recipe. Cooking time, rating, five alternatives. Guests tonight? Servings to six — every quantity rescales.` | `A real top-rated recipe in ~100 ms — set servings to 6 and every quantity and pack count rescales.` |
 | 4 | 0:34–0:41 | Take A, T+65…80: **Ja** beim Spinat, **Ja** beim Klopapier-Freitext | `Nothing enters the cart without a yes. Twelve hundred grams — that's three packs. Computed, not guessed.` | `Nothing enters the cart without a Yes. "1200 g needed → 3 packs" — computed, not guessed.` |
-| 5 | 0:41–0:48 | Take A, T+85…95: Korb, Mengen, Klopapier-Zeile, **Bestellung abschicken** | `No catalog match for toilet paper — it stays on the list as free text. The cart is the order.` | `No catalog hit for toilet paper — it stays as free text instead of silently vanishing. The cart is the order.` |
-| 6 | 0:48–0:54 | Take A, T+100…110: Pick-Liste, abhaken, **gab's nicht** | `In the store, we check things off. Wasn't there — that's an honest answer, too.` | `In the store: check items off. "Wasn't there" is an honest third state.` |
-| 7 | 0:54–1:02 | Take A, T+115…: Trace-Ansicht, Zoom auf die Span-Kette, RETRIEVER-Dokumente, `picknick.rejected = 0` | `Every turn is one trace. The model can only pick from what the shop retrieved. Invented products are rejected — and counted.` | `Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted. rejected = 0.` |
-| 8 | 1:02–1:07 | **Endcard** (Standbild) | `Open weights. One GPU. Measured on sixty-four dishes. Link below.` | *(Text steht auf der Endcard)* |
+| 4b | 0:41–0:51 | Take A: **Alles übernehmen**, Blick nach oben auf die gesprungene Korbzahl, **Doch nicht alles** (WB-397/WB-398) | `Two by hand. Then the whole list in one tap. And back again — not all of it after all. Every decision here is reversible.` | `Two confirmed by hand — then the whole list in one tap. "Not all of it after all" reopens exactly that batch; the two stay.` |
+| 5 | 0:51–0:58 | Take A: Korb, Mengen, Klopapier-Zeile, **Bestellung abschicken** | `No catalog match for toilet paper — it stays on the list as free text. The cart is the order.` | `No catalog hit for toilet paper — it stays as free text instead of silently vanishing. The cart is the order.` |
+| 6 | 0:58–1:04 | Take A: Pick-Liste, abhaken, **gab's nicht** | `In the store, we check things off. Wasn't there — that's an honest answer, too.` | `In the store we check items off — and "wasn't there" is the honest third state, used right here.` |
+| 6b | 1:04–1:11 | **Take D (Aaron filmt selbst):** am Regal, Telefon in der Hand, mobile Ansicht, die zwei Zutaten abhaken — siehe „Der Supermarkt-Shot" unten | `And this is where it ends up: at the shelf, phone in hand.` | `Same list, at the shelf.` |
+| 7 | 1:11–1:19 | Take A: Trace-Ansicht, Zoom auf die Span-Kette, RETRIEVER-Dokumente, `picknick.rejected = 0` | `Every turn is one trace. The model can only pick from what the shop retrieved. Invented products are rejected — and counted.` | `Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted. rejected = 0.` |
+| 8 | 1:19–1:24 | **Endcard** (Standbild) | `Open weights. One GPU. Measured on sixty-four dishes. Link below.` | *(Text steht auf der Endcard)* |
+
+Die Zeiten in der Spalte sind die geplanten; **die gültigen kommen aus
+`schnitt.py`**, das sie am Ende des Laufs ausgibt („Zeitmarken fürs
+Voice-Over"). Sie hängen an Ereignissen und nicht an der Uhr — ein Zug, der
+drei Sekunden länger dauert, verschiebt alles Folgende.
 
 **VO-Skript am Stück** (zum Ablesen; Zeitmarke = wann der Satz beginnt;
 insgesamt ~150 Wörter, ruhiges Tempo):
@@ -249,14 +257,23 @@ insgesamt ~150 Wörter, ruhiges Tempo):
 0:27  Guests tonight? Servings to six — every quantity rescales.
 0:34  Nothing enters the cart without a yes.
       Twelve hundred grams — that's three packs. Computed, not guessed.
-0:41  No catalog match for toilet paper — it stays on the list as free text.
+0:41  Two by hand. Then the whole list in one tap.
+      And back again — not all of it after all.
+      Every decision here is reversible.
+0:51  No catalog match for toilet paper — it stays on the list as free text.
       The cart is the order.
-0:48  In the store, we check things off.
+0:58  In the store, we check things off.
       Wasn't there — that's an honest answer, too.
-0:54  Every turn is one trace. The model can only pick from what the
+1:04  And this is where it ends up: at the shelf, phone in hand.
+1:11  Every turn is one trace. The model can only pick from what the
       shop retrieved. Invented products are rejected — and counted.
-1:02  Open weights. One GPU. Measured on sixty-four dishes. Link below.
+1:19  Open weights. One GPU. Measured on sixty-four dishes. Link below.
 ```
+
+Rund 175 Wörter statt 150 — die Geste aus Shot 4b und der Regal-Shot kosten
+zusammen etwa 17 Sekunden. Wer bei 65 s bleiben will, kürzt Shot 3 (die
+Alternativenliste) und nicht Shot 4b: 4b ist die Einstellung, die den Kern
+zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 
 **Endcard** (Standbild, 5 s):
 
@@ -323,6 +340,21 @@ derselbe Zug noch einmal als bewerteter Dokumenten-Trace.
   mit frischem Projektnamen neu starten (`Picknick Demo 2`, …) — oder die
   alten Takes als ältere Zeilen unter dem neuen akzeptieren, der neueste
   steht oben.
+
+## Stand: Take 4 liegt, Take 5 ist vorbereitet aber nicht gedreht (WB-398)
+
+Der Abschnitt darunter beschreibt **Take 4**. Er ist die gültige Fassung,
+solange kein neuer gedreht ist — mit den beiden abgeschwächten Untertiteln,
+die er verdient (siehe unten).
+
+**Take 5 ist vorbereitet, aber nicht aufgenommen.** Fertig und geprüft:
+die neue Choreografie in `dreh.py` (Sammeln und Zurücknehmen, an der
+laufenden Bühne einzeln durchgeklickt und in der Datenbank nachgesehen),
+der lebendige Zeiger in `menschlich.py`, die Erkenner in `finde.py` und
+`schnitt.py` mit Shot 4b und den zurückgetauschten Untertiteln. **Nicht
+erledigt:** ein warnungsfreier Trockenlauf am Stück und der Take selbst
+(er braucht ein Box-Fenster). Die `.srt` und die Schnittfassung unter
+`~/picknick-video/` sind darum weiter die von Take 4.
 
 ## Take A liegt vorproduziert (WB-396)
 
@@ -464,3 +496,158 @@ beide „Ja", Korb, Bestellung, Pick-Liste, „gab's nicht" — bis jeder Schrit
 seine Wirkung meldet. Erst dann lohnt es, die Box für den echten Take zu
 belegen. (Danach die Prüfstand-Zeilen aus `recipe_item` wieder löschen,
 sonst nimmt der Kamera-Zug genau diesen Pfad.)
+
+## Der Supermarkt-Shot (Shot 6b) — Drehanweisung
+
+**Diesen Shot filmt Aaron selbst**, mit einer zweiten Kamera (oder dem
+Zweitgerät): er am Regal, das Telefon in der Hand, auf dem Bildschirm die
+mobile Ansicht, und er hakt die zwei Zutaten ab, die er gerade entnommen hat.
+Er ist die Landung des ganzen Videos in der echten Welt — Shot 6 zeigt die
+Pick-Liste auf dem Schirm, 6b zeigt, wofür sie da ist.
+
+**Wo der Schnitt sitzt.** Davor endet **Shot 6** auf der abgehakten Zeile im
+Bildschirmteil (die Zeile ist durchgestrichen, daneben steht die
+„gab's nicht"-Marke). Direkt danach steht **Shot 7** (die Trace-Ansicht in
+Phoenix). 6b sitzt also zwischen der Pick-Liste und dem Trace: erst die
+Handlung im Laden, dann die Erklärung darunter. Länge 6–8 s, mehr trägt die
+Einstellung nicht.
+
+**Was auf dem Telefon offen sein muss:**
+
+```
+http://<laptop-im-tailnet>:8747/pick        ← die Demo-Instanz, NICHT 8730
+```
+
+* Die **Bestellung muss vorher abgeschickt sein** — die Pick-Liste entsteht
+  erst beim Abschicken (`orders.abschicken`). Ohne das zeigt `/pick` eine
+  leere Seite, und im Laden ist keine Zeit, das zu merken.
+* **Die Demo-Datenbank, nicht der echte Einkauf.** Der echte Shop auf 8730
+  trägt Haushaltsposten; wer den filmt, hakt vor der Kamera echte Einkäufe
+  ab — und sie sind danach abgehakt. Die Demo-Instanz läuft auf **8747** mit
+  `~/picknick-demo/demo.db` (Aufbau siehe Prep, Schritt 3/5).
+* Das Telefon muss den Laptop erreichen: über das Tailnet (die Adresse steht
+  in `PICKNICK_HOST`) oder dasselbe WLAN. **Vor dem Losgehen einmal am
+  Telefon öffnen** — nicht erst im Laden.
+
+**Die Pick-Liste muss dieselben zwei Posten zeigen wie der Bildschirmteil.**
+Sonst passen die Szenen nicht zusammen: im Schirmteil bestätigt er Spinat und
+Klopapier von Hand, und im Laden dürfen nicht plötzlich sechzehn Zeilen
+stehen. Das ist **keine Selbstverständlichkeit** — siehe den nächsten
+Abschnitt: nach „Alles übernehmen" und dem Rückweg liegen alle Zeilen im Korb
+und damit in der Bestellung. Wer die zwei will, hat zwei Wege:
+
+1. **Für den Regal-Shot eine eigene, kurze Bestellung abschicken** — Chat
+   leeren, einen Satz ohne Sammeltipp fahren, nur Spinat und Klopapier mit
+   „Ja" bestätigen, abschicken. Zwei Zeilen, fertig. Das ist der einfache Weg
+   und der empfohlene: der Regal-Shot ist ohnehin eine eigene Aufnahme.
+2. **Im Korb die überzähligen Zeilen löschen**, bevor abgeschickt wird — im
+   Korb steht an jeder Zeile ein Löschknopf. Bei sechzehn Zeilen sind das
+   vierzehn Tipps; nur sinnvoll, wenn ohnehin schon abgeschickt wurde.
+
+**Lesbarkeit — der Bildschirm überstrahlt im Video fast immer:**
+
+* **Telefon hochkant.** Die Ansicht ist für 390 px gebaut; quer stünde die
+  Liste in einer Breite, für die sie nie entworfen wurde.
+* **Helligkeit auf ~70 %, nicht auf 100 %.** Ein voll aufgedrehtes Display
+  brennt in der Kamera aus, und die Schrift verschwindet in einer weissen
+  Fläche. Automatische Helligkeit vorher **aus** — sonst regelt sie mitten in
+  der Einstellung nach.
+* **Nicht gegen das Regallicht filmen.** Neonröhren im Rücken der Kamera
+  spiegeln sich im Glas; einen Schritt zur Seite, bis die Spiegelung aus dem
+  Bild ist.
+* **Abstand 30–40 cm**, Telefon leicht gekippt, damit die Kamera auf den
+  Bildschirm schaut und nicht schräg darüber. Näher als 30 cm sieht man die
+  Liste nicht mehr im Zusammenhang, weiter weg ist die Schrift nicht mehr zu
+  lesen.
+* **Zwei Takes**: einen mit dem Regal im Hintergrund (weiter), einen nah auf
+  den Bildschirm. Der Schnitt nimmt den nahen, wenn die Schrift trägt, sonst
+  den weiten mit dem Untertitel darüber.
+* Der Daumen soll das Kästchen **sichtbar** treffen — die Bewegung ist die
+  Aussage, nicht das Ergebnis.
+
+## Was WB-398 gemessen hat
+
+### Die Korbzahl geht 2 → n, aber nicht wieder zurück
+
+Am 30.08. an der laufenden Bühne nachgemessen, zweimal (einmal über die
+Oberfläche, einmal über `TestClient`):
+
+```
+zwei einzelne „Ja"      Kopfzahl  2   order_item  2
+„Alles übernehmen"      Kopfzahl 17   order_item 17
+„Doch nicht alles"      Kopfzahl 17   order_item 17    ← bleibt
+                        decisions: 2 × kept, 15 × offen
+```
+
+**Das ist kein Fehler, sondern die Zusicherung aus WB-361/WB-397:** der Korb
+wird beim Zurücknehmen NICHT angerührt. `orders.einlegen()` fasst gleiche
+Zeilen zusammen, die Korbzeile kann also längst eine sein, die die Nutzerin
+selbst aufgestockt hat; sie herauszunehmen hiesse, fremde Mengen zu löschen.
+Die Oberfläche verschweigt es nicht — unter dem Rückweg steht „Nimmt nur
+diesen einen Sammeltipp zurück — einzeln Entschiedenes bleibt stehen, und der
+Korb auch", und an jeder zurückgenommenen Zeile „die Zeile bleibt im Korb;
+dort steht ein Löschknopf".
+
+**Fürs Video heisst das:** der sichtbare Beleg für die Rücknahme sind die
+**Zeilen**, nicht die Zahl. Nach dem Rückweg stehen fünfzehn Zeilen wieder mit
+Ja/Nein da, und mittendrin bleiben Spinat und Klopapier als „im Korb" stehen —
+das ist im Bild deutlicher als eine Zahl im Kopf. Der Untertitel sagt es
+darum so: *„…reopens exactly that batch; the two stay."* Ein Untertitel, der
+behauptet, der Korb sei wieder bei zwei, wäre gelogen.
+
+### Zwei neue Fallen, beide im Trockenlauf aufgelaufen
+
+* **Der Portionsblock bricht um — und dann sitzt der Knopf UNTER dem Feld.**
+  WB-396 hat Feld und Knopf über feste Abstände zum Zutatenlisten-Anker
+  gegriffen (`anker + 224 px` bzw. `+ 367 px`, beide auf derselben Zeile). Im
+  520-px-Fenster steht „Mengen neu rechnen" eine Zeile TIEFER; der Griff nach
+  dem Feld landete auf dem Knopf, die „6" wurde ins Nichts getippt, und die
+  Portionen blieben bei 3 — mit grüner Protokollzeile. Seit WB-398 sucht
+  `finde.portionsfeld()` beide über ihre Form (schmaler Kasten = Feld,
+  breiter = Knopf) und kommt mit beiden Layouts zurecht.
+* **Die abgerundete rechte Kante jeder Vorschlagskarte trägt dieselbe Farbe
+  wie die „Ja"-Pille.** Bei x=503 läuft sie über 85 % der Fensterhöhe durch.
+  Ein Erkenner, der nur senkrecht schneidet (`finde.treffer`), verklebt
+  dadurch Karte und Pille zu einem 200-px-Klumpen, und die Formschranke wirft
+  genau die Pillen weg, die sie finden soll. `finde.flecken()` wirft erst
+  Randspalten weg (Spaltendeckung > 40 %) und bestimmt danach echte
+  zusammenhängende Flächen — gemessen kommen 42 × 42 px heraus. **Das ist
+  dieselbe Falle wie in Take 4, nur von der anderen Seite**: dort waren es
+  Chatzeile und „im Korb"-Marke, hier der Kartenrand.
+* Nebenbei: **zwischen zwei Trockenläufen muss der Browser zurück auf
+  `/chat`.** Ein Durchlauf endet auf der Pick-Liste, und ein `F5` lädt dann
+  die Pick-Liste neu. Dafür gibt es `bereit.sh`.
+
+### Der Zeiger im Wartefenster
+
+`menschlich.leerlauf(sekunden, feld, abbruch=…)` bewegt den Zeiger während
+der Wartezeit: winziger Drift (2–7 px), gelegentlich ein kurzes Wandern in
+Leserichtung mit Rücksprung an den Zeilenanfang, und **einmal** pro Fenster
+an den Rand und zurück. Die Pausen dazwischen kommen aus zwei Töpfen (0,9–2,6 s
+und 3,5–8,0 s), damit die Abstände nicht um einen Mittelwert pendeln — ein
+Zittern in festem Takt sieht schlimmer aus als Stillstand. Das Feld ist ein
+Rechteck, das nie verlassen wird: über der Phoenix-Tabelle poppen Tooltips
+auf, und ein Zeiger, der auf einer Schaltfläche parkt, färbt sie ein. Das Ende
+hängt am Server (`chat_message`), nicht an einer Uhr.
+
+Dazu `rollen()` in Schüben von zwei bis vier Radklicks mit Lesepause und
+gelegentlichem Klick zurück, und `klick()` mit einer Korrekturbewegung: in
+65 % der Fälle landet der Zeiger 6–15 px neben dem Ziel, hält kurz inne und
+fasst nach. Ohne sie sieht jeder Klick aus wie ein `mousemove`, weil er es ist.
+
+### Die Bühne steht in Skripten
+
+Unter `~/picknick-video/` (nicht im Repo — eine Videodatei und ein
+Tastatur-Roboter gehören nicht hinein):
+
+| Skript | Was |
+|---|---|
+| `buehne.sh` | Xephyr :78, Demo-Instanz auf 8747, zwei Firefox-Fenster, GPU-Streifen; merkt jede PID in `buehne.pids` |
+| `bereit.sh [--pruefstand]` | Datenbank in den Vor-Take-Zustand, Browser zurück auf `/chat` |
+| `pruefstand.py hin\|weg\|reset` | Gespeichert-Pfad an/aus (16 `recipe_item`-Zeilen), Reset ohne den Gericht-Cache |
+| `dreh.py [--trocken]` | der Durchlauf; `--trocken` lässt Shot 7 aus, weil es ohne Box keine Spans gibt |
+| `schnitt.py` | Schnittfassung + `.srt`, und die Zeitmarken fürs Voice-Over |
+
+Aufgeräumt wird über `buehne.pids`, **nie über `pkill -f`**: auf `:1` liegt
+Aarons angemeldete Sitzung, und der echte Shop auf 8730 läuft im selben
+Prozessbaum-Muster.
