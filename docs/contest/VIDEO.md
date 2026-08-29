@@ -119,15 +119,16 @@ im Laptop — der hat eine RTX 3500). Einmalig installieren, falls es fehlt
 (Stand 29.08.: fehlt), dann in einem eigenen Terminalfenster starten:
 
 ```bash
-ssh vllm-box 'sudo apt install -y nvtop'     # einmalig, fragt nach dem Passwort
-gnome-terminal --title="RTX 3090" -- ssh -t vllm-box nvtop
+BOX=<dein-ssh-alias-für-die-gpu-box>              # steht in ~/.ssh/config
+ssh "$BOX" 'sudo apt install -y nvtop'            # einmalig, fragt nach dem Passwort
+gnome-terminal --title="RTX 3090" -- ssh -t "$BOX" nvtop
 # Rückfall ohne Installation (weniger hübsch, tut es auch):
-gnome-terminal --title="RTX 3090" -- ssh -t vllm-box watch -n1 nvidia-smi
+gnome-terminal --title="RTX 3090" -- ssh -t "$BOX" watch -n1 nvidia-smi
 ```
 
-Der SSH-Alias `vllm-box` steht in `~/.ssh/config` (User `vllm-box`,
-eigener Key) — der nackte Hostname `vllm-box.local` landet beim falschen
-User und scheitert.
+Wichtig: den **Alias** aus `~/.ssh/config` benutzen (er trägt User und Key) —
+der nackte mDNS-Hostname der Box landet beim falschen User und scheitert mit
+Permission denied.
 
 **7. Fensterlayout für 1920 × 1080.** Gefilmt wird der **Laptop-Bildschirm**
 (eDP-1) — er ist exakt 1920 × 1080. Sein Versatz im X-Screen (aktuell
