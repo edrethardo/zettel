@@ -1,0 +1,236 @@
+# Picknick — Showcase
+
+> **A grocery app for a two-person household where a 27B open model —
+> quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
+> and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
+> evaluated across 64 dishes, zero cloud, zero API keys.**
+
+She fills the cart from her phone, he buys the groceries at a physical store
+and checks them off on his. In between sits an LLM agent that is allowed to do
+exactly one thing: **choose from candidates the shop found** — never invent.
+Everything the agent does is one trace in Phoenix, every user decision becomes
+an eval label, and the whole recipe path has been measured end-to-end on 64
+dishes. This page is the tour; the German docs
+([`DESIGN.md`](DESIGN.md), [`OBSERVABILITY.md`](OBSERVABILITY.md),
+[`EVALS.md`](EVALS.md)) carry the full detail.
+
+*All screenshots below come from a staged demo copy of the database (same
+catalog, no household data). The chat turn shown is a real turn against the
+real model — nothing in the pictures is mocked.*
+
+## One sentence in, one shopping list out
+
+| | |
+|---|---|
+| ![Chat turn with recipe card](docs/images/chat-recipe-card.png) | ![Suggestions with computed quantities](docs/images/chat-suggestions.png) |
+
+The user types *"alles für Lasagne, und Klopapier"* ("everything for lasagna,
+and toilet paper"). The shop notices the dish, fetches the top-rated recipe
+from Chefkoch's public JSON API (measured 90–147 ms — 250× faster than letting the
+model guess the ingredients, which takes ~35 s and gets Vietnamese soup
+wrong), and answers with:
+
+* **a recipe card** — cooking time, difficulty, rating, a servings field that
+  rescales every quantity, and five alternative recipes from the same search
+  (choosing one costs no new search),
+* **one suggestion row per ingredient**, each with the product photo, the
+  needed amount from the recipe (*"600 g gebraucht — 2 × 0,54 kg"* — the pack
+  count is computed, not guessed), the search term it came from, and its
+  retrieval rank,
+* **"Klopapier" as free text** — the catalog's prefix-only search cannot find
+  "Toilettenpapier", so the term stays visible instead of silently
+  disappearing. A dropped ingredient is only discovered in the store; a free
+  text line is discovered now.
+
+Nothing lands in the cart yet. Every row is confirmed with a per-row
+**Yes/No** — and that decision doubles as the eval label later.
+
+| | |
+|---|---|
+| ![Cart with computed pack counts](docs/images/cart.png) | ![Free text survives into the cart](docs/images/cart-free-text.png) |
+| ![Pick list in the store](docs/images/pick-list.png) | ![Status page with label counts](docs/images/status.png) |
+
+After "Yes": the cart shows the computed pack counts, the free-text toilet
+paper is still there, submitting turns the cart into the **pick list** he
+checks off in the store ("gab's nicht" = the shelf was empty — an honest third
+state), and the status page counts the labels every decision produced.
+Confirmed ingredients become a **saved recipe** on submit — the next
+"lasagna" answers from it with **zero model calls**.
+
+## The stack, and why
+
+| Piece | Why this one |
+|---|---|
+| **Qwen3.8-27B-Instruct** (dense, open weights) | AWQ 4-bit (W4A16, repo `philbert440/Qwen3.8-27B-W4A16-AWQ`), KV cache FP8 (fp8_e4m3) — **~17.4 GiB VRAM on a single NVIDIA RTX 3090 (24 GB)**. A consumer GPU, not a datacenter. |
+| **vLLM 0.24.0** | Self-hosted on the LAN, systemd unit, `--gpu-memory-utilization 0.97`, `--max-num-seqs 32`. Context length 106,496 tokens — kept deliberately below the tested 131k after crash-restarts at the higher setting. |
+| **FastAPI + Jinja2 + HTMX** | One process, server-rendered, no build step. HTMX is a vendored file, not a CDN — the tailnet is not necessarily online. Every form also works without JavaScript. |
+| **SQLite + FTS5** | Catalog (10,361 products), orders, chat, recipes, eval labels — one file, WAL mode, idempotent SQL migrations, no ORM. |
+| **Arize Phoenix** (self-hosted) | Traces via OpenTelemetry/OpenInference, datasets, experiments, and annotations that flow back from real user decisions. |
+| **No cloud, no API key** | The only external calls are a nightly catalog crawl and a twice-per-dish recipe fetch. If the internet is down, shopping still works. |
+
+Measured throughput on this box (single RTX 3090):
+
+| Metric | Value | Conditions |
+|---|---|---|
+| Single-stream, end-to-end | **24.9 tok/s** | 2.2k-token prompt (stage-3 candidate list), ~0.4k completion, guided JSON, thinking disabled, temperature 0 |
+| Aggregate, 4 concurrent requests | **74.8 tok/s** | same workload |
+| Decode-only rate | ~34 tok/s | prefill measured at ~1,645 tok/s |
+
+## The guarantees that make it interesting
+
+**The model chooses only from what it was shown.** The agent has three
+stages, and the middle one is not a model call:
+
+1. `plan.extract` — the model turns the sentence into *search terms with
+   quantities*. It sees zero catalog entries.
+2. `catalog.search` — **the shop** searches (FTS5), merges hits, and presents
+   candidates. This is a `RETRIEVER` span, on purpose (see below).
+3. `plan.choose` — the model picks **from that list**. An ID that was never
+   presented is **rejected, not repaired**, and counted in
+   `picknick.rejected` — visible in the trace *and* in the UI.
+
+The same rule guards four different surfaces: product IDs, category names
+(a typed "Aufschnitt" fans out into the catalog's own categories, and the
+model may only map to one that was offered), recipe choices (only the twelve
+recipes the search returned can be picked), and the term→ingredient mapping.
+vLLM's `guided_json` is on, but it enforces the *shape*, not the truth — a
+well-formed integer can still be a hallucinated one, so the check against the
+presented candidates lives in code.
+
+**Four "obviously LLM" tasks turned out not to need an LLM.** Retrieval is
+FTS5, not the model. Fanning "Aufschnitt" out into its sorts is a `GROUP BY`
+over the category tree (the model's own attempt produced "SCHWEINEBRUST" with
+zero hits and a mangled "Birn"). Mapping each search term back to its recipe
+ingredient — and thus its quantity — is a word comparison, because the term
+was *made from* the ingredient name (37 of 38 correct on real data, zero
+wrong). And "…and toilet paper" is appended in code, after measuring that the
+model carried it through in **0 of 35** turns when asked politely in the
+prompt. Each of these is a model call that can no longer hallucinate.
+
+**Nothing lands in the cart unasked, and no decision is final.** Every
+suggestion is confirmed per row; "Yes" can be withdrawn (back to *open*, not
+flipped — a mis-tap on a phone must not fake an eval label), "No" unfolds the
+alternatives *from the same search* instead of searching again, and a
+correction row records what it corrected — which is exactly what turns it
+into a `correction` annotation later.
+
+## Observability that answered a real question
+
+The model once picked an artisanal **"ButterBoyz BIO Salzbutter" for 4.69 €**
+when asked for plain butter. Bad model? The trace says no:
+
+```
+"Butter" — 5 candidates presented        picknick.rejected = 0
+   4.01  #1771  ButterBoyz BIO Butter Chili & Röstzwiebel
+   4.01  #1772  ButterBoyz BIO Butter Feige & Anis
+   3.96  #1757  ButterBoyz BIO Kräuterbutter
+   3.96  #1766  ButterBoyz BIO Salzbutter      ← chosen
+   3.96  #1768  ButterBoyz BIO Steinpilzbutter
+"Zahnpasta" — 0 candidates presented
+```
+
+`rejected = 0`: the model invented nothing — **there was no normal butter in
+the list**. The failure belongs to retrieval, not the model. That is why
+`catalog.search` is a `RETRIEVER` span and not a `TOOL`: Phoenix renders the
+candidates as scored documents, and the guilt question answers itself without
+opening a JSON blob. The reading rule is documented and short:
+
+| In the trace | Blame |
+|---|---|
+| the right product was not among the documents | retrieval |
+| it was there, the model took another | model |
+| `picknick.rejected > 0` | model, inventing |
+
+Every chat turn is exactly one trace (`chat.turn` → `plan.extract`,
+`catalog.search` ×N, `plan.choose`), the turn's span ID is stored with the
+message, and when the order is submitted, the user's accumulated Yes/No/
+correction decisions are written back to that span as annotations —
+`kept`, `removed`, `correction` (with what would have been right), and a
+`mapping_precision` score. **The eval labels fall out of the product**,
+because the user has to go through the list anyway.
+
+## The numbers, honestly
+
+**Breadth: 64 dishes across 12 axes** (baking, vegan, typo'd, ambiguous,
+fantasy names, exotic international, …), each driven through the full path —
+sentence → ingredients → search terms → products → cart → shopping list.
+No run failed. Median 34 s per dish.
+
+* **411 of 533 search terms (77 %) found a catalog product** — median 83 %
+  per dish, range 0–100. Two thirds of dishes land above 80 %; four land at
+  zero (see weaknesses).
+* **Not one suggestion line was lost**: 558 rows → 558 cart items → 558
+  shopping-list lines. 71 % carried a quantity to the end.
+* The lost quantities split cleanly into four measured links: the recipe
+  itself has none ("salt, to taste" — 16 %), the word mapping misses the
+  ingredient (22 %), the unit is not computable against the pack ("2 onions"
+  vs. a 1 kg net, 95× — the quantity still shows, only the pack count stays
+  at 1), and one real bug (115 lines, fixed since, guarded by tests — the
+  numbers above are from the measured run and were not re-measured).
+* The extra article ("…and toilet paper") arrived in the cart **8 of 8**
+  times, once translated by the model.
+
+**Depth: 12 fixed queries, 3 evaluators, 4 agent variants** as Phoenix
+experiments — one knob changed per variant. The interesting result is what
+did *not* move: 20 candidates instead of 5 changed nothing, and turning
+`guided_json` **off** moved none of the three scores — the twelve outputs
+came back word-identical, schema or no schema (at temperature 0 the
+constraint never binds; it is insurance against a different model, not an
+improvement of this one). A completeness-first
+prompt variant raised ingredient recall 0.611 → 0.750 for the measured
+reason (it stopped forgetting onions and garlic), and precision 0.850 →
+0.960 — partly by **omitting** an item, which the docs flag as suspect
+rather than celebrate.
+
+**Gates: 1,146 tests and a 76-check smoke gate** (counted 2026-08-29 — the
+numbers keep growing), both running without
+network, model, or Phoenix — and for the gate that is *enforced, not
+assumed*: it monkeypatches `socket.connect/bind/getaddrinfo` before the
+first project import and proves the block works by failing a connection to
+the very Phoenix port that is live on the dev machine.
+
+## What is weaker than it looks
+
+A showcase that hides its edges is an ad. The measured ones:
+
+* **"Salat" scores 0 of 9 — reproducibly.** Stage 3 chooses against the
+  *sentence*, not the recipe: the dish fetch returns "KFC Coleslaw" for
+  "Salat", the mismatch makes the model reject **every** candidate — even
+  milk and butter that were right there. *"alles für Salat"* (same recipe,
+  same catalog) gets 6 of 9. All-or-nothing, and the sentence's phrasing is
+  half the problem.
+* **The search knows prefixes only.** "milch" never finds "Landmilch" by
+  name, "Klopapier" never finds "Toilettenpapier" — German compounds put the
+  noun at the end. This is the single biggest retrieval weakness; part of
+  what looks like model failure in traces is this one property.
+* **"2 onions" vs. "1 kg net"**: 328 of 485 quantities reach the list but
+  cannot be computed against the pack unit (95× piece-vs-weight, then
+  tablespoons). The list shows the need; the pack count stays an honest 1.
+* **One run, no repetitions** — for both measurements. Bibimbap scored 0,
+  then 7 of 8 when re-run. The eval deltas (0.850 vs. 0.960) sit on two
+  examples out of ten. There are no confidence intervals because there is
+  nothing to compute them from.
+* **The LLM judge is the same Qwen that runs the agent** — same blind spots.
+  It therefore only judges where the deterministic scores cannot, and its
+  column sits beside them, never above.
+* **The UI has never been checked on a physical phone.** Designed for
+  390 px, verified over HTTP tests and headless screenshots — whether
+  nothing scrolls sideways on real glass, nobody has confirmed with eyes.
+
+## Run it
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pytest -q          # the full suite, no network needed
+.venv/bin/python checks/smoke.py       # the gate, network actively blocked
+.venv/bin/python -m picknick.web.app   # binds loopback + tailnet only — 0.0.0.0 is refused
+```
+
+The chat needs a local vLLM endpoint (`PICKNICK_LLM_ENDPOINT`); everything
+else — catalog, cart, pick list, saved recipes — runs without it, by design.
+There is no password: the shop refuses to bind anything but loopback and a
+tailnet address, with a whitelist, before a socket exists.
+
+*Contest material: the 60-second video script lives in
+[`docs/contest/VIDEO.md`](docs/contest/VIDEO.md), the post draft in
+[`docs/contest/POST.md`](docs/contest/POST.md).*
