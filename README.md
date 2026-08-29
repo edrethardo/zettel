@@ -1,5 +1,16 @@
 # Picknick
 
+> **English** — Picknick is a private grocery-ordering shop for a two-person
+> household on a [Tailscale](https://tailscale.com/) tailnet: she fills the
+> cart, he buys the groceries at a physical store and checks them off on his
+> phone. A chat box maps free text ("everything for spaghetti bolognese, plus
+> toilet paper") onto real catalog products — and the LLM agent behind it is
+> fully traced, evaluated and reproducibly comparable in Arize Phoenix.
+> No cloud, no API keys: Qwen3.8-27B (open weights) served by a local vLLM,
+> FastAPI + HTMX, SQLite with FTS5. The engineering tour in English —
+> screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md).
+> The rest of this README is in German, the household's language.
+
 Ein privater Bestell-Shop für zwei Personen im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
 dort auf dem Handy ab. **Es wird nie eine
@@ -51,14 +62,19 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m picknick.web.app
 ```
 
-Der Shop lauscht dann auf `http://100.64.0.1:8730` (Tailscale) und auf
-`http://127.0.0.1:8730`. Auf `0.0.0.0` bindet er nicht — der Versuch bricht mit
-einer Fehlermeldung ab, weil es kein Passwort gibt und das Tailnet der einzige
-Schutz ist.
+Der Shop lauscht dann auf `http://127.0.0.1:8730` — und, wenn die Maschine
+im Tailnet ist, zusätzlich auf `http://<deine Tailnet-Adresse>:8730`. Die
+Adresse steht nicht im Code: sie wird beim Start von der Maschine erfragt
+(eine Adresse aus `100.64.0.0/10`, siehe `eigene_tailnet_adresse()`), und
+`PICKNICK_HOST` überschreibt die Wahl. Auf `0.0.0.0` bindet er nie — der
+Versuch bricht mit einer Fehlermeldung ab, weil es kein Passwort gibt und das
+Tailnet der einzige Schutz ist.
 
-Für den Chat braucht es die lokale vLLM-Box; ohne sie läuft alles ausser dem
-Chat weiter, und der Rezeptweg sogar auch. Für Traces und Evals ein Phoenix
-auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
+Für den Chat braucht es ein lokales vLLM (Vorgabe `http://localhost:8000/v1`;
+eine Box woanders im Netz trägt man in `PICKNICK_LLM_ENDPOINT` ein — in der
+Umgebung oder in einer gitignorten `picknick.env` im Projektverzeichnis).
+Ohne Modell läuft alles ausser dem Chat weiter, und der Rezeptweg sogar
+auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
 [`OBSERVABILITY.md`](OBSERVABILITY.md).
 
 ## Prüfen

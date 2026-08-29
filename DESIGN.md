@@ -275,6 +275,12 @@ Uvicorn kann pro Aufruf nur eine Adresse binden, „localhost und Tailnet" sind
 zwei — der Prozess baut die Sockets deshalb selbst und übergibt sie. Der
 naheliegende Ausweg wäre `0.0.0.0`; genau der ist verboten.
 
+Die Tailnet-Adresse selbst steht seit WB-388 nicht mehr im Code: sie ist die
+eines privaten Geräts, und das Repo ist zur Veröffentlichung gedacht. Der
+Start erfragt sie über die Routing-Tabelle (`eigene_tailnet_adresse()`); ohne
+Tailnet bindet der Shop nur loopback, und `PICKNICK_HOST` erzwingt eine
+Adresse — die trotzdem durch die Weissliste muss.
+
 Das **Rollen-Cookie ist keine Authentifizierung.** Es ist frei wählbar, wird
 nirgends geprüft und steuert nur, welche Ansicht `/` zeigt. Wer daran je eine
 Berechtigung aufhängt, hat eine Zugangskontrolle gebaut, die jeder Besucher

@@ -30,7 +30,7 @@ from picknick.llm import client as llm
 from picknick.llm import wake
 from picknick.web import app as webapp
 
-ENDPUNKT = "http://vllm-box.local:8000/v1"
+ENDPUNKT = "http://vllm-box.example:8000/v1"
 KUERZEL = "Qwen3.8-27B-Instruct"
 
 
@@ -174,10 +174,13 @@ def wecker(handler, starter=None, uhr=None, weckbefehl="/bin/false", **kw):
 
 
 # --------------------------------------------------------------------------
-# Endpunkt: die Fallen, die schon Zeit gekostet haben
+# Endpunkt: generische Vorgabe, private Adresse ausserhalb des Repos (WB-388)
 
-def test_vorgabe_ist_die_box_im_lan():
-    assert llm.endpunkt_aus_umgebung({}) == ENDPUNKT
+def test_vorgabe_ist_generisch_lokal():
+    """Die Vorgabe nennt kein privates Gerät — vLLMs Standardport auf
+    derselben Maschine. Die echte Box dieses Haushalts steht in
+    `picknick.env` oder in der Umgebung, nie im Code."""
+    assert llm.endpunkt_aus_umgebung({}) == "http://localhost:8000/v1"
     assert llm.endpunkt_aus_umgebung({llm.ENV_ENDPUNKT: "http://anders:8000/v1"}) \
         == "http://anders:8000/v1"
 
@@ -185,32 +188,64 @@ def test_vorgabe_ist_die_box_im_lan():
 @pytest.mark.parametrize("url", [
     "http://127.0.0.1:8000/v1",
     "http://localhost:8000/v1",
-    "http://[::1]:8000/v1",
+    "http://127.0.0.1:8011/v1",
+    "http://eine-box.local:8000/v1",
 ])
-def test_loopback_auf_8000_ist_ein_konfigurationsfehler(url):
-    """Auf diesem Rechner lauscht auf 8000 nichts — die Box ist ein anderer."""
-    with pytest.raises(llm.KonfigurationsFehler) as e:
-        llm.pruefe_endpunkt(url)
-    assert "eigener Rechner" in str(e.value)
-    assert ENDPUNKT in str(e.value)
+def test_lokale_und_ferne_endpunkte_sind_erlaubt(url):
+    """Bis WB-388 war loopback:8000 eine Falle dieses Haushalts (die Box war
+    ein eigener Rechner). Für alle anderen ist es die normale vLLM-Adresse —
+    die Falle gehörte der Maschine und ist mit ihr aus dem Code gezogen."""
+    assert llm.pruefe_endpunkt(url) == url
 
 
-def test_loopback_auf_anderem_port_bleibt_erlaubt():
-    """Ein lokaler Forward auf einem anderen Port ist eine legitime Wahl."""
-    assert llm.pruefe_endpunkt("http://127.0.0.1:8011/v1") == "http://127.0.0.1:8011/v1"
-
-
-def test_die_alte_ip_wird_als_altlast_erkannt():
-    """„No route to host" sieht aus wie ein Netzfehler und ist Konfiguration."""
-    with pytest.raises(llm.KonfigurationsFehler) as e:
-        llm.pruefe_endpunkt(f"http://{llm.ALTE_IP}:8000/v1")
-    assert "2026-08-16" in str(e.value)
-
-
-@pytest.mark.parametrize("url", ["", "   ", "vllm-box:8000", "ftp://box/v1"])
+@pytest.mark.parametrize("url", ["", "   ", "irgendeine-box:8000", "ftp://box/v1"])
 def test_unbrauchbare_endpunkte(url):
     with pytest.raises(llm.KonfigurationsFehler):
         llm.pruefe_endpunkt(url)
+
+
+def test_picknick_env_liefert_endpunkt_und_schluessel(monkeypatch, tmp_path):
+    """Die gitignorte Datei trägt die privaten Werte — der Start liest sie,
+    wenn die Umgebung nichts sagt."""
+    datei = tmp_path / "picknick.env"
+    datei.write_text(
+        "# private Werte\n"
+        "\n"
+        f'{llm.ENV_ENDPUNKT} = "http://meine-box.local:8000/v1"\n'
+        f"{llm.ENV_SCHLUESSEL}=geheim\n",
+        encoding="utf-8")
+    monkeypatch.setattr(llm, "ENV_DATEI", datei)
+    monkeypatch.delenv(llm.ENV_ENDPUNKT, raising=False)
+    monkeypatch.delenv(llm.ENV_SCHLUESSEL, raising=False)
+    assert llm.endpunkt_aus_umgebung() == "http://meine-box.local:8000/v1"
+    z = llm.Modellzugang(client=object())
+    assert z.endpunkt == "http://meine-box.local:8000/v1"
+    assert z.schluessel == "geheim"
+
+
+def test_umgebung_schlaegt_die_env_datei(monkeypatch, tmp_path):
+    datei = tmp_path / "picknick.env"
+    datei.write_text(f"{llm.ENV_ENDPUNKT}=http://datei:8000/v1\n",
+                     encoding="utf-8")
+    monkeypatch.setattr(llm, "ENV_DATEI", datei)
+    monkeypatch.setenv(llm.ENV_ENDPUNKT, "http://umgebung:8000/v1")
+    assert llm.endpunkt_aus_umgebung() == "http://umgebung:8000/v1"
+
+
+def test_injizierte_umgebung_liest_keine_env_datei(monkeypatch, tmp_path):
+    """Eine übergebene Umgebung ist vollständig — sonst hinge jeder Test am
+    Inhalt einer privaten Datei der Maschine, auf der er zufällig läuft."""
+    datei = tmp_path / "picknick.env"
+    datei.write_text(f"{llm.ENV_ENDPUNKT}=http://datei:8000/v1\n",
+                     encoding="utf-8")
+    monkeypatch.setattr(llm, "ENV_DATEI", datei)
+    assert llm.endpunkt_aus_umgebung({}) == llm.DEFAULT_ENDPUNKT
+
+
+def test_fehlende_env_datei_ist_kein_fehler(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm, "ENV_DATEI", tmp_path / "gibts-nicht.env")
+    monkeypatch.delenv(llm.ENV_ENDPUNKT, raising=False)
+    assert llm.endpunkt_aus_umgebung() == llm.DEFAULT_ENDPUNKT
 
 
 # --------------------------------------------------------------------------
@@ -273,7 +308,7 @@ def test_schweigende_box_wird_nicht_fuer_tot_erklaert():
 def test_denken_kommt_getrennt_vom_ergebnis_an(denkfeld):
     """Beide Schreibweisen, weil die Box ihre schon gewechselt hat.
 
-    Gemessen 2026-08-28 liefert `vllm-box.local` das Denken als
+    Gemessen 2026-08-28 liefert die Box das Denken als
     `reasoning`; die Notiz zur Maschine sprach von `reasoning_content`. Ein
     geratener Feldname hätte das Denken stillschweigend verschluckt.
     """
@@ -496,10 +531,10 @@ def test_starter_der_nicht_startet(weckbefehl):
 def test_kaputter_endpunkt_graut_nur_den_chat_aus(monkeypatch):
     """`wake.zustand()` wirft nicht — sonst reisst der Chat den Shop mit."""
     monkeypatch.setattr(wake, "_WECKER", None)
-    monkeypatch.setenv(llm.ENV_ENDPUNKT, "http://127.0.0.1:8000/v1")
+    monkeypatch.setenv(llm.ENV_ENDPUNKT, "ftp://box/v1")
     z = wake.zustand()
     assert z.zustand == wake.NICHT_ERREICHBAR
-    assert "eigener Rechner" in z.grund
+    assert "brauchbare Adresse" in z.grund
 
 
 # --------------------------------------------------------------------------

@@ -129,14 +129,48 @@ ENV_DB = "PICKNICK_DB"
 ENV_IMAGE_DIR = "PICKNICK_IMAGE_DIR"
 ENV_BON_DIR = "PICKNICK_BON_DIR"
 
-#: Vorgabe: die Tailscale-Adresse dieser Maschine und localhost. Beides steht
-#: in der Umgebung und nicht als einzige Wahrheit im Code, weil die Adresse
-#: beim Umzug auf einen Dauerläufer (Spec 12) eine andere ist.
-DEFAULT_HOSTS = "100.64.0.1,127.0.0.1"
 DEFAULT_PORT = 8730
 
 #: Der CGNAT-Bereich, aus dem Tailscale seine Adressen vergibt.
 TAILNET = ipaddress.ip_network("100.64.0.0/10")
+
+#: Ein Ziel im Tailnet für die Routenfrage in `eigene_tailnet_adresse()`.
+#: 100.100.100.100 ist der MagicDNS-Dienst, den Tailscale auf jeder Maschine
+#: einrichtet — gesendet wird an ihn nie ein Paket, er ist nur die Frage
+#: „welchen Absender nähme ein Weg dorthin?".
+_TAILNET_SONDE = ("100.100.100.100", 53)
+
+
+def eigene_tailnet_adresse() -> str | None:
+    """Die IPv4-Adresse dieser Maschine im Tailnet — oder None.
+
+    Die Adresse steht mit Absicht nicht im Code: sie ist auf jeder Maschine
+    eine andere, und in einem veröffentlichten Repo wäre sie die eines
+    privaten Geräts (WB-388). Statt alle Interfaces zu durchsuchen, wird die
+    Routing-Tabelle gefragt: ein UDP-`connect` sendet nichts, es wählt nur
+    die Absenderadresse für den Weg ins Tailnet. Ohne Tailscale fällt die
+    Wahl auf eine Adresse ausserhalb von 100.64.0.0/10 oder scheitert — dann
+    gibt es keine, und die Vorgabe ist allein loopback.
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sonde:
+            sonde.connect(_TAILNET_SONDE)
+            adresse = ipaddress.ip_address(sonde.getsockname()[0])
+    except OSError:
+        return None
+    if adresse.version == 4 and adresse in TAILNET:
+        return str(adresse)
+    return None
+
+
+def standard_hosts() -> list[str]:
+    """Die Vorgabe: die eigene Tailnet-Adresse (falls vorhanden), dann loopback.
+
+    Dieselbe Reihenfolge wie die frühere feste Vorgabe, damit ein Neustart
+    auf derselben Maschine auf denselben Adressen lauscht wie bisher.
+    """
+    tailnet = eigene_tailnet_adresse()
+    return ([tailnet] if tailnet else []) + ["127.0.0.1"]
 
 
 class UnsichereBindung(RuntimeError):
@@ -183,11 +217,16 @@ def pruefe_host(host: str) -> str:
 
 
 def hosts_aus_umgebung(umgebung=None) -> list[str]:
-    """Die Bindeadressen aus `PICKNICK_HOST`, komma-getrennt. Alle geprüft."""
+    """Die Bindeadressen aus `PICKNICK_HOST`, komma-getrennt. Alle geprüft.
+
+    Ungesetzt gilt `standard_hosts()`: die Tailnet-Adresse wird erfragt statt
+    hinterlegt. Auch die erfragte Adresse geht durch `pruefe_host()` — die
+    Weissliste gilt für jede Quelle.
+    """
     umgebung = os.environ if umgebung is None else umgebung
     roh = umgebung.get(ENV_HOST)
     if roh is None:
-        roh = DEFAULT_HOSTS
+        return [pruefe_host(h) for h in standard_hosts()]
     hosts = [h.strip() for h in roh.split(",") if h.strip()]
     if not hosts:
         # Gesetzt, aber leer: das ist ein Konfigurationsfehler und wird nicht

@@ -2,7 +2,7 @@
 
 **Datum:** 2026-08-28
 **Status:** abgenommen, noch nicht implementiert
-**Projekt:** `/home/user/code/picknick_klon`, Werkbank-Board als „Picknick"
+**Projekt:** `~/code/picknick_klon`, Werkbank-Board als „Picknick"
 
 ---
 
@@ -244,7 +244,8 @@ ohnehin beisammen sind.
 (Bild, Name, Menge, Preis); sie bestätigt oder verwirft jede Zeile einzeln.
 
 **Modellzugang.** Endpunkt aus der Konfiguration, Vorgabe
-`http://vllm-box.local:8000/v1`. Das Modellkürzel wird beim Start über
+`http://<vllm-box>:8000/v1` (der echte Hostname der Box ist privat und steht
+seit  in `picknick.env`, nicht im Repo). Das Modellkürzel wird beim Start über
 `/v1/models` erfragt und nie im Code festgeschrieben — es hat auf dieser Box schon
 gewechselt. Vor jedem Chat-Request wird `/v1/models` geprüft: antwortet die Box,
 läuft alles normal; antwortet sie nicht, wird `wake-vllm` im Hintergrund gestartet
@@ -449,7 +450,7 @@ zugeklappt, ohne das fiele der Crawl aus und der Katalog würde nie aktualisiert
 
 Nächtliche Sicherung der SQLite-Datei per `VACUUM INTO`, sieben Stände.
 
-Läuft auf `user-Laptop`. Dass der Shop mit dem Laptop schläft, ist bekannt und
+Läuft auf dem Laptop des Haushalts. Dass der Shop mit dem Laptop schläft, ist bekannt und
 akzeptiert; ein Umzug auf einen Dauerläufer ist später ein reiner Ortswechsel von
 Prozess und Datei.
 

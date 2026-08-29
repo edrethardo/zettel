@@ -2,7 +2,7 @@
 
 [Unit]
 Description=Picknick — Katalog-Lauf jede Nacht
-Documentation=file:///home/user/code/picknick_klon/README.md
+Documentation=file://%h/code/picknick_klon/README.md
 
 [Timer]
 OnCalendar=*-*-* 03:30:00
