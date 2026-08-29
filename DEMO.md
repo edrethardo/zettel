@@ -61,8 +61,8 @@ und deshalb ist die Adresse eine Weisse Liste und keine Empfehlung.
 Im Browser `http://127.0.0.1:8730/` öffnen.
 
 **Prüfung:** die Weiterleitung landet auf `/katalog`, oben eine Leiste
-`Katalog · Korb 0 · Rezepte · Bestellungen · Pick-Liste · Status · wer bin
-ich?`, links der Kategoriebaum (`Aufschnitt`, `Backwaren & Feingebäck`, …
+`Katalog · Chat · Korb 0 · Rezepte · Bestellungen · Pick-Liste · Bons ·
+Status · wer bin ich?`, links der Kategoriebaum (`Aufschnitt`, `Backwaren & Feingebäck`, …
 jeweils mit Produktzahl), rechts Kacheln — **genau 60**, das ist die harte
 Kappung, und darunter steht der Satz „Preise stammen von knuspr.de und sind
 Richtwerte — eingekauft wird bei Rewe und Lidl."
@@ -88,7 +88,11 @@ landet wieder im unbeschränkten Katalog. Bekannt, siehe `DESIGN.md`.
 
 ## 3. Der Chat
 
-Auf **Korb** klicken, dann unten ins Chat-Feld:
+Auf **Chat** klicken, dann unten ins Chat-Feld:
+
+**Prüfung vorab:** der Chat ist seit WB-382 eine eigene Seite (`/chat`). Über
+dem Verlauf steht die Korbbrücke — solange nichts drin liegt: „Noch nichts im
+Korb. Was du hier mit „Ja“ bestätigst, landet dort."
 
 > `dazu brauche ich noch Zahnpasta und Butter`
 
@@ -142,8 +146,16 @@ Freitextfeld. Das ist dort der richtige Ausgang und nicht der Notausgang.
 
 ### 3b. „rückgängig" — ein Fehltipp ist nicht endgültig (WB-361)
 
-An der Zahnpastazeile auf **Ja** tippen, dann auf das kleine **rückgängig**
-neben „im Korb". Die Zeile steht wieder mit Ja/Nein da, und darunter steht:
+An der Zahnpastazeile auf **Ja** tippen.
+
+**Prüfung (WB-382):** die Seite wechselt NICHT. An der Zeile steht „Liegt jetzt
+im Korb — 1 Sache drin.", die Korbbrücke über dem Verlauf wird zu „1 Sache im
+Korb — ansehen", und die Zahl oben im Kopf springt auf 1. Drei Stellen für
+dieselbe Auskunft: die Zeile, weil dort der Daumen steht; die Brücke, weil sie
+beim Scrollen oben klebt; der Kopf, weil er auf jeder Seite steht.
+
+Dann auf das kleine **rückgängig** neben „im Korb". Die Zeile steht wieder mit
+Ja/Nein da, und darunter steht:
 
 ```
 Zurückgenommen — die Zeile bleibt im Korb; dort steht ein Löschknopf.
@@ -375,7 +387,9 @@ Zurück im Shop, in der Vorschlagsliste:
 als Freitext im Korb, die Butter-Zeile ist als entschieden markiert und bleibt
 sichtbar stehen.
 
-Dann **Bestellung abschicken**.
+Dann über die Korbbrücke („1 Sache im Korb — ansehen") auf den **Warenkorb** —
+dort steht die Liste allein, ohne den Verlauf darunter — und
+**Bestellung abschicken**.
 
 **Prüfung:** Weiterleitung auf `/bestellungen`, die Bestellung steht auf
 `offen`. Und in Phoenix, auf **demselben** `chat.turn`-Span:

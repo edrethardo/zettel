@@ -496,7 +496,13 @@ def test_unbekannte_entscheidung_wird_abgelehnt(con):
 
 
 def test_chat_haengt_am_warenkorb(con):
-    """Der Chat gehört zur Bestellung und wandert beim Abschicken mit."""
+    """Der Chat gehört zur Bestellung und wandert beim Abschicken mit.
+
+    Das bleibt auch, seit der Chat einen eigenen ORT hat (WB-382): „eigener
+    Ort" heisst eine eigene Ansicht, nicht ein eigener Besitzer. Löste man
+    die Bindung, blieben die Entscheidungen nicht mehr bei dem Einkauf, zu
+    dem sie gehören — und daran hängen die Eval-Labels aus WB-329.
+    """
     agent, _ = _chat(con, _extract(("Landmilch", 1)),
                      _choose(("Landmilch", _pid(con, MILCH), 1)))
     ergebnis = agent.turn(con, "Landmilch")

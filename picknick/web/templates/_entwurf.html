@@ -34,8 +34,8 @@
   <h3>Rezeptentwurf</h3>
   <p class="fussnote">Daraus wird kein Rezept.</p>
   <form method="post"
-        action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
-        hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
+        action="/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
+        hx-post="/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <button class="mini" type="submit">Doch ein Rezept daraus</button>
@@ -45,8 +45,8 @@
   {# Der Name ist überschreibbar, und das ist keine Kosmetik: der Rezeptweg
      sucht ihn beim nächsten Mal wörtlich im Satz. #}
   <form class="entwurf-name" method="post"
-        action="/warenkorb/chat/{{ m.id }}/entwurf/name"
-        hx-post="/warenkorb/chat/{{ m.id }}/entwurf/name"
+        action="/chat/{{ m.id }}/entwurf/name"
+        hx-post="/chat/{{ m.id }}/entwurf/name"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <input type="text" name="name" autocomplete="off"
@@ -79,8 +79,8 @@
          im Korb liegt, ändert sich davon nicht — dort steht ein eigenes
          Mengenfeld. #}
       <form class="entwurf-menge" method="post"
-            action="/warenkorb/vorschlag/{{ z.id }}/bedarf"
-            hx-post="/warenkorb/vorschlag/{{ z.id }}/bedarf"
+            action="/chat/vorschlag/{{ z.id }}/bedarf"
+            hx-post="/chat/vorschlag/{{ z.id }}/bedarf"
             hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
             hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
         <input type="text" name="menge" inputmode="decimal"
@@ -97,8 +97,8 @@
          falsch" — und nur das zweite ist ein Urteil über das Modell
          (Spec 8.1). #}
       <form method="post"
-            action="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
-            hx-post="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
+            action="/chat/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
+            hx-post="/chat/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
             hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
             hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
         <button class="mini {{ 'zurueck' if z.im_rezept }}" type="submit">
@@ -124,8 +124,8 @@
     hier holt eine zurück.</p>
   {% endif %}
   <form method="post"
-        action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
-        hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
+        action="/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
+        hx-post="/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <button class="mini zurueck" type="submit">Kein Rezept daraus</button>

@@ -66,6 +66,18 @@
     {% if v.nicht_im_katalog %}
     <span class="ausgemustert">Nicht mehr im Katalog.</span>
     {% endif %}
+    {% if gerade == v.id and v.behalten %}
+    {# Die Rückmeldung an der ZEILE (WB-382). Sie steht nur in der Antwort auf
+       genau diesen Tipp — im gerenderten Verlauf ist nichts „gerade"
+       passiert, und dort kostete der Satz an 150 Zeilen nur Bytes.
+
+       Warum es die Marke „im Korb" nebenan nicht schon tut: die Marke ist ein
+       ZUSTAND und sieht auf einer entschiedenen Zeile aus wie jede andere.
+       Was hier fehlte, seit der Korb nicht mehr daneben steht, ist das
+       EREIGNIS — und mit ihm die Zahl, die sagt, wohin es gegangen ist. #}
+    {%- set was = "Sache" if korb_anzahl == 1 else "Sachen" %}
+    <span class="hinweis eben" role="status">Liegt jetzt im Korb — {{ korb_anzahl }} {{ was }} drin.</span>
+    {% endif %}
     {% if v.offen and v.im_korb %}
     {# Zurückgenommenes „Ja" (WB-361): der Korb wird dabei bewusst NICHT
        angerührt — `orders.einlegen()` fasst gleiche Zeilen zusammen, die
@@ -79,8 +91,8 @@
   <span class="stellen">
     {% if v.offen %}
       <form method="post"
-            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
-            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+            action="/chat/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+            hx-post="/chat/vorschlag/{{ v.id }}/entscheiden?decision=kept"
             hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
@@ -88,8 +100,8 @@
                 aria-label="{{ v.name }} in den Korb">Ja</button>
       </form>
       <form method="post"
-            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
-            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+            action="/chat/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+            hx-post="/chat/vorschlag/{{ v.id }}/entscheiden?decision=removed"
             hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
@@ -119,8 +131,8 @@
          gemeint hat. #}
       {% if v.behalten or not v.korrektur %}
       <form method="post"
-            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
-            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+            action="/chat/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+            hx-post="/chat/vorschlag/{{ v.id }}/entscheiden?decision=offen"
             hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML"
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
@@ -170,8 +182,8 @@
              NEUE Vorschlagszeile an (WB-359), und die hat noch kein Element,
              in das sie getauscht werden könnte. #}
           <form method="post"
-                action="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
-                hx-post="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                action="/chat/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                hx-post="/chat/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
                 hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML"
                 hx-indicator="#zug-{{ v.chat_message_id }}"
                 hx-disabled-elt="find button">
@@ -197,8 +209,8 @@
 
     {# Auch hier der ganze Zug: der Freitext wird als neue Zeile angelegt. #}
     <form class="selbst" method="post"
-          action="/warenkorb/vorschlag/{{ v.id }}/freitext"
-          hx-post="/warenkorb/vorschlag/{{ v.id }}/freitext"
+          action="/chat/vorschlag/{{ v.id }}/freitext"
+          hx-post="/chat/vorschlag/{{ v.id }}/freitext"
           hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML"
           hx-indicator="#zug-{{ v.chat_message_id }}"
           hx-disabled-elt="find button">

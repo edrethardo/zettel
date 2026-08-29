@@ -345,8 +345,8 @@ class Chat:
 
         Das ist der Aufruf aus Spec 6 („vor jedem Chat-Request wird
         `/v1/models` geprüft"). Er steht bewusst NICHT im Konstruktor: der
-        Chat-Kasten im Warenkorb fragt ihn beim Anzeigen, und ein Katalogklick
-        soll keine Maschine im LAN aufwecken.
+        Chatseite fragt ihn beim Anzeigen, und ein Katalogklick soll keine
+        Maschine im LAN aufwecken.
         """
         if self._wecker is not None:
             return self._wecker.zustand()
@@ -401,9 +401,11 @@ class Chat:
         # ganzen Zug; die LLM- und RETRIEVER-Spans darunter entstehen in
         # `_aus_modell`. Ohne eingerichteten Tracer ist das ein No-Op.
         with obs.chain("chat.turn", eingabe=text) as span:
-            # Der Chat gehört in den Warenkorb (Spec 9), also hängt er an
-            # dessen Bestellung. Beim Abschicken wandert er mit, und die
+            # Der Chat hängt am Warenkorb, also an dessen Bestellung
+            # (Spec 9). Beim Abschicken wandert er mit, und die
             # Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören.
+            # Seit WB-382 hat er eine eigene ANSICHT; am Besitzer hier
+            # ändert das nichts — daran hängen die Eval-Labels.
             order_id = orders.warenkorb(con)
             # Derselbe Warenkorb ist auch die Sitzung: mehrere Sätze zu einem
             # Einkauf gehören in Phoenix zusammen, sonst steht jeder Zug für

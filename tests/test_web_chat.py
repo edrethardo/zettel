@@ -99,19 +99,52 @@ def _inhalt(pfad):
 
 # --------------------------------------------------------------------------
 
-def test_warenkorb_zeigt_das_chatfeld(db_datei, tmp_path):
+def test_der_chat_hat_einen_eigenen_ort(db_datei, tmp_path):
+    """Seit WB-382 eine eigene Adresse — und der Korb trägt ihn nicht mehr."""
     client, box = _client(db_datei, tmp_path)
-    seite = client.get("/warenkorb").text
+    seite = client.get("/chat").text
     assert 'name="satz"' in seite
-    assert 'hx-post="/warenkorb/chat"' in seite
+    assert 'hx-post="/chat"' in seite
+    korb = client.get("/warenkorb").text
+    assert 'name="satz"' not in korb
+    assert '<section class="chat"' not in korb
 
 
-def test_warenkorb_fragt_die_box_nicht(db_datei, tmp_path):
+def test_der_chat_steht_in_der_navigation(db_datei, tmp_path):
+    """Ein eigener Ort, den man nur über einen Link im Text erreicht, ist
+    keiner. Geprüft wird an einer BELIEBIGEN Vollseite — die Leiste steht im
+    Grundgerüst und gilt überall."""
+    client, _ = _client(db_datei, tmp_path)
+    seite = client.get("/katalog").text
+    nav = seite.split('<nav id="hauptnavigation"', 1)[1].split("</nav>", 1)[0]
+    assert 'href="/chat"' in nav
+
+
+def test_der_chat_fragt_die_box_nicht(db_datei, tmp_path):
     """Der Zustand wird nachgeladen — sonst wartet jeder Blick am Timeout."""
     client, box = _client(db_datei, tmp_path)
-    client.get("/warenkorb")
+    client.get("/chat")
     assert box.gefragt == 0
-    assert 'hx-get="/warenkorb/chat/zustand"' in client.get("/warenkorb").text
+    assert 'hx-get="/chat/zustand"' in client.get("/chat").text
+
+
+def test_der_korb_laedt_den_chatzustand_nicht_mehr(db_datei, tmp_path):
+    """Der Aufruf, der `wake-vllm` anstösst, gehört dorthin, wo jemand das
+    Modell braucht (Spec 6). Seit der Korb keinen Chat mehr trägt, wäre ein
+    Weckruf beim Blick in den Korb ein Weckruf für nichts."""
+    client, _ = _client(db_datei, tmp_path)
+    assert "/chat/zustand" not in client.get("/warenkorb").text
+
+
+def test_der_chat_ansehen_legt_keine_bestellung_an(db_datei, tmp_path):
+    """Wie beim Korb: ein Blick darf keinen `draft` erzeugen."""
+    client, _ = _client(db_datei, tmp_path)
+    client.get("/chat")
+    con = db.connect(db_datei)
+    try:
+        assert con.execute("SELECT count(*) AS n FROM orders").fetchone()["n"] == 0
+    finally:
+        con.close()
 
 
 def test_warenkorb_ansehen_legt_keine_bestellung_an(db_datei, tmp_path):
@@ -127,16 +160,16 @@ def test_warenkorb_ansehen_legt_keine_bestellung_an(db_datei, tmp_path):
 def test_zustand_zeigt_den_zaehler_beim_aufwachen(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
-    stueck = client.get("/warenkorb/chat/zustand").text
+    stueck = client.get("/chat/zustand").text
     assert "wacht auf" in stueck
     assert "Weckruf läuft." in stueck
     # Es fragt sich selbst wieder — sonst bliebe der Zähler stehen.
-    assert 'hx-get="/warenkorb/chat/zustand"' in stueck
+    assert 'hx-get="/chat/zustand"' in stueck
 
 
 def test_zustand_schweigt_wenn_die_box_bedient(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path)
-    stueck = client.get("/warenkorb/chat/zustand").text
+    stueck = client.get("/chat/zustand").text
     assert "wacht auf" not in stueck
     assert "hx-trigger" not in stueck
 
@@ -145,7 +178,7 @@ def test_chat_zug_legt_vorschlaege_vor_und_nichts_in_den_korb(db_datei, tmp_path
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 2)),
                         _choose(("Landmilch", milch, 2)))
-    stueck = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+    stueck = client.post("/chat", data={"satz": "Landmilch"},
                          headers=HTMX).text
 
     assert MILCH in stueck
@@ -154,36 +187,153 @@ def test_chat_zug_legt_vorschlaege_vor_und_nichts_in_den_korb(db_datei, tmp_path
     assert _inhalt(db_datei) == []        # nichts landet ungefragt im Korb
 
 
-def test_ja_legt_ein_und_zeigt_den_korb_gleich_mit(db_datei, tmp_path):
+def test_ja_legt_ein_und_sagt_es_an_der_zeile(db_datei, tmp_path):
+    """Das Ankommen im Korb ist vom Chat aus sichtbar — ohne Seitenwechsel.
+
+    Bis WB-382 stand der Korb auf derselben Seite und kam als
+    out-of-band-Tausch mit. Er steht jetzt woanders; sichtbar bleibt es an
+    DREI Stellen, und alle drei sind in dieser einen Antwort:
+
+        an der Zeile      „Liegt jetzt im Korb — 1 Sache drin."
+        an der Brücke     „1 Sache im Korb — ansehen"
+        oben im Kopf      die Ziffer
+
+    Die Zeile ist die wichtigste davon: dort steht der Daumen.
+    """
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 2)),
                         _choose(("Landmilch", milch, 2)))
-    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
     con = db.connect(db_datei)
     sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
     con.close()
 
-    antwort = client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=kept",
+    antwort = client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
                           headers=HTMX)
     assert antwort.status_code == 200
-    # Der Korb kommt als out-of-band-Tausch mit, sonst sieht sie ihn nicht.
-    assert 'id="korb" hx-swap-oob="true"' in antwort.text
+    assert "Liegt jetzt im Korb" in antwort.text
+    assert 'id="korbbruecke" hx-swap-oob="true"' in antwort.text
+    assert "1 Sache im Korb" in antwort.text
+    assert 'id="korb-anzahl"' in antwort.text
     assert "im Korb" in antwort.text
     zeilen = _inhalt(db_datei)
     assert [(z["product_id"], z["qty"]) for z in zeilen] == [(milch, 2)]
+
+
+def test_der_ankunftssatz_steht_nur_an_der_eben_getippten_zeile(db_datei,
+                                                                tmp_path):
+    """Er ist ein Ereignis und kein Zustand.
+
+    Stünde er im gerenderten Verlauf, stünde er an 150 Zeilen gleichzeitig —
+    und wäre damit weder Rückmeldung noch billig. Ein „Nein" bekommt ihn
+    ebenfalls nicht: es ändert am Korb nichts.
+    """
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
+                        _choose(("Landmilch", milch, 1)))
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    con = db.connect(db_datei)
+    sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
+    con.close()
+
+    client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
+                headers=HTMX)
+    assert "Liegt jetzt im Korb" not in client.get("/chat").text
+
+    zurueck = client.post(
+        f"/chat/vorschlag/{sid}/entscheiden?decision=offen", headers=HTMX)
+    assert "Liegt jetzt im Korb" not in zurueck.text
+    nein = client.post(
+        f"/chat/vorschlag/{sid}/entscheiden?decision=removed", headers=HTMX)
+    assert "Liegt jetzt im Korb" not in nein.text
+
+
+def test_der_tipp_traegt_den_korb_nicht_mehr_mit(db_datei, tmp_path):
+    """Die Grössenzusicherung von WB-382 — und ihr eigentlicher Grund.
+
+    Bis hierher trug jedes „Ja" den KOMPLETTEN Korb als out-of-band-Tausch:
+    Zeilen mit Bild, zwei Mengenformularen, Ladenauswahl und Löschknopf, weil
+    der Korb auf derselben Seite stand. Seit er woanders steht, wäre das ein
+    Tausch ins Leere — und obendrein der teuerste Teil einer Antwort, die
+    sonst nur eine Zeile umschreibt.
+
+    Gemessen (`scripts/groesse_probe.py`, 17 Züge): 10.412 -> 2.249 Bytes je
+    Tipp, 21 -> 3 Formulare. Hier steht die Eigenschaft, die dahinter liegt.
+    """
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
+                        _choose(("Landmilch", milch, 1)))
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    con = db.connect(db_datei)
+    sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
+    con.close()
+
+    antwort = client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
+                          headers=HTMX).text
+
+    assert 'id="korb"' not in antwort
+    assert '<ul class="korb">' not in antwort
+    assert "/warenkorb/posten/" not in antwort
+    # Und die Zahl kommt trotzdem an — sonst wäre nur gespart, nicht verlegt.
+    assert "1 Sache im Korb" in antwort
+
+
+def test_beide_wege_zwischen_chat_und_korb_gehen_ohne_die_leiste(db_datei,
+                                                                 tmp_path):
+    """Ein Weg, den es nur in der Navigationsleiste gibt, ist keiner.
+
+    Sie scrollt quer, hat neun Ziele und sieht auf jeder Seite gleich aus;
+    Chat und Korb sind aber das Paar, zwischen dem am häufigsten gewechselt
+    wird. Geprüft wird deshalb, was IM BLATT steht — die Leiste wird für
+    diesen Test herausgeschnitten.
+    """
+    def ohne_leiste(text):
+        kopf, _, rest = text.partition('<nav id="hauptnavigation"')
+        return kopf + rest.partition("</nav>")[2]
+
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
+                        _choose(("Landmilch", milch, 1)))
+
+    # Der leere Korb lädt in den Chat ein, statt in eine Sackgasse zu führen.
+    leer = ohne_leiste(client.get("/warenkorb").text)
+    assert "Der Warenkorb ist leer." in leer
+    assert 'href="/chat"' in leer
+    assert "Sag einfach, was du brauchst" in leer
+
+    # Solange nichts drin liegt, ist die Brücke ein Satz und kein Knopf: ein
+    # Link auf eine leere Liste ist eine Sackgasse mit Einladung.
+    assert "Noch nichts im Korb" in client.get("/chat").text
+
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    con = db.connect(db_datei)
+    sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
+    con.close()
+    client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
+                headers=HTMX)
+
+    # Jetzt führt die Brücke in den Korb — und sagt, wie voll er ist.
+    chat = ohne_leiste(client.get("/chat").text)
+    assert 'href="/warenkorb"' in chat
+    assert "1 Sache im Korb" in chat
+
+    # Und der volle Korb behält den Weg zurück.
+    voll = ohne_leiste(client.get("/warenkorb").text)
+    assert "Der Warenkorb ist leer." not in voll
+    assert 'href="/chat"' in voll
 
 
 def test_nein_setzt_removed_und_legt_nichts_ein(db_datei, tmp_path):
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
                         _choose(("Landmilch", milch, 1)))
-    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
     con = db.connect(db_datei)
     sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
     con.close()
 
     antwort = client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed", headers=HTMX)
+        f"/chat/vorschlag/{sid}/entscheiden?decision=removed", headers=HTMX)
     assert "verworfen" in antwort.text
     assert _inhalt(db_datei) == []
     con = db.connect(db_datei)
@@ -199,7 +349,7 @@ def test_erfundene_id_kommt_auch_ueber_die_oberflaeche_nicht_durch(db_datei,
     """Derselbe Kern wie in `test_assistant.py`, hier am HTTP-Rand."""
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
                         _choose(("Landmilch", 987654, 1)))
-    stueck = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+    stueck = client.post("/chat", data={"satz": "Landmilch"},
                          headers=HTMX).text
     assert "Freitext" in stueck
     con = db.connect(db_datei)
@@ -214,7 +364,7 @@ def test_schlafende_box_graut_nur_den_chat_aus(db_datei, tmp_path):
     """Spec 11: alles ausser dem Chat bleibt benutzbar."""
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.NICHT_ERREICHBAR, grund="Box antwortet nicht."))
-    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+    antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX)
     assert antwort.status_code == 200
     assert "Box antwortet nicht." in antwort.text
@@ -237,25 +387,28 @@ def test_rezeptweg_geht_ohne_modell_auch_ueber_die_oberflaeche(db_datei,
     # scheiterte der Test.
     client, box = _client(db_datei, tmp_path,
                           box=Box(wake.NICHT_ERREICHBAR, grund="schläft"))
-    stueck = client.post("/warenkorb/chat", data={"satz": "Milchreis bitte"},
+    stueck = client.post("/chat", data={"satz": "Milchreis bitte"},
                          headers=HTMX).text
     assert MILCH in stueck
     assert box.gefragt == 0
 
 
 def test_ohne_javascript_kommt_die_ganze_seite(db_datei, tmp_path):
+    """Und zwar die CHATSEITE — kein Sprung in den Korb und zurück (WB-382)."""
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
                         _choose(("Landmilch", milch, 1)))
-    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"})
+    antwort = client.post("/chat", data={"satz": "Landmilch"})
     assert antwort.status_code == 200
     assert "<html" in antwort.text
     assert MILCH in antwort.text
+    assert "<title>Chat" in antwort.text
+    assert 'name="satz"' in antwort.text
 
 
 def test_leerer_satz_wird_erklaert_und_bricht_nichts(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path)
-    antwort = client.post("/warenkorb/chat", data={"satz": "  "}, headers=HTMX)
+    antwort = client.post("/chat", data={"satz": "  "}, headers=HTMX)
     assert antwort.status_code == 200
     assert "leer geht nicht" in antwort.text
 
@@ -265,14 +418,14 @@ def test_alles_uebernehmen_legt_alle_offenen_ein(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path,
                         _extract(("Landmilch", 1), ("Zahnstocher", 1)),
                         _choose(("Landmilch", milch, 1)))
-    client.post("/warenkorb/chat", data={"satz": "Landmilch und Zahnstocher"},
+    client.post("/chat", data={"satz": "Landmilch und Zahnstocher"},
                 headers=HTMX)
     con = db.connect(db_datei)
     mid = con.execute("SELECT id FROM chat_message WHERE role = 'assistant'"
                       ).fetchone()["id"]
     con.close()
 
-    client.post(f"/warenkorb/chat/{mid}/alle?decision=kept", headers=HTMX)
+    client.post(f"/chat/{mid}/alle?decision=kept", headers=HTMX)
     namen = sorted(z["name"] for z in _inhalt(db_datei))
     assert namen == sorted([MILCH, "Zahnstocher"])
 
@@ -296,7 +449,7 @@ def _milch_zug(db_datei, tmp_path):
     con.close()
     client, _ = _client(db_datei, tmp_path, _extract(("Milch", 1)),
                         _choose(("Milch", pid, 1)))
-    client.post("/warenkorb/chat", data={"satz": "Milch"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Milch"}, headers=HTMX)
     con = db.connect(db_datei)
     sid = con.execute("SELECT id FROM chat_suggestion ORDER BY id"
                       ).fetchone()["id"]
@@ -317,7 +470,7 @@ def test_nein_klappt_die_alternativen_auf(db_datei, tmp_path):
     client, sid, _ = _milch_zug(db_datei, tmp_path)
 
     stueck = client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
         headers=HTMX).text
 
     assert "<details class=\"alternativen\" open>" in stueck
@@ -326,7 +479,7 @@ def test_nein_klappt_die_alternativen_auf(db_datei, tmp_path):
     for name in namen:
         assert name in stueck
     # Bild, Menge, Preis — wie im Katalog. Und ein Tipp je Alternative.
-    assert f'/warenkorb/vorschlag/{sid}/statt?produkt_id=' in stueck
+    assert f'/chat/vorschlag/{sid}/statt?produkt_id=' in stueck
     assert "Nichts davon" in stueck
 
 
@@ -345,7 +498,7 @@ def test_die_alternativen_kosten_keine_zweite_suche(db_datei, tmp_path,
     monkeypatch.setattr(webapp.search, "search", verboten)
     monkeypatch.setattr(webapp.search, "suche_kette", verboten)
     antwort = client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
         headers=HTMX)
     assert antwort.status_code == 200
     assert "alternativen" in antwort.text
@@ -354,17 +507,19 @@ def test_die_alternativen_kosten_keine_zweite_suche(db_datei, tmp_path,
 def test_ein_tipp_auf_die_alternative_legt_sie_statt_des_vorschlags_ein(
         db_datei, tmp_path):
     client, sid, vorgeschlagen = _milch_zug(db_datei, tmp_path)
-    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+    client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
                 headers=HTMX)
     andere = _alternativen(db_datei, sid)[0]
 
     antwort = client.post(
-        f"/warenkorb/vorschlag/{sid}/statt?produkt_id={andere['id']}",
+        f"/chat/vorschlag/{sid}/statt?produkt_id={andere['id']}",
         headers=HTMX)
 
     assert antwort.status_code == 200
-    # Der Korb kommt out-of-band mit, sonst sieht sie ihre Zeile nicht.
-    assert 'id="korb" hx-swap-oob="true"' in antwort.text
+    # Die Korbbrücke kommt out-of-band mit, sonst merkt sie nicht, dass etwas
+    # angekommen ist — der Korb selbst steht seit WB-382 woanders.
+    assert 'id="korbbruecke" hx-swap-oob="true"' in antwort.text
+    assert "1 Sache im Korb" in antwort.text
     assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == [
         (andere["id"], 1)]
     # Und die Korrektur steht als Korrektur da, nicht als zweiter Vorschlag.
@@ -384,11 +539,11 @@ def test_ein_produkt_ausserhalb_der_vorlage_kommt_nicht_durch(db_datei,
                                                               tmp_path):
     """Dieselbe Regel wie gegen erfundene IDs des Modells, hier am HTTP-Rand."""
     client, sid, _ = _milch_zug(db_datei, tmp_path)
-    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+    client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
                 headers=HTMX)
 
     antwort = client.post(
-        f"/warenkorb/vorschlag/{sid}/statt?produkt_id=987654", headers=HTMX)
+        f"/chat/vorschlag/{sid}/statt?produkt_id=987654", headers=HTMX)
 
     assert antwort.status_code == 200
     assert "stand nicht in der Vorlage" in antwort.text
@@ -398,10 +553,10 @@ def test_ein_produkt_ausserhalb_der_vorlage_kommt_nicht_durch(db_datei,
 def test_nichts_davon_fuehrt_zu_einer_freitextzeile(db_datei, tmp_path):
     """Der Ausgang bei einer Katalog-Lücke — im echten Katalog „Sellerie"."""
     client, sid, _ = _milch_zug(db_datei, tmp_path)
-    client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+    client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
                 headers=HTMX)
 
-    antwort = client.post(f"/warenkorb/vorschlag/{sid}/freitext",
+    antwort = client.post(f"/chat/vorschlag/{sid}/freitext",
                           data={"text": "Rohmilch vom Hof"}, headers=HTMX)
 
     assert antwort.status_code == 200
@@ -413,13 +568,13 @@ def test_ohne_alternativen_bricht_die_ansicht_nicht(db_datei, tmp_path):
     """Ein Begriff ohne einen einzigen Treffer — der Weg bleibt trotzdem offen."""
     client, _ = _client(db_datei, tmp_path, _extract(("Zahnstocher", 1)),
                         _choose())
-    client.post("/warenkorb/chat", data={"satz": "Zahnstocher"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Zahnstocher"}, headers=HTMX)
     con = db.connect(db_datei)
     sid = con.execute("SELECT id FROM chat_suggestion").fetchone()["id"]
     con.close()
 
     stueck = client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision=removed",
+        f"/chat/vorschlag/{sid}/entscheiden?decision=removed",
         headers=HTMX).text
     assert "eine Lücke im Katalog" in stueck
     assert "Nichts davon" in stueck
@@ -453,7 +608,7 @@ def _sid(db_datei):
 
 def _entscheiden(client, sid, decision):
     return client.post(
-        f"/warenkorb/vorschlag/{sid}/entscheiden?decision={decision}",
+        f"/chat/vorschlag/{sid}/entscheiden?decision={decision}",
         headers=HTMX)
 
 
@@ -463,7 +618,7 @@ def test_die_entschiedene_zeile_bietet_den_rueckweg_an(db_datei, tmp_path):
     for decision, marke in (("kept", "im Korb"), ("removed", "verworfen")):
         client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
                             _choose(("Landmilch", milch, 1)))
-        client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+        client.post("/chat", data={"satz": "Landmilch"},
                     headers=HTMX)
         con = db.connect(db_datei)
         sid = con.execute("SELECT id FROM chat_suggestion ORDER BY id DESC"
@@ -474,7 +629,7 @@ def test_die_entschiedene_zeile_bietet_den_rueckweg_an(db_datei, tmp_path):
 
         assert marke in stueck
         assert "rückgängig" in stueck
-        assert (f'hx-post="/warenkorb/vorschlag/{sid}/entscheiden'
+        assert (f'hx-post="/chat/vorschlag/{sid}/entscheiden'
                 '?decision=offen"') in stueck
 
 
@@ -485,7 +640,7 @@ def test_ja_ruecknahme_ja_legt_auch_ueber_die_oberflaeche_nur_einmal_ein(
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 2)),
                         _choose(("Landmilch", milch, 2)))
-    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
     sid = _sid(db_datei)
 
     _entscheiden(client, sid, "kept")
@@ -502,7 +657,7 @@ def test_die_ruecknahme_sagt_dass_die_zeile_im_korb_bleibt(db_datei, tmp_path):
     milch = _pid(db_datei, MILCH)
     client, _ = _client(db_datei, tmp_path, _extract(("Landmilch", 1)),
                         _choose(("Landmilch", milch, 1)))
-    client.post("/warenkorb/chat", data={"satz": "Landmilch"}, headers=HTMX)
+    client.post("/chat", data={"satz": "Landmilch"}, headers=HTMX)
     sid = _sid(db_datei)
     _entscheiden(client, sid, "kept")
 
@@ -513,9 +668,9 @@ def test_die_ruecknahme_sagt_dass_die_zeile_im_korb_bleibt(db_datei, tmp_path):
     assert [(z["product_id"], z["qty"]) for z in _inhalt(db_datei)] == [
         (milch, 1)]
     # Und die Zeile ist wieder entscheidbar: beide Knöpfe stehen da.
-    assert (f'/warenkorb/vorschlag/{sid}/entscheiden?decision=kept'
+    assert (f'/chat/vorschlag/{sid}/entscheiden?decision=kept'
             in stueck)
-    assert (f'/warenkorb/vorschlag/{sid}/entscheiden?decision=removed'
+    assert (f'/chat/vorschlag/{sid}/entscheiden?decision=removed'
             in stueck)
 
 
@@ -539,7 +694,7 @@ def test_eine_korrektur_laesst_sich_ueber_die_oberflaeche_zuruecknehmen(
     client, sid, _ = _milch_zug(db_datei, tmp_path)
     _entscheiden(client, sid, "removed")
     andere = _alternativen(db_datei, sid)[0]
-    client.post(f"/warenkorb/vorschlag/{sid}/statt?produkt_id={andere['id']}",
+    client.post(f"/chat/vorschlag/{sid}/statt?produkt_id={andere['id']}",
                 headers=HTMX)
     con = db.connect(db_datei)
     korrektur = con.execute(
@@ -552,7 +707,7 @@ def test_eine_korrektur_laesst_sich_ueber_die_oberflaeche_zuruecknehmen(
     # Der Korb behält die Zeile (dieselbe Begründung wie beim „Ja"), …
     assert [z["product_id"] for z in _inhalt(db_datei)] == [andere["id"]]
     # … und die Wahl steht wieder offen.
-    assert f'/warenkorb/vorschlag/{sid}/statt?produkt_id=' in stueck
+    assert f'/chat/vorschlag/{sid}/statt?produkt_id=' in stueck
     assert "Nichts davon" in stueck
 
 
@@ -605,7 +760,7 @@ def aufschnitt_db(vorlagen, tmp_path):
 def _sorten_zug(aufschnitt_db, tmp_path, *antworten):
     """Der Zug, der „Aufschnitt" auffächert — ohne einen Modellaufruf."""
     client, _ = _client(aufschnitt_db, tmp_path, *antworten)
-    seite = client.post("/warenkorb/chat", data={"satz": "Aufschnitt"},
+    seite = client.post("/chat", data={"satz": "Aufschnitt"},
                         headers=HTMX).text
     con = db.connect(aufschnitt_db)
     mid = con.execute("SELECT max(id) AS id FROM chat_message"
@@ -621,7 +776,7 @@ def test_aufschnitt_zeigt_die_sorten_als_kaestchen(aufschnitt_db, tmp_path):
     assert "ist ein Oberbegriff" in seite
     for sorte in ("Salami", "Kochschinken", "Brühwurst", "Geflügelwurst"):
         assert f'name="sorte" value="{sorte}"' in seite
-    assert f'hx-post="/warenkorb/chat/{mid}/sorten"' in seite
+    assert f'hx-post="/chat/{mid}/sorten"' in seite
     # Punkt 5 des Tickets: keine Sackgasse.
     assert "Überspringen" in seite
 
@@ -639,7 +794,7 @@ def test_mehrere_sorten_kommen_als_mehrere_werte_an(aufschnitt_db, tmp_path):
         FakeLLM(_choose(("Salami", salami, 1), ("Kochschinken", schinken, 1))),
         wecker=Box())
 
-    seite = client.post(f"/warenkorb/chat/{mid}/sorten",
+    seite = client.post(f"/chat/{mid}/sorten",
                         data={"sorte": ["Salami", "Kochschinken"]},
                         headers=HTMX).text
 
@@ -662,7 +817,7 @@ def test_ohne_kreuz_wird_direkt_gesucht(aufschnitt_db, tmp_path):
                 _choose(("Aufschnitt", jagdwurst, 1))),
         wecker=Box())
 
-    seite = client.post(f"/warenkorb/chat/{mid}/sorten", headers=HTMX).text
+    seite = client.post(f"/chat/{mid}/sorten", headers=HTMX).text
 
     assert "Jagdwurst Aufschnitt" in seite
     # Und nicht noch einmal dieselbe Frage.
@@ -683,7 +838,7 @@ def test_eine_nicht_angebotene_sorte_kommt_nicht_durch(aufschnitt_db, tmp_path):
                 _choose(("Aufschnitt", jagdwurst, 1))),
         wecker=Box())
 
-    seite = client.post(f"/warenkorb/chat/{mid}/sorten",
+    seite = client.post(f"/chat/{mid}/sorten",
                         data={"sorte": "Kaviar"}, headers=HTMX).text
 
     # Kein „1 Sorte aus …": die erfundene Sorte fiel weg, und übrig blieb der
@@ -743,7 +898,7 @@ def test_ein_ja_uebertraegt_nicht_mehr_den_ganzen_verlauf(db_datei, tmp_path):
     """Der Grössenvergleich, um den es im Ticket geht."""
     ids = _langer_verlauf(db_datei)
     client, _ = _client(db_datei, tmp_path)
-    seite = _chatteil(client.get("/warenkorb?verlauf=alles").text)
+    seite = _chatteil(client.get("/chat?verlauf=alles").text)
 
     antwort = _entscheiden(client, ids[-1][0], "kept").text
 
@@ -766,9 +921,9 @@ def test_der_tipp_taucht_genau_die_eine_zeile_aus(db_datei, tmp_path):
 
     assert f'id="vorschlag-{sid}"' in antwort
     assert f'id="vorschlag-{geschwister}"' not in antwort
-    # Der Korb und die Zahl im Kopf kommen out-of-band mit, sonst sieht sie
-    # nicht, dass ihr „Ja" etwas getan hat.
-    assert 'id="korb" hx-swap-oob="true"' in antwort
+    # Die Korbbrücke und die Zahl im Kopf kommen out-of-band mit, sonst sieht
+    # sie nicht, dass ihr „Ja" etwas getan hat (WB-382).
+    assert 'id="korbbruecke" hx-swap-oob="true"' in antwort
     assert 'id="korb-anzahl"' in antwort
 
 
@@ -791,7 +946,7 @@ def test_aeltere_zuege_werden_nicht_gerendert(db_datei, tmp_path):
     _langer_verlauf(db_datei, zuege=6, je_zug=2)
     client, _ = _client(db_datei, tmp_path)
 
-    seite = client.get("/warenkorb").text
+    seite = client.get("/chat").text
 
     # Die letzten drei Züge stehen da, die älteren nicht.
     for zug in (3, 4, 5):
@@ -811,16 +966,16 @@ def test_ein_eingeklappter_zug_ist_aufklappbar_und_traegt_seine_entscheidungen(
     # Im ÄLTESTEN Zug entscheiden, danach klappt er weg.
     _entscheiden(client, ids[0][0], "kept")
     _entscheiden(client, ids[0][1], "removed")
-    assert "Antwort zu Zug 0" not in client.get("/warenkorb").text
+    assert "Antwort zu Zug 0" not in client.get("/chat").text
 
-    alles = client.get("/warenkorb?verlauf=alles").text
+    alles = client.get("/chat?verlauf=alles").text
 
     assert "Antwort zu Zug 0" in alles
     # Die Entscheidungen sind da, wo sie waren.
     assert alles.count("im Korb") >= 1
     assert "verworfen" in alles
     # Und über HTMX kommt dasselbe als Bruchstück.
-    stueck = client.get("/warenkorb/chat?verlauf=alles", headers=HTMX).text
+    stueck = client.get("/chat?verlauf=alles", headers=HTMX).text
     assert "Antwort zu Zug 0" in stueck
     assert "<html" not in stueck.lower()
 
@@ -830,7 +985,7 @@ def test_einklappen_loescht_keine_entscheidung(db_datei, tmp_path):
     ids = _langer_verlauf(db_datei, zuege=6, je_zug=2)
     client, _ = _client(db_datei, tmp_path)
     _entscheiden(client, ids[0][0], "kept")
-    client.get("/warenkorb")
+    client.get("/chat")
 
     con = db.connect(db_datei)
     try:
@@ -849,7 +1004,7 @@ def test_ein_kurzer_verlauf_bekommt_keinen_aufklapper(db_datei, tmp_path):
     """„0 ältere Züge anzeigen" wäre ein Knopf ohne Gegenstand."""
     _langer_verlauf(db_datei, zuege=2, je_zug=1)
     client, _ = _client(db_datei, tmp_path)
-    seite = client.get("/warenkorb").text
+    seite = client.get("/chat").text
     assert "ältere Züge" not in seite
     assert "Antwort zu Zug 0" in seite
 
@@ -870,21 +1025,21 @@ def test_verlauf_leeren_fragt_erst_nach(db_datei, tmp_path):
     _langer_verlauf(db_datei, zuege=2, je_zug=2)
     client, _ = _client(db_datei, tmp_path)
 
-    frage = client.post("/warenkorb/chat/leeren", headers=HTMX).text
+    frage = client.post("/chat/leeren", headers=HTMX).text
 
     assert "wirklich löschen?" in frage
     assert "Eval-Labels" in frage            # sie sagt, was auf dem Spiel steht
     assert "4 Vorschläge" in frage
-    assert "/warenkorb/chat/leeren?ja=1" in frage
+    assert "/chat/leeren?ja=1" in frage
     assert _chatzeilen(db_datei) == 4         # gefragt, nicht gelöscht
 
 
 def test_verlauf_leeren_laesst_sich_abbrechen(db_datei, tmp_path):
     _langer_verlauf(db_datei, zuege=2, je_zug=1)
     client, _ = _client(db_datei, tmp_path)
-    client.post("/warenkorb/chat/leeren", headers=HTMX)
+    client.post("/chat/leeren", headers=HTMX)
 
-    zurueck = client.post("/warenkorb/chat/leeren?ja=0", headers=HTMX).text
+    zurueck = client.post("/chat/leeren?ja=0", headers=HTMX).text
 
     assert "wirklich löschen?" not in zurueck
     assert _chatzeilen(db_datei) == 4
@@ -899,7 +1054,7 @@ def test_verlauf_leeren_loescht_und_laesst_den_korb_unangetastet(db_datei,
     vorher = _inhalt(db_datei)
     assert len(vorher) == 1
 
-    antwort = client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX).text
+    antwort = client.post("/chat/leeren?ja=1", headers=HTMX).text
 
     assert _chatzeilen(db_datei) == 0
     assert "Der Verlauf ist gelöscht" in antwort
@@ -913,7 +1068,7 @@ def test_verlauf_leeren_raeumt_auch_alles_ab_was_daran_haengt(db_datei,
     """Vorschläge und Kandidaten gehen per CASCADE mit — nichts bleibt liegen."""
     _milch_zug(db_datei, tmp_path)
     client, _ = _client(db_datei, tmp_path)
-    client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX)
+    client.post("/chat/leeren?ja=1", headers=HTMX)
 
     con = db.connect(db_datei)
     try:
@@ -940,7 +1095,7 @@ def test_der_leere_korb_mit_vollem_verlauf_ist_keine_sackgasse_mehr(db_datei,
     assert "Der Warenkorb ist leer" in abgelehnt.text
 
     # … das Leeren nicht.
-    client.post("/warenkorb/chat/leeren?ja=1", headers=HTMX)
+    client.post("/chat/leeren?ja=1", headers=HTMX)
 
     assert _chatzeilen(db_datei) == 0
     con = db.connect(db_datei)
@@ -955,9 +1110,9 @@ def test_der_leere_korb_mit_vollem_verlauf_ist_keine_sackgasse_mehr(db_datei,
 def test_ohne_verlauf_gibt_es_nichts_zu_leeren(db_datei, tmp_path):
     """Der Knopf steht nur da, wo er etwas tut."""
     client, _ = _client(db_datei, tmp_path)
-    assert "Verlauf leeren" not in client.get("/warenkorb").text
+    assert "Verlauf leeren" not in client.get("/chat").text
     _langer_verlauf(db_datei, zuege=1, je_zug=1)
-    assert "Verlauf leeren" in client.get("/warenkorb").text
+    assert "Verlauf leeren" in client.get("/chat").text
 
 
 def test_jedes_tauschziel_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
@@ -974,7 +1129,7 @@ def test_jedes_tauschziel_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
     # Ein „Nein" bringt die Alternativenliste mit ihren eigenen Zielen dazu.
     _entscheiden(client, ids[-1][0], "removed")
 
-    seite = client.get("/warenkorb").text
+    seite = client.get("/chat").text
     vorhanden = set(re.findall(r'id="([\w-]+)"', seite))
     ziele = set(re.findall(r'hx-target="#([\w-]+)"', seite))
 
@@ -984,6 +1139,51 @@ def test_jedes_tauschziel_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
     assert "chat" in ziele
     assert any(z.startswith("zug-") for z in ziele)
     assert any(z.startswith("vorschlag-") for z in ziele)
+
+
+def test_jedes_out_of_band_ziel_gibt_es_auch_auf_der_chatseite(db_datei,
+                                                               tmp_path):
+    """Die Schwester der Tauschziel-Prüfung — für die Nachträge (WB-382).
+
+    Ein `hx-swap-oob`, dessen id die Seite nicht trägt, tauscht nichts und
+    sagt es nicht: die Antwort kommt mit 200, HTMX findet kein Element, und
+    die Rückmeldung fällt still aus. Genau das wäre beim Umzug des Chats
+    passiert, hätte `_nachtrag.html` weiter den Korb nachgetragen — er steht
+    seit WB-382 auf einer anderen Seite.
+
+    Geprüft wird über ALLE drei Antwortgrössen, damit keine davon durchrutscht.
+    """
+    ids = _langer_verlauf(db_datei, zuege=2, je_zug=2)
+    client, _ = _client(db_datei, tmp_path)
+
+    seite = client.get("/chat").text
+    vorhanden = set(re.findall(r'id="([\w-]+)"', seite))
+
+    mid = _zug_von(db_datei, ids[0][0])
+    antworten = {
+        "Ja (eine Zeile)": _entscheiden(client, ids[-1][0], "kept").text,
+        "Nein (eine Zeile)": _entscheiden(client, ids[-1][1], "removed").text,
+        "Sammelknopf (ein Zug)": client.post(
+            f"/chat/{mid}/alle?decision=kept", headers=HTMX).text,
+        "Verlauf leeren (der ganze Chat)": client.post(
+            "/chat/leeren", headers=HTMX).text,
+    }
+    for was, text in antworten.items():
+        oob = set(re.findall(r'id="([\w-]+)" hx-swap-oob', text))
+        fehlend = oob - vorhanden
+        assert not fehlend, f"{was} tauscht ins Leere: {sorted(fehlend)}"
+    # Und der Nachtrag ist wirklich da — sonst prüfte der Test eine leere Menge.
+    assert 'id="korbbruecke" hx-swap-oob' in antworten["Ja (eine Zeile)"]
+
+
+def _zug_von(db_datei, sid):
+    con = db.connect(db_datei)
+    try:
+        return con.execute(
+            "SELECT chat_message_id AS m FROM chat_suggestion WHERE id = ?",
+            (sid,)).fetchone()["m"]
+    finally:
+        con.close()
 
 
 # --------------------------------------------------------------------------
@@ -1016,7 +1216,7 @@ def test_jedes_chatformular_sperrt_seinen_knopf_beim_antippen(db_datei,
     # Ein „Nein" bringt Alternativen und Freitext mit ihren Formularen dazu.
     _entscheiden(client, ids[-1][0], "removed")
 
-    chat = _chatteil(client.get("/warenkorb").text)
+    chat = _chatteil(client.get("/chat").text)
     formulare = [f for f in _formulare(chat) if "hx-post" in f or "hx-get" in f]
 
     assert formulare, "der Chat hat gar keine Formulare — der Test misst nichts"
@@ -1035,7 +1235,7 @@ def test_die_entscheidungsknoepfe_zeigen_genau_das_stueck_das_sich_aendert(
     sid = ids[0][0]
     client, _ = _client(db_datei, tmp_path)
 
-    chat = _chatteil(client.get("/warenkorb").text)
+    chat = _chatteil(client.get("/chat").text)
     zeile = chat.split(f'id="vorschlag-{sid}"', 1)[1]
     for entscheidung in ("kept", "removed"):
         block = zeile.split(f"decision={entscheidung}", 1)[1].split("</form>", 1)[0]
@@ -1057,7 +1257,7 @@ def test_jeder_indikator_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path)
     _entscheiden(client, ids[-1][0], "removed")
 
-    seite = client.get("/warenkorb").text
+    seite = client.get("/chat").text
     vorhanden = set(re.findall(r'id="([\w-]+)"', seite))
     indikatoren = set(re.findall(r'hx-indicator="#([\w-]+)"', seite))
 
@@ -1076,7 +1276,7 @@ def test_die_schlafende_box_meldet_sich_am_eingabefeld(db_datei, tmp_path):
     """
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.NICHT_ERREICHBAR, grund="Box antwortet nicht."))
-    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+    antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX).text
 
     unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
@@ -1091,7 +1291,7 @@ def test_die_schlafende_box_meldet_sich_am_eingabefeld(db_datei, tmp_path):
 def test_die_wachende_box_sagt_am_feld_dass_es_gleich_geht(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
-    antwort = client.post("/warenkorb/chat", data={"satz": "Landmilch"},
+    antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX).text
     unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
     assert "wacht gerade auf" in unten
@@ -1122,9 +1322,9 @@ def test_der_zustandsstreifen_fragt_auch_im_fehlerfall_weiter_nach(db_datei,
     """
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.NICHT_ERREICHBAR, grund="schläft"))
-    stueck = client.get("/warenkorb/chat/zustand").text
+    stueck = client.get("/chat/zustand").text
 
-    assert 'hx-get="/warenkorb/chat/zustand"' in stueck
+    assert 'hx-get="/chat/zustand"' in stueck
     # Mit grösserem Abstand als beim Aufwachen: `wake.NEUVERSUCH_S` wartet
     # ohnehin eine Minute, und häufiger zu fragen kostet nur health-Timeouts.
     assert 'hx-trigger="load delay:30s"' in stueck
@@ -1135,7 +1335,7 @@ def test_der_zustandsstreifen_fragt_auch_im_fehlerfall_weiter_nach(db_datei,
 def test_beim_aufwachen_bleibt_der_kurze_takt(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
-    stueck = client.get("/warenkorb/chat/zustand").text
+    stueck = client.get("/chat/zustand").text
     assert 'hx-trigger="load delay:5s"' in stueck
     # Solange der Zähler läuft, braucht es keinen Knopf.
     assert "Jetzt nachsehen" not in stueck
@@ -1150,6 +1350,6 @@ def test_der_abgelaufene_zaehler_steht_nicht_bei_null(db_datei, tmp_path):
                                 grund="Weckruf läuft.")
 
     client, _ = _client(db_datei, tmp_path, box=AlteBox())
-    stueck = client.get("/warenkorb/chat/zustand").text
+    stueck = client.get("/chat/zustand").text
     assert "~0 s" not in stueck
     assert "dauert länger als sonst" in stueck

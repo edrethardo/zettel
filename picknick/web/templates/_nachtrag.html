@@ -6,7 +6,8 @@
    Knopf, dessen Wirkung man nicht sieht, wird ein zweites Mal gedrückt.
    Drei Dinge sind es, und mehr sind es auch nicht:
 
-   * **der Korb** — ein „Ja" legt ein (Spec 6);
+   * **die Korbbrücke** — ein „Ja" legt ein (Spec 6), und die Brücke ist die
+     Stelle, an der man das auf dieser Seite sieht;
    * **die Zahl im Kopf** — sonst füllt sich der Korb unsichtbar;
    * **die Fehlerzeile, beide Male** — sonst bleibt die Begründung eines
      misslungenen Tipps aus, und der Knopf sieht kaputt aus. Zwei Hüllen, weil
@@ -14,11 +15,12 @@
      nur die obere nachträgt, schreibt die Meldung dorthin, wo gerade niemand
      hinsieht.
 
-   Der Korb steht hier als ganzes Stück und nicht zeilenweise: er ist die
-   kleine Liste (ein Einkauf, keine 150 Zeilen), und `orders.einlegen()` fasst
-   gleiche Posten zusammen — welche Zeile sich durch ein „Ja" ändert, steht
-   erst hinterher fest. #}
-<div id="korb" hx-swap-oob="true">{% include "_korb.html" %}</div>
+   **Der Korb selbst stand hier bis WB-382** — als ganze Liste, bei jedem
+   „Ja". Er steht jetzt auf seiner eigenen Seite, und damit ist der grösste
+   Brocken dieser Antwort weg: die Zeilen mit Bildern, Mengenformularen und
+   Ladenauswahl waren das Teuerste an einem Tipp, der sonst nur eine Zeile
+   umschreibt. Was von ihm bleibt, ist die Zahl. #}
+<div id="korbbruecke" hx-swap-oob="true">{% include "_korbbruecke.html" %}</div>
 <span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
 <div id="chat-fehler" hx-swap-oob="true">
   {% with leise = true %}{% include "_chatfehler.html" %}{% endwith %}

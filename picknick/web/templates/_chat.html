@@ -1,6 +1,9 @@
-{# Der Chat — er gehört in den Warenkorb und bekommt keinen eigenen Ort
-   (Spec 9). Vorschläge stehen als vorgemerkte Zeilen da und wandern erst mit
-   „Ja" in den Korb: **nichts landet ungefragt im Warenkorb** (Spec 6).
+{# Der Chat — seit WB-382 ein eigener Ort (`/chat`), aber weiter am Korb
+   hängend (Spec 9 in der neuen Fassung). Vorschläge stehen als vorgemerkte
+   Zeilen da und wandern erst mit „Ja" in den Korb: **nichts landet ungefragt
+   im Warenkorb** (Spec 6). Dass etwas angekommen ist, sagt die Korbbrücke
+   über dem Verlauf und ein Satz an der Zeile selbst — der Korb steht nicht
+   mehr daneben.
 
    Seit WB-372 ist dieses Stück nur noch selten das Tauschziel. Ein Tipp auf
    „Ja" tauscht eine ZEILE (`_vorschlag.html`), alles, was Zeilen anlegt,
@@ -15,8 +18,9 @@
    sind nicht weg — kein Datensatz wird angefasst, und ein Tipp holt sie
    zurück. #}
 <section class="chat" id="chat">
-  <h2>Chat</h2>
-
+  {# Keine Überschrift mehr: die Seite selbst heisst „Chat" (WB-382). Zweimal
+     dasselbe Wort untereinander wäre eine Zwischenüberschrift ohne Ebene
+     darunter. #}
   {# Die Meldung steht ZWEIMAL, und das ist Absicht (WB-378). Hier oben, weil
      der Chat hier anfängt — und gleich noch einmal über dem Eingabefeld, das
      im Verlauf einer echten Sitzung siebentausend Zeilen weiter unten steht.
@@ -44,8 +48,12 @@
      Ein `<details>` wäre der naheliegende Griff und bringt hier nichts: es
      versteckt nur, was trotzdem übertragen wurde. Diese Züge werden gar nicht
      erst gerendert, und der Knopf holt sie. #}
-  <form class="aeltere" method="get" action="/warenkorb"
-        hx-get="/warenkorb/chat?verlauf=alles"
+  {# Eine Adresse für beide Wege seit WB-382: ohne JavaScript lädt `action`
+     die Chatseite mit `?verlauf=alles`, mit HTMX holt `hx-get` dasselbe als
+     Bruchstück. Vorher zeigte `action` auf `/warenkorb`, weil der Chat keine
+     eigene Vollseite hatte. #}
+  <form class="aeltere" method="get" action="/chat"
+        hx-get="/chat?verlauf=alles"
         hx-target="#chat" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <input type="hidden" name="verlauf" value="alles">
@@ -81,14 +89,14 @@
         die Eval-Labels. Gelöscht sind sie fort. Der Warenkorb bleibt, wie er
         ist.</span></p>
     <div class="sammel">
-      <form method="post" action="/warenkorb/chat/leeren?ja=1"
-            hx-post="/warenkorb/chat/leeren?ja=1"
+      <form method="post" action="/chat/leeren?ja=1"
+            hx-post="/chat/leeren?ja=1"
             hx-target="#chat" hx-swap="outerHTML"
             hx-disabled-elt="find button">
         <button class="mini nein" type="submit">Ja, Verlauf löschen</button>
       </form>
-      <form method="post" action="/warenkorb/chat/leeren?ja=0"
-            hx-post="/warenkorb/chat/leeren?ja=0"
+      <form method="post" action="/chat/leeren?ja=0"
+            hx-post="/chat/leeren?ja=0"
             hx-target="#chat" hx-swap="outerHTML"
             hx-disabled-elt="find button">
         <button class="mini" type="submit">Abbrechen</button>
@@ -99,8 +107,8 @@
   {# Der einzige Reset war bis WB-372 das Abschicken — und das wirft bei
      leerem Korb. Wer 34 Chatzeilen und 0 Posten hatte, kam da nur heraus,
      indem sie eine Bestellung abschickte, die sie nicht wollte. #}
-  <form class="verlauf-leeren" method="post" action="/warenkorb/chat/leeren"
-        hx-post="/warenkorb/chat/leeren"
+  <form class="verlauf-leeren" method="post" action="/chat/leeren"
+        hx-post="/chat/leeren"
         hx-target="#chat" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <button class="mini zurueck" type="submit">Verlauf leeren</button>
@@ -113,8 +121,8 @@
      `_nachtrag.html` trägt beide out-of-band nach. #}
   <div id="chat-fehler-unten">{% include "_chatfehler.html" %}</div>
 
-  <form class="chatform" method="post" action="/warenkorb/chat"
-        hx-post="/warenkorb/chat" hx-target="#chat" hx-swap="outerHTML"
+  <form class="chatform" method="post" action="/chat"
+        hx-post="/chat" hx-target="#chat" hx-swap="outerHTML"
         hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
     <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
            aria-label="Was brauchst du?" placeholder="Was brauchst du?">

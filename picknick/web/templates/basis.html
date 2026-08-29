@@ -22,7 +22,7 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  {# Wo bin ich? Acht Ziele in einer quer scrollenden Leiste sahen alle gleich
+  {# Wo bin ich? Neun Ziele in einer quer scrollenden Leiste sahen alle gleich
      aus — und /bestellungen und /pick sind zwei sehr ähnliche Listen. Die
      Klasse ist der Teil, den man sieht, `aria-current="page"` der, den ein
      Vorleseprogramm ansagt; beides zusammen, weil Farbe allein für beides
@@ -37,6 +37,11 @@
     <a class="marke" href="/">Picknick</a>
     <nav id="hauptnavigation" aria-label="Hauptbereiche">
       <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
+      {# Der Chat steht seit WB-382 hier — vorher war er ein Abschnitt der
+         Korbseite und über die Leiste gar nicht zu erreichen. Er steht VOR
+         dem Korb, weil er der Weg dorthin ist: erst sagen, was man braucht,
+         dann nachsehen, was drin liegt. #}
+      <a href="/chat"{{ wo('/chat') }}>Chat</a>
       {# Die Zahl wird nach jedem „+" per hx-swap-oob nachgezogen (siehe
          _eingelegt.html) — deshalb braucht sie eine feste id. #}
       <a href="/warenkorb"{{ wo('/warenkorb') }}>Korb <span id="korb-anzahl"

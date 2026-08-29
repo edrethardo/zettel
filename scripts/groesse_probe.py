@@ -1,4 +1,4 @@
-"""Handprobe: was ein Blick in den Warenkorb und was ein „Ja" kostet (WB-372).
+"""Handprobe: was ein Blick in Korb und Chat und was ein „Ja" kostet (WB-372).
 
 KEIN Test — die Zusicherung, dass ein Tipp nicht mehr den ganzen Verlauf
 überträgt, steht in `tests/test_web_chat.py` und wird dort bei jedem Lauf
@@ -13,14 +13,20 @@ Datenbank geschrieben und der Shop über `fastapi.testclient` befragt. Die
 Probe ist damit wiederholbar — die Zahlen im Ticket sind gegen den laufenden
 Shop gemessen und schwanken mit seinem Inhalt, diese hier nicht.
 
-Gemessen werden zwei Dinge GETRENNT, weil zwei verschiedene Hebel daran
-hängen:
+Gemessen werden drei Dinge GETRENNT, weil verschiedene Hebel daran hängen:
 
-    Seite   GET /warenkorb          — hängt an der Verlaufsgrenze (Punkt 1)
+    Chat    GET /chat               — hängt an der Verlaufsgrenze (Punkt 1)
+    Korb    GET /warenkorb          — seit WB-382 ohne den Verlauf
     Tipp    POST .../entscheiden    — hängt am Tauschziel (Punkt 2)
 
 `--grenze alle` schaltet die Kürzung ab und lässt nur das Tauschziel wirken;
 so ist zu sehen, welcher Hebel wie viel bringt.
+
+**Die Zeile „Seite" von WB-372 ist seit WB-382 zwei Zeilen.** Damals trug eine
+Seite beides; die Zahl 45 KB von damals ist mit der CHATSEITE zu vergleichen,
+denn dort steht jetzt der Verlauf. Der Korb ist der Rest — und der ist klein.
+Der Tipp wurde beim Umzug nebenbei billiger: er trug den ganzen Korb mit, weil
+der danebenstand, und trägt jetzt nur noch die Korbbrücke.
 """
 import json
 import sys
@@ -124,13 +130,14 @@ def messe(pfad: Path, offene: list[int], bilder: Path):
                             chat=chatmodul.Chat(StummesLLM(),
                                                 wecker=BedienteBox()))
     client = TestClient(app)
-    seite = client.get("/warenkorb").text
+    chatseite = client.get("/chat").text
+    korbseite = client.get("/warenkorb").text
     # Ein „Ja" auf eine Zeile MITTEN im Verlauf — genau der Tipp, um den es
     # geht. Am Ende des Verlaufs sähe eine Kürzung besser aus, als sie ist.
     sid = offene[len(offene) // 2]
-    tipp = client.post(f"/warenkorb/vorschlag/{sid}/entscheiden?decision=kept",
+    tipp = client.post(f"/chat/vorschlag/{sid}/entscheiden?decision=kept",
                        headers=HTMX).text
-    return seite, tipp
+    return chatseite, korbseite, tipp
 
 
 def bytes_(text: str) -> int:
@@ -147,13 +154,16 @@ def main() -> None:
         tmp = Path(tmp)
         pfad = tmp / "picknick.db"
         offene = baue(pfad)
-        seite, tipp = messe(pfad, offene, tmp / "bilder")
-    chat = seite[seite.find('<section class="chat"'):]
+        chatseite, korbseite, tipp = messe(pfad, offene, tmp / "bilder")
+    chat = chatseite[chatseite.find('<section class="chat"'):]
     print(f"Verlaufsgrenze:     {grenze}")
-    print(f"Seite /warenkorb:   {bytes_(seite):>9,} Bytes")
+    print(f"Seite /chat:        {bytes_(chatseite):>9,} Bytes")
     print(f"  davon #chat:      {bytes_(chat):>9,} Bytes")
+    print(f"Seite /warenkorb:   {bytes_(korbseite):>9,} Bytes")
+    print(f"beide zusammen:     {bytes_(chatseite) + bytes_(korbseite):>9,} Bytes")
     print(f"Tipp  Ja/Nein:      {bytes_(tipp):>9,} Bytes")
-    print(f"Formulare Seite:    {seite.count('<form'):>9,}")
+    print(f"Formulare /chat:    {chatseite.count('<form'):>9,}")
+    print(f"Formulare /korb:    {korbseite.count('<form'):>9,}")
     print(f"Formulare Tipp:     {tipp.count('<form'):>9,}")
 
 

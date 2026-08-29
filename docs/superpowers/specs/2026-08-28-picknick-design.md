@@ -376,7 +376,7 @@ vLLM-Box; das Gate (Abschnitt 12) braucht sie nicht.
 
 ## 9 Oberfläche
 
-Sechs Ansichten, durchgehend fürs Handy gebaut — beide benutzen Telefone, er im
+Sieben Ansichten, durchgehend fürs Handy gebaut — beide benutzen Telefone, er im
 Laden.
 
 - **Katalog** — Suchfeld oben, darunter Kategorien aus dem Knuspr-Baum, Produkte
@@ -385,12 +385,33 @@ Laden.
 - **Warenkorb** — der `draft`. Je Zeile Menge, Laden (Rewe / Lidl / egal,
   vorbelegt), Löschen. Ein Feld für Freitext-Artikel. Unten „Bestellung
   abschicken".
-- **Chat** — gehört zum Warenkorb, kein eigener Ort. Vorschläge erscheinen als
-  vorgemerkte Zeilen zum einzelnen Bestätigen oder Verwerfen.
+- **Chat** — ein eigener Ort (`/chat`), in der Navigation, mit dem Gespräch als
+  Hauptsache. Vorschläge erscheinen als vorgemerkte Zeilen zum einzelnen
+  Bestätigen oder Verwerfen. **Er hängt trotzdem an der Bestellung**
+  (`chat_message.order_id`) und wandert beim Abschicken mit ihr mit.
+
+  Die Regel hieß bis  *„Chat — gehört zum Warenkorb, kein eigener Ort"*,
+  und beides steckte in einem Satz: der BESITZER (der `draft`) und der PLATZ
+  (dieselbe Seite). Der Besitzer bleibt und ist die Hälfte, an der etwas
+  hängt — die Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören, und
+  daraus werden beim Abschicken die Eval-Labels (Abschnitt 8.1). Der gemeinsame
+  Platz war die Vermutung, dass man beim Bestätigen den Korb wachsen sehen
+  will; er hat den Shop seine größte Seite gekostet (257 KB vor , und
+  beides drängelte sich um denselben Raum). Den Korb wachsen sieht man jetzt
+  ohne ihn: der Kopfzähler steht auf jeder Seite, an der eben
+  bestätigten Zeile steht „liegt jetzt im Korb", und über dem Verlauf klebt
+  eine Brücke („5 Sachen im Korb — ansehen"). Gemessen am selben Verlauf wie
+  in  (17 Züge, 153 Vorschläge): die Seite mit dem Chat 50.934 → 44.088
+  Bytes, der Korb für sich 8.054, ein „Ja" 10.412 → 2.249 Bytes.
 - **Rezepte** — Liste, Anlegen und Bearbeiten, „alles in den Warenkorb".
 - **Bestellungen** — offene oben, erledigte darunter.
 - **Pick-Ansicht** — eine Bestellung, nach Laden getrennt, große Checkboxen mit
   Produktbild daneben, damit im Regal das Richtige gegriffen wird.
+
+Zwischen Chat und Warenkorb führt in beide Richtungen ein Weg, der **nicht über
+die Navigationsleiste geht**: sie scrollt quer und hat neun Ziele. Vom Chat die
+Brücke über dem Verlauf, vom vollen Korb eine Zeile darunter, vom leeren Korb
+die Einladung selbst („Sag einfach, was du brauchst").
 
 ## 10 Zugang
 

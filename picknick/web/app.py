@@ -746,6 +746,16 @@ def create_app(db_path: str | Path | None = None,
                 "weg": weg,
                 "meldung": meldung}
 
+    def _korb_zahlen(c: sqlite3.Connection) -> dict:
+        """Nur die Korbzahl — was der Chat vom Korb noch wissen muss (WB-382).
+
+        Eine Abfrage statt `orders.inhalt()` samt Bildern: seit der Korb eine
+        eigene Seite ist, trägt eine Chat-Antwort ihn nicht mehr mit. Sie
+        trägt die Zahl, und aus der Zahl werden zwei Dinge — die Ziffer im
+        Kopf und die Korbbrücke unter dem Chat.
+        """
+        return {"korb_anzahl": orders.korb_anzahl(c)}
+
     def _korb_antwort(request: Request, c: sqlite3.Connection,
                       fehler: str | None = None, weg: dict | None = None,
                       meldung: str | None = None):
@@ -766,8 +776,7 @@ def create_app(db_path: str | Path | None = None,
             # Weiterleitung gar nicht mehr da.
             return vorlagen.TemplateResponse(
                 request, "warenkorb.html",
-                {**_rahmen(request, c), **_korb_kontext(c, fehler, weg, meldung),
-                 **_chat_kontext(c)})
+                {**_rahmen(request, c), **_korb_kontext(c, fehler, weg, meldung)})
         return RedirectResponse("/warenkorb", status_code=303)
 
     def _zeile_im_korb(c: sqlite3.Connection, item_id: int) -> dict | None:
@@ -838,18 +847,19 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.get("/warenkorb")
-    def warenkorb(request: Request, verlauf: str = ""):
-        """Korb und Chat. `?verlauf=alles` zeigt auch die älteren Züge.
+    def warenkorb(request: Request):
+        """Der Korb — Zeilen, Mengen, Laden, Abschicken. Und sonst nichts.
 
-        Der Parameter ist der Ausgang OHNE JavaScript (WB-372): der Knopf am
-        eingeklappten Teil ist ein echtes `GET`-Formular auf diese Adresse und
-        wird von HTMX nur abgekürzt.
+        Bis WB-382 hing der ganze Chatverlauf an derselben Seite (Spec 9 in
+        ihrer alten Fassung). Sie war damit die grösste des Shops, und die
+        beiden Dinge drängelten sich um denselben Platz. Der Chat hat jetzt
+        einen eigenen Ort (`/chat`); am Datenmodell hat sich dabei nichts
+        geändert — der Verlauf hängt weiter am `draft`.
         """
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "warenkorb.html", {
-                **_rahmen(request, c), **_korb_kontext(c),
-                **_chat_kontext(c, alles=verlauf == "alles")})
+                **_rahmen(request, c), **_korb_kontext(c)})
         finally:
             c.close()
 
@@ -986,16 +996,22 @@ def create_app(db_path: str | Path | None = None,
     # ----------------------------------------------------------------------
     # Chat (Spec 6 und 9)
     #
-    # Der Chat gehört in den Warenkorb und bekommt keinen eigenen Ort. Zwei
-    # Dinge sind an dieser Stelle wichtiger als sie aussehen:
+    # Der Chat hat seit WB-382 einen eigenen Ort (`/chat`) und hängt trotzdem
+    # weiter am `draft` — „eigener Ort" heisst eine eigene ANSICHT, nicht ein
+    # eigener Besitzer. Drei Dinge sind an dieser Stelle wichtiger als sie
+    # aussehen:
     #
     # * **Das Rendern der Seite fragt die vLLM-Box NICHT.** Der Zustand wird
-    #   nachgeladen (`/warenkorb/chat/zustand`). Sonst hinge jeder Blick in
-    #   den Warenkorb bis zu drei Sekunden am health-Timeout — und jeder
-    #   Testlauf ginge ins Netz.
-    # * **Ein Vorschlag ist noch kein Posten.** Erst „Ja" legt ein. Deshalb
-    #   trägt jede Antwort auf eine Entscheidung den Korb mit, sonst sähe die
-    #   Nutzerin ihre Zeile im Korb erst nach dem nächsten Laden.
+    #   nachgeladen (`/chat/zustand`). Sonst hinge jeder Blick in den Chat bis
+    #   zu drei Sekunden am health-Timeout — und jeder Testlauf ginge ins
+    #   Netz.
+    # * **Ein Vorschlag ist noch kein Posten.** Erst „Ja" legt ein.
+    # * **Und der Korb steht nicht mehr daneben.** Bis WB-382 trug jede
+    #   Antwort auf eine Entscheidung den ganzen Korb mit, weil er auf
+    #   derselben Seite stand. Jetzt trägt sie die KORBBRÜCKE („5 im Korb —
+    #   ansehen") und einen Satz an der Zeile selbst. Das ist billiger und
+    #   näher am Daumen: die Knöpfe stehen mitten in einer Liste von 150
+    #   Zeilen, und was am Seitenkopf passiert, ist beim Tippen aus dem Bild.
     #
     # Und seit WB-372 gibt es DREI Antwortgrössen statt einer. Sie sind keine
     # Optimierung nebenbei, sondern die Sache selbst: ein Tipp auf „Ja" trug
@@ -1116,25 +1132,30 @@ def create_app(db_path: str | Path | None = None,
                       satz: str = "", aufklappen: int | None = None,
                       alles: bool = False, leeren_fragt: bool = False,
                       geleert=None):
-        """HTMX bekommt Chat + Korb, ein Formular ohne JavaScript die Seite.
+        """HTMX bekommt den Chat, ein Formular ohne JavaScript die Seite.
 
         Die GRÖSSTE der drei Antworten (WB-372) und seit dem Ticket die
         seltenste: sie bleibt dem vorbehalten, was den Verlauf selbst ändert —
         ein neuer Zug, eine Sortenauswahl, das Leeren. Ein „Ja" nimmt
         `_entscheidung_antwort`, alles Zeilenanlegende `_zug_antwort`.
+
+        `_korb_zahlen` statt `_korb_kontext` seit WB-382: der Korb steht nicht
+        mehr auf dieser Seite, also braucht die Antwort auch nicht mehr seine
+        Zeilen — nur die Zahl für die Brücke und den Kopf.
         """
         kontext = {**_chat_kontext(c, fehler, zustand, satz, aufklappen,
                                    alles, leeren_fragt, geleert),
-                   **_korb_kontext(c)}
+                   **_korb_zahlen(c)}
         if ist_htmx(request):
             return vorlagen.TemplateResponse(request, "_chat_antwort.html",
                                              kontext)
         return vorlagen.TemplateResponse(
-            request, "warenkorb.html", {**_rahmen(request, c), **kontext})
+            request, "chat.html", {**_rahmen(request, c), **kontext})
 
     def _teilantwort(request: Request, c: sqlite3.Connection, mid: int | None,
                      vorlage: str, fehler: str | None = None,
-                     aufklappen: int | None = None, sid: int | None = None):
+                     aufklappen: int | None = None, sid: int | None = None,
+                     gerade: int | None = None):
         """Ein Zug oder eine Zeile statt des ganzen Verlaufs (WB-372).
 
         **Ohne HTMX gibt es hier nichts zu tauschen**, dann geht die ganze
@@ -1147,6 +1168,11 @@ def create_app(db_path: str | Path | None = None,
         der andere den Verlauf inzwischen geleert hat, gäbe es sonst eine
         Antwort, die auf ein Element zielt, das es nicht mehr gibt — der Tipp
         sähe aus, als hätte er nichts getan.
+
+        `gerade` ist die Zeile, die dieser Tipp EBEN entschieden hat (WB-382).
+        Nur an ihr steht der Satz „liegt jetzt im Korb" — im gerenderten
+        Verlauf steht er nirgends, denn dort ist nichts gerade passiert. Er
+        ist Rückmeldung und keine Zustandsanzeige; die trägt die Marke.
         """
         zeile = vorschlagsliste.zug(c, mid) if mid is not None else None
         v = None
@@ -1161,8 +1187,8 @@ def create_app(db_path: str | Path | None = None,
                                  aufklappen=aufklappen)
         return vorlagen.TemplateResponse(
             request, vorlage,
-            {"m": zeile, "v": v, "aufklappen": aufklappen,
-             "chat_fehler": fehler, **_korb_kontext(c)})
+            {"m": zeile, "v": v, "aufklappen": aufklappen, "gerade": gerade,
+             "chat_fehler": fehler, **_korb_zahlen(c)})
 
     def _zug_von(c: sqlite3.Connection, sid: int) -> int | None:
         """Zu welchem Zug eine Vorschlagszeile gehört. `None`, wenn es sie
@@ -1174,7 +1200,8 @@ def create_app(db_path: str | Path | None = None,
 
     def _entscheidung_antwort(request: Request, c: sqlite3.Connection,
                               sid: int, fehler: str | None = None,
-                              aufklappen: int | None = None):
+                              aufklappen: int | None = None,
+                              gerade: int | None = None):
         """Die Antwort auf ein „Ja"/„Nein": eine ZEILE plus die Nachträge.
 
         **Ausser an einer Korrekturzeile** — dort geht der ganze Zug zurück.
@@ -1193,34 +1220,41 @@ def create_app(db_path: str | Path | None = None,
         if v["ist_korrektur"]:
             return _teilantwort(request, c, v["chat_message_id"],
                                 "_zugantwort.html", fehler=fehler,
-                                aufklappen=aufklappen)
+                                aufklappen=aufklappen, gerade=gerade)
         return _teilantwort(request, c, v["chat_message_id"],
                             "_entscheidung.html", fehler=fehler,
-                            aufklappen=aufklappen, sid=sid)
+                            aufklappen=aufklappen, sid=sid, gerade=gerade)
 
     def _zug_antwort(request: Request, c: sqlite3.Connection, mid: int,
                      fehler: str | None = None):
         """Die Antwort auf alles, was Zeilen ANLEGT oder mehrere ändert."""
         return _teilantwort(request, c, mid, "_zugantwort.html", fehler=fehler)
 
-    @app.get("/warenkorb/chat")
-    def chat_stueck(request: Request, verlauf: str = ""):
-        """Nur der Chat — der Weg zurück zu den eingeklappten Zügen (WB-372).
+    @app.get("/chat")
+    def chat_seite(request: Request, verlauf: str = ""):
+        """Der eigene Ort des Chats (WB-382) — und sein eigenes Bruchstück.
 
-        `?verlauf=alles` hebt die Anzeigegrenze für diese eine Antwort auf.
-        Dieselbe Adresse trägt ohne HTMX die ganze Seite (`/warenkorb`), und
-        das Formular am Knopf zeigt auf beides — ein eingeklappter Zug muss
-        auch ohne JavaScript wieder aufzuklappen sein.
+        EINE Adresse für beides, weil es dieselbe Sache in zwei Grössen ist:
+        ohne HTMX die ganze Seite, mit HTMX nur `#chat`. Das ist der Weg
+        zurück zu den eingeklappten Zügen aus WB-372 (`?verlauf=alles` hebt
+        die Anzeigegrenze für diese eine Antwort auf) — bis dahin brauchte er
+        zwei Adressen, weil die Vollseite `/warenkorb` hiess und der Chat kein
+        eigenes Ziel hatte. Der Knopf am eingeklappten Teil zeigt jetzt mit
+        `action` und `hx-get` auf dieselbe Stelle.
         """
         c = con()
         try:
-            return vorlagen.TemplateResponse(
-                request, "_chat.html",
-                _chat_kontext(c, alles=verlauf == "alles"))
+            kontext = _chat_kontext(c, alles=verlauf == "alles")
+            if ist_htmx(request):
+                return vorlagen.TemplateResponse(request, "_chat.html", kontext)
+            # `_rahmen` trägt die Korbzahl schon — die Brücke rechnet nicht
+            # zum zweiten Mal nach, was oben im Kopf ohnehin steht.
+            return vorlagen.TemplateResponse(request, "chat.html", {
+                **_rahmen(request, c), **kontext})
         finally:
             c.close()
 
-    @app.post("/warenkorb/chat/leeren")
+    @app.post("/chat/leeren")
     async def chat_leeren(request: Request):
         """Den Verlauf loswerden, ohne eine Bestellung abzuschicken (WB-372).
 
@@ -1255,7 +1289,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.get("/warenkorb/chat/zustand")
+    @app.get("/chat/zustand")
     def chat_zustand(request: Request):
         """Bedient die Box? Nachgeladen, damit der Korb sofort da ist.
 
@@ -1265,7 +1299,7 @@ def create_app(db_path: str | Path | None = None,
         return vorlagen.TemplateResponse(request, "_chatzustand.html",
                                          {"chat_zustand": app.state.chat.zustand()})
 
-    @app.post("/warenkorb/chat")
+    @app.post("/chat")
     async def chat_senden(request: Request):
         """Ein Chat-Zug. Legt NICHTS in den Korb — nur Vorschläge (Spec 6)."""
         werte = await eingaben(request)
@@ -1287,7 +1321,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/chat/{mid}/sorten")
+    @app.post("/chat/{mid}/sorten")
     async def chat_sorten(request: Request, mid: int):
         """Die angekreuzten Sorten einer Auffächerung (WB-368).
 
@@ -1331,7 +1365,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/vorschlag/{sid}/entscheiden")
+    @app.post("/chat/vorschlag/{sid}/entscheiden")
     async def vorschlag_entscheiden(request: Request, sid: int):
         """„Ja", „Nein" — oder zurück auf `offen` (WB-361).
 
@@ -1362,12 +1396,16 @@ def create_app(db_path: str | Path | None = None,
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
             auf = sid if entscheidung == vorschlagsliste.VERWORFEN else None
+            # Nur ein „Ja" bekommt den Ankunftssatz an der Zeile (WB-382).
+            # „Nein" und der Rückweg ändern am Korb nichts, und ein Satz, der
+            # bei jeder Entscheidung erscheint, sagt nichts mehr.
+            eben = sid if entscheidung == vorschlagsliste.BEHALTEN else None
             return _entscheidung_antwort(request, c, sid, fehler=fehler,
-                                         aufklappen=auf)
+                                         aufklappen=auf, gerade=eben)
         finally:
             c.close()
 
-    @app.post("/warenkorb/vorschlag/{sid}/statt")
+    @app.post("/chat/vorschlag/{sid}/statt")
     async def vorschlag_korrigieren(request: Request, sid: int,
                                     produkt_id: int = 0):
         """Eine Alternative statt des Vorschlags in den Korb (WB-359).
@@ -1392,7 +1430,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/vorschlag/{sid}/freitext")
+    @app.post("/chat/vorschlag/{sid}/freitext")
     async def vorschlag_freitext(request: Request, sid: int):
         """„Nichts davon" — die Zutat kommt als Freitext in den Korb.
 
@@ -1415,7 +1453,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/chat/{mid}/alle")
+    @app.post("/chat/{mid}/alle")
     async def vorschlaege_alle(request: Request, mid: int):
         """Sammelknopf. Rührt nur an, was noch offen ist.
 
@@ -1446,7 +1484,7 @@ def create_app(db_path: str | Path | None = None,
     # Grund wie die Eval-Annotationen aus WB-329 — bis dahin darf sie ihre
     # Meinung ändern.
 
-    @app.post("/warenkorb/chat/{mid}/entwurf/name")
+    @app.post("/chat/{mid}/entwurf/name")
     async def entwurf_benennen(request: Request, mid: int):
         """Der Rezeptname — überschreibbar, und das ist keine Kosmetik.
 
@@ -1466,7 +1504,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/chat/{mid}/entwurf/verwerfen")
+    @app.post("/chat/{mid}/entwurf/verwerfen")
     async def entwurf_verwerfen(request: Request, mid: int):
         """„Daraus soll kein Rezept werden" — und mit `ja=0` zurück.
 
@@ -1485,7 +1523,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/vorschlag/{sid}/rezeptzeile")
+    @app.post("/chat/vorschlag/{sid}/rezeptzeile")
     async def entwurf_zeile(request: Request, sid: int):
         """Eine Zutat aus dem Entwurf nehmen (`drin=0`) oder zurückholen.
 
@@ -1507,7 +1545,7 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/warenkorb/vorschlag/{sid}/bedarf")
+    @app.post("/chat/vorschlag/{sid}/bedarf")
     async def entwurf_bedarf(request: Request, sid: int):
         """Die benötigte Menge einer Zutat im Entwurf — „500 g", nicht „2 ×".
 
@@ -1983,7 +2021,7 @@ def create_app(db_path: str | Path | None = None,
 
         **Diese Route ruft `app.state.chat.zustand()` nicht auf, und keine
         künftige Fassung darf das tun.** Der Aufruf schickt ein Magic Packet
-        und weckt die vLLM-Box (siehe `/warenkorb/chat/zustand`) — eine Seite,
+        und weckt die vLLM-Box (siehe `/chat/zustand`) — eine Seite,
         die jemand aufmacht, um nachzusehen, ob alles läuft, darf keinen
         Rechner hochfahren. Was `betrieb.statusbericht()` liefert, kommt aus
         der Datenbank und aus Prozesszählern, nichts davon aus dem Netz.

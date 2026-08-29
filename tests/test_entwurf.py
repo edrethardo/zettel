@@ -900,7 +900,7 @@ def test_der_entwurf_steht_im_warenkorb_und_nennt_das_klopapier_nicht(
     _bolo_geholt(con)
     client = _web(db_pfad, tmp_path, _web_zug(con))
     stueck = client.post(
-        "/warenkorb/chat",
+        "/chat",
         data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
         headers={"HX-Request": "true"}).text
 
@@ -921,19 +921,19 @@ def test_der_weg_mit_dem_daumen_von_der_frage_bis_zum_rezept(
     """
     _bolo_geholt(con)
     client = _web(db_pfad, tmp_path, _web_zug(con))
-    client.post("/warenkorb/chat",
+    client.post("/chat",
                 data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
                 headers={"HX-Request": "true"})
     mid = con.execute("SELECT max(id) AS id FROM chat_message"
                       " WHERE role = 'assistant'").fetchone()["id"]
-    client.post(f"/warenkorb/chat/{mid}/alle?decision=kept",
+    client.post(f"/chat/{mid}/alle?decision=kept",
                 headers={"HX-Request": "true"})
-    client.post(f"/warenkorb/chat/{mid}/entwurf/name",
+    client.post(f"/chat/{mid}/entwurf/name",
                 data={"name": "Bolo"}, headers={"HX-Request": "true"})
     spaghetti = con.execute(
         "SELECT s.id FROM chat_suggestion s JOIN product p ON p.id = s.product_id"
         " WHERE p.name LIKE 'Spaghetti No%'").fetchone()["id"]
-    client.post(f"/warenkorb/vorschlag/{spaghetti}/rezeptzeile?drin=0",
+    client.post(f"/chat/vorschlag/{spaghetti}/rezeptzeile?drin=0",
                 headers={"HX-Request": "true"})
 
     antwort = client.post("/warenkorb/abschicken",
@@ -953,13 +953,13 @@ def test_die_menge_laesst_sich_ueber_die_oberflaeche_aendern(
         con, db_pfad, tmp_path):
     _bolo_geholt(con)
     client = _web(db_pfad, tmp_path, _web_zug(con))
-    client.post("/warenkorb/chat",
+    client.post("/chat",
                 data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
                 headers={"HX-Request": "true"})
     hack = con.execute(
         "SELECT s.id FROM chat_suggestion s JOIN product p ON p.id = s.product_id"
         " WHERE p.name LIKE 'Rinderhack%'").fetchone()["id"]
-    stueck = client.post(f"/warenkorb/vorschlag/{hack}/bedarf",
+    stueck = client.post(f"/chat/vorschlag/{hack}/bedarf",
                          data={"menge": "0,25", "einheit": "kg"},
                          headers={"HX-Request": "true"}).text
 
@@ -972,16 +972,16 @@ def test_die_menge_laesst_sich_ueber_die_oberflaeche_aendern(
 def test_kein_rezept_daraus_und_wieder_zurueck(con, db_pfad, tmp_path):
     _bolo_geholt(con)
     client = _web(db_pfad, tmp_path, _web_zug(con))
-    client.post("/warenkorb/chat",
+    client.post("/chat",
                 data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
                 headers={"HX-Request": "true"})
     mid = con.execute("SELECT max(id) AS id FROM chat_message"
                       " WHERE role = 'assistant'").fetchone()["id"]
 
-    stueck = client.post(f"/warenkorb/chat/{mid}/entwurf/verwerfen?ja=1",
+    stueck = client.post(f"/chat/{mid}/entwurf/verwerfen?ja=1",
                          headers={"HX-Request": "true"}).text
     assert "Daraus wird kein Rezept." in stueck
-    stueck = client.post(f"/warenkorb/chat/{mid}/entwurf/verwerfen?ja=0",
+    stueck = client.post(f"/chat/{mid}/entwurf/verwerfen?ja=0",
                          headers={"HX-Request": "true"}).text
     # Der Entwurf steht wieder da, mit Namen und Zeilen — er wurde nicht neu
     # zusammengesucht, sondern nie weggeworfen.
