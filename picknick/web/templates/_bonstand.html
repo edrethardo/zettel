@@ -30,11 +30,13 @@
 
 {% if not beleg %}
   {% if not (lauf and lauf.laeuft) %}
-  <p class="leer">Dieser Bon ist noch nicht ausgelesen.
+  {# Ein `div` und kein `p`: ein Formular in einem Absatz schliesst den Absatz
+     im Browser vorzeitig, und der Knopf stand danach ausserhalb der Karte. #}
+  <div class="leer">Dieser Bon ist noch nicht ausgelesen.
     <form method="post" action="/bons/{{ name | urlencode }}/auslesen">
       <button type="submit" class="mini">Auslesen</button>
     </form>
-  </p>
+  </div>
   {% endif %}
 {% else %}
 
@@ -50,6 +52,15 @@
 <p class="fussnote">
   {{ bilanz.bestaetigt }} bestätigt · {{ bilanz.verworfen }} verworfen ·
   {{ bilanz.offen }} offen
+</p>
+
+{# „Neu lesen" gehört auch hierher und nicht nur in die Liste: hier sieht man,
+   was ein neuer Lauf ersetzen würde. Der Link führt auf die Rückfrage, die
+   die Zahl der verworfenen Entscheidungen nennt (WB-376) — von hier aus
+   startet kein Lauf mit einem Tipp. #}
+<p class="fussnote">
+  <a class="mini" href="/bons/{{ name | urlencode }}/auslesen"
+     aria-label="{{ name }} neu lesen — fragt vorher nach">neu lesen</a>
 </p>
 
 <ul class="vorschlaege">

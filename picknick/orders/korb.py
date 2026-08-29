@@ -419,11 +419,83 @@ def laden_setzen(con: sqlite3.Connection, item_id: int, store: str) -> str:
     return store
 
 
-def entfernen(con: sqlite3.Connection, item_id: int) -> None:
-    """Nimmt eine Zeile aus dem Warenkorb."""
+def entfernen(con: sqlite3.Connection, item_id: int) -> dict:
+    """Nimmt eine Zeile aus dem Warenkorb — und gibt zurück, was sie war.
+
+    **Der Rückgabewert ist der Rückweg** (WB-376). Löschen ist die einzige
+    Geste im Korb, die sich nicht durch dieselbe Geste zurücknehmen lässt:
+    „+" hat „−", „Laden" hat den anderen Laden, aber eine gelöschte Zeile ist
+    weg. Seit WB-361 hat jeder Chat-Tipp einen Rückweg, und der Hinweis dort
+    schickt sie für die Rücknahme ausdrücklich in den Korb — „dort steht ein
+    Löschknopf". Ausgerechnet der war die einzige Stelle ohne Rückweg.
+
+    Zurückgegeben wird alles, was `wieder_einlegen()` braucht, um dieselbe
+    Zeile noch einmal hinzulegen: Produkt oder Freitext, Packungszahl,
+    Bedarf, Handmenge und Laden. Wer den Wert nicht braucht, ignoriert ihn —
+    gelöscht ist die Zeile so oder so.
+    """
     _posten_im_draft(con, item_id)
+    row = con.execute(
+        "SELECT product_id, free_text, qty, need_amount, need_unit, hand_qty,"
+        "       store FROM order_item WHERE id = ?", (item_id,)).fetchone()
     con.execute("DELETE FROM order_item WHERE id = ?", (item_id,))
     con.commit()
+    return dict(row) if row is not None else {}
+
+
+def wieder_einlegen(con: sqlite3.Connection, *, product_id=None,
+                    free_text=None, qty: int = 1, store=None,
+                    need_amount=None, need_unit=None, hand_qty=None) -> int:
+    """Legt eine entfernte Zeile wieder so hin, wie sie war (WB-376).
+
+    **Nicht `einlegen()`**, und das ist der ganze Unterschied: `einlegen()`
+    RECHNET etwas DAZU — es zählt Bedarfe zusammen und erhöht die Handmenge.
+    Auf eine Rücknahme angewandt wäre das eine neue Behauptung („noch eine
+    Packung") statt der Rückkehr zum Zustand vor dem Fehltipp. Hier wird die
+    Zeile mit ihren eigenen Zahlen wieder eingesetzt; `_neu_rechnen()` stellt
+    daraus dieselbe Packungszahl wieder her, aus der sie entstanden ist.
+
+    Die id ist eine neue — die alte Zeile ist wirklich gelöscht worden. Für
+    die Nutzerin ändert das nichts, für einen offenen zweiten Browser schon:
+    dessen Knöpfe zeigen danach auf eine id, die es nicht mehr gibt, und der
+    Korb sagt das (`UngueltigerPosten`), statt still danebenzugreifen.
+    """
+    pid, text = genau_eines(product_id, free_text)
+    if pid is not None and not con.execute(
+            "SELECT 1 FROM product WHERE id = ?", (pid,)).fetchone():
+        raise UngueltigerPosten(f"Produkt {pid} gibt es nicht.")
+    # Aus einem Formular kommt der Bedarf als Text zurück. Was sich nicht als
+    # Zahl lesen lässt, wird zu `None` und nicht zu 0: „kein Bedarf" und
+    # „Bedarf null" sind zwei verschiedene Aussagen (siehe `need_amount` in
+    # `db.py`).
+    try:
+        bedarf = float(need_amount) if need_amount not in (None, "") else None
+    except (TypeError, ValueError):
+        bedarf = None
+    korb = warenkorb(con)
+    vorhanden = con.execute(
+        "SELECT id FROM order_item"
+        " WHERE order_id = ? AND product_id IS ? AND free_text IS ?",
+        (korb, pid, text)).fetchone()
+    if vorhanden is not None:
+        # Dieselbe Sache liegt schon wieder im Korb — zwischen Löschen und
+        # Rücknahme wurde sie neu eingelegt. Dann ist die Rücknahme bereits
+        # erfüllt, und eine zweite Zeile wäre eine, die im Laden zweimal
+        # gegriffen wird. Die Menge der neuen Zeile bleibt stehen: sie ist
+        # die jüngere Aussage.
+        return int(vorhanden["id"])
+    laden = store if store in db.STORES else vorbelegter_laden(con, pid, text)
+    cur = con.execute(
+        "INSERT INTO order_item (order_id, product_id, free_text, qty,"
+        "                        need_amount, need_unit, hand_qty, store)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (korb, pid, text, max(1, int(qty)), bedarf,
+         (need_unit or None) if bedarf is not None else None,
+         max(0, int(hand_qty or 0)), laden))
+    item_id = int(cur.lastrowid)
+    _neu_rechnen(con, item_id)
+    con.commit()
+    return item_id
 
 
 def inhalt(con: sqlite3.Connection) -> list[dict]:

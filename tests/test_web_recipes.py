@@ -173,8 +173,12 @@ def test_rezept_loeschen_ueber_die_oberflaeche(client, con):
     client.post(f"/rezepte/{rid}/zutaten", data={"free_text": "Zimt"},
                 headers=HTMX)
     r = client.post(f"/rezepte/{rid}/loeschen", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/rezepte"
+    # Der Name reist in der Weiterleitung mit (WB-376): ohne ihn sähe die
+    # Rezeptliste nach dem Löschen aus wie nach einem Abbruch.
+    assert r.status_code == 303
+    assert r.headers["location"].startswith("/rezepte?weg=")
     assert recipes.rezepte(con) == []
+    assert "ist gelöscht" in client.get(r.headers["location"]).text
     assert client.get(f"/rezepte/{rid}").status_code == 404
 
 

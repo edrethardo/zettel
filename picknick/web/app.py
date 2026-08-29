@@ -663,21 +663,92 @@ def create_app(db_path: str | Path | None = None,
                 "korb_anzahl": orders.korb_anzahl(c),
                 "hinweis": katalog_hinweis(c)}
 
-    def _korb_kontext(c: sqlite3.Connection, fehler: str | None = None) -> dict:
+    # ----------------------------------------------------------------------
+    # Zwei Seiten, die es vor WB-376 nicht gab: die Adresse ins Leere und die
+    # Rückfrage vor etwas Endgültigem.
+
+    #: Der Rückweg, wenn kein näherer bekannt ist.
+    WEGE_ALLGEMEIN = [{"url": "/katalog", "text": "Zum Katalog"},
+                      {"url": "/warenkorb", "text": "Zum Korb"}]
+    _WEGE_REZEPT = [{"url": "/rezepte", "text": "Alle Rezepte"},
+                    {"url": "/katalog", "text": "Zum Katalog"}]
+    _WEGE_BON = [{"url": "/bons", "text": "Alle Bons"},
+                 {"url": "/katalog", "text": "Zum Katalog"}]
+
+    def _nicht_gefunden(request: Request, satz: str, wege=None):
+        """Eine 404 mit Kopf, Navigation und Rückweg — für alle drei Wege.
+
+        Vorher gab es drei Antworten auf dieselbe Frage: `/pick/99` und
+        `/rezepte/99` lieferten 0 Bytes, `/bons/gibtesnicht.pdf` eine 200 mit
+        einer Seite über eine Datei, die es nicht gibt. Diese Funktion ist die
+        eine Antwort; `wege` sagt, wohin zurück.
+
+        Sie öffnet eine eigene Verbindung: sie wird auch aus dem
+        Ausnahmebehandler heraus gerufen, wo keine offen ist. Zwei lesende
+        sqlite-Verbindungen nebeneinander sind kein Problem, und der Preis
+        einer 404 ist der falsche Ort zum Sparen.
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(
+                request, "nicht_gefunden.html",
+                {**_rahmen(request, c), "satz": satz,
+                 "wege": wege or WEGE_ALLGEMEIN},
+                status_code=404)
+        finally:
+            c.close()
+
+    @app.exception_handler(404)
+    def _kein_weg(request: Request, exc):
+        """Jede unbekannte Adresse bekommt dieselbe Seite.
+
+        Nicht nur die drei aus dem Ticket: ein vertippter Link im Tailnet
+        landete sonst wieder auf einem weissen Blatt. Routen, die absichtlich
+        ein nacktes `Response(404)` zurückgeben — die HTMX-Bruchstücke —
+        laufen hier NICHT durch: dieser Behandler sieht nur geworfene
+        Ausnahmen, und ein Bruchstück, in das eine ganze Seite getauscht
+        würde, wäre schlimmer als gar keine Antwort.
+        """
+        return _nicht_gefunden(
+            request, "Diese Adresse gibt es im Picknick-Shop nicht.")
+
+    def _bestaetigen(request: Request, titel: str, frage: str, aktion: str,
+                     knopf: str, zurueck: str, verlust=None,
+                     bleibt: str | None = None):
+        """Der zweite Schritt vor etwas, das keinen dritten hat."""
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "bestaetigen.html", {
+                **_rahmen(request, c), "titel": titel, "frage": frage,
+                "aktion": aktion, "knopf": knopf, "zurueck": zurueck,
+                "verlust": verlust or [], "bleibt": bleibt})
+        finally:
+            c.close()
+
+    def _korb_kontext(c: sqlite3.Connection, fehler: str | None = None,
+                      weg: dict | None = None,
+                      meldung: str | None = None) -> dict:
         """Alles, was `_korb.html` braucht — für Vollseite und HTMX-Bruchstück.
 
         Eine Funktion für beide Wege, aus demselben Grund wie bei der
         Trefferliste in WB-323: sonst entwickelt sich das Bruchstück von der
         ersten Ansicht weg, und niemand merkt es.
+
+        `weg` ist die gerade entfernte Zeile (WB-376) — nicht als Fehler,
+        sondern als Rückweg: der Korb zeigt darüber, was verschwunden ist, und
+        einen Knopf, der es zurückholt.
         """
         return {"posten": _posten_mit_bild(orders.inhalt(c), app.state.image_dir),
                 "stores": db.STORES,
                 "laden_titel": orders.LADEN_TITEL,
                 "korb_anzahl": orders.korb_anzahl(c),
-                "fehler": fehler}
+                "fehler": fehler,
+                "weg": weg,
+                "meldung": meldung}
 
     def _korb_antwort(request: Request, c: sqlite3.Connection,
-                      fehler: str | None = None):
+                      fehler: str | None = None, weg: dict | None = None,
+                      meldung: str | None = None):
         """HTMX bekommt den Korb, ein Formular ohne JavaScript die ganze Seite.
 
         `korb_oob` schaltet die Zahl im Kopf dazu (WB-372). Nur hier, wo der
@@ -687,15 +758,25 @@ def create_app(db_path: str | Path | None = None,
         if ist_htmx(request):
             return vorlagen.TemplateResponse(
                 request, "_korb.html",
-                {**_korb_kontext(c, fehler), "korb_oob": True})
-        if fehler:
+                {**_korb_kontext(c, fehler, weg, meldung), "korb_oob": True})
+        if fehler or weg or meldung:
             # Mit einer Weiterleitung ginge die Begründung verloren, und die
-            # Nutzerin sähe nur, dass nichts passiert ist.
+            # Nutzerin sähe nur, dass nichts passiert ist. Für den Rückweg
+            # (WB-376) gilt dasselbe doppelt: ohne JavaScript wäre er nach der
+            # Weiterleitung gar nicht mehr da.
             return vorlagen.TemplateResponse(
                 request, "warenkorb.html",
-                {**_rahmen(request, c), **_korb_kontext(c, fehler),
+                {**_rahmen(request, c), **_korb_kontext(c, fehler, weg, meldung),
                  **_chat_kontext(c)})
         return RedirectResponse("/warenkorb", status_code=303)
+
+    def _zeile_im_korb(c: sqlite3.Connection, item_id: int) -> dict | None:
+        """Die Korbzeile, wie sie JETZT ist — gebraucht, bevor sie weg ist.
+
+        Der Rückweg braucht den Namen für die Meldung und die Zahlen für das
+        Wiedereinlegen; nach dem `DELETE` sind beide nicht mehr zu haben.
+        """
+        return next((z for z in orders.inhalt(c) if z["id"] == item_id), None)
 
     @app.get("/katalog")
     def katalog(request: Request, q: str = "",
@@ -792,15 +873,26 @@ def create_app(db_path: str | Path | None = None,
 
     @app.post("/warenkorb/posten/{item_id}/menge")
     async def posten_menge(request: Request, item_id: int):
+        """„+" und „−". Unter 1 nimmt „−" die Zeile aus dem Korb — mit Rückweg.
+
+        Das war die vierte stille Zerstörung aus WB-376: bei Menge 1 löschte
+        „−" die Zeile, ohne zu fragen und ohne Spur. Der Knopf soll das
+        weiterhin können — ein „−", das bei 1 nichts tut, ist ein kaputter
+        Knopf —, aber die Zeile ist danach zurückzuholen.
+        """
         werte = await eingaben(request)
         c = con()
         try:
             fehler = None
+            menge = zahl(werte.get("qty"), 1)
+            # VOR der Änderung gelesen: ab qty < 1 gibt es die Zeile nicht
+            # mehr, und mit ihr wäre der Rückweg weg.
+            vorher = _zeile_im_korb(c, item_id) if menge < 1 else None
             try:
-                orders.menge_setzen(c, item_id, zahl(werte.get("qty"), 1))
+                orders.menge_setzen(c, item_id, menge)
             except orders.UngueltigerPosten as e:
-                fehler = str(e)
-            return _korb_antwort(request, c, fehler)
+                fehler, vorher = str(e), None
+            return _korb_antwort(request, c, fehler, weg=vorher)
         finally:
             c.close()
 
@@ -820,14 +912,55 @@ def create_app(db_path: str | Path | None = None,
 
     @app.post("/warenkorb/posten/{item_id}/loeschen")
     def posten_loeschen(request: Request, item_id: int):
+        """Das „×" am Posten — und seit WB-376 mit Rückweg statt Rückfrage.
+
+        Rückweg und nicht Rückfrage, weil der Korb die Stelle ist, an die
+        WB-361 für die Rücknahme ausdrücklich verweist („dort steht ein
+        Löschknopf"): eine Zeile im Korb ist eine Absicht und kein Ergebnis,
+        und ein Zwischenschritt vor jedem Wegnehmen wäre auf dem Telefon der
+        doppelte Aufwand für die häufigste Geste des Shops.
+        """
         c = con()
         try:
             fehler = None
+            vorher = _zeile_im_korb(c, item_id)
             try:
                 orders.entfernen(c, item_id)
             except orders.UngueltigerPosten as e:
+                fehler, vorher = str(e), None
+            return _korb_antwort(request, c, fehler, weg=vorher)
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/wiederherstellen")
+    async def posten_wiederherstellen(request: Request):
+        """Der Rückweg (WB-376): die entfernte Zeile noch einmal hinlegen.
+
+        Die Zeile reist im Formular mit und nicht in einem Serverzustand: der
+        Shop läuft auf zwei Telefonen gleichzeitig, und ein „zuletzt
+        gelöscht"-Fach im Prozess wäre eines für beide zusammen — die eine
+        nähme zurück, was die andere weggenommen hat. Im Formular gehört der
+        Rückweg zu der Seite, auf der gelöscht wurde, und überlebt auch einen
+        Neustart des Web-Prozesses.
+        """
+        werte = await eingaben(request)
+        c = con()
+        try:
+            fehler = meldung = None
+            try:
+                orders.wieder_einlegen(
+                    c, product_id=werte.get("product_id") or None,
+                    free_text=werte.get("free_text") or None,
+                    qty=zahl(werte.get("qty"), 1),
+                    store=werte.get("store"),
+                    need_amount=werte.get("need_amount"),
+                    need_unit=werte.get("need_unit") or None,
+                    hand_qty=zahl(werte.get("hand_qty"), 0))
+            except orders.UngueltigerPosten as e:
                 fehler = str(e)
-            return _korb_antwort(request, c, fehler)
+            else:
+                meldung = f"{werte.get('name') or 'Die Zeile'} liegt wieder im Korb."
+            return _korb_antwort(request, c, fehler, meldung=meldung)
         finally:
             c.close()
 
@@ -1446,7 +1579,13 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             if orders.bestellung(c, order_id) is None:
-                return Response(status_code=404)
+                # Eine Seite und kein weisses Blatt (WB-376): ein Lesezeichen
+                # auf eine erledigte Bestellung ist der Normalfall, nicht der
+                # Fehlerfall.
+                return _nicht_gefunden(
+                    request, f"Die Bestellung {order_id} gibt es nicht.",
+                    [{"url": "/pick", "text": "Zur Pick-Liste"},
+                     {"url": "/bestellungen", "text": "Alle Bestellungen"}])
             return vorlagen.TemplateResponse(request, "pick.html", {
                 **_rahmen(request, c), **_pick_kontext(c, order_id)})
         finally:
@@ -1545,11 +1684,13 @@ def create_app(db_path: str | Path | None = None,
         return RedirectResponse(f"/rezepte/{recipe_id}", status_code=303)
 
     @app.get("/rezepte")
-    def rezeptliste(request: Request):
+    def rezeptliste(request: Request, weg: str = ""):
+        """Die Rezeptliste. `?weg=` meldet ein gerade gelöschtes (WB-376)."""
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "rezepte.html", {
-                **_rahmen(request, c), "rezepte": recipes.rezepte(c)})
+                **_rahmen(request, c), "rezepte": recipes.rezepte(c),
+                "weg": weg or None})
         finally:
             c.close()
 
@@ -1577,7 +1718,9 @@ def create_app(db_path: str | Path | None = None,
                 kontext = _rezept_kontext(c, recipe_id, q=q, amount=amount,
                                           unit=unit)
             except recipes.RezeptFehler:
-                return Response(status_code=404)
+                return _nicht_gefunden(
+                    request, f"Das Rezept {recipe_id} gibt es nicht (mehr).",
+                    _WEGE_REZEPT)
             return vorlagen.TemplateResponse(request, "rezept.html", {
                 **_rahmen(request, c), **kontext})
         finally:
@@ -1618,15 +1761,74 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
-    @app.post("/rezepte/{recipe_id}/loeschen")
-    def rezept_loeschen(request: Request, recipe_id: int):
+    @app.get("/rezepte/{recipe_id}/loeschen")
+    def rezept_loeschen_fragen(request: Request, recipe_id: int):
+        """Die Rückfrage vor dem teuersten Löschknopf des Shops (WB-376).
+
+        `DELETE FROM recipe` nimmt per CASCADE Zutaten, Zubereitung, Zeiten
+        und Herkunft mit; bei einem geholten Chefkoch-Rezept sind das zwei
+        Modellläufe plus Abruf. Und der Knopf sass direkt unter „Speichern".
+
+        Aufgezählt wird, was WIRKLICH an diesem Rezept hängt, mit Zahlen —
+        „alles wird gelöscht" liest sich schneller und sagt weniger. Ein
+        Papierkorb ist ausdrücklich nicht Teil davon: Rückfrage und Meldung
+        reichen, ein zweiter Speicherort wäre mehr Technik als das Problem
+        verlangt.
+        """
         c = con()
         try:
             try:
+                r = recipes.rezept(c, recipe_id)
+            except recipes.RezeptFehler:
+                return _nicht_gefunden(
+                    request, f"Das Rezept {recipe_id} gibt es nicht (mehr).",
+                    _WEGE_REZEPT)
+            verlust = []
+            if r["n_zutaten"]:
+                verlust.append(f"{r['n_zutaten']} verknüpfte Zutaten aus dem"
+                               " Katalog")
+            if r["rezeptzutaten"]:
+                verlust.append(f"{len(r['rezeptzutaten'])} Zutaten laut"
+                               " Rezept, mit Menge und Einheit")
+            if r["zubereitung"]:
+                verlust.append(f"die Zubereitung in"
+                               f" {len(r['zubereitung'])} Schritten")
+            if r.get("prep_minutes") or r.get("cook_minutes"):
+                verlust.append("die Zeiten fürs Planen")
+            if r.get("source_url"):
+                verlust.append(f"die Herkunft: {r['source_url']}")
+            if not verlust:
+                verlust.append("Dieses Rezept ist noch leer — es hängt nichts"
+                               " daran.")
+            return _bestaetigen(
+                request,
+                titel=f"„{r['name']}“ löschen?",
+                frage=("Das Rezept wird endgültig gelöscht. Es gibt keinen"
+                       " Papierkorb, aus dem es zurückzuholen wäre."),
+                verlust=verlust,
+                bleibt=("Was schon im Warenkorb liegt, bleibt dort liegen —"
+                        " der Korb ist eine eigene Liste."),
+                aktion=f"/rezepte/{recipe_id}/loeschen",
+                knopf="Ja, Rezept löschen",
+                zurueck=f"/rezepte/{recipe_id}")
+        finally:
+            c.close()
+
+    @app.post("/rezepte/{recipe_id}/loeschen")
+    def rezept_loeschen(request: Request, recipe_id: int):
+        """Löscht wirklich. Der zweite Schritt der Rückfrage von oben."""
+        c = con()
+        try:
+            try:
+                name = recipes.rezept(c, recipe_id)["name"]
                 recipes.loeschen(c, recipe_id)
             except recipes.RezeptFehler:
                 return Response(status_code=404)
-            return RedirectResponse("/rezepte", status_code=303)
+            # Die Meldung reist im Query mit und nicht in einer Sitzung: der
+            # Shop hat keine, und ohne sie sähe die Rezeptliste nach dem
+            # Löschen genauso aus wie nach einem Abbruch.
+            return RedirectResponse(f"/rezepte?weg={quote(name)}",
+                                    status_code=303)
         finally:
             c.close()
 
@@ -1823,7 +2025,8 @@ def create_app(db_path: str | Path | None = None,
         return bonmodul.pfad_im_verzeichnis(app.state.bon_dir, name)
 
     def _bon_kontext(request: Request, c: sqlite3.Connection,
-                     fehler: str | None = None, neu: str | None = None) -> dict:
+                     fehler: str | None = None, neu: str | None = None,
+                     weg: str | None = None) -> dict:
         """Die Bon-Liste, jede Datei mit ihrem Auslesestand.
 
         Der Stand kommt aus zwei Quellen, und beide werden gebraucht: ein
@@ -1847,10 +2050,14 @@ def create_app(db_path: str | Path | None = None,
                 "ocr_da": bonmodul.ocr_da(),
                 "ocr_fehlt_text": bonmodul.OCR_FEHLT_TEXT,
                 "fehler": fehler,
-                "neu": neu}
+                "neu": neu,
+                # Der gerade gelöschte Bon (WB-376): ohne die Meldung sieht die
+                # Liste nach dem Löschen aus wie nach einem Abbruch.
+                "weg": weg}
 
     def _bon_seite(request: Request, fehler: str | None = None,
-                   neu: str | None = None, code: int = 200):
+                   neu: str | None = None, code: int = 200,
+                   weg: str | None = None):
         """Die ganze Seite — auch im Fehlerfall.
 
         Eine Weiterleitung nach einem abgelehnten Upload verlöre die
@@ -1860,14 +2067,15 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             return vorlagen.TemplateResponse(
-                request, "bons.html", _bon_kontext(request, c, fehler, neu),
+                request, "bons.html",
+                _bon_kontext(request, c, fehler, neu, weg),
                 status_code=code)
         finally:
             c.close()
 
     @app.get("/bons")
-    def bonliste(request: Request, neu: str = ""):
-        return _bon_seite(request, neu=neu or None)
+    def bonliste(request: Request, neu: str = "", weg: str = ""):
+        return _bon_seite(request, neu=neu or None, weg=weg or None)
 
     @app.post("/bons")
     async def bon_hochladen(request: Request):
@@ -1911,9 +2119,56 @@ def create_app(db_path: str | Path | None = None,
         # Zeitstempel im Namen steckt, fällt das niemandem auf.
         return RedirectResponse(f"/bons?neu={quote(name)}", status_code=303)
 
+    def _bon_fehlt(request: Request, name: str):
+        """Dieselbe Seite für jeden Bon, den es nicht (mehr) gibt (WB-376)."""
+        return _nicht_gefunden(
+            request, f"Den Bon „{name}“ gibt es nicht (mehr).", _WEGE_BON)
+
+    @app.get("/bons/{name}/loeschen")
+    def bon_loeschen_fragen(request: Request, name: str):
+        """Die Rückfrage vor dem Löschen (WB-376).
+
+        Löschen ist hier endgültig im wörtlichen Sinn: die Datei liegt in
+        `data/bons/`, es gibt keine zweite Kopie und keinen Papierkorb. Der
+        Knopf sass auf dem Telefon unter dem Daumen, direkt neben „Auslesen".
+
+        Die Rückfrage sagt auch, was BLEIBT — sonst rechnet sie mit dem
+        grösseren Verlust und bricht ab, obwohl sie das Richtige wollte.
+        """
+        pfad = _bon_pfad(name)
+        if pfad is None or not pfad.is_file():
+            return _bon_fehlt(request, name)
+        c = con()
+        try:
+            beleg = bonmodul.beleg_zu_datei(c, name)
+            verlust = [f"Die Datei {name} wird endgültig gelöscht — sie liegt"
+                       " nur hier, es gibt keine zweite Kopie."]
+            bleibt = None
+            if beleg:
+                b = bonmodul.bilanz(c, beleg["id"])
+                bleibt = (f"Die ausgelesenen Käufe bleiben: {b['posten']}"
+                          f" Posten, davon {b['bestaetigt']} bestätigt. Wer"
+                          " den Zettel wegwirft, will nicht seine"
+                          " Einkaufshistorie löschen.")
+            else:
+                bleibt = ("Ausgelesen wurde dieser Bon noch nicht — es gehen"
+                          " keine Käufe mit.")
+            return _bestaetigen(
+                request,
+                titel=f"{name} löschen?",
+                frage="Die Bon-Datei wird gelöscht. Das lässt sich nicht"
+                      " zurücknehmen.",
+                verlust=verlust,
+                bleibt=bleibt,
+                aktion=f"/bons/{quote(name)}/loeschen",
+                knopf="Ja, Bon löschen",
+                zurueck="/bons")
+        finally:
+            c.close()
+
     @app.post("/bons/{name}/loeschen")
     def bon_loeschen(request: Request, name: str):
-        """Löscht einen Bon.
+        """Löscht einen Bon. Der zweite Schritt der Rückfrage von oben.
 
         Der Name kommt aus der URL und ist damit beliebig. Er wird NICHT
         bereinigt, sondern geprüft und im Zweifel abgelehnt (siehe
@@ -1929,7 +2184,7 @@ def create_app(db_path: str | Path | None = None,
                 "Diesen Bon gibt es nicht (mehr). Die Liste unten ist der"
                 " aktuelle Stand."))
         app.state.bonlaeufe.vergiss(name)
-        return RedirectResponse("/bons", status_code=303)
+        return RedirectResponse(f"/bons?weg={quote(name)}", status_code=303)
 
     # -- Auslesen ---------------------------------------------------------
 
@@ -1972,6 +2227,56 @@ def create_app(db_path: str | Path | None = None,
             finally:
                 c.close()
         return arbeit
+
+    @app.get("/bons/{name}/auslesen")
+    def bon_auslesen_fragen(request: Request, name: str):
+        """„Neu lesen" sagt vorher, was es verwirft (WB-376).
+
+        Der Code wusste es längst — `kaeufe.anlegen(ersetzen=True)` wirft den
+        früheren Beleg weg, „mitsamt seinen Entscheidungen, denn sie gehören
+        zu Zeilen, die es dann nicht mehr gibt". Der Knopf sagte es nicht, und
+        er sass in derselben Zeile wie das Löschen.
+
+        Genannt wird die ZAHL, nicht bloss die Tatsache: „14 Entscheidungen"
+        ist der Unterschied zwischen einer Rückfrage und einem Türsteher. Beim
+        ersten Auslesen gibt es nichts zu verlieren — dann steht die Seite
+        ohne Verlustliste da, und der Knopf heisst schlicht „Auslesen".
+        """
+        pfad = _bon_pfad(name)
+        if pfad is None or not pfad.is_file():
+            return _bon_fehlt(request, name)
+        c = con()
+        try:
+            beleg = bonmodul.beleg_zu_datei(c, name)
+            verlust, bleibt = [], None
+            if beleg:
+                b = bonmodul.bilanz(c, beleg["id"])
+                entschieden = b["bestaetigt"] + b["verworfen"]
+                verlust.append(
+                    f"{entschieden} Entscheidungen zu diesem Bon"
+                    f" ({b['bestaetigt']} bestätigt, {b['verworfen']}"
+                    " verworfen) — sie gehören zu Zeilen, die es nach dem"
+                    " neuen Lauf nicht mehr gibt.")
+                verlust.append(
+                    f"Die {b['posten']} eingelesenen Posten werden ersetzt,"
+                    " samt ihrer Zuordnung zum Katalog.")
+                bleibt = ("Die Bon-Datei selbst bleibt liegen. Neu gelesen"
+                          " wird sie, das Modell ordnet noch einmal zu, und"
+                          " die Ja/Nein fangen von vorn an.")
+            return _bestaetigen(
+                request,
+                titel=(f"{name} neu lesen?" if beleg else f"{name} auslesen?"),
+                frage=("Der Bon wird noch einmal eingelesen. Die bisherigen"
+                       " Ja/Nein gehen dabei verloren." if beleg else
+                       "Der Bon wird eingelesen — das dauert einen Moment und"
+                       " fragt das Modell."),
+                verlust=verlust,
+                bleibt=bleibt,
+                aktion=f"/bons/{quote(name)}/auslesen",
+                knopf="Ja, neu lesen" if beleg else "Auslesen",
+                zurueck=f"/bons/{quote(name)}" if beleg else "/bons")
+        finally:
+            c.close()
 
     @app.post("/bons/{name}/auslesen")
     def bon_auslesen(request: Request, name: str):
@@ -2023,11 +2328,23 @@ def create_app(db_path: str | Path | None = None,
 
     @app.get("/bons/{name}")
     def bon_ansicht(request: Request, name: str):
+        """Die Ansicht eines Bons — und nur, wenn es ihn gibt (WB-376).
+
+        Vorher wurde hier bloss die NAMENSGÜLTIGKEIT geprüft. `/bons/
+        gibtesnicht.pdf` antwortete deshalb mit 200 und einer Geisterseite
+        über eine Datei, die nie existiert hat, samt Auslesen-Knopf, der dann
+        an derselben Prüfung scheiterte. Das trifft sie im Alltag: die
+        Bon-Ansicht auf dem zweiten Telefon, während der Bon auf dem ersten
+        gelöscht wird.
+
+        Ein gültiger Name OHNE Datei ist derselbe Fall wie ein ungültiger —
+        beide Male gibt es den Bon nicht, und beide bekommen dieselbe Seite.
+        """
         c = con()
         try:
-            if _bon_pfad(name) is None:
-                return _bon_seite(request, code=404, fehler=(
-                    f"„{name}“ ist kein Bon-Name."))
+            pfad = _bon_pfad(name)
+            if pfad is None or not pfad.is_file():
+                return _bon_fehlt(request, name)
             return _bonstand_antwort(request, c, name)
         finally:
             c.close()
