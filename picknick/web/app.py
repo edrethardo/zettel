@@ -66,6 +66,31 @@ SEITE = 60
 #: Ab wann das Hinweisband erscheint (Spec 11).
 HINWEIS_AB_TAGEN = 3
 
+#: Wie viele Züge des Chats offen dastehen (WB-372). Ältere werden GAR NICHT
+#: gerendert und mit einem Tipp nachgeholt — sie sind eingeklappt, nicht weg;
+#: an der Datenbank ändert diese Zahl nichts (siehe `vorschlaege.verlauf`).
+#:
+#: Drei, und das ist eine Abwägung und keine runde Zahl. Gearbeitet wird immer
+#: am NEUESTEN Zug: dort stehen die Zeilen, die noch zu entscheiden sind. Der
+#: Zug davor ist der, in dem man nachsieht, ob man dieselbe Zutat nicht eben
+#: schon bestätigt hat, und der dritte fängt die Auffächerung ab — ein
+#: Oberbegriff (WB-368) kostet einen eigenen Zug, ohne selbst einer zu sein,
+#: und mit zwei Zügen wäre die Frage schon aus dem Bild, während man ihre
+#: Antwort noch bearbeitet.
+#:
+#: Weiter zurück wird nicht gearbeitet, sondern nachgeschlagen, und dafür gibt
+#: es den Knopf. Gemessen mit `scripts/groesse_probe.py` (17 Züge, 153
+#: Vorschläge), Seitengrösse je Grenze:
+#:
+#:     ohne Grenze   215.410 Bytes      3 Züge    45.543 Bytes
+#:     1 Zug          21.240 Bytes      5 Züge    70.077 Bytes
+#:
+#: Rund 12 KB je Zug, und die gehen bei JEDEM Blick in den Warenkorb über
+#: Mobilfunk. Zwischen 1 und 3 liegen 24 KB und der Unterschied zwischen
+#: „arbeiten" und „nachschlagen"; ab 5 wird es wieder teuer, ohne dass dort
+#: noch entschieden würde.
+VERLAUF_ZUEGE = 3
+
 #: Wie lange ein Produktfoto im Browser liegen bleiben darf (WB-374). Sieben
 #: Tage, und das ist eine Abwägung: der Bildweg heisst `/bild/{id}` und trägt
 #: keine Version, also wäre `immutable` falsch — wechselt knuspr.de das Foto
@@ -592,10 +617,16 @@ def create_app(db_path: str | Path | None = None,
 
     def _korb_antwort(request: Request, c: sqlite3.Connection,
                       fehler: str | None = None):
-        """HTMX bekommt den Korb, ein Formular ohne JavaScript die ganze Seite."""
+        """HTMX bekommt den Korb, ein Formular ohne JavaScript die ganze Seite.
+
+        `korb_oob` schaltet die Zahl im Kopf dazu (WB-372). Nur hier, wo der
+        Korb die ganze Antwort ist: eingebettet trägt sie der Aufrufer
+        (`_nachtrag.html`), und zweimal wäre sie ein Tausch im Tausch.
+        """
         if ist_htmx(request):
-            return vorlagen.TemplateResponse(request, "_korb.html",
-                                             _korb_kontext(c, fehler))
+            return vorlagen.TemplateResponse(
+                request, "_korb.html",
+                {**_korb_kontext(c, fehler), "korb_oob": True})
         if fehler:
             # Mit einer Weiterleitung ginge die Begründung verloren, und die
             # Nutzerin sähe nur, dass nichts passiert ist.
@@ -666,11 +697,18 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.get("/warenkorb")
-    def warenkorb(request: Request):
+    def warenkorb(request: Request, verlauf: str = ""):
+        """Korb und Chat. `?verlauf=alles` zeigt auch die älteren Züge.
+
+        Der Parameter ist der Ausgang OHNE JavaScript (WB-372): der Knopf am
+        eingeklappten Teil ist ein echtes `GET`-Formular auf diese Adresse und
+        wird von HTMX nur abgekürzt.
+        """
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "warenkorb.html", {
-                **_rahmen(request, c), **_korb_kontext(c), **_chat_kontext(c)})
+                **_rahmen(request, c), **_korb_kontext(c),
+                **_chat_kontext(c, alles=verlauf == "alles")})
         finally:
             c.close()
 
@@ -763,35 +801,87 @@ def create_app(db_path: str | Path | None = None,
     #   den Warenkorb bis zu drei Sekunden am health-Timeout — und jeder
     #   Testlauf ginge ins Netz.
     # * **Ein Vorschlag ist noch kein Posten.** Erst „Ja" legt ein. Deshalb
-    #   antwortet die Entscheidung mit Chat UND Korb (`_chat_antwort`), sonst
-    #   sähe die Nutzerin ihre Zeile im Korb erst nach dem nächsten Laden.
+    #   trägt jede Antwort auf eine Entscheidung den Korb mit, sonst sähe die
+    #   Nutzerin ihre Zeile im Korb erst nach dem nächsten Laden.
+    #
+    # Und seit WB-372 gibt es DREI Antwortgrössen statt einer. Sie sind keine
+    # Optimierung nebenbei, sondern die Sache selbst: ein Tipp auf „Ja" trug
+    # vorher den kompletten Verlauf (gemessen 259.941 Bytes bei 17 Zügen), und
+    # genau diese Tipps macht man in Serie durch eine Liste von 150 Zeilen, am
+    # Telefon über Mobilfunk.
+    #
+    #   `_entscheidung_antwort`  eine ZEILE    Ja, Nein, rückgängig
+    #   `_zug_antwort`           ein ZUG       alles, was Zeilen ANLEGT
+    #                                          (Korrektur, Freitext) oder
+    #                                          mehrere auf einmal ändert
+    #                                          (Sammelknopf, Rezeptentwurf)
+    #   `_chat_antwort`          der VERLAUF   ein neuer Zug, Sorten, leeren
+    #
+    # Die Regel dahinter ist kurz: **so gross wie das, was sich ändert, und
+    # keinen Zug grösser.** Was sich ausserhalb des getauschten Stücks ändert,
+    # kommt out-of-band (`_nachtrag.html`) — nicht dadurch, dass
+    # sicherheitshalber alles neu gerendert wird.
+
+    def _zug_fuellen(c: sqlite3.Connection, zeile: dict) -> dict:
+        """Ergänzt eine Chatzeile um alles, was `_zug.html` an ihr zeigt.
+
+        Eine Funktion für den Verlauf UND für den einzeln getauschten Zug
+        (WB-372) — aus demselben Grund wie bei der Trefferliste in WB-323:
+        sonst entwickelt sich das Bruchstück von der Vollansicht weg, und
+        niemand merkt es.
+        """
+        _posten_mit_bild(zeile["vorschlaege"], app.state.image_dir)
+        for v in zeile["vorschlaege"]:
+            v["alternativen"] = _alternativen(c, v)
+        # Die Sorten einer Auffächerung (WB-368). Sie stehen an der
+        # Antwortzeile und bleiben im Verlauf stehen: wer erst Salami
+        # gewählt hat und zwei Sätze später doch noch Kochschinken will,
+        # findet die Liste noch vor.
+        zeile["faecher"] = oberbegriffe.zu_nachricht(c, zeile["id"])
+        # Der Rezeptentwurf (WB-337). Er bekommt die schon geholte
+        # Vorschlagsliste gereicht statt sie ein zweites Mal zu holen —
+        # sonst hätte er andere Wörterbücher als die Liste darüber, und
+        # an denen fehlten die Bilder.
+        zeile["entwurf"] = entwuerfe.zu_nachricht(c, zeile["id"],
+                                                  zeile["vorschlaege"])
+        return zeile
 
     def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
                       zustand=None, satz: str = "",
-                      aufklappen: int | None = None) -> dict:
-        """Alles, was `_chat.html` braucht — für Vollseite und Bruchstück."""
+                      aufklappen: int | None = None, alles: bool = False,
+                      leeren_fragt: bool = False, geleert=None) -> dict:
+        """Alles, was `_chat.html` braucht — für Vollseite und Bruchstück.
+
+        **Gerendert wird nur der Schwanz des Verlaufs** (WB-372): die letzten
+        `VERLAUF_ZUEGE` Züge. `alles=True` hebt die Grenze für diese eine
+        Antwort auf — der Weg zurück zu den älteren Zügen. Es ist eine
+        Anzeigegrenze; gelöscht oder verändert wird dabei nichts.
+
+        Die Grenze spart nicht nur Bytes, sondern auch Abfragen: an jeder
+        Chatzeile hängen die Alternativen jedes Vorschlags, die Sorten und der
+        Rezeptentwurf. Über 34 Chatzeilen war das der eigentliche Aufwand
+        dieser Ansicht.
+        """
         # Nur nachsehen, nicht anlegen: ein Blick in den Warenkorb darf keine
         # Bestellung erzeugen. Angelegt wird er erst im Chat-Zug selbst.
         korb_id = orders.warenkorb_id(c)
-        verlauf = vorschlagsliste.verlauf(c, korb_id) if korb_id else []
+        ab = (None if korb_id is None or alles else
+              vorschlagsliste.verlauf_ab(c, korb_id, VERLAUF_ZUEGE))
+        verlauf = vorschlagsliste.verlauf(c, korb_id, ab=ab) if korb_id else []
         for zeile in verlauf:
-            _posten_mit_bild(zeile["vorschlaege"], app.state.image_dir)
-            for v in zeile["vorschlaege"]:
-                v["alternativen"] = _alternativen(c, v)
-            # Die Sorten einer Auffächerung (WB-368). Sie stehen an der
-            # Antwortzeile und bleiben im Verlauf stehen: wer erst Salami
-            # gewählt hat und zwei Sätze später doch noch Kochschinken will,
-            # findet die Liste noch vor.
-            zeile["faecher"] = oberbegriffe.zu_nachricht(c, zeile["id"])
-            # Der Rezeptentwurf (WB-337). Er bekommt die schon geholte
-            # Vorschlagsliste gereicht statt sie ein zweites Mal zu holen —
-            # sonst hätte er andere Wörterbücher als die Liste darüber, und
-            # an denen fehlten die Bilder.
-            zeile["entwurf"] = entwuerfe.zu_nachricht(c, zeile["id"],
-                                                      zeile["vorschlaege"])
+            _zug_fuellen(c, zeile)
         return {"verlauf": verlauf, "chat_fehler": fehler,
                 "chat_zustand": zustand, "satz": satz,
-                "aufklappen": aufklappen}
+                "aufklappen": aufklappen,
+                # Was eingeklappt ist — mit Zahlen, sonst sagt der Knopf
+                # nicht, ob dort noch Arbeit wartet.
+                "aeltere": (vorschlagsliste.umfang(c, korb_id, bis=ab)
+                            if ab else None),
+                # Nur für die Rückfrage vor dem Leeren, und nur dann: zwei
+                # Zählabfragen bei jedem Blick in den Korb wären umsonst.
+                "umfang": (vorschlagsliste.umfang(c, korb_id)
+                           if leeren_fragt and korb_id else None),
+                "leeren_fragt": leeren_fragt, "verlauf_geleert": geleert}
 
     def _alternativen(c: sqlite3.Connection, v: dict) -> list[dict]:
         """Die aufgehobenen Kandidaten einer verworfenen Zeile (WB-359).
@@ -811,15 +901,147 @@ def create_app(db_path: str | Path | None = None,
 
     def _chat_antwort(request: Request, c: sqlite3.Connection,
                       fehler: str | None = None, zustand=None,
-                      satz: str = "", aufklappen: int | None = None):
-        """HTMX bekommt Chat + Korb, ein Formular ohne JavaScript die Seite."""
-        kontext = {**_chat_kontext(c, fehler, zustand, satz, aufklappen),
+                      satz: str = "", aufklappen: int | None = None,
+                      alles: bool = False, leeren_fragt: bool = False,
+                      geleert=None):
+        """HTMX bekommt Chat + Korb, ein Formular ohne JavaScript die Seite.
+
+        Die GRÖSSTE der drei Antworten (WB-372) und seit dem Ticket die
+        seltenste: sie bleibt dem vorbehalten, was den Verlauf selbst ändert —
+        ein neuer Zug, eine Sortenauswahl, das Leeren. Ein „Ja" nimmt
+        `_entscheidung_antwort`, alles Zeilenanlegende `_zug_antwort`.
+        """
+        kontext = {**_chat_kontext(c, fehler, zustand, satz, aufklappen,
+                                   alles, leeren_fragt, geleert),
                    **_korb_kontext(c)}
         if ist_htmx(request):
             return vorlagen.TemplateResponse(request, "_chat_antwort.html",
                                              kontext)
         return vorlagen.TemplateResponse(
             request, "warenkorb.html", {**_rahmen(request, c), **kontext})
+
+    def _teilantwort(request: Request, c: sqlite3.Connection, mid: int | None,
+                     vorlage: str, fehler: str | None = None,
+                     aufklappen: int | None = None, sid: int | None = None):
+        """Ein Zug oder eine Zeile statt des ganzen Verlaufs (WB-372).
+
+        **Ohne HTMX gibt es hier nichts zu tauschen**, dann geht die ganze
+        Seite zurück — derselbe Ausgang wie beim Korb, und der Grund, warum
+        der Shop weiter ohne JavaScript bedienbar bleibt.
+
+        Findet sich der Zug oder die Zeile nicht mehr, fällt die Antwort
+        ebenfalls auf den ganzen Chat zurück. Das ist kein Sonderfall, den man
+        wegdiskutieren kann: zwei Telefone bedienen denselben Korb, und wenn
+        der andere den Verlauf inzwischen geleert hat, gäbe es sonst eine
+        Antwort, die auf ein Element zielt, das es nicht mehr gibt — der Tipp
+        sähe aus, als hätte er nichts getan.
+        """
+        zeile = vorschlagsliste.zug(c, mid) if mid is not None else None
+        v = None
+        if zeile is not None:
+            _zug_fuellen(c, zeile)
+            if sid is not None:
+                v = next((x for x in zeile["vorschlaege"]
+                          if x["id"] == sid), None)
+        if not ist_htmx(request) or zeile is None or (sid is not None
+                                                      and v is None):
+            return _chat_antwort(request, c, fehler=fehler,
+                                 aufklappen=aufklappen)
+        return vorlagen.TemplateResponse(
+            request, vorlage,
+            {"m": zeile, "v": v, "aufklappen": aufklappen,
+             "chat_fehler": fehler, **_korb_kontext(c)})
+
+    def _zug_von(c: sqlite3.Connection, sid: int) -> int | None:
+        """Zu welchem Zug eine Vorschlagszeile gehört. `None`, wenn es sie
+        nicht (mehr) gibt — dann geht der ganze Chat zurück."""
+        try:
+            return vorschlagsliste.eine(c, sid)["chat_message_id"]
+        except vorschlagsliste.VorschlagFehler:
+            return None
+
+    def _entscheidung_antwort(request: Request, c: sqlite3.Connection,
+                              sid: int, fehler: str | None = None,
+                              aufklappen: int | None = None):
+        """Die Antwort auf ein „Ja"/„Nein": eine ZEILE plus die Nachträge.
+
+        **Ausser an einer Korrekturzeile** — dort geht der ganze Zug zurück.
+        Eine Korrektur zählt nur, solange sie entschieden ist
+        (`vorschlaege.liste`), und mit ihrer Rücknahme kommt an der Zeile, die
+        sie korrigiert, die Alternativenliste samt Rückweg wieder hervor. Ein
+        Tipp, der eine ANDERE Zeile mitverändert, lässt sich nicht als diese
+        eine Zeile beantworten; die Regel „so gross wie das, was sich ändert"
+        heisst hier eben: ein Zug.
+        """
+        try:
+            v = vorschlagsliste.eine(c, sid)
+        except vorschlagsliste.VorschlagFehler:
+            return _chat_antwort(request, c, fehler=fehler,
+                                 aufklappen=aufklappen)
+        if v["ist_korrektur"]:
+            return _teilantwort(request, c, v["chat_message_id"],
+                                "_zugantwort.html", fehler=fehler,
+                                aufklappen=aufklappen)
+        return _teilantwort(request, c, v["chat_message_id"],
+                            "_entscheidung.html", fehler=fehler,
+                            aufklappen=aufklappen, sid=sid)
+
+    def _zug_antwort(request: Request, c: sqlite3.Connection, mid: int,
+                     fehler: str | None = None):
+        """Die Antwort auf alles, was Zeilen ANLEGT oder mehrere ändert."""
+        return _teilantwort(request, c, mid, "_zugantwort.html", fehler=fehler)
+
+    @app.get("/warenkorb/chat")
+    def chat_stueck(request: Request, verlauf: str = ""):
+        """Nur der Chat — der Weg zurück zu den eingeklappten Zügen (WB-372).
+
+        `?verlauf=alles` hebt die Anzeigegrenze für diese eine Antwort auf.
+        Dieselbe Adresse trägt ohne HTMX die ganze Seite (`/warenkorb`), und
+        das Formular am Knopf zeigt auf beides — ein eingeklappter Zug muss
+        auch ohne JavaScript wieder aufzuklappen sein.
+        """
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(
+                request, "_chat.html",
+                _chat_kontext(c, alles=verlauf == "alles"))
+        finally:
+            c.close()
+
+    @app.post("/warenkorb/chat/leeren")
+    async def chat_leeren(request: Request):
+        """Den Verlauf loswerden, ohne eine Bestellung abzuschicken (WB-372).
+
+        Drei Ausgänge an einer Adresse, weil die Rückfrage kein eigener Ort
+        ist, sondern ein Zustand derselben Handlung:
+
+        * **ohne `ja`** — die Rückfrage. Sie nennt, was verloren geht, statt
+          bloss „wirklich?" zu fragen: an den Vorschlägen hängen die
+          Entscheidungen, aus denen beim Abschicken die Eval-Labels werden
+          (Spec 8.1, WB-329).
+        * **`ja=0`** — Abbruch, und nichts ist passiert.
+        * **`ja=1`** — gelöscht, mit einer Meldung, die die Zahlen nennt.
+
+        Serverseitig und nicht per `hx-confirm`: eine Rückfrage, die ohne
+        JavaScript ausfällt, fehlt genau dann, wenn sie gebraucht wird.
+
+        **Der Korb wird nicht angefasst** — siehe `vorschlaege.leeren()`.
+        """
+        werte = await eingaben(request)
+        ja = werte.get("ja", "")
+        c = con()
+        try:
+            korb_id = orders.warenkorb_id(c)
+            if korb_id is None or ja == "0":
+                # Kein Korb heisst kein Verlauf: nichts zu fragen, nichts zu
+                # löschen. Dieselbe Antwort wie beim Abbruch.
+                return _chat_antwort(request, c)
+            if ja == "1":
+                return _chat_antwort(request, c,
+                                     geleert=vorschlagsliste.leeren(c, korb_id))
+            return _chat_antwort(request, c, leeren_fragt=True)
+        finally:
+            c.close()
 
     @app.get("/warenkorb/chat/zustand")
     def chat_zustand(request: Request):
@@ -908,6 +1130,11 @@ def create_app(db_path: str | Path | None = None,
         Vorschlag tun kann, sondern die dritte Entscheidung, die es seit
         Spec 8.1 gibt — sie war bloss nie anzutippen. Ein zweiter Endpunkt
         müsste dieselbe Prüfung und dieselbe Antwort noch einmal bauen.
+
+        **Zurück kommt seit WB-372 die ZEILE und nicht der Verlauf.** Genau
+        dieser Tipp wird in Serie durch eine Liste von 150 Zeilen gemacht, auf
+        dem Telefon über Mobilfunk; vorher kostete jeder einzelne den
+        kompletten Chat (gemessen 259.941 Bytes bei 17 Zügen).
         """
         werte = await eingaben(request)
         c = con()
@@ -919,7 +1146,8 @@ def create_app(db_path: str | Path | None = None,
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
             auf = sid if entscheidung == vorschlagsliste.VERWORFEN else None
-            return _chat_antwort(request, c, fehler=fehler, aufklappen=auf)
+            return _entscheidung_antwort(request, c, sid, fehler=fehler,
+                                         aufklappen=auf)
         finally:
             c.close()
 
@@ -931,15 +1159,20 @@ def create_app(db_path: str | Path | None = None,
         Der ursprüngliche Vorschlag bleibt als `removed` stehen und die neue
         Zeile verweist auf ihn — die Korrektur ist dadurch als Korrektur
         erkennbar und nicht als zwei lose Entscheidungen.
+
+        Zurück kommt der ZUG und nicht die Zeile (WB-372): die Korrektur ist
+        eine NEUE Vorschlagszeile, und die hat im Dokument noch kein Element,
+        in das sie getauscht werden könnte.
         """
         c = con()
         try:
             fehler = None
+            mid = _zug_von(c, sid)
             try:
                 vorschlagsliste.korrigieren(c, sid, produkt_id)
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler)
         finally:
             c.close()
 
@@ -955,18 +1188,23 @@ def create_app(db_path: str | Path | None = None,
         c = con()
         try:
             fehler = None
+            mid = _zug_von(c, sid)
             try:
                 vorschlagsliste.stattdessen_freitext(c, sid,
                                                      werte.get("text", ""))
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            # Der Zug: auch der Freitext ist eine neu angelegte Zeile.
+            return _zug_antwort(request, c, mid, fehler=fehler)
         finally:
             c.close()
 
     @app.post("/warenkorb/chat/{mid}/alle")
     async def vorschlaege_alle(request: Request, mid: int):
-        """Sammelknopf. Rührt nur an, was noch offen ist."""
+        """Sammelknopf. Rührt nur an, was noch offen ist.
+
+        Der ganze Zug zurück (WB-372): er ändert jede offene Zeile darin.
+        """
         werte = await eingaben(request)
         c = con()
         try:
@@ -976,7 +1214,7 @@ def create_app(db_path: str | Path | None = None,
                                                  werte.get("decision", ""))
             except vorschlagsliste.VorschlagFehler as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler)
         finally:
             c.close()
 
@@ -1008,7 +1246,7 @@ def create_app(db_path: str | Path | None = None,
                 entwuerfe.benennen(c, mid, werte.get("name", ""))
             except entwuerfe.EntwurfFehler as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler)
         finally:
             c.close()
 
@@ -1027,7 +1265,7 @@ def create_app(db_path: str | Path | None = None,
                 entwuerfe.verwerfen(c, mid, werte.get("ja", "1") != "0")
             except entwuerfe.EntwurfFehler as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler)
         finally:
             c.close()
 
@@ -1049,7 +1287,7 @@ def create_app(db_path: str | Path | None = None,
             except (entwuerfe.EntwurfFehler,
                     vorschlagsliste.VorschlagFehler) as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler)
         finally:
             c.close()
 
@@ -1070,7 +1308,7 @@ def create_app(db_path: str | Path | None = None,
             except (entwuerfe.EntwurfFehler,
                     vorschlagsliste.VorschlagFehler) as e:
                 fehler = str(e)
-            return _chat_antwort(request, c, fehler=fehler)
+            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler)
         finally:
             c.close()
 

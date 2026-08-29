@@ -635,6 +635,32 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 .sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
 
+/* Der eingeklappte Teil des Verlaufs (WB-372). Er sieht wie eine Trennlinie
+   mit Aufschrift aus und nicht wie eine Handlung: was dort steht, ist
+   erledigt, und der Knopf ist ein Rückblick, kein nächster Schritt. Volle
+   Breite, weil die Aufschrift Zahlen trägt und umbrechen darf. */
+.aeltere { margin: 0 0 var(--rand); }
+.aeltere button {
+  width: 100%; height: auto; min-height: var(--tap); padding: 8px 14px;
+  font-size: 14px; font-weight: 500; color: var(--gedaempft);
+  background: var(--karte-tief); border: 1px dashed var(--linie);
+}
+
+/* Der Weg aus dem Verlauf heraus (WB-372). Ganz unten, gedämpft und einzeln:
+   er löscht Entscheidungen, aus denen später Eval-Labels werden, und darf
+   deshalb nicht neben den Knöpfen stehen, die man im Vorbeigehen tippt. */
+.verlauf-leeren { margin: var(--rand) 0 8px; }
+
+/* Die Rückfrage davor. Sie erbt das Hinweisband und bekommt seinen Rahmen,
+   damit sie als eigener Block dasteht und nicht als Randnotiz. */
+.band.frage {
+  border: 1px solid var(--honig-linie); border-radius: var(--radius);
+  margin: var(--rand) 0;
+}
+.band.frage p { margin: 0 0 10px; }
+.band.frage .fussnote { display: block; margin-top: 4px; }
+.band.frage .sammel { margin: 0; }
+
 /* Der Rezeptentwurf (WB-337): eine ruhige Karte unter den Vorschlägen. Er ist
    keine zweite Vorschlagsliste und sieht deshalb auch nicht so aus — hier
    wird nichts entschieden, hier wird nur beschrieben, was beim Abschicken

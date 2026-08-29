@@ -1,0 +1,11 @@
+{# Die Fehlerzeile des Chats. Nur der INHALT; die Hülle mit der `id` steht beim
+   Aufrufer, inline in `_chat.html` und out-of-band in den Teilantworten.
+
+   Sie hat seit WB-372 überhaupt eine eigene Hülle, weil ein Tipp nicht mehr
+   den ganzen Chat tauscht: ohne sie bliebe die Begründung eines
+   fehlgeschlagenen Tipps unsichtbar, und der Knopf sähe aus, als täte er
+   nichts. Die Hülle steht auch dann da, wenn es nichts zu sagen gibt — ein
+   Element, das es nur im Fehlerfall gibt, lässt sich nicht überschreiben. #}
+{% if chat_fehler %}
+<p class="fehler" role="status">{{ chat_fehler }}</p>
+{% endif %}

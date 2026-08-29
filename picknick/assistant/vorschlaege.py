@@ -357,22 +357,141 @@ def eine(con: sqlite3.Connection, suggestion_id: int) -> dict:
     return _auf(row)
 
 
-def verlauf(con: sqlite3.Connection, order_id: int) -> list[dict]:
+def verlauf(con: sqlite3.Connection, order_id: int,
+            ab: int | None = None) -> list[dict]:
     """Der Chat zu einer Bestellung: Nachrichten, jede mit ihren Vorschlägen.
 
     Der Chat hängt an der Bestellung und nicht an einer eigenen Sitzung
     (Spec 9: er gehört in den Warenkorb). Damit wandert er beim Abschicken
     mit — und die Entscheidungen bleiben bei dem Einkauf, zu dem sie gehören.
+
+    `ab` schneidet vorne ab und rendert nur die Chatzeilen ab dieser id
+    (WB-372). **Das ist eine Anzeigegrenze und keine Löschung** — die Zeilen
+    davor stehen unangetastet in der Datenbank, und alles, was am Verlauf
+    hängt (die Eval-Labels aus WB-329, die Rezeptentwürfe aus WB-337, der
+    Zusammenhang, den `chat.turn` liest), sieht ihn weiter ganz. Wer die
+    Grenze setzt, ist die Oberfläche und niemand sonst; die Grenze selbst
+    kommt aus `verlauf_ab()`.
     """
-    zeilen = []
-    for m in con.execute(
-            "SELECT id, order_id, role, content, span_id, created_at"
-            "  FROM chat_message WHERE order_id = ? ORDER BY id",
-            (order_id,)).fetchall():
-        eintrag = dict(m)
-        eintrag["vorschlaege"] = liste(con, eintrag["id"])
-        zeilen.append(eintrag)
-    return zeilen
+    bedingung = "" if ab is None else " AND id >= :ab"
+    return [_mit_vorschlaegen(con, m) for m in con.execute(
+        _CHATZEILE + " WHERE order_id = :order" + bedingung + " ORDER BY id",
+        {"order": order_id, "ab": ab}).fetchall()]
+
+
+_CHATZEILE = ("SELECT id, order_id, role, content, span_id, created_at"
+              "  FROM chat_message")
+
+
+def _mit_vorschlaegen(con: sqlite3.Connection, row: sqlite3.Row) -> dict:
+    eintrag = dict(row)
+    eintrag["vorschlaege"] = liste(con, eintrag["id"])
+    return eintrag
+
+
+def zug(con: sqlite3.Connection, chat_message_id: int) -> dict | None:
+    """EINE Chatzeile mit ihren Vorschlägen — ein Eintrag aus `verlauf()`.
+
+    Denselben Aufbau und denselben Weg, damit ein Zug, der einzeln getauscht
+    wird (WB-372), nicht anders aussehen kann als derselbe Zug im Verlauf.
+    Genau dafür gibt es diese Funktion überhaupt: das Bruchstück und die
+    Vollansicht dürfen nicht auseinanderlaufen — dieselbe Regel wie bei der
+    Trefferliste in WB-323.
+    """
+    row = con.execute(_CHATZEILE + " WHERE id = ?",
+                      (chat_message_id,)).fetchone()
+    return None if row is None else _mit_vorschlaegen(con, row)
+
+
+def verlauf_ab(con: sqlite3.Connection, order_id: int,
+               zuege: int | None) -> int | None:
+    """Wo die letzten `zuege` Züge anfangen. `None` heisst: der ganze Verlauf.
+
+    Gezählt werden ZÜGE und nicht Chatzeilen: ein Zug ist eine Frage und ihre
+    Antwort, und ein Schnitt zwischen beiden ergäbe eine Vorschlagsliste ohne
+    den Satz, aus dem sie entstanden ist — genau die Angabe, an der sich
+    später ablesen lässt, warum etwas vorgeschlagen wurde. Deshalb liegt die
+    Grenze immer auf einer Zeile der Nutzerin.
+
+    Gibt `None` zurück, wenn es ohnehin nicht mehr Züge gibt als erlaubt: dann
+    ist nichts eingeklappt und die Oberfläche soll auch nicht so tun.
+    """
+    if zuege is None or zuege <= 0:
+        return None
+    row = con.execute(
+        "SELECT min(id) AS ab FROM ("
+        "  SELECT id FROM chat_message WHERE order_id = ? AND role = ?"
+        "   ORDER BY id DESC LIMIT ?)",
+        (order_id, ROLLE_NUTZERIN, zuege)).fetchone()
+    ab = row["ab"] if row else None
+    if ab is None:
+        return None
+    # Nichts abzuschneiden ist kein Abschneiden. Ohne diese Prüfung stünde
+    # über einem kurzen Verlauf ein Knopf „0 ältere Züge anzeigen".
+    aelteste = con.execute(
+        "SELECT min(id) AS erste FROM chat_message WHERE order_id = ?",
+        (order_id,)).fetchone()["erste"]
+    return None if aelteste is None or ab <= aelteste else ab
+
+
+def umfang(con: sqlite3.Connection, order_id: int,
+           bis: int | None = None) -> dict:
+    """Wie viel Verlauf da ist: Chatzeilen, Züge, Vorschläge, Entscheidungen.
+
+    `bis` zählt nur, was VOR dieser Chatzeile liegt — also genau den Teil, den
+    die Anzeigegrenze einklappt. Ohne Angabe ist es der ganze Verlauf.
+
+    Die Zahlen stehen in der Oberfläche an zwei Stellen, und beide Male tragen
+    sie dieselbe Last: am eingeklappten Teil sagen sie, ob dort noch Arbeit
+    wartet („84 Vorschläge, 12 entschieden"), und in der Rückfrage vor dem
+    Leeren sagen sie, was verloren ginge. „Ältere Züge" ohne Zahl wäre an
+    beiden Stellen eine Beruhigung statt einer Auskunft.
+    """
+    nur_aeltere = "" if bis is None else " AND id < :bis"
+    nur_aeltere_m = "" if bis is None else " AND m.id < :bis"
+    zeilen = con.execute(
+        "SELECT count(*) AS nachrichten,"
+        "       coalesce(sum(CASE WHEN role = :nutzerin THEN 1 ELSE 0 END), 0)"
+        "           AS zuege"
+        "  FROM chat_message WHERE order_id = :order" + nur_aeltere,
+        {"order": order_id, "nutzerin": ROLLE_NUTZERIN, "bis": bis}).fetchone()
+    vorschlaege = con.execute(
+        "SELECT count(*) AS vorschlaege,"
+        "       coalesce(sum(CASE WHEN s.decision <> :offen THEN 1 ELSE 0 END),"
+        "                0) AS entschieden"
+        "  FROM chat_suggestion s"
+        "  JOIN chat_message m ON m.id = s.chat_message_id"
+        " WHERE m.order_id = :order" + nur_aeltere_m,
+        {"order": order_id, "offen": OFFEN, "bis": bis}).fetchone()
+    return {**dict(zeilen), **dict(vorschlaege)}
+
+
+def leeren(con: sqlite3.Connection, order_id: int) -> dict:
+    """Löscht den Chatverlauf einer Bestellung. **Rührt den Korb nicht an.**
+
+    Der einzige Reset war bis WB-372 das Abschicken — und `orders.abschicken()`
+    wirft bei leerem Korb. Der gemessene Stand am 2026-08-29 war genau der
+    Zustand, aus dem es dadurch keinen Ausweg gab: 0 Posten, 34 Chatzeilen.
+    Sie kam da nur heraus, indem sie etwas einlegte und eine Bestellung
+    abschickte, die sie nicht wollte.
+
+    **Was hier gelöscht wird, ist nicht wiederherstellbar**, und es ist mehr
+    als Text: an den Vorschlägen hängen die Entscheidungen, aus denen beim
+    Abschicken die Eval-Labels werden (Spec 8.1, WB-329). Deshalb steht in der
+    Oberfläche eine Rückfrage davor, die das ausspricht, und deshalb gibt
+    diese Funktion zurück, was sie weggeräumt hat — die Meldung danach soll
+    die Zahlen nennen können.
+
+    Gelöscht wird nur `chat_message`; Vorschläge, Kandidaten, Sorten und
+    Rezeptentwürfe gehen per `ON DELETE CASCADE` mit. `order_item` hängt an
+    der Bestellung und nicht an der Nachricht — der Korb bleibt also stehen,
+    und zwar nicht aus Versehen: eine Zeile, die durch ein „Ja" eingelegt
+    wurde, ist ab dem „Ja" ein Posten wie jeder andere.
+    """
+    weg = umfang(con, order_id)
+    con.execute("DELETE FROM chat_message WHERE order_id = ?", (order_id,))
+    con.commit()
+    return weg
 
 
 def entscheiden(con: sqlite3.Connection, suggestion_id: int,

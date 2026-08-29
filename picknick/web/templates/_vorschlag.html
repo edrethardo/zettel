@@ -1,0 +1,196 @@
+{# EINE Vorschlagszeile — das kleinste Stück, das ein „Ja" oder „Nein" ändert
+   (WB-372).
+
+   Vorher trug jeder dieser Knöpfe `hx-target="#chat"`: ein Tipp tauschte den
+   ganzen Verlauf, gemessen 259.941 Bytes bei 17 Zügen. Und genau diese Tipps
+   macht man in Serie durch eine Liste von 150 Zeilen, auf dem Telefon, über
+   Mobilfunk. Die Zeile trägt deshalb eine eigene `id` und ist ihr eigenes
+   Tauschziel.
+
+   **Was ein Tipp sonst noch ändert, kommt out-of-band** und nicht dadurch,
+   dass sicherheitshalber alles neu gerendert wird: der Korb, die Zahl im
+   Kopf, der Sammelknopf dieses Zugs (er verschwindet, wenn nichts mehr offen
+   ist) und der Rezeptentwurf (er zeigt dieselbe Entscheidung noch einmal).
+   Siehe `_entscheidung.html` — dort steht die Liste an einer Stelle.
+
+   Jede Entscheidung ist zugleich das Eval-Label (Spec 8.1). Deshalb steht an
+   jeder Zeile, WORAUS sie entstanden ist — der Suchbegriff und der Rang der
+   Suche. Ohne das lässt sich später nicht unterscheiden, ob ein Fehlgriff am
+   Modell lag oder daran, dass die Suche das richtige Produkt nie vorgelegt
+   hat. #}
+<li id="vorschlag-{{ v.id }}"
+    class="zeile vorschlag {{ 'entschieden' if not v.offen }}
+           {{ 'fehlt-im-katalog' if v.nicht_im_katalog }}">
+  {% if v.bild_url %}
+    <img class="bild" src="{{ v.bild_url }}" alt="" loading="lazy"
+         width="56" height="56">
+  {% else %}
+    <span class="bild bild-fehlt" aria-hidden="true"></span>
+  {% endif %}
+  <span class="text">
+    <span class="name">{{ v.packungen }} × {{ v.name }}</span>
+    <span class="menge">
+      {% if v.ist_freitext %}
+        Freitext — im Katalog nicht gefunden
+      {% else %}
+        {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
+      {% endif %}
+    </span>
+    {% if v.mengensatz %}
+    {# Die benötigte Menge aus dem Rezept (WB-369). Sie steht hier, weil die
+       blosse Packungszahl nicht erklärt, WARUM sie so ausfällt — und weil der
+       Fall „nicht ausrechenbar" einen Grund braucht, den man lesen kann. Im
+       Korb steht derselbe Satz noch einmal, dann mit der Summe über alle
+       Rezepte. #}
+    <span class="hinweis">{{ v.mengensatz }}</span>
+    {% endif %}
+    <span class="woher">
+      {{ v.search_term or "—" }}
+      {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}
+      {%- if v.ist_korrektur %} · statt „{{ v.statt_name }}“{% endif %}
+    </span>
+    {% if v.fallback_term %}
+    {# Der Befund aus WB-358: findet kein genauer Begriff etwas, greift der
+       allgemeinste — und der findet immer irgendetwas („OLD AMSTERDAM" ->
+       „Bier" -> Singha Bier). Ein solcher Treffer ist kein sicherer, und die
+       Zeile sagt es, statt es zu verschweigen. #}
+    <span class="schwach">Nur über den allgemeinen Begriff
+      „{{ v.fallback_term }}“ gefunden — sieh die Alternativen an.</span>
+    {% endif %}
+    {% if v.nicht_im_katalog %}
+    <span class="ausgemustert">Nicht mehr im Katalog.</span>
+    {% endif %}
+    {% if v.offen and v.im_korb %}
+    {# Zurückgenommenes „Ja" (WB-361): der Korb wird dabei bewusst NICHT
+       angerührt — `orders.einlegen()` fasst gleiche Zeilen zusammen, die
+       Korbzeile kann also längst eine sein, die sie selbst aufgestockt hat.
+       Das darf die Oberfläche nicht verschweigen, sonst sucht sie die Zeile
+       im Korb und findet sie doch. #}
+    <span class="hinweis">Zurückgenommen —
+      die Zeile bleibt im Korb; dort steht ein Löschknopf.</span>
+    {% endif %}
+  </span>
+  <span class="stellen">
+    {% if v.offen %}
+      <form method="post"
+            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+        <button class="mini ja" type="submit"
+                aria-label="{{ v.name }} in den Korb">Ja</button>
+      </form>
+      <form method="post"
+            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+        <button class="mini nein" type="submit"
+                aria-label="{{ v.name }} verwerfen">Nein</button>
+      </form>
+    {% else %}
+      {% if v.behalten %}
+        {# Der Korb hat einen Löschknopf; von hier aus wird er nicht angerührt
+           (siehe vorschlaege.entscheiden). #}
+        <span class="marke ja">im Korb</span>
+      {% else %}
+        <span class="marke nein">verworfen</span>
+      {% endif %}
+      {# Der Rückweg (WB-361): eine Entscheidung ist ein Tipp und kein Urteil.
+         Er führt auf `offen` — den Zustand VOR dem Fehltipp — und nicht auf
+         die andere Seite; „doch behalten" wäre eine neue Behauptung statt der
+         Rücknahme einer alten.
+
+         Kleiner als die Hauptentscheidung, aber nicht kleiner als der Daumen:
+         `.mini` bürgt für 44 px, `.zurueck` nimmt nur Gewicht und Farbe
+         zurück.
+
+         Steht an einer verworfenen Zeile schon eine Korrektur, führt der
+         Rückweg über SIE. „Verworfen" zurückzunehmen, während daneben ein
+         „stattdessen X" im Korb liegt, ergäbe einen Zustand, den niemand
+         gemeint hat. #}
+      {% if v.behalten or not v.korrektur %}
+      <form method="post"
+            action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+            hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
+            hx-target="#vorschlag-{{ v.id }}" hx-swap="outerHTML">
+        <button class="mini zurueck" type="submit"
+                aria-label="Entscheidung zu {{ v.name }} zurücknehmen{% if v.behalten %} — die Zeile bleibt im Korb{% endif %}"
+                >rückgängig</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </span>
+  {# Ein „Nein" ist seit WB-359 keine Sackgasse: die Kandidaten, die die Suche
+     zu dieser Zutat vorgelegt hat, stehen schon in der Datenbank
+     (`chat_kandidat`) — hier werden sie gezeigt, ohne ein zweites Mal zu
+     suchen. Aufgeklappt ist genau die Zeile, die gerade verworfen wurde;
+     ältere bleiben zu, damit die Seite nicht zuwächst. #}
+  {# Eine Korrekturzeile selbst bekommt keinen Aufklapper: ihre Alternativen
+     sind die der Zeile, die sie korrigiert, und ein zweites „nichts davon"
+     darunter wäre eine Kette ohne Ende. #}
+  {% if v.decision == "removed" and not v.korrektur and not v.ist_korrektur %}
+  <details class="alternativen" {{ "open" if aufklappen == v.id }}>
+    <summary>
+      {% if v.alternativen %}
+        {{ v.alternativen | length }} Alternative{{ "n" if v.alternativen | length != 1 }}
+        aus derselben Suche
+      {% else %}
+        Nichts gefunden — selbst schreiben
+      {% endif %}
+    </summary>
+
+    {% if v.alternativen %}
+    <ul class="vorschlaege altliste">
+      {% for a in v.alternativen %}
+      <li class="zeile">
+        {% if a.bild_url %}
+          <img class="bild" src="{{ a.bild_url }}" alt="" loading="lazy"
+               width="56" height="56">
+        {% else %}
+          <span class="bild bild-fehlt" aria-hidden="true"></span>
+        {% endif %}
+        <span class="text">
+          <span class="name">{{ a.name }}</span>
+          <span class="menge">{{ a.unit_text or "" }} · {{ a.price_cents | euro }}</span>
+          <span class="woher">{{ a.search_term or "—" }}</span>
+        </span>
+        <span class="stellen">
+          {# Ziel ist der ZUG und nicht die Zeile: eine Korrektur legt eine
+             NEUE Vorschlagszeile an (WB-359), und die hat noch kein Element,
+             in das sie getauscht werden könnte. #}
+          <form method="post"
+                action="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                hx-post="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
+                hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML">
+            <button class="mini ja" type="submit"
+                    aria-label="{{ a.name }} statt {{ v.name }} in den Korb">Das</button>
+          </form>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if v.alternativen | length < 5 %}
+    {# Gibt der Katalog weniger her, wird das gesagt statt verschwiegen: bei
+       „Sellerie" sind es zwei, und mehr anzufragen ändert daran nichts. Dann
+       ist der Freitext unten der richtige Ausgang. #}
+    <p class="fussnote">Mehr hat der Katalog zu
+      „{{ v.search_term or v.name }}“ nicht hergegeben.</p>
+    {% endif %}
+    {% else %}
+    <p class="fussnote">Zu „{{ v.search_term or v.name }}“ hat die Suche
+      nichts vorgelegt — eine Lücke im Katalog. Schreib es selbst, dann steht
+      es im Laden auf der Liste.</p>
+    {% endif %}
+
+    {# Auch hier der ganze Zug: der Freitext wird als neue Zeile angelegt. #}
+    <form class="selbst" method="post"
+          action="/warenkorb/vorschlag/{{ v.id }}/freitext"
+          hx-post="/warenkorb/vorschlag/{{ v.id }}/freitext"
+          hx-target="#zug-{{ v.chat_message_id }}" hx-swap="outerHTML">
+      <input type="text" name="text" autocomplete="off"
+             value="{{ v.search_term or v.name }}"
+             aria-label="Stattdessen als Freitext">
+      <button class="mini" type="submit">Nichts davon</button>
+    </form>
+  </details>
+  {% endif %}
+</li>

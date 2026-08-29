@@ -1,0 +1,18 @@
+{# Die Antwort auf ein „Ja", ein „Nein" oder eine Rücknahme — das kleinste,
+   was der Shop auf einen Tipp zurückgibt (WB-372).
+
+   Getauscht wird die ZEILE. Alles Weitere kommt out-of-band, und die Liste
+   ist genau so lang, wie sie sein muss:
+
+       die Zeile selbst      Ja/Nein weg, Marke und Rückweg da
+       #sammel-<zug>         mit dem letzten „Ja" ist nichts mehr offen
+       #entwurf-<zug>        er zeigt dieselbe Entscheidung ein zweites Mal
+       #korb, die Zahl, die Fehlerzeile  (siehe `_nachtrag.html`)
+
+   Vorher stand hier `_chat_antwort.html` mit dem GANZEN Verlauf: 259.941
+   Bytes je Tipp, und die Tipps macht man in Serie durch eine Liste von 150
+   Zeilen. #}
+{% include "_vorschlag.html" %}
+<div id="sammel-{{ m.id }}" hx-swap-oob="true">{% include "_sammel.html" %}</div>
+<div id="entwurf-{{ m.id }}" hx-swap-oob="true">{% include "_entwurf.html" %}</div>
+{% include "_nachtrag.html" %}

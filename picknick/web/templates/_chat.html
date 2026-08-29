@@ -2,358 +2,100 @@
    (Spec 9). Vorschläge stehen als vorgemerkte Zeilen da und wandern erst mit
    „Ja" in den Korb: **nichts landet ungefragt im Warenkorb** (Spec 6).
 
-   Jede Entscheidung ist zugleich das Eval-Label (Spec 8.1). Deshalb steht an
-   jeder Zeile, WORAUS sie entstanden ist — der Suchbegriff und der Rang der
-   Suche. Ohne das lässt sich später nicht unterscheiden, ob ein Fehlgriff am
-   Modell lag oder daran, dass die Suche das richtige Produkt nie vorgelegt
-   hat. #}
+   Seit WB-372 ist dieses Stück nur noch selten das Tauschziel. Ein Tipp auf
+   „Ja" tauscht eine ZEILE (`_vorschlag.html`), alles, was Zeilen anlegt,
+   tauscht einen ZUG (`_zug.html`) — der ganze Chat wird nur noch getauscht,
+   wenn ein neuer Zug dazukommt oder der Verlauf selbst sich ändert. Vorher
+   kostete jedes „Ja" den kompletten Verlauf, gemessen 259.941 Bytes bei
+   17 Zügen; die Nutzerinnen bedienen den Shop am Telefon über Mobilfunk und
+   arbeiten sich in Serie durch die Liste.
+
+   **Und er wird gekürzt.** Offen stehen die letzten `VERLAUF_ZUEGE` Züge,
+   ältere werden gar nicht erst gerendert (siehe `app.VERLAUF_ZUEGE`). Sie
+   sind nicht weg — kein Datensatz wird angefasst, und ein Tipp holt sie
+   zurück. #}
 <section class="chat" id="chat">
   <h2>Chat</h2>
 
-  {% if chat_fehler %}
-  <p class="fehler" role="status">{{ chat_fehler }}</p>
+  <div id="chat-fehler">{% include "_chatfehler.html" %}</div>
+
+  {% if verlauf_geleert %}
+  {# Was gelöscht wurde, und was ausdrücklich nicht (WB-372). Der zweite Satz
+     ist der wichtigere: sie leert den Verlauf, weil sie ihn loswerden will,
+     nicht ihren Einkauf. #}
+  <p class="band" role="status">Der Verlauf ist gelöscht —
+    {{ verlauf_geleert.nachrichten }} {{ "Chatzeile" if verlauf_geleert.nachrichten == 1 else "Chatzeilen" }}
+    mit {{ verlauf_geleert.vorschlaege }} {{ "Vorschlag" if verlauf_geleert.vorschlaege == 1 else "Vorschlägen" }}.
+    <span class="fussnote">Der Warenkorb ist unberührt: was du eingelegt
+      hast, liegt weiter drin.</span></p>
+  {% endif %}
+
+  {% if aeltere %}
+  {# Der eingeklappte Teil. Er sagt, WIE VIEL er verbirgt und wie viele
+     Entscheidungen darin stecken — „ältere Züge" allein liesse offen, ob dort
+     noch Arbeit wartet.
+
+     Ein `<details>` wäre der naheliegende Griff und bringt hier nichts: es
+     versteckt nur, was trotzdem übertragen wurde. Diese Züge werden gar nicht
+     erst gerendert, und der Knopf holt sie. #}
+  <form class="aeltere" method="get" action="/warenkorb"
+        hx-get="/warenkorb/chat?verlauf=alles"
+        hx-target="#chat" hx-swap="outerHTML">
+    <input type="hidden" name="verlauf" value="alles">
+    <button class="mini" type="submit">{{ aeltere.zuege }} {{ "älterer Zug" if aeltere.zuege == 1 else "ältere Züge" }} —
+      {{ aeltere.vorschlaege }} {{ "Vorschlag" if aeltere.vorschlaege == 1 else "Vorschläge" }},
+      {{ aeltere.entschieden }} entschieden. Anzeigen</button>
+  </form>
   {% endif %}
 
   {% for m in verlauf %}
-    {% if m.role == "user" %}
-      <p class="chatzeile ich">{{ m.content }}</p>
-    {% else %}
-      <p class="chatzeile agent">{{ m.content }}</p>
-      {# Ein Oberbegriff (WB-368): erst die Sorte, dann das Produkt. Die
-         Sorten kommen aus dem Kategoriebaum und tragen ihre echte Stückzahl —
-         angeboten wird nur, was wirklich im Katalog steht. Mehrere Kästchen
-         gehen, weil „Aufschnitt" oft Salami UND Kochschinken heisst. #}
-      {% if m.faecher %}
-      <form class="sorten" method="post"
-            action="/warenkorb/chat/{{ m.id }}/sorten"
-            hx-post="/warenkorb/chat/{{ m.id }}/sorten"
-            hx-target="#chat" hx-swap="outerHTML"
-            hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
-        <ul class="sortenliste">
-          {% for s in m.faecher.sorten %}
-          <li>
-            <label>
-              <input type="checkbox" name="sorte" value="{{ s.name }}">
-              <span class="name">{{ s.name }}</span>
-              <span class="anzahl">{{ s.anzahl }}</span>
-            </label>
-          </li>
-          {% endfor %}
-        </ul>
-        <div class="sammel">
-          <button class="mini ja" type="submit">Ausgewählte Sorten zeigen</button>
-        </div>
-      </form>
-      {# Kein Kästchen angekreuzt heisst „überspringen": dann wird direkt nach
-         dem gesucht, was getippt wurde. Ein Oberbegriff darf keine Sackgasse
-         sein. Dieselbe Adresse, derselbe Ausgang — der Knopf spart nur das
-         Absenden eines leeren Formulars. #}
-      <form class="sorten-weiter" method="post"
-            action="/warenkorb/chat/{{ m.id }}/sorten"
-            hx-post="/warenkorb/chat/{{ m.id }}/sorten"
-            hx-target="#chat" hx-swap="outerHTML"
-            hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
-        <button class="mini" type="submit">Überspringen — direkt nach
-          „{{ m.faecher.wort }}“ suchen</button>
-      </form>
-      {% endif %}
-      {% if m.vorschlaege %}
-      <ul class="vorschlaege">
-        {% for v in m.vorschlaege %}
-        <li class="zeile vorschlag {{ 'entschieden' if not v.offen }}
-                   {{ 'fehlt-im-katalog' if v.nicht_im_katalog }}">
-          {% if v.bild_url %}
-            <img class="bild" src="{{ v.bild_url }}" alt="" loading="lazy"
-                 width="56" height="56">
-          {% else %}
-            <span class="bild bild-fehlt" aria-hidden="true"></span>
-          {% endif %}
-          <span class="text">
-            <span class="name">{{ v.packungen }} × {{ v.name }}</span>
-            <span class="menge">
-              {% if v.ist_freitext %}
-                Freitext — im Katalog nicht gefunden
-              {% else %}
-                {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
-              {% endif %}
-            </span>
-            {% if v.mengensatz %}
-            {# Die benötigte Menge aus dem Rezept (WB-369). Sie steht hier,
-               weil die blosse Packungszahl nicht erklärt, WARUM sie so
-               ausfällt — und weil der Fall „nicht ausrechenbar" einen Grund
-               braucht, den man lesen kann. Im Korb steht derselbe Satz noch
-               einmal, dann mit der Summe über alle Rezepte. #}
-            <span class="hinweis">{{ v.mengensatz }}</span>
-            {% endif %}
-            <span class="woher">
-              {{ v.search_term or "—" }}
-              {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}
-              {%- if v.ist_korrektur %} · statt „{{ v.statt_name }}“{% endif %}
-            </span>
-            {% if v.fallback_term %}
-            {# Der Befund aus WB-358: findet kein genauer Begriff etwas, greift
-               der allgemeinste — und der findet immer irgendetwas („OLD
-               AMSTERDAM" -> „Bier" -> Singha Bier). Ein solcher Treffer ist
-               kein sicherer, und die Zeile sagt es, statt es zu verschweigen. #}
-            <span class="schwach">Nur über den allgemeinen Begriff
-              „{{ v.fallback_term }}“ gefunden — sieh die Alternativen an.</span>
-            {% endif %}
-            {% if v.nicht_im_katalog %}
-            <span class="ausgemustert">Nicht mehr im Katalog.</span>
-            {% endif %}
-            {% if v.offen and v.im_korb %}
-            {# Zurückgenommenes „Ja" (WB-361): der Korb wird dabei bewusst
-               NICHT angerührt — `orders.einlegen()` fasst gleiche Zeilen
-               zusammen, die Korbzeile kann also längst eine sein, die sie
-               selbst aufgestockt hat. Das darf die Oberfläche nicht
-               verschweigen, sonst sucht sie die Zeile im Korb und findet
-               sie doch. #}
-            <span class="hinweis">Zurückgenommen —
-              die Zeile bleibt im Korb; dort steht ein Löschknopf.</span>
-            {% endif %}
-          </span>
-          <span class="stellen">
-            {% if v.offen %}
-              <form method="post"
-                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
-                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=kept"
-                    hx-target="#chat" hx-swap="outerHTML">
-                <button class="mini ja" type="submit"
-                        aria-label="{{ v.name }} in den Korb">Ja</button>
-              </form>
-              <form method="post"
-                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
-                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=removed"
-                    hx-target="#chat" hx-swap="outerHTML">
-                <button class="mini nein" type="submit"
-                        aria-label="{{ v.name }} verwerfen">Nein</button>
-              </form>
-            {% else %}
-              {% if v.behalten %}
-                {# Der Korb hat einen Löschknopf; von hier aus wird er nicht
-                   angerührt (siehe vorschlaege.entscheiden). #}
-                <span class="marke ja">im Korb</span>
-              {% else %}
-                <span class="marke nein">verworfen</span>
-              {% endif %}
-              {# Der Rückweg (WB-361): eine Entscheidung ist ein Tipp und kein
-                 Urteil. Er führt auf `offen` — den Zustand VOR dem Fehltipp —
-                 und nicht auf die andere Seite; „doch behalten" wäre eine
-                 neue Behauptung statt der Rücknahme einer alten.
-
-                 Kleiner als die Hauptentscheidung, aber nicht kleiner als der
-                 Daumen: `.mini` bürgt für 44 px, `.zurueck` nimmt nur Gewicht
-                 und Farbe zurück.
-
-                 Steht an einer verworfenen Zeile schon eine Korrektur, führt
-                 der Rückweg über SIE. „Verworfen" zurückzunehmen, während
-                 daneben ein „stattdessen X" im Korb liegt, ergäbe einen
-                 Zustand, den niemand gemeint hat. #}
-              {% if v.behalten or not v.korrektur %}
-              <form method="post"
-                    action="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
-                    hx-post="/warenkorb/vorschlag/{{ v.id }}/entscheiden?decision=offen"
-                    hx-target="#chat" hx-swap="outerHTML">
-                <button class="mini zurueck" type="submit"
-                        aria-label="Entscheidung zu {{ v.name }} zurücknehmen{% if v.behalten %} — die Zeile bleibt im Korb{% endif %}"
-                        >rückgängig</button>
-              </form>
-              {% endif %}
-            {% endif %}
-          </span>
-          {# Ein „Nein" ist seit WB-359 keine Sackgasse: die Kandidaten, die
-             die Suche zu dieser Zutat vorgelegt hat, stehen schon in der
-             Datenbank (`chat_kandidat`) — hier werden sie gezeigt, ohne ein
-             zweites Mal zu suchen. Aufgeklappt ist genau die Zeile, die gerade
-             verworfen wurde; ältere bleiben zu, damit die Seite nicht
-             zuwächst. #}
-          {# Eine Korrekturzeile selbst bekommt keinen Aufklapper: ihre
-             Alternativen sind die der Zeile, die sie korrigiert, und ein
-             zweites „nichts davon" darunter wäre eine Kette ohne Ende. #}
-          {% if v.decision == "removed" and not v.korrektur
-                and not v.ist_korrektur %}
-          <details class="alternativen" {{ "open" if aufklappen == v.id }}>
-            <summary>
-              {% if v.alternativen %}
-                {{ v.alternativen | length }} Alternative{{ "n" if v.alternativen | length != 1 }}
-                aus derselben Suche
-              {% else %}
-                Nichts gefunden — selbst schreiben
-              {% endif %}
-            </summary>
-
-            {% if v.alternativen %}
-            <ul class="vorschlaege altliste">
-              {% for a in v.alternativen %}
-              <li class="zeile">
-                {% if a.bild_url %}
-                  <img class="bild" src="{{ a.bild_url }}" alt="" loading="lazy"
-                       width="56" height="56">
-                {% else %}
-                  <span class="bild bild-fehlt" aria-hidden="true"></span>
-                {% endif %}
-                <span class="text">
-                  <span class="name">{{ a.name }}</span>
-                  <span class="menge">{{ a.unit_text or "" }} · {{ a.price_cents | euro }}</span>
-                  <span class="woher">{{ a.search_term or "—" }}</span>
-                </span>
-                <span class="stellen">
-                  <form method="post"
-                        action="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
-                        hx-post="/warenkorb/vorschlag/{{ v.id }}/statt?produkt_id={{ a.id }}"
-                        hx-target="#chat" hx-swap="outerHTML">
-                    <button class="mini ja" type="submit"
-                            aria-label="{{ a.name }} statt {{ v.name }} in den Korb">Das</button>
-                  </form>
-                </span>
-              </li>
-              {% endfor %}
-            </ul>
-            {% if v.alternativen | length < 5 %}
-            {# Gibt der Katalog weniger her, wird das gesagt statt verschwiegen:
-               bei „Sellerie" sind es zwei, und mehr anzufragen ändert daran
-               nichts. Dann ist der Freitext unten der richtige Ausgang. #}
-            <p class="fussnote">Mehr hat der Katalog zu
-              „{{ v.search_term or v.name }}“ nicht hergegeben.</p>
-            {% endif %}
-            {% else %}
-            <p class="fussnote">Zu „{{ v.search_term or v.name }}“ hat die
-              Suche nichts vorgelegt — eine Lücke im Katalog. Schreib es
-              selbst, dann steht es im Laden auf der Liste.</p>
-            {% endif %}
-
-            <form class="selbst" method="post"
-                  action="/warenkorb/vorschlag/{{ v.id }}/freitext"
-                  hx-post="/warenkorb/vorschlag/{{ v.id }}/freitext"
-                  hx-target="#chat" hx-swap="outerHTML">
-              <input type="text" name="text" autocomplete="off"
-                     value="{{ v.search_term or v.name }}"
-                     aria-label="Stattdessen als Freitext">
-              <button class="mini" type="submit">Nichts davon</button>
-            </form>
-          </details>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-      {% if m.vorschlaege | selectattr("offen") | list %}
-      <div class="sammel">
-        <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
-              hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
-              hx-target="#chat" hx-swap="outerHTML">
-          <button class="mini" type="submit">Alles übernehmen</button>
-        </form>
-        <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
-              hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
-              hx-target="#chat" hx-swap="outerHTML">
-          <button class="mini" type="submit">Alles verwerfen</button>
-        </form>
-      </div>
-      {% endif %}
-      {# Der Rezeptentwurf (WB-337). Er steht UNTER den Vorschlägen, weil er
-         aus ihnen entsteht: was hier drin ist, sind genau die Zeilen, die
-         eine Zutat des Gerichts benennen — „Klopapier" ist keine und taucht
-         hier nie auf.
-
-         **Gespeichert wird beim Abschicken, nicht hier.** Bis dahin darf sie
-         alles noch ändern; dieselbe Regel wie beim Eval-Label aus WB-329. #}
-      {% if m.entwurf %}
-      <section class="entwurf">
-        {% if m.entwurf.saved_at %}
-        <h3>Rezept angelegt</h3>
-        <p class="fussnote">„{{ m.entwurf.name }}“ steht in der Sammlung.
-          {% if m.entwurf.recipe_id %}
-          <a href="/rezepte/{{ m.entwurf.recipe_id }}">Ansehen</a>{% endif %}
-        </p>
-        {% elif m.entwurf.verworfen %}
-        <h3>Rezeptentwurf</h3>
-        <p class="fussnote">Daraus wird kein Rezept.</p>
-        <form method="post"
-              action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
-              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
-              hx-target="#chat" hx-swap="outerHTML">
-          <button class="mini" type="submit">Doch ein Rezept daraus</button>
-        </form>
-        {% else %}
-        <h3>Rezeptentwurf</h3>
-        {# Der Name ist überschreibbar, und das ist keine Kosmetik: der
-           Rezeptweg sucht ihn beim nächsten Mal wörtlich im Satz. #}
-        <form class="entwurf-name" method="post"
-              action="/warenkorb/chat/{{ m.id }}/entwurf/name"
-              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/name"
-              hx-target="#chat" hx-swap="outerHTML">
-          <input type="text" name="name" autocomplete="off"
-                 value="{{ m.entwurf.name }}"
-                 aria-label="Name des Rezepts">
-          <button class="mini" type="submit">Name merken</button>
-        </form>
-        <ul class="entwurfsliste">
-          {% for z in m.entwurf.zeilen %}
-          <li class="{{ 'raus' if not z.im_rezept or not z.behalten }}">
-            <span class="text">
-              <span class="name">{{ z.rezeptzeile.name }}</span>
-              {% if not z.behalten and not (z.korrektur and z.korrektur.behalten) %}
-              <span class="menge">{{ "verworfen" if not z.offen else
-                "noch nicht bestätigt" }} — kommt nicht ins Rezept</span>
-              {% elif not z.im_rezept %}
-              <span class="menge">aus dem Entwurf genommen</span>
-              {% endif %}
-            </span>
-            {# Die MENGE aus dem Rezept, nicht die Packungszahl (WB-362).
-               Was schon im Korb liegt, ändert sich davon nicht — dort steht
-               ein eigenes Mengenfeld. #}
-            <form class="entwurf-menge" method="post"
-                  action="/warenkorb/vorschlag/{{ z.id }}/bedarf"
-                  hx-post="/warenkorb/vorschlag/{{ z.id }}/bedarf"
-                  hx-target="#chat" hx-swap="outerHTML">
-              <input type="text" name="menge" inputmode="decimal"
-                     autocomplete="off"
-                     value="{{ z.need_amount | menge }}"
-                     aria-label="Menge von {{ z.rezeptzeile.name }} im Rezept">
-              <input type="text" name="einheit" autocomplete="off"
-                     value="{{ z.need_unit or '' }}"
-                     aria-label="Einheit von {{ z.rezeptzeile.name }}">
-              <button class="mini" type="submit">ok</button>
-            </form>
-            {# Aus dem Entwurf nehmen ist NICHT „Nein": das eine heisst „das
-               kaufe ich, aber es gehört nicht ins Rezept", das andere „das
-               Produkt ist falsch" — und nur das zweite ist ein Urteil über
-               das Modell (Spec 8.1). #}
-            <form method="post"
-                  action="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
-                  hx-post="/warenkorb/vorschlag/{{ z.id }}/rezeptzeile?drin={{ 0 if z.im_rezept else 1 }}"
-                  hx-target="#chat" hx-swap="outerHTML">
-              <button class="mini {{ 'zurueck' if z.im_rezept }}" type="submit">
-                {{ "raus" if z.im_rezept else "wieder rein" }}</button>
-            </form>
-          </li>
-          {% endfor %}
-        </ul>
-        {% if m.entwurf.n_drin %}
-        <p class="fussnote">Beim Abschicken wird daraus das Rezept
-          „{{ m.entwurf.name }}“ mit {{ m.entwurf.n_drin }}
-          {{ "Zutat" if m.entwurf.n_drin == 1 else "Zutaten" }} — nur die
-          bestätigten, und nie das, was nicht zum Gericht gehört.</p>
-        {% else %}
-        <p class="fussnote">Es steht keine bestätigte Zutat im Entwurf —
-          so entsteht kein Rezept.</p>
-        {% endif %}
-        <form method="post"
-              action="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
-              hx-post="/warenkorb/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
-              hx-target="#chat" hx-swap="outerHTML">
-          <button class="mini zurueck" type="submit">Kein Rezept daraus</button>
-        </form>
-        {% endif %}
-      </section>
-      {% endif %}
-    {% endif %}
+    {% include "_zug.html" %}
   {% else %}
   <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti
     Bolognese, und Klopapier". Vorgeschlagen wird nur; in den Korb kommt
     nichts, was du nicht bestätigst.</p>
   {% endfor %}
+
+  {% if leeren_fragt %}
+  {# Die Rückfrage vor dem Leeren (WB-372) — und sie sagt, was auf dem Spiel
+     steht, statt bloss „wirklich?" zu fragen. Der Verlauf ist nicht Deko: aus
+     genau diesen Entscheidungen werden beim Abschicken die Eval-Labels
+     (Spec 8.1, WB-329), und was hier gelöscht wird, taucht in keiner
+     Auswertung mehr auf.
+
+     Serverseitig und nicht per `hx-confirm`: der Shop kommt ohne JavaScript
+     aus, und eine Rückfrage, die ohne JavaScript ausfällt, ist genau dann
+     weg, wenn sie gebraucht wird. #}
+  <div class="band frage" role="status">
+    <p>{{ umfang.nachrichten }} {{ "Chatzeile" if umfang.nachrichten == 1 else "Chatzeilen" }},
+      {{ umfang.vorschlaege }} {{ "Vorschlag" if umfang.vorschlaege == 1 else "Vorschläge" }},
+      davon {{ umfang.entschieden }} entschieden — wirklich löschen?
+      <span class="fussnote">Aus diesen Entscheidungen werden beim Abschicken
+        die Eval-Labels. Gelöscht sind sie fort. Der Warenkorb bleibt, wie er
+        ist.</span></p>
+    <div class="sammel">
+      <form method="post" action="/warenkorb/chat/leeren?ja=1"
+            hx-post="/warenkorb/chat/leeren?ja=1"
+            hx-target="#chat" hx-swap="outerHTML">
+        <button class="mini nein" type="submit">Ja, Verlauf löschen</button>
+      </form>
+      <form method="post" action="/warenkorb/chat/leeren?ja=0"
+            hx-post="/warenkorb/chat/leeren?ja=0"
+            hx-target="#chat" hx-swap="outerHTML">
+        <button class="mini" type="submit">Abbrechen</button>
+      </form>
+    </div>
+  </div>
+  {% elif verlauf or aeltere %}
+  {# Der einzige Reset war bis WB-372 das Abschicken — und das wirft bei
+     leerem Korb. Wer 34 Chatzeilen und 0 Posten hatte, kam da nur heraus,
+     indem sie eine Bestellung abschickte, die sie nicht wollte. #}
+  <form class="verlauf-leeren" method="post" action="/warenkorb/chat/leeren"
+        hx-post="/warenkorb/chat/leeren"
+        hx-target="#chat" hx-swap="outerHTML">
+    <button class="mini zurueck" type="submit">Verlauf leeren</button>
+  </form>
+  {% endif %}
 
   <form class="chatform" method="post" action="/warenkorb/chat"
         hx-post="/warenkorb/chat" hx-target="#chat" hx-swap="outerHTML"

@@ -1,0 +1,23 @@
+{# Die beiden Sammelknöpfe eines Zugs. Nur der INHALT — die Hülle mit der `id`
+   steht beim Aufrufer (`_zug.html` inline, `_entscheidung.html` out-of-band),
+   damit genau dort entschieden wird, ob getauscht wird oder nicht. Dieselbe
+   Bauart wie beim Korb in `_chat_antwort.html`.
+
+   Warum das überhaupt out-of-band mitmuss (WB-372): mit dem letzten „Ja" ist
+   nichts mehr offen, und dann gehören die Knöpfe weg. Täte man das nicht,
+   stünde unter einem fertig entschiedenen Zug weiter „Alles übernehmen" — ein
+   Knopf, der nichts mehr tut. #}
+{% if m.vorschlaege | selectattr("offen") | list %}
+<div class="sammel">
+  <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
+        hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=kept"
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+    <button class="mini" type="submit">Alles übernehmen</button>
+  </form>
+  <form method="post" action="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
+        hx-post="/warenkorb/chat/{{ m.id }}/alle?decision=removed"
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML">
+    <button class="mini" type="submit">Alles verwerfen</button>
+  </form>
+</div>
+{% endif %}
