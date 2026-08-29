@@ -18,8 +18,18 @@
       <span class="text">
         <span class="name">{{ r.name }}</span>
         <span class="menge">
+          {# Zwei Zahlen und nicht eine (WB-375): die Zutaten LAUT REZEPT und
+             die davon verknüpften Katalogprodukte. Vorher stand hier nur die
+             zweite — ein geholtes Rezept mit 23 Zutaten meldete „0 Zutaten",
+             und die Liste ist der erste Blick auf die Rezepte. #}
+          {% if r.n_rezeptzutaten %}
+          {{ r.n_rezeptzutaten }} {% if r.n_rezeptzutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
+          {%- if r.n_zutaten %} · {{ r.n_zutaten }} verknüpft
+          {%- else %} · noch nichts verknüpft{% endif %}
+          {%- else %}
           {{ r.n_zutaten }} {% if r.n_zutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
-          {%- if r.servings %} · für {{ r.servings }}{% endif %}
+          {%- endif %}
+          {%- if r.servings %} · für {{ r.servings }} Portionen{% endif %}
           {%- if r.hat_zubereitung %} · mit Zubereitung{% endif %}
           {%- if r.source %} · von {{ r.source }}{% endif %}
           {%- if r.n_ausgemustert %}

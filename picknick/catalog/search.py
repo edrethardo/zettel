@@ -262,6 +262,32 @@ def search(con: sqlite3.Connection, begriff: str,
     return treffer[:limit]
 
 
+def count(con: sqlite3.Connection, begriff: str) -> int:
+    """Wie viele aktive Produkte der Begriff überhaupt trifft.
+
+    Dieselbe Bedingung wie in `search()`, nur ohne Sortieren und ohne Grenze —
+    das Nachsortieren stellt die Reihenfolge um, es wirft nichts weg, also ist
+    diese Zahl auch die Zahl der Treffer, die `search()` bei unbegrenztem
+    `limit` lieferte.
+
+    Gebraucht wird sie für einen einzigen Satz in der Oberfläche (WB-375):
+    „Milch" hat 657 Treffer, gezeigt werden 60. Dass geschnitten wird, ist
+    Absicht — auf dem Telefon scrollt niemand durch 657 Kacheln. Dass die
+    Liste darüber schweigt, ist der Fehler: wer sein Produkt nicht sieht, hält
+    den Katalog für lückenhaft statt die Suche für zu weit.
+    """
+    query = fts_query(begriff)
+    if query is None:
+        return 0
+    platzhalter = ", ".join("?" for _ in AUSGESCHLOSSENE_KATEGORIEN)
+    return int(con.execute(
+        "SELECT count(*) AS n"
+        "  FROM product_fts f JOIN product p ON p.id = f.rowid"
+        " WHERE product_fts MATCH ? AND p.active = 1"
+        f"   AND coalesce(p.category_l1, '') NOT IN ({platzhalter})",
+        (query, *AUSGESCHLOSSENE_KATEGORIEN)).fetchone()["n"])
+
+
 def _reihenfolge(p: dict) -> tuple:
     """Der Sortierschlüssel: Stufe, Rang, Namenslänge, Name.
 

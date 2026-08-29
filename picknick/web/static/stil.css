@@ -271,6 +271,15 @@ button:disabled { opacity: 0.5; cursor: default; }
   border: 1.5px dashed var(--linie); border-radius: var(--radius);
 }
 .leer .knopf { margin-top: 12px; }
+/* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Nicht `.band`:
+   das ist das seitenbreite Hinweisband oben am Blatt, und hier gehört der Satz
+   in die Liste, zu der er gehört. Der Honigton verbindet die beiden trotzdem —
+   in diesem Blatt heisst honig „lies mich, es fehlt etwas". */
+.gekappt {
+  margin: 0 0 12px; padding: 8px 14px; font-size: 14px;
+  color: var(--honig); background: var(--honig-hell);
+  border: 1px solid var(--honig-linie); border-radius: var(--radius);
+}
 .fussnote { color: var(--gedaempft); font-size: 14px; margin-top: 20px; }
 .fussnote a { color: inherit; }
 
@@ -450,12 +459,21 @@ button:disabled { opacity: 0.5; cursor: default; }
 /* Die benötigte Menge an der Rezeptzutat (WB-362): ein schmales Feld und
    ein Nebensatz, in derselben Zeile wie der Name — sie gehört zur Zutat und
    nicht in ein eigenes Formular weiter unten. */
-.bedarf { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; }
+/* `wrap`, seit die Einheit ein zweites Feld ist (WB-375): auf einem schmalen
+   Telefon bricht der Hinweis unter die beiden Felder, statt sie zu quetschen —
+   die Tap-Ziele bleiben so gross, wie `--tap` sie meint. */
+.bedarf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+          margin: 4px 0 0; }
+.bedarf .hinweis { flex: 1 1 12ch; }
 .bedarf input[type="text"] {
   width: 5ch; min-height: var(--tap); text-align: right; font-size: 15px;
   border: 1px solid var(--linie); border-radius: 10px; padding: 0 6px;
   background: var(--karte); color: var(--tinte);
 }
+/* Die Einheit steht seit WB-375 als eigenes Feld neben der Zahl. Linksbündig
+   und etwas breiter als die Menge: dort steht Text („Scheibe"), keine Ziffer,
+   und rechtsbündig sähe er wie eine zweite Zahl aus. */
+.bedarf input.einheit { width: 7ch; text-align: left; }
 
 /* Die Portionszahl steht neben dem Korb-Knopf und nicht darüber: sie gehört
    zu diesem Griff. Auf dem Telefon bricht sie darüber um. */
