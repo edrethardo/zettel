@@ -22,22 +22,47 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+  {# Wo bin ich? Acht Ziele in einer quer scrollenden Leiste sahen alle gleich
+     aus — und /bestellungen und /pick sind zwei sehr ähnliche Listen. Die
+     Klasse ist der Teil, den man sieht, `aria-current="page"` der, den ein
+     Vorleseprogramm ansagt; beides zusammen, weil Farbe allein für beides
+     nicht reicht.
+
+     Verglichen wird mit Präfix, damit /pick/12 und /rezepte/3 ihren Eintrag
+     mitmarkieren — sonst wäre die Markierung genau auf den Unterseiten weg,
+     auf denen man sich am ehesten verläuft. #}
+  {%- set hier = request.url.path if request else "" %}
+  {%- macro wo(pfad) %}{% if hier == pfad or hier.startswith(pfad ~ "/") %} class="aktiv" aria-current="page"{% endif %}{% endmacro %}
   <header class="kopf">
     <a class="marke" href="/">Picknick</a>
-    <nav>
-      <a href="/katalog">Katalog</a>
+    <nav id="hauptnavigation" aria-label="Hauptbereiche">
+      <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
       {# Die Zahl wird nach jedem „+" per hx-swap-oob nachgezogen (siehe
          _eingelegt.html) — deshalb braucht sie eine feste id. #}
-      <a href="/warenkorb">Korb <span id="korb-anzahl"
+      <a href="/warenkorb"{{ wo('/warenkorb') }}>Korb <span id="korb-anzahl"
          class="korbzahl">{{ korb_anzahl or 0 }}</span></a>
-      <a href="/rezepte">Rezepte</a>
-      <a href="/bestellungen">Bestellungen</a>
-      <a href="/pick">Pick-Liste</a>
-      <a href="/bons">Bons</a>
-      <a href="/status">Status</a>
-      <a href="/rolle">{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
+      <a href="/rezepte"{{ wo('/rezepte') }}>Rezepte</a>
+      <a href="/bestellungen"{{ wo('/bestellungen') }}>Bestellungen</a>
+      <a href="/pick"{{ wo('/pick') }}>Pick-Liste</a>
+      <a href="/bons"{{ wo('/bons') }}>Bons</a>
+      <a href="/status"{{ wo('/status') }}>Status</a>
+      <a href="/rolle"{{ wo('/rolle') }}>{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
     </nav>
   </header>
+  {# Die Leiste scrollt quer: auf 375 px liegen „Bons" und „Status" ausserhalb
+     des Bildes. Steht man auf einem davon, wäre die Markierung unsichtbar —
+     also wird sie hereingeholt. `block: 'nearest'` sorgt dafür, dass dabei
+     NUR seitwärts gescrollt wird und die Seite nicht springt.
+     Nur Blockkommentare: ein doppelter Schrägstrich ist im ausgelieferten
+     HTML der Anfang einer fremden Adresse (WB-323 sieht darauf nach). #}
+  <script>
+    (function () {
+      var da = document.querySelector('.kopf nav a[aria-current]');
+      if (da && da.scrollIntoView) {
+        da.scrollIntoView({ inline: 'center', block: 'nearest' });
+      }
+    })();
+  </script>
 
   {% if hinweis %}
   {# Spec 11: die Oberfläche schweigt nicht, wenn der Katalog alt ist. #}

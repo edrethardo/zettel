@@ -43,7 +43,10 @@
        dann in das Mengenfeld tippen, und in der Praxis bliebe die Menge
        leer. Dann skalierte die verknüpfte Zutat nicht, und das ganze Ticket
        wäre eine Zusage ohne Deckung. #}
-    <a class="name" href="/rezepte/{{ rezept.id }}?q={{ z.name | urlencode }}{% if z.amount %}&amount={{ z.amount }}&unit={{ (z.unit or '') | urlencode }}{% endif %}"
+    {# Anker auf die Trefferliste (WB-379): der Sprung landete bisher am
+       Seitenanfang, und die Suche samt Treffern stand weit unten — man tippte
+       auf die Zutat und sah scheinbar dieselbe Seite. #}
+    <a class="name" href="/rezepte/{{ rezept.id }}?q={{ z.name | urlencode }}{% if z.amount %}&amount={{ z.amount }}&unit={{ (z.unit or '') | urlencode }}{% endif %}#rezept-treffer"
        >{{ z.raw_name }}{% if z.usage_info %}<span class="hinweis">, {{ z.usage_info }}</span>{% endif %}</a>
   </li>
   {% endfor %}

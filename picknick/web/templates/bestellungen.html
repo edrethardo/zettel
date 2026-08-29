@@ -31,8 +31,8 @@
           {%- endif -%}
         </span>
         <span class="menge">
-          {% if b.state == 'offen' %}abgeschickt {{ b.submitted_at }}
-          {% else %}fertig {{ b.done_at }}{% endif %}
+          {% if b.state == 'offen' %}abgeschickt {{ b.submitted_at | zeit }}
+          {% else %}fertig {{ b.done_at | zeit }}{% endif %}
         </span>
         <span class="menge">{{ b.posten | map(attribute='name') | join(', ') }}</span>
       </span>

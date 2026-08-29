@@ -163,7 +163,13 @@ def test_verworfener_lauf_steht_mit_begruendung_auf_der_statusseite(db_datei, cl
     assert "rejected" in r.text
     # Die Begründung selbst, nicht bloss die Tatsache eines Fehlschlags.
     assert "im letzten guten Lauf" in r.text
-    assert "2026-08-27T03:30:00" in r.text
+    # Der Zeitpunkt steht da, seit WB-379 aber lesbar statt als ISO-Feld: das
+    # `T` aus `scrape_run` sah neben „2026-08-28 17:32:47" aus `orders` wie
+    # zwei verschiedene Shops. Geprüft wird der ECHTE Zeitpunkt dieses Laufs,
+    # durch denselben Filter geschickt — eine festgeschriebene Form („vorgestern
+    # um 03:30") wäre je nach Kalendertag des Testlaufs falsch.
+    assert webapp.zeit("2026-08-27T03:30:00") in r.text
+    assert "2026-08-27T03:30:00" not in r.text, "das rohe ISO-Feld steht noch da"
 
 
 def test_abgebrochener_lauf_ohne_status_faellt_auf(db_datei, client):
@@ -314,9 +320,12 @@ def test_die_luecke_steht_als_zahl_auf_der_seite(db_datei, client):
     assert "<strong>2 von 3</strong> Zügen haben keine Span-ID" in text
     assert "nie in Phoenix angekommen" in text
     assert "1 Züge sind angekommen (33 %)" in text
-    # Der Zeitpunkt gehört dazu, sonst ist die Zahl nicht einzuordnen.
-    assert "Letzter Zug MIT Trace: 2026-08-28 19:00:00" in text
-    assert "Letzter Zug OHNE Trace: 2026-08-28 21:00:00" in text
+    # Der Zeitpunkt gehört dazu, sonst ist die Zahl nicht einzuordnen. Seit
+    # WB-379 durch denselben Filter wie alle Zeitpunkte des Shops — eine
+    # festgeschriebene Form („gestern um 19:00") wäre je nach Kalendertag des
+    # Testlaufs falsch.
+    assert f"Letzter Zug MIT Trace: {webapp.zeit('2026-08-28 19:00:00')}" in text
+    assert f"Letzter Zug OHNE Trace: {webapp.zeit('2026-08-28 21:00:00')}" in text
 
 
 def test_trace_luecke_zaehlt_zuege_und_nicht_zeilen(db_datei):

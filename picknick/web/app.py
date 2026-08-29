@@ -283,6 +283,45 @@ def menge(wert) -> str:
     return f"{zahl:g}".replace(".", ",")
 
 
+def zeit(wert, jetzt: datetime | None = None) -> str:
+    """'2026-08-28 17:32:47' -> 'gestern um 17:32'. Auch die Form mit `T`.
+
+    Die Datenbank trägt DENSELBEN Zeitpunkt in zwei Schreibweisen: `orders`
+    schreibt mit Leerzeichen (`orders.bestellung.jetzt`), `scrape_run` mit `T`
+    (`scrapers.knuspr`). Beide sind ISO, `fromisoformat` liest beide — und die
+    Oberfläche soll den Unterschied gar nicht erst zeigen müssen.
+
+    Heute, gestern und vorgestern bekommen ein Wort statt eines Datums: an
+    einer Bestellzeile ist „gestern um 17:32" die Antwort auf die Frage, die
+    man wirklich hat, und ein SQL-Feld ist es nicht. Älteres bekommt das
+    deutsche Datum — dieselbe Form, in der die Bonliste seit jeher schreibt
+    (`bons.ablage`).
+
+    Unlesbares kommt unverändert zurück. Ein erfundener Zeitpunkt wäre die
+    schlechtere Antwort als ein hässlicher echter.
+    """
+    if wert in (None, ""):
+        return ""
+    if isinstance(wert, datetime):
+        gelesen = wert
+    else:
+        try:
+            gelesen = datetime.fromisoformat(str(wert).strip())
+        except (TypeError, ValueError):
+            return str(wert)
+    uhr = gelesen.strftime("%H:%M")
+    # Auf Kalendertage gerechnet und nicht auf 24-Stunden-Abstände: um 00:30
+    # ist 23:50 „gestern", auch wenn es vierzig Minuten her ist.
+    tage = ((jetzt or datetime.now()).date() - gelesen.date()).days
+    if tage == 0:
+        return f"heute um {uhr}"
+    if tage == 1:
+        return f"gestern um {uhr}"
+    if tage == 2:
+        return f"vorgestern um {uhr}"
+    return f"{gelesen.strftime('%d.%m.%Y')} um {uhr}"
+
+
 def _stand_letzter_lauf(con: sqlite3.Connection) -> str | None:
     row = con.execute(
         "SELECT coalesce(finished_at, started_at) AS stand FROM scrape_run"
@@ -543,6 +582,7 @@ def create_app(db_path: str | Path | None = None,
     vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR))
     vorlagen.env.filters["euro"] = euro
     vorlagen.env.filters["menge"] = menge
+    vorlagen.env.filters["zeit"] = zeit
 
     def con() -> sqlite3.Connection:
         return db.connect(app.state.db_path)
@@ -578,8 +618,16 @@ def create_app(db_path: str | Path | None = None,
 
     @app.get("/rolle")
     def rolle_waehlen(request: Request):
-        return vorlagen.TemplateResponse(request, "rolle.html", {
-            "rolle": request.cookies.get(COOKIE_ROLLE)})
+        # Öffnet eine Verbindung nur für den Rahmen — die Rollenwahl selbst
+        # braucht keine. Das ist der Preis dafür, dass KEINE Vollseite den
+        # Katalogstand verschweigt (WB-379); eine Ausnahme wäre genau die
+        # Sorte Sonderfall, die später niemand mehr erklärt.
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "rolle.html",
+                                             _rahmen(request, c))
+        finally:
+            c.close()
 
     @app.post("/rolle")
     def rolle_setzen(request: Request, wer: str = ""):
@@ -599,9 +647,21 @@ def create_app(db_path: str | Path | None = None,
         return antwort
 
     def _rahmen(request: Request, c: sqlite3.Connection) -> dict:
-        """Was jede Vollseite braucht: Rolle und Zahl im Warenkorb-Knopf."""
+        """Was jede Vollseite braucht: Rolle, Korbzahl — und der Katalogstand.
+
+        Das Hinweisband steht seit jeher im Grundgerüst (`basis.html`), wurde
+        aber nur von `/katalog` und `/status` gefüttert. Ausgerechnet `/pick`
+        liest im Laden Namen, Gebinde und Bilder aus demselben Katalog und
+        schrieb „nicht mehr im Katalog" auf Daten, deren Alter die Seite
+        verschwieg. Hier gehört es hin und nirgends sonst: eine Stelle, alle
+        Vollseiten, und keine Seite kann es beim nächsten Umbau vergessen.
+
+        Eine zusätzliche Abfrage je Vollseite (`scrape_run ORDER BY id DESC
+        LIMIT 1`) — dieselbe, die `/katalog` bisher allein bezahlt hat.
+        """
         return {"rolle": request.cookies.get(COOKIE_ROLLE),
-                "korb_anzahl": orders.korb_anzahl(c)}
+                "korb_anzahl": orders.korb_anzahl(c),
+                "hinweis": katalog_hinweis(c)}
 
     def _korb_kontext(c: sqlite3.Connection, fehler: str | None = None) -> dict:
         """Alles, was `_korb.html` braucht — für Vollseite und HTMX-Bruchstück.
@@ -647,7 +707,6 @@ def create_app(db_path: str | Path | None = None,
                 **_rahmen(request, c),
                 **_liste(c, q, l1, l2, l3),
                 "baum": categories.tree(c),
-                "hinweis": katalog_hinweis(c),
                 "q": q, "l1": l1, "l2": l2, "l3": l3})
         finally:
             c.close()
@@ -1459,10 +1518,24 @@ def create_app(db_path: str | Path | None = None,
                                      app.state.image_dir) if q.strip() else []}
 
     def _rezept_antwort(request: Request, c: sqlite3.Connection, recipe_id: int,
-                        meldung: str | None = None, fehler: str | None = None):
-        """HTMX bekommt die Zutatenliste, ein Formular ohne JS die ganze Seite."""
+                        meldung: str | None = None, fehler: str | None = None,
+                        rueckmeldung: str | None = None):
+        """HTMX bekommt die Zutatenliste, ein Formular ohne JS die ganze Seite.
+
+        `rueckmeldung` ist die Produkt-id, an deren „+" gedrückt wurde. Sie
+        bekommt ihr „im Rezept" AN DER STELLE, an der der Daumen war: die
+        Zutatenliste hängt am Seitenanfang, die Trefferliste steht unten, und
+        ohne ein Zeichen unten drückt man ein zweites Mal — derselbe Grund,
+        aus dem der Korb-Knopf seit WB-323 eine Rückmeldung hat. Der Weg
+        dorthin ist ein `hx-swap-oob`, weil der Haupttausch die Zutatenliste
+        bleibt und ein Tausch nur einen Platz hat.
+        """
         kontext = _rezept_kontext(c, recipe_id, meldung=meldung, fehler=fehler)
         if ist_htmx(request):
+            if rueckmeldung:
+                return vorlagen.TemplateResponse(
+                    request, "_rezept_eingelegt.html",
+                    {**kontext, "rueckmeldung": rueckmeldung})
             return vorlagen.TemplateResponse(request, "_rezept.html", kontext)
         if meldung or fehler:
             # Eine Weiterleitung würde die Begründung verlieren, und die
@@ -1578,7 +1651,12 @@ def create_app(db_path: str | Path | None = None,
             except orders.UngueltigerPosten:
                 fehler = ("Schreib hin, was es sein soll — ein leeres Feld "
                           "ergibt keine Zutat.")
-            return _rezept_antwort(request, c, recipe_id, fehler=fehler)
+            # Nur der Weg über die Trefferliste hat einen Knopf, an dem eine
+            # Rückmeldung stehen könnte: „nichts davon, ich schreibe es
+            # selbst" (`free_text`) hat keinen.
+            return _rezept_antwort(
+                request, c, recipe_id, fehler=fehler,
+                rueckmeldung=(None if fehler else werte.get("product_id")))
         finally:
             c.close()
 
@@ -1715,7 +1793,6 @@ def create_app(db_path: str | Path | None = None,
             return vorlagen.TemplateResponse(request, "status.html", {
                 **_rahmen(request, c),
                 **betrieb.statusbericht(c),
-                "hinweis": katalog_hinweis(c),
             })
         finally:
             c.close()

@@ -30,6 +30,12 @@
       <button class="plus" type="submit"
               aria-label="{{ p.name }} ins Rezept">+</button>
     </form>
+    {# Dasselbe wie an der Katalogkachel (`_produkte.html`), und aus demselben
+       Grund: ohne Rückmeldung drückt man zweimal. Hier wiegt es schwerer —
+       `hx-target="#rezept"` zeigt an den SEITENANFANG, die Trefferliste steht
+       unten, und der Erfolg passierte bisher ausserhalb des Bildes. Gefüllt
+       wird der Platzhalter per `hx-swap-oob` aus `_rezept_eingelegt.html`. #}
+    <span class="rueckmeldung" id="rz-{{ p.id }}" role="status"></span>
   </li>
   {% endfor %}
 </ul>

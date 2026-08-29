@@ -1,0 +1,15 @@
+{# Antwort auf das „+“ an einem Katalogtreffer der Rezeptseite (WB-379).
+
+   Zwei Dinge auf einmal, wie beim Warenkorb (`_eingelegt.html`): der
+   Haupttausch ist die Zutatenliste oben — dafür ist dieses Stück da —, und
+   per `hx-swap-oob` bekommt der Treffer UNTEN, an dem gedrückt wurde, sein
+   „im Rezept". Ohne das Zeichen unten drückt man zweimal: die Zutatenliste
+   hängt am Seitenanfang und ist beim Drücken gar nicht im Bild.
+
+   `innerHTML` und nicht `true`: getauscht wird der INHALT der Rückmeldung,
+   der Platzhalter selbst bleibt stehen und behält seine id für das nächste
+   Mal. #}
+{% include "_rezept.html" %}
+{%- if rueckmeldung %}
+<span id="rz-{{ rueckmeldung }}" hx-swap-oob="innerHTML"><span class="ok" role="status">im Rezept</span></span>
+{%- endif %}

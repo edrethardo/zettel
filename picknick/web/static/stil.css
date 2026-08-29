@@ -156,12 +156,22 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: var(--akzent); margin-top: 6px;
 }
 /* Acht Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
-   statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen. */
+   statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
+
+   Die Bildlaufleiste war ganz ausgeblendet — auf 375 px lagen „Bons" und
+   „Status" ausserhalb des Bildes, ohne ein Zeichen, dass da noch etwas kommt.
+   Jetzt ist sie dünn statt weg: ein 3-px-Strich, der die Leiste nicht höher
+   macht und trotzdem sagt, dass sie weitergeht. */
 .kopf nav {
   display: flex; gap: 2px; margin-left: auto; min-width: 0;
-  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--linie) transparent;
 }
-.kopf nav::-webkit-scrollbar { display: none; }
+.kopf nav::-webkit-scrollbar { height: 3px; }
+.kopf nav::-webkit-scrollbar-thumb {
+  background: var(--linie); border-radius: 999px;
+}
+.kopf nav::-webkit-scrollbar-track { background: transparent; }
 .kopf nav a {
   min-height: var(--tap); display: flex; align-items: center;
   padding: 0 10px; border-radius: 999px;
@@ -169,6 +179,13 @@ button:disabled { opacity: 0.5; cursor: default; }
   font-size: 15px; font-weight: 500; white-space: nowrap;
 }
 .kopf nav a:active { background: var(--karte-tief); }
+/* Wo man gerade ist. Nicht nur Farbe: /bestellungen und /pick sind zwei sehr
+   ähnliche Listen, und ein Farbton allein ist auf einem Telefon in der Sonne
+   kein Unterschied. Deshalb Fläche UND Gewicht — und `aria-current` in der
+   Vorlage für alle, die die Fläche nicht sehen. */
+.kopf nav a.aktiv {
+  background: var(--akzent-hell); color: var(--akzent-tinte); font-weight: 700;
+}
 
 /* Hinweisband (Spec 11) -------------------------------------------------- */
 .band {
@@ -203,12 +220,28 @@ button:disabled { opacity: 0.5; cursor: default; }
 .rollen .gewaehlt { background: var(--akzent-hell); border-color: var(--akzent);
                     color: var(--akzent-tinte); }
 
-/* Kategorien: eine Karte, in der die Äste aufklappen --------------------- */
-.kategorien {
+/* Kategorien: eine Karte, in der die Äste aufklappen ---------------------
+   Die Karte selbst klappt jetzt zu (WB-379). 138 Zeilen à 44 px sind 6.100 px
+   zwischen dem Suchfeld und den Treffern; zugeklappt sind es eine Zeile. Das
+   Kartenkleid sitzt deshalb am `<details>` und nicht mehr an der Liste
+   darin — sonst wäre es eine Karte in einer Karte. */
+.kategorienkarte {
   margin-bottom: 16px; background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius);
   box-shadow: var(--schatten); overflow: hidden;
 }
+.kategorienkarte > summary {
+  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
+  padding: 0 14px; font-weight: 700; cursor: pointer; list-style: none;
+}
+.kategorienkarte > summary::-webkit-details-marker { display: none; }
+.kategorienkarte > summary::before {
+  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
+}
+.kategorienkarte[open] > summary::before { transform: rotate(90deg); }
+.kategorienkarte[open] > summary { border-bottom: 1px solid var(--linie); }
+.kategorien { margin: 0; }
 .kategorien summary,
 .zweig {
   min-height: var(--tap); display: flex; align-items: center; gap: 6px;
@@ -280,6 +313,15 @@ button:disabled { opacity: 0.5; cursor: default; }
   color: var(--honig); background: var(--honig-hell);
   border: 1px solid var(--honig-linie); border-radius: var(--radius);
 }
+/* Sprungziele bekommen Luft nach oben. Beide Wege enden an einer Liste, die
+   ohne diesen Abstand oben am Rand klebte: `#treffer` ist das Ziel, auf das
+   die Katalogsuche und jeder Kategoriezweig scrollen, `#rezept-treffer` das
+   des Ankers an einer Rezeptzutat. Beim zweiten sind es 96 px mit Absicht —
+   so bleiben die Überschrift, die Menge aus dem Rezept und das Suchfeld im
+   Bild, statt gerade eben herauszurutschen. */
+#treffer { scroll-margin-top: 12px; }
+#rezept-treffer { scroll-margin-top: 96px; }
+
 .fussnote { color: var(--gedaempft); font-size: 14px; margin-top: 20px; }
 .fussnote a { color: inherit; }
 
@@ -480,8 +522,11 @@ button:disabled { opacity: 0.5; cursor: default; }
 .bedarf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
           margin: 4px 0 0; }
 .bedarf .hinweis { flex: 1 1 12ch; }
+/* 16 px, nicht 15: Safari zoomt bei einem kleineren Feld beim Hineintippen in
+   die Seite und zoomt nicht zurück (WB-379). Die Breiten stehen in `ch` und
+   wachsen mit. */
 .bedarf input[type="text"] {
-  width: 5ch; min-height: var(--tap); text-align: right; font-size: 15px;
+  width: 5ch; min-height: var(--tap); text-align: right; font-size: 16px;
   border: 1px solid var(--linie); border-radius: 10px; padding: 0 6px;
   background: var(--karte); color: var(--tinte);
 }
@@ -543,6 +588,13 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .rezeptzutaten li:last-child { border-bottom: none; }
 .rezeptzutaten .menge { flex: 0 0 8ch; text-align: right; color: var(--gedaempft); }
+/* Der Griff „Zutat im Katalog suchen" ist ein Tap-Ziel wie jedes andere und
+   hatte ~24 px — die Höhe der Textzeile. In diesem Blatt sind es 44 (WB-379).
+   Volle Restbreite, damit auch neben einem kurzen Namen getroffen wird. */
+.rezeptzutaten a.name {
+  flex: 1 1 auto; display: flex; align-items: center; min-height: var(--tap);
+  color: var(--akzent-tinte); text-decoration: none;
+}
 .rezeptzutaten .hinweis { color: var(--gedaempft); }
 .rezeptzutaten .gruppe {
   display: block; margin-top: 10px; font-weight: 700; color: var(--tinte);
@@ -706,8 +758,12 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
                         color: var(--gedaempft); }
 .entwurfsliste > li.raus { opacity: 0.55; }
 .entwurf-menge { display: flex; gap: 4px; }
+/* 16 px und keinen Punkt weniger: Safari zoomt bei einem kleineren Feld beim
+   Hineintippen in die Seite — und zoomt NICHT zurück. Das passierte mitten in
+   der grössten Seite des Shops. Die Feldbreiten unten stehen in `em` und
+   wachsen einfach mit. */
 .entwurf-menge input {
-  min-height: var(--tap); padding: 0 10px; font-size: 15px;
+  min-height: var(--tap); padding: 0 10px; font-size: 16px;
   color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--linie); border-radius: 10px;
 }
@@ -804,8 +860,11 @@ code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
              margin-bottom: var(--rand); padding: 14px;
              background: var(--karte); border: 1.5px dashed var(--linie);
              border-radius: var(--radius); }
+/* Auch hier 16 px (WB-379). Ein Dateifeld nimmt zwar keine Tastatur an, aber
+   die Regel „kein Eingabefeld unter 16" ohne Sonderfall ist die, die man beim
+   nächsten Feld noch kennt — und die ein Test halten kann. */
 .bonupload input[type="file"] {
-  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 15px;
+  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 16px;
   color: var(--tinte);
   border: 1.5px solid var(--linie); border-radius: var(--radius);
   background: var(--grund);
