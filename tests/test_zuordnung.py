@@ -123,11 +123,14 @@ def test_der_rueckwechsel_kostet_kein_modell(datei, tmp_path):
     mid = _zug_id(datei)
 
     _wechsel(client, mid, PHO_GA)
-    assert len(client.llm.aufrufe) == 4, "Der Wechsel kostet einen Zug."
+    # **Drei und nicht vier** (WB-411): der Wechsel kostet nur noch Stufe 1.
+    # Stufe 3 entfällt, weil „Ingwer" und „Mie Nudeln" seit dem ersten Zug im
+    # Gedächtnis stehen — dieselben Begriffe, dieselben Kandidaten.
+    assert len(client.llm.aufrufe) == 3, "Der Wechsel kostet nur Stufe 1."
     zweiter = _zug_id(datei)
 
     _wechsel(client, zweiter, PHO_BO)
-    assert len(client.llm.aufrufe) == 4, (
+    assert len(client.llm.aufrufe) == 3, (
         "Der Rückwechsel hat das Modell gefragt, obwohl das Rezept bekannt "
         "ist.")
     assert _rezept_des_gerichts(datei) == PHO_BO
@@ -278,7 +281,9 @@ def test_vorwaermen_rechnet_ohne_zug_und_ohne_umzuhaengen(datei, tmp_path):
     antwort = client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={PHO_GA}",
                           headers=HTMX)
     assert antwort.status_code == 204
-    assert len(client.llm.aufrufe) == 4, "Vorwärmen hat nicht gerechnet."
+    # Eine Frage und nicht zwei (WB-411): Stufe 1 muss die Zutatenliste des
+    # neuen Rezepts zerlegen, Stufe 3 findet beide Begriffe im Gedächtnis.
+    assert len(client.llm.aufrufe) == 3, "Vorwärmen hat nicht gerechnet."
     assert _rezept_des_gerichts(datei) == PHO_BO, "Das Gericht wurde umgehängt."
     assert _zug_id(datei) == mid, "Es ist ein Zug entstanden."
     assert _gemerkt(datei, _rezept_id(datei, PHO_GA)), "Nichts gemerkt."

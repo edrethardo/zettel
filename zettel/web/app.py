@@ -1651,6 +1651,52 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    @app.post("/chat/{mid}/neusuche")
+    def chat_neusuche(request: Request, mid: int,
+                      werte: Formular = Depends(formular)):
+        """Denselben Satz noch einmal — ohne Gedächtnis (WB-411).
+
+        „Melde dann dass sie cached sind und gib die Möglichkeit neu zu
+        suchen." Das hier ist die zweite Hälfte: der Zug läuft noch einmal,
+        und diesmal wird weder die Zuordnung des Rezepts noch eine gemerkte
+        Wahl je Begriff gelesen. Was dabei herauskommt, **überschreibt
+        beide** — der Weg zurück aus einer Wahl, die einmal danebengriff.
+
+        Gelöscht wird dabei nichts im Voraus. Ein `DELETE` vor dem Lauf
+        hiesse, bei einem Ausfall der Box mit leeren Händen dazustehen; so
+        gilt die alte Erinnerung genau so lange, bis eine neue da ist.
+
+        Der Zug tritt an die Stelle des alten, wie beim Rezeptwechsel
+        (WB-403) — dieselbe Antwort, dieselbe Zusicherung über den Korb: was
+        bestätigt wurde, bleibt liegen.
+        """
+        c = con()
+        try:
+            zeile = _satzzeile_zum_zug(c, mid)
+            satz = (zeile["content"] if zeile is not None else "").strip()
+            if not satz:
+                return _wechsel_fehler(
+                    request, c, mid,
+                    "Zu diesem Zug steht kein Satz mehr da — dann gibt es "
+                    "auch nichts, was noch einmal laufen könnte.")
+            stand = c.execute(
+                "SELECT max(id) AS letzte FROM chat_message"
+                " WHERE order_id = (SELECT order_id FROM chat_message"
+                "                    WHERE id = ?)", (mid,)).fetchone()["letzte"]
+            try:
+                app.state.chat.turn(c, satz, frisch=True)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                return _wechsel_fehler(request, c, mid, zustand=e.zustand,
+                                       fehler=_nicht_verfuegbar(e))
+            except chatmodul.ChatFehler as e:
+                return _wechsel_fehler(request, c, mid, fehler=str(e))
+            neue = _zug_ersetzen(c, mid,
+                                 zeile["id"] if zeile is not None else None,
+                                 stand)
+            return _wechsel_antwort(request, c, mid, neue)
+        finally:
+            c.close()
+
     def _wahl_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
                          gewuenscht: str):
         """Prüft die gewählte Rezept-ID und holt ihr Rezept.

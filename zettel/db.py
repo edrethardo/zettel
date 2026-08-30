@@ -279,6 +279,41 @@ SCHEMA = [
         PRIMARY KEY (recipe_id, pos)
     )
     """,
+    # Was der Shop zu EINEM Suchbegriff schon einmal gewählt hat (WB-411).
+    #
+    # `recipe_zuordnung` merkt die Antwort für ein ganzes Rezept; diese Tabelle
+    # liegt eine Ebene tiefer und gilt über Rezepte hinweg. Gemessen an sieben
+    # Lasagne-Rezepten: **jedes kannte 36 bis 62 % seiner Begriffsketten schon
+    # aus den anderen** („Zwiebel" sechsmal, „Tomatenmark", „Butter", „Milch"
+    # je fünfmal). Über den ganzen Bestand wiederholen sich 51 % der
+    # Zutatennamen. Diese Wahl je Zug neu zu bezahlen, waren gemessen 14,7 s
+    # Median für Stufe 3.
+    #
+    # **Der Schlüssel ist die KETTE, nicht das erste Wort.** „Möhren" und
+    # „Karotten" führen zu verschiedenen Produkten (WB-340); wer nur den
+    # genauesten Begriff merkte, gäbe die Wahl einer Kette für die einer
+    # anderen aus.
+    #
+    # `gewaehlt = 0` heisst „das Modell wollte hier nichts" und bleibt so —
+    # sonst kostete jeder Begriff ohne Katalogtreffer für immer einen
+    # Modellaufruf. `ON DELETE CASCADE`: fällt das Produkt aus dem Katalog,
+    # fällt die Erinnerung mit, und der Begriff wird neu gefragt.
+    #
+    # `quelle` unterscheidet, WER gewählt hat. Heute steht dort immer
+    # `modell`; die Spalte ist der Platz, an dem später eine Wahl eines
+    # Menschen die des Modells schlagen soll (WB-341) — ohne sie müsste man
+    # dafür die Tabelle umbauen.
+    """
+    CREATE TABLE IF NOT EXISTS begriff_wahl (
+        begriff      TEXT PRIMARY KEY,
+        suchbegriffe TEXT    NOT NULL,
+        product_id   INTEGER REFERENCES product(id) ON DELETE CASCADE,
+        gewaehlt     INTEGER NOT NULL DEFAULT 0,
+        quelle       TEXT    NOT NULL DEFAULT 'modell',
+        benutzt      INTEGER NOT NULL DEFAULT 0,
+        erstellt_at  TEXT    NOT NULL
+    )
+    """,
     # Ein GEFRAGTES Gericht und was der Abruf ergeben hat (WB-338). Der
     # Zwischenspeicher, ohne den jeder Chat-Zug erneut ins Netz ginge.
     #
