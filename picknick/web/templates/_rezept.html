@@ -58,6 +58,18 @@
     {% endif %}
     <span class="text">
       <span class="name">{{ z.name }}</span>
+      {# Packung und Preis stehen HIER und nicht unter dem Mengenfeld
+         (WB-400). Anders als im Korb und am Vorschlag ist die benötigte
+         Menge auf dieser Seite kein Text, sondern ein FELD: die Zeile
+         besteht aus Text (Name, Packung, Preis) und darunter aus zwei
+         Bedienstrecken. Ein Absatz zwischen zwei Bedienzeilen zerschnitt,
+         was zusammengehört. #}
+      <span class="menge">
+        {% if z.ist_freitext %}Freitext
+        {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
+        {%- if z.nicht_im_katalog %}
+        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
+      </span>
       {# Die benötigte Menge — die Grösse, die mit den Portionen wächst
          (WB-362). Die Zahl rechts daneben ist die PACKUNGSZAHL und wächst
          nicht mit; ohne diese Zeile sähen beide gleich aus.
@@ -90,15 +102,6 @@
         <noscript><button class="mini" type="submit">ok</button></noscript>
       </form>
       {% endif %}
-      {# Packung und Preis stehen UNTER der benötigten Menge (WB-400) —
-         dieselbe Rangfolge wie im Korb, am Vorschlag und auf /pick: erst
-         was gebraucht wird, dann was im Regal steht. #}
-      <span class="menge">
-        {% if z.ist_freitext %}Freitext
-        {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
-        {%- if z.nicht_im_katalog %}
-        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
-      </span>
     </span>
     <span class="stellen">
       {# Dieselbe gemeinsame Hülle wie im Korb (WB-400) — es ist dasselbe

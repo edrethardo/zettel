@@ -16,9 +16,24 @@
    - DUNKEL ist die Kreidetafel in der Küche: Schiefer statt Papier, Kreide
      statt Tinte, dieselben Stifte als Kreidefarben. Ein zweiter Entwurf,
      kein Negativ — die Fotos werden sanft gedimmt statt zu blenden.
-   - GERECHNETE ZAHLEN stehen in Monospace, wie von der Kasse gedruckt:
-     Preise, Stückzahlen, Bedarfsmengen. Der Zettel sagt die Wahrheit über
-     Mengen, und die Wahrheit hat hier eine eigene Schrift.
+   - GERECHNETE ZAHLEN stehen in Monospace, wie von der Kasse gedruckt.
+     Die Regel steht seit WB-400 genau da, weil sie vorher an fünf Orten
+     fünf Antworten gab:
+
+       Monospace bekommt eine Zahl, die der Shop SELBST rechnet oder zählt,
+       und nur dort, wo sie ALS ZAHL dasteht — nicht im Fliesstext.
+
+     Also: Preise und Packungsgrössen (`.preis`, `.zeile .menge`), die
+     Packungs- und Korbzahlen (`.anzahl`, `.korbzahl`), die Bedarfsmenge auf
+     der Einkaufsliste (`.pickzeile .menge`, `.gebinde`), die mit dem
+     Portionsfeld hochgerechneten Rezeptmengen (`.rezeptzutaten .menge`) und
+     die Gesamtzeit der Rezeptkarte.
+     Also NICHT: was von Chefkoch abgeschrieben ist und nur weitergereicht
+     wird (`.andereliste .zahlen` — „35 Minuten Arbeitszeit", „4.74 aus 1420
+     Stimmen"), und NICHT ein ganzer Satz, auch wenn Zahlen darin vorkommen
+     (`.hinweis.gebraucht` — „1000 ml gebraucht — 2 × Mutti Passierte
+     Tomaten 0,7 kg."). Eine Kassenschrift über drei Zeilen Fliesstext ist
+     eine Wand und keine Auszeichnung.
    - FORMEN: Karten sind Blätter (12 px, feiner Rand, flacher Schatten),
      Knöpfe sind gezeichnete Kästen (10 px), Abzeichen bleiben Pillen,
      der Plus-Knopf bleibt ein Punkt. Vier Formen, jede mit einem Grund.
@@ -369,8 +384,16 @@ button, .knopf { overflow-wrap: normal; }
 .bild-fehlt { display: block; background: transparent;
               border: 1.5px dashed var(--linie); }
 .text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
-.name { font-weight: 600; }
-.menge { color: var(--gedaempft); font-size: var(--t-klein); }
+/* `text-wrap: pretty` verhindert die einsame Silbe am Ende eines Namens
+   („Hemme Milch Milch 1,8 / %"). Wo der Browser es nicht kennt, bleibt alles
+   wie bisher — es ist eine Verbesserung und keine Bedingung. */
+.name { font-weight: 600; text-wrap: pretty; }
+/* Packungsgrösse und Preis: von der Kasse, also Monospace — dieselbe Schrift
+   wie `.preis` an der Katalogkachel, die denselben Preis zeigt. Bis WB-400
+   war derselbe Preis einen Tap voneinander entfernt einmal Kassenschrift
+   und einmal nicht. */
+.menge { color: var(--gedaempft); font-size: var(--t-klein);
+         font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .preis { white-space: nowrap; font-family: var(--mono);
          font-variant-numeric: tabular-nums; font-weight: 700;
          font-size: var(--t-feld); }
@@ -589,11 +612,19 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
    nachts mit 1,08:1 gegen den Zeilengrund, nur ein Haarrand hielt sie
    sichtbar. Jetzt trägt es Kartenfarbe und einen eigenen Rand, und der Haken
    ist grün wie überall im Blatt, wo etwas erledigt ist. 32 px im 64 px
-   hohen Griff: getippt wird auf das Label, nicht auf das Kästchen. */
+   hohen Griff: getippt wird auf das Label, nicht auf das Kästchen.
+
+   Der Rand ist `--gedaempft` und nicht `--knopflinie`: die Knopflinie stand
+   mit 1,42:1 gegen den Grund (2,30:1 nachts) und war damit blasser als das
+   Betriebssystem-Kästchen, das sie abgelöst hat. „Offen" ist auf dieser
+   Seite der wichtigste der drei Zustände — es heisst „das musst du noch
+   holen" — und war der einzige ohne eigene Farbe. `--gedaempft` trägt in
+   beiden Modi über 4,5:1, auch auf dem Rotstift-Grund einer
+   „gab's nicht"-Zeile. */
 .haken input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: 32px; height: 32px; flex: 0 0 32px; margin: 0;
-  background: var(--karte); border: 2px solid var(--knopflinie);
+  background: var(--karte); border: 2px solid var(--gedaempft);
   border-radius: 7px; cursor: pointer;
 }
 .haken input[type="checkbox"]:checked {
@@ -1246,6 +1277,11 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
         border-bottom: 1px solid var(--linie); }
 .laeufe > .lauf:last-child { border-bottom: none; }
 .lauf .name { font-weight: 600; }
+/* Auf dieser Seite steht in `.menge` ein SATZ und keine Zahl („Die Schlange
+   fasst 10.000; was darüber hinaus anfällt, geht verloren.") — die
+   Kassenschrift gilt der Zahl, die als Zahl dasteht, und nicht dem
+   Fliesstext, in dem eine vorkommt. */
+.lauf .menge { font-family: inherit; }
 .lauf.verworfen { background: var(--honig-hell); border-radius: var(--radius-knopf); }
 .lauf.error .name { color: var(--fehler-text); }
 code { background: var(--karte-tief); border-radius: 6px; padding: var(--v0) var(--v1);
