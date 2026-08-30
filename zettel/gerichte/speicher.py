@@ -201,6 +201,14 @@ def merken(con: sqlite3.Connection, name: str, rezept: dict,
             " fetched_at = ? WHERE id = ?", (*felder, recipe_id))
         con.execute("DELETE FROM recipe_ingredient WHERE recipe_id = ?",
                     (recipe_id,))
+        # **Und die gemerkte Zuordnung mit** (WB-408). Sie ist die Antwort
+        # des Modells auf GENAU DIESE Zutatenliste; steht dort ab der
+        # nächsten Zeile eine andere, wäre sie eine Zuordnung zu Zutaten, die
+        # es nicht mehr gibt — schlimmer als keine, weil sie gültig aussieht.
+        # Roh und nicht über `assistant.zuordnung.vergessen`: dieses Modul
+        # kennt den Assistenten nicht und soll ihn nicht kennenlernen.
+        con.execute("DELETE FROM recipe_zuordnung WHERE recipe_id = ?",
+                    (recipe_id,))
     else:
         cur = con.execute(
             "INSERT INTO recipe (name, servings, instructions, prep_minutes,"

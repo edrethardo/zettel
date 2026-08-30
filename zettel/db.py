@@ -240,6 +240,45 @@ SCHEMA = [
         usage_info TEXT
     )
     """,
+    # Was das MODELL zu diesem Rezept ergeben hat (WB-408). Einmal gerechnet,
+    # danach gelesen — und damit ist ein Rezeptwechsel im Chat eine Abfrage
+    # und kein Modelllauf.
+    #
+    # **Warum das überhaupt geht.** Auf dem Quellenweg hängen beide teuren
+    # Stufen an nichts, was sich von Zug zu Zug ändert: Stufe 1 bekommt die
+    # Zutatenliste des Rezepts, Stufe 3 wählt seit WB-386 ausdrücklich OHNE
+    # den Satz. Die Modellarbeit eines Rezeptzugs ist damit eine reine
+    # Funktion des Rezepts und des Katalogs — sie wurde bloss bei jedem Zug
+    # neu bezahlt, 24 bis 27 Sekunden lang.
+    #
+    # **Ausdrücklich nicht `recipe_item`.** Dort stehen die Produkte, die ein
+    # MENSCH dem Rezept zugeordnet hat (Spec 4) — daran erkennt
+    # `rezeptweg.erkenne`, dass ein Rezept den Chat-Zug abfangen darf. Hier
+    # steht eine Vermutung des Modells. Beides in eine Tabelle zu legen
+    # hiesse, den schnellen Weg auf Raten aufzubauen.
+    #
+    # `gewaehlt` und `product_id` beantworten zwei verschiedene Fragen:
+    # `NULL` bei `gewaehlt = 1` heisst „das Produkt ist aus dem Katalog
+    # verschwunden" (ON DELETE SET NULL) und wird neu gefragt; `gewaehlt = 0`
+    # heisst „das Modell hat hier nichts genommen" und wird NICHT neu
+    # gefragt — sonst kostete jede Zutat ohne Katalogtreffer für immer einen
+    # Modellaufruf.
+    """
+    CREATE TABLE IF NOT EXISTS recipe_zuordnung (
+        recipe_id    INTEGER NOT NULL REFERENCES recipe(id) ON DELETE CASCADE,
+        pos          INTEGER NOT NULL,
+        -- Die Begriffskette aus Stufe 1, als JSON-Liste. Eine Kette ist eine
+        -- Reihenfolge („passierte Tomaten" vor „Tomaten") und keine Menge;
+        -- eine zweite Tabelle dafür wäre eine Zeile je Wort.
+        suchbegriffe TEXT    NOT NULL,
+        menge        REAL,
+        product_id   INTEGER REFERENCES product(id) ON DELETE SET NULL,
+        wahl_menge   REAL,
+        gewaehlt     INTEGER NOT NULL DEFAULT 0,
+        erstellt_at  TEXT    NOT NULL,
+        PRIMARY KEY (recipe_id, pos)
+    )
+    """,
     # Ein GEFRAGTES Gericht und was der Abruf ergeben hat (WB-338). Der
     # Zwischenspeicher, ohne den jeder Chat-Zug erneut ins Netz ginge.
     #

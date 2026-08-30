@@ -169,6 +169,33 @@
       Vorschläge zum alten Rezept fallen weg. Zutatenzahl und Kochzeit stehen
       erst im Rezept selbst; die Suche nennt nur die Arbeitszeit.</p>
   </form>
+  {# **Vorgerechnet, während der Mensch liest** (WB-408). Ein Wechsel zu
+     einem Rezept, dessen Zuordnung dasteht, ist eine Datenbankabfrage; einer
+     zu einem unbekannten kostet die zwei Modellstufen — gemessen 24 bis 27 s.
+     Der Nutzer wollte es „quasi sofort", und das geht nur, wenn gerechnet
+     ist, BEVOR er tippt.
+
+     Drei, und nur am jüngsten Zug (`vorwaermen` trägt dessen id). Alles
+     andere hiesse, bei jedem Blick in den Chat die halbe Rezeptliste durch
+     das Modell zu schicken: die Karten weiter oben stehen im Verlauf und
+     nicht vor Augen.
+
+     Gestaffelt um je eine Sekunde, damit die drei Läufe der Box nicht
+     gleichzeitig ins Haus fallen — sie bedient vier Anfragen nebeneinander
+     mit 74,8 tok/s gegen 24,9 einzeln, aber ein eigener Zug der Nutzerin
+     soll dabei nicht hinten anstehen.
+
+     Der Eingang antwortet immer mit 204: hier hat niemand etwas gefragt, und
+     was schiefgeht, kostet die Wartezeit des nächsten Tipps und sonst
+     nichts. #}
+  {%- if vorwaermen and m.id == vorwaermen %}
+  {%- set warm = r.alternativen | rejectattr("gewaehlt") | list %}
+  {%- for a in warm[:3] %}
+  <span class="vorwaermen" aria-hidden="true"
+        hx-post="/chat/{{ m.id }}/rezept/vorwaermen?rezept={{ a.source_id | urlencode }}"
+        hx-trigger="load delay:{{ loop.index }}s" hx-swap="none"></span>
+  {%- endfor %}
+  {%- endif %}
   {%- endif %}
 
   {# Für wie viele Portionen dieser Zug rechnet (WB-384). **Bis dahin gab es

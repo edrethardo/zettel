@@ -83,8 +83,10 @@ from dataclasses import dataclass, field
 
 from zettel import gerichte, mengen, obs, orders
 from zettel.assistant import (entwurf, herkunft, oberbegriffe, plan,
-                                rezeptweg, vorschlaege, zugrezept)
+                                rezeptweg, vorschlaege, zugrezept,
+                                zuordnung)
 from zettel.catalog import search
+from zettel.gerichte import speicher as gerichtespeicher
 from zettel.llm import wake
 from zettel.llm.client import ModellNichtErreichbar
 
@@ -686,11 +688,20 @@ class Chat:
         Es kürzt „Knoblauchzehe(n)" zu „Knoblauch", bietet „Karotten" für
         „Möhren" an und lässt Salz und Pfeffer weg. Was es nicht mehr tut,
         ist sich die Zutatenliste ausdenken.
-        """
-        zustand = self.zustand()
-        if not zustand.bedient:
-            raise ChatNichtVerfuegbar(zustand)
 
+        **Und seit WB-408 fragt dieser Weg oft gar kein Modell mehr.** Was
+        beide Stufen ergeben, hängt nur am Rezept und am Katalog — der Satz
+        geht seit WB-386 nicht mehr in Stufe 3. Also steht es nach dem ersten
+        Mal in `recipe_zuordnung`, und ein zweiter Zug zu demselben Rezept
+        liest es. Das ist der Grund, warum ein Rezeptwechsel im Chat jetzt
+        eine Abfrage ist und kein Modelllauf.
+
+        **Der Weckruf steht deshalb nicht mehr am Anfang.** Ob dieser Zug ein
+        Modell braucht, entscheidet sich erst, wenn das Rezept dasteht und
+        die Zuordnung nachgeschlagen ist. Ein bekanntes Rezept läuft auch bei
+        schlafender Box — und genau daran waren die letzten zwei Wechsel des
+        Nutzers gescheitert.
+        """
         gerichte_daten = []
         for eintrag in gefunden.rezepte:
             voll = self.quelle.gericht(con, eintrag["query"])
@@ -709,28 +720,39 @@ class Chat:
             quellen.append(g["rezept"])
         titel = ", ".join(namen)
 
-        try:
-            with obs.stufe("plan.extract"):
-                begriffe = plan.zutatenbegriffe(
-                    self.zugang, zutaten, gericht=titel,
-                    servings=quellen[0].get("servings"),
-                    guided=self.guided, denken=self.denken)
+        # **Die Zuordnung gehört dem Rezept** (WB-408). Steht sie schon da,
+        # entfallen beide Modellstufen; was hier zurückkommt, ist Wort für
+        # Wort das, was Stufe 1 damals geliefert hat.
+        #
+        # Nur bei EINEM Rezept: „alles für Bolognese und Kartoffelsalat"
+        # zerlegt zwei Zutatenlisten in einem Aufruf, und die Begriffe stehen
+        # danach in einer Liste, die keinem der beiden allein gehört. Das
+        # aufzuteilen hiesse zu raten, welcher Begriff aus welchem Rezept kam
+        # — `herkunft` weiss es, aber ein Begriff kann zu beiden passen. Der
+        # seltene Fall zahlt weiter das Modell.
+        gemerkt = (zuordnung.lesen(con, int(quellen[0]["id"]))
+                   if len(quellen) == 1 else None)
+        if gemerkt is not None:
+            # `herkunft.zuordnen` läuft neu und wird nicht mitgespeichert:
+            # `bedarf`, `einheit` und die Herkunftszutat entstehen ohne
+            # Modell aus der Zutatenliste, die daneben steht. Eine gemerkte
+            # Kopie davon wäre eine zweite Wahrheit.
+            begriffe = herkunft.zuordnen(zutaten,
+                                         zuordnung.begriffe_aus(gemerkt))
             notbehelf = None
-        except plan.PlanFehler as e:
-            # **Hier wird nicht abgebrochen, und das ist der Unterschied zum
-            # Modellweg.** Dort gibt es ohne Stufe 1 nichts; hier liegt die
-            # Zutatenliste bereits vor, und aus ihr lässt sich ohne Modell
-            # eine Begriffskette bauen (`chefkoch.zutat_kette`). Sie ist
-            # schlechter — gemessen 10 von 14 statt 12 von 12 — aber sie ist
-            # da, und eine Liste, in der zwei Zeilen als Freitext stehen, ist
-            # besser als eine Fehlermeldung.
-            begriffe = self._ketten_ohne_modell(zutaten)
-            notbehelf = str(e)
-            if not begriffe:
-                raise
-        except ModellNichtErreichbar as e:
-            raise ChatNichtVerfuegbar(
-                wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
+            merken = None
+        else:
+            # Erst hier braucht dieser Zug wirklich ein Modell.
+            zustand = self.zustand()
+            if not zustand.bedient:
+                raise ChatNichtVerfuegbar(zustand)
+            begriffe, notbehelf = self._stufe_eins(zutaten, titel, quellen)
+            # Gemerkt wird nur, was WIRKLICH aus dem Modell kam und zu genau
+            # EINEM Rezept gehört. Ein Notbehelf aus `chefkoch.zutat_kette`
+            # gäbe sich sonst für immer als Modellantwort aus und hielte das
+            # Rezept auf der schlechteren Zerlegung fest.
+            merken = (list(begriffe)
+                      if notbehelf is None and len(quellen) == 1 else None)
 
         # **Hier entsteht die Trennung, um die es in WB-337 geht** — ohne
         # Modell und ohne ein Feld im Prompt. Sie steht vor der Suche, weil
@@ -749,7 +771,14 @@ class Chat:
         # „KFC Coleslaw" —, kostet er die ganze Zutatenliste: das Modell
         # prüft dann jeden Kandidaten gegen den Satz statt gegen den Begriff
         # und lehnt auch Milch und Butter ab.
-        auswahl, choose_kaputt = self._waehlen("", aufgaben)
+        if gemerkt is not None:
+            auswahl, choose_kaputt = self._waehlen_gemerkt(
+                con, int(quellen[0]["id"]), gemerkt, aufgaben)
+        else:
+            auswahl, choose_kaputt = self._waehlen("", aufgaben)
+            if merken is not None:
+                zuordnung.schreiben(con, int(quellen[0]["id"]), merken,
+                                    auswahl)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
 
         erstes = quellen[0]
@@ -800,6 +829,125 @@ class Chat:
                   "rest_angehaengt": rest_angehaengt}
         return (zeilen, " ".join(teile), begriffe, auswahl.verworfen, aufgaben,
                 zusatz)
+
+    def zuordnung_vorwaermen(self, con, recipe_id: int) -> str:
+        """Rechnet die Zuordnung eines Rezepts — ohne einen Zug zu schreiben.
+
+        Der zweite Teil von WB-408. Die Zuordnung macht einen Wechsel zu
+        einem BEKANNTEN Rezept sofort; damit auch der erste Tipp sofort ist,
+        muss sie schon dastehen, bevor jemand tippt. Also wird sie gerechnet,
+        während der Mensch die Karte liest.
+
+        Gibt ein Wort zurück, das sagt, was geschah — `ok`, `bekannt` (stand
+        schon da), `kein_modell`, `keine_zutaten`, `notbehelf`, `kaputt`.
+        **Wirft nicht:** ein Vorwärmen, das scheitert, kostet die Wartezeit
+        des nächsten Tipps und sonst nichts. Es darf niemals eine Seite
+        zerbrechen, die jemand gerade ansieht.
+
+        Der eigene CHAIN-Span heisst `recipe.zuordnung` und nicht
+        `chat.turn`: hier antwortet niemandem jemand. Ein Vorwärmlauf unter
+        demselben Namen verdürbe jede Auswertung über Züge — er hat keine
+        Nutzerin, keinen Satz und keine Vorschlagsliste.
+        """
+        if zuordnung.lesen(con, int(recipe_id)) is not None:
+            return "bekannt"
+        rezept = con.execute(
+            "SELECT id, name, servings FROM recipe WHERE id = ?",
+            (int(recipe_id),)).fetchone()
+        if rezept is None:
+            return "kein_rezept"
+        zutaten = gerichtespeicher.zutaten(con, int(recipe_id))
+        if not zutaten:
+            return "keine_zutaten"
+        if not self.zustand().bedient:
+            # Kein Weckruf von hier aus: das Vorwärmen ist niemandes Frage.
+            # Die Box wecken darf, wer wirklich etwas wissen will.
+            return "kein_modell"
+        with obs.chain("recipe.zuordnung", eingabe=rezept["name"]) as span:
+            obs.setze(span, {"zettel.recipe_id": int(recipe_id)})
+            try:
+                begriffe, notbehelf = self._stufe_eins(
+                    zutaten, rezept["name"], [dict(rezept)])
+            except (ChatNichtVerfuegbar, plan.PlanFehler):
+                return "kein_modell"
+            if notbehelf is not None:
+                # Ein Notbehelf wird nicht gemerkt (siehe `zuordnung`), und
+                # ohne Modell vorzuwärmen hat keinen Sinn.
+                return "notbehelf"
+            aufgaben = self._suchen(con, begriffe)
+            try:
+                auswahl, kaputt = self._waehlen("", aufgaben)
+            except ChatNichtVerfuegbar:
+                return "kein_modell"
+            if kaputt is not None:
+                return "kaputt"
+            n = zuordnung.schreiben(con, int(recipe_id), begriffe, auswahl)
+            obs.setze(span, {"zettel.begriffe": n,
+                             "zettel.gewaehlt": len(auswahl.gewaehlt)})
+        return "ok"
+
+    def _stufe_eins(self, zutaten, titel, quellen):
+        """Stufe 1 auf dem Quellenweg — mit dem Notbehelf daneben.
+
+        Herausgelöst in WB-408, damit die Stelle, an der die gemerkte
+        Zuordnung sie ersetzt, eine Verzweigung bleibt und keine Einrückung.
+        """
+        try:
+            with obs.stufe("plan.extract"):
+                return plan.zutatenbegriffe(
+                    self.zugang, zutaten, gericht=titel,
+                    servings=quellen[0].get("servings"),
+                    guided=self.guided, denken=self.denken), None
+        except plan.PlanFehler as e:
+            # **Hier wird nicht abgebrochen, und das ist der Unterschied zum
+            # Modellweg.** Dort gibt es ohne Stufe 1 nichts; hier liegt die
+            # Zutatenliste bereits vor, und aus ihr lässt sich ohne Modell
+            # eine Begriffskette bauen (`chefkoch.zutat_kette`). Sie ist
+            # schlechter — gemessen 10 von 14 statt 12 von 12 — aber sie ist
+            # da, und eine Liste, in der zwei Zeilen als Freitext stehen, ist
+            # besser als eine Fehlermeldung.
+            begriffe = self._ketten_ohne_modell(zutaten)
+            if not begriffe:
+                raise
+            return begriffe, str(e)
+        except ModellNichtErreichbar as e:
+            raise ChatNichtVerfuegbar(
+                wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
+
+    def _waehlen_gemerkt(self, con, recipe_id: int, gemerkt: list[dict],
+                         aufgaben: list[dict]):
+        """Stufe 3 aus dem Gedächtnis — und nur der Rest ans Modell (WB-408).
+
+        Offen bleibt zweierlei: der Rest des Satzes („und Klopapier"), der
+        keinem Rezept gehört, und ein Produkt, das aus dem Katalog
+        verschwunden ist. Beides ist eine kurze Frage; die Zutatenliste
+        selbst wird nicht noch einmal gestellt.
+
+        **Bedient die Box gerade nicht, kostet das die offenen Begriffe ihre
+        Wahl und nicht den ganzen Zug.** Sie werden zu Freitext, wie bei
+        jeder anderen kaputten Stufe 3 auch — der Wechsel zu einem bekannten
+        Rezept soll an einer schlafenden Box nicht scheitern. Genau daran
+        sind die zwei letzten Versuche des Nutzers gescheitert.
+        """
+        aus_speicher = zuordnung.auswahl_aus(gemerkt, aufgaben)
+        offen = zuordnung.offen(gemerkt, aufgaben)
+        if not offen:
+            return aus_speicher, None
+        zustand = self.zustand()
+        if not zustand.bedient:
+            return aus_speicher, (
+                f"Für {len(offen)} Begriff(e) stand nichts im Gedächtnis, "
+                f"und das Modell bedient gerade nicht ({zustand.grund or ''}"
+                ").".replace(" ()", ""))
+        frisch, kaputt = self._waehlen("", offen)
+        zusammen = zuordnung.verschmelzen(aus_speicher, frisch)
+        # Was zum REZEPT gehörte und neu gewählt wurde, wird nachgetragen —
+        # sonst fragte ein verschwundenes Produkt bei jedem Zug aufs Neue.
+        bekannt = {g["suchbegriffe"][0] for g in gemerkt if g["suchbegriffe"]}
+        if any(a["begriff"] in bekannt for a in offen):
+            zuordnung.schreiben(con, recipe_id,
+                                zuordnung.begriffe_aus(gemerkt), zusammen)
+        return zusammen, kaputt
 
     def _meldung_rest(self, rest: str, angehaengt: bool) -> str:
         """Was mit dem Rest des Satzes geschah — in der ANTWORT (WB-370).
