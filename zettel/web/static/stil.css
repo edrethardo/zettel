@@ -1402,6 +1402,22 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 }
 .sorten-weiter { margin: 0 0 var(--rand); }
 
+/* Der Wartekasten (WB-414). Er steht zwischen der Meldung und dem Eingabefeld
+   und trägt dieselbe Bandoptik wie der Weckzustand darüber — es ist dieselbe
+   Auskunft, nur mit einem Satz, der schon unterwegs ist.
+
+   Der Zähler ist eine Zahl, die sich jede Sekunde ändert: `tabular-nums`,
+   damit die Zeile dabei nicht zappelt. */
+#chat-warten { margin: 0 0 var(--rand); }
+.warten-zaehler {
+  display: block; font-size: var(--t-klein); color: var(--gedaempft);
+  font-variant-numeric: tabular-nums;
+}
+.warten-jetzt {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v3);
+  margin: var(--v2) 0 0;
+}
+
 /* Der Weg zurück aus dem Gedächtnis (WB-411). Er steht unter den Vorschlägen
    und über den Sammelknöpfen, also da, wo man ankommt, wenn die Liste nicht
    überzeugt hat.

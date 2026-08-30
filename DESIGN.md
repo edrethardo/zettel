@@ -711,6 +711,64 @@ Für 4,4 gesparte Sekunden. **Also nicht gebaut** (WB-413). Die Probe bleibt
 im Baum: sie ist die Antwort auf „warum eigentlich nicht", und sie lässt sich
 gegen ein anderes Modell noch einmal fahren.
 
+### Der Shop fragt von selbst noch einmal
+
+„Sorg dafür dass der Timer … interaktiv ist … und dass man danach nicht
+nochmal klicken muss." (WB-414.) Ein Satz an eine schlafende Box endete
+vorher hier:
+
+> Das Modell wacht gerade auf — dein Satz steht noch im Feld. Gleich noch
+> einmal „Fragen" tippen.
+
+Zweimal schlecht. Der Satz war schon getippt und schon abgeschickt; ihn ein
+zweites Mal abzuschicken ist Arbeit, die der Shop selbst tun kann. Und
+„gleich" ist keine Angabe — aus dem Schlaf braucht die Box gemessene 96
+Sekunden, und das Band darüber erneuerte sich alle fünf Sekunden um denselben
+Satz.
+
+Jetzt steht dort ein Kasten, der sich alle drei Sekunden selbst tauscht und
+dabei denselben Satz an `/chat/warten` schickt. **Ein Eingang für beides,
+weil es dieselbe Frage ist:** bedient die Box nicht, kommt der Kasten zurück
+— rund 700 Bytes, mit neuem Zählerstand; bedient sie, läuft der Zug, und die
+Antwort geht per `HX-Retarget` an den ganzen Chat. Den ganzen Chat je
+Wartesekunde zu schicken wäre das falsche Paket: WB-372 hat ihn von 215 KB
+auf 45 KB gedrückt, und dreissig Runden Warten wären daraus 1,3 MB.
+
+**Der Zähler tickt im Browser**, einmal je Sekunde (`data-warten-bis`, fünf
+Zeilen in `chat.html`), und nicht im Takt der Anfragen: alle drei Sekunden um
+drei zu springen sieht aus wie ein hängender Fortschrittsbalken.
+
+**Und er wird nicht vorgelesen.** Eine Zahl, die jede Sekunde wechselt, macht
+einen Vorleser unbenutzbar — derselbe Befund wie an der Quittung in WB-400.
+`role="status"` trägt der SATZ, einmal; die Zahl daneben ist `aria-hidden`.
+
+Ohne JavaScript gibt es den Kasten trotzdem: dann tickt nichts und nichts
+fragt nach, aber der Knopf darin schickt denselben Satz noch einmal — genau
+das, was vorher der einzige Weg war.
+
+### Die Mengen folgen der Eingabe, nicht dem Knopf
+
+„Wenn man die Menge ändert pass direkt das Rezept bei Eingabe an und nicht
+erst bei Button klick." (WB-415.) Ein Feld, dessen Wirkung erst nach einem
+zweiten Handgriff eintritt, zwingt zum Ausprobieren im Kopf: man tippt eine 8
+und sieht weiter die Mengen für 4.
+
+`hx-trigger="submit, input changed delay:500ms"`. Die halbe Sekunde ist
+nötig, weil „12" als „1" und „12" getippt wird; `changed` hält den Tausch
+zurück, wenn der Wert derselbe geblieben ist. Der Knopf bleibt — ohne
+JavaScript ist er der einzige Weg.
+
+Die feste `id` am Feld ist die Bedingung dafür, dass das überhaupt geht: der
+Tausch ersetzt den ganzen Zug samt Eingabefeld, und htmx stellt Fokus und
+Schreibmarke nur an einem Element mit derselben `id` wieder her.
+
+**Die Rezeptseite bleibt, wie sie ist**, und das ist kein Vergessen. Dort
+sind die Mengen EDITIERBARE Felder und keine Anzeige. Eine Vorschau für acht
+Portionen sähe aus wie die echten Werte des Rezepts; wer danach eine Zeile
+bearbeitet, schriebe die hochgerechnete Zahl als Rezeptmenge fest. Das Feld
+„Diesmal für wie viele Portionen?" gehört dort zum Korb-Knopf und nicht zur
+Anzeige.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist

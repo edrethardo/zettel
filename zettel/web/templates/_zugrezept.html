@@ -213,14 +213,34 @@
      Feld an „Alles in den Warenkorb" (WB-362). #}
   {%- if (r.zutaten or r.n_zettel) and not vorschau %}
   {%- if r.portionen_rezept %}
+  {# **Die Mengen folgen der EINGABE und nicht dem Knopf** (WB-415). Der
+     Nutzer: „Wenn man die Menge ändert pass direkt das Rezept bei Eingabe an
+     und nicht erst bei Button klick." Ein Feld, dessen Wirkung erst nach
+     einem zweiten Handgriff eintritt, zwingt zum Ausprobieren im Kopf: man
+     tippt eine 8 und sieht weiter die Mengen für 4.
+
+     `delay:500ms` und nicht sofort: „12" wird als „1" und „12" getippt, und
+     ohne die Pause liefe der Zug zweimal — einmal davon für eine Zahl, die
+     niemand gemeint hat. `changed` hält den Tausch zurück, wenn der Wert
+     derselbe geblieben ist (Klick ins Feld, Pfeiltaste, Zurückbewegen).
+
+     Das Feld trägt eine feste `id`, und das ist die Bedingung dafür, dass es
+     überhaupt geht: der Tausch ersetzt den ganzen Zug samt diesem Eingabefeld,
+     und htmx stellt Fokus und Schreibmarke nur an einem Element mit derselben
+     `id` wieder her. Ohne sie verlöre man mitten im Tippen die Tastatur.
+
+     Der Knopf bleibt: ohne JavaScript ist er der einzige Weg, und mit
+     JavaScript spart er die halbe Sekunde. #}
   <form class="zugportionen" method="post"
         action="/chat/{{ m.id }}/portionen"
         hx-post="/chat/{{ m.id }}/portionen"
+        hx-trigger="submit, input changed delay:500ms"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <input type="hidden" name="rezept" value="{{ r.id }}">
     <label>Für wie viele Portionen?
       <input type="text" inputmode="numeric" name="portionen"
+             id="zugportionen-{{ m.id }}"
              value="{{ r.portionen }}"
              aria-label="Portionen für „{{ r.name }}“"></label>
     <button class="mini" type="submit">Mengen neu rechnen</button>

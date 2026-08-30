@@ -132,6 +132,11 @@
      `_nachtrag.html` trägt beide out-of-band nach. #}
   <div id="chat-fehler-unten">{% include "_chatfehler.html" %}</div>
 
+  {# Der Wartezähler (WB-414) — zwischen der Meldung und dem Feld, also da,
+     wo der Blick nach dem Tipp auf „Fragen" ohnehin hängt. Er steht nur da,
+     wenn ein Satz auf das Modell wartet. #}
+  {% if warten_satz %}{% include "_chatwarten.html" %}{% endif %}
+
   <form class="chatform" method="post" action="/chat"
         hx-post="/chat" hx-target="#chat" hx-swap="outerHTML"
         hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
