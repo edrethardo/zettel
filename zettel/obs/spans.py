@@ -160,7 +160,14 @@ def setze(span, attribute: dict) -> None:
     OpenTelemetry lehnt `None` als Attributwert ab und protokolliert das —
     ein Feld, das es diesmal nicht gibt (`weakest_rank` auf dem Rezeptweg),
     soll fehlen und nicht als Warnung auffallen.
+
+    **Und ein fehlender SPAN ist ebenso kein Fehler.** Ohne eingerichteten
+    Tracer gibt `stufe()` `None` zurück (anders als `chain()`); jede
+    Aufrufstelle dieselbe Abfrage schreiben zu lassen, hiesse, sie einmal zu
+    vergessen — und dann zerbricht ein Chat-Zug daran, dass niemand hinsieht.
     """
+    if span is None:
+        return
     for name, wert in attribute.items():
         if wert is None:
             continue

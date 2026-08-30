@@ -85,6 +85,7 @@ from zettel import gerichte, mengen, obs, orders
 from zettel.assistant import (entwurf, herkunft, oberbegriffe, plan,
                                 rezeptweg, vorschlaege, zugrezept,
                                 zuordnung)
+from zettel.assistant import gedaechtnis as ged
 from zettel.catalog import search
 from zettel.gerichte import speicher as gerichtespeicher
 from zettel.llm import wake
@@ -380,7 +381,7 @@ class Chat:
              span_id: str | None = None, *,
              auffaechern: bool | None = None,
              aus_sorten: tuple[str, list[str]] | None = None,
-             gewechselt: str | None = None) -> Ergebnis:
+             gewechselt: str | None = None, frisch: bool = False) -> Ergebnis:
         """Ein Satz -> eine Vorschlagsliste. Legt nichts in den Warenkorb.
 
         Wirft `ChatFehler`, wenn der Satz leer ist, und `ChatNichtVerfuegbar`,
@@ -399,6 +400,12 @@ class Chat:
         ist der Weg zurück in den Freitext: wer den Oberbegriff überspringt,
         soll nach „Aufschnitt" suchen können, ohne dass ihm dieselbe Frage
         noch einmal gestellt wird.
+
+        `frisch=True` heisst „neu suchen" (WB-411): das Gedächtnis wird für
+        DIESEN Zug übergangen — weder die Zuordnung des Rezepts noch die
+        gemerkten Wahlen je Begriff. Was dabei herauskommt, überschreibt
+        beide. Der Weg zurück aus einer einmal danebengegriffenen Wahl; ohne
+        ihn wäre das Gedächtnis ein Käfig statt einer Abkürzung.
 
         `gewechselt` ist der Titel des Rezepts, das ein Mensch anstelle der
         Vorauswahl genommen hat (WB-387). Er ändert am Ablauf NICHTS — das
@@ -470,7 +477,8 @@ class Chat:
                 # Rezept verschwunden (gelöscht, abgelaufen). Dann gilt der
                 # Modellweg — und zwar auch als `weg`, damit im Trace nicht
                 # `chefkoch` steht, wo das Modell geraten hat.
-                aus_quelle = self._aus_quelle(con, text, gerichtsweg)
+                aus_quelle = self._aus_quelle(con, text, gerichtsweg,
+                                              frisch=frisch)
 
             if treffer:
                 plan_zeilen, meldung = self._aus_rezept(con, treffer)
@@ -496,7 +504,8 @@ class Chat:
                 zusatz = {"faecher": faecher}
             elif aus_sorten is not None:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
-                 zusatz) = self._aus_sorten(con, text, *aus_sorten)
+                 zusatz) = self._aus_sorten(con, text, *aus_sorten,
+                                            frisch=frisch)
                 weg = WEG_LLM
             elif aus_quelle is not None:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
@@ -505,7 +514,8 @@ class Chat:
             else:
                 (plan_zeilen, meldung, begriffe, verworfen, aufgaben,
                  zusatz) = self._aus_modell(
-                     con, text, auffaechern=self._faechern(auffaechern))
+                     con, text, auffaechern=self._faechern(auffaechern),
+                     frisch=frisch)
                 # Der Modellweg kann UNTERWEGS zum Quellenweg werden
                 # (WB-367): Stufe 1 nennt ein Gericht, das noch niemand
                 # geholt hat, es wird geholt, und die Zutaten kommen dann
@@ -671,7 +681,8 @@ class Chat:
 
     # -- Weg 2: die Quelle (WB-338) ---------------------------------------
 
-    def _aus_quelle(self, con, text: str, gefunden):
+    def _aus_quelle(self, con, text: str, gefunden, *,
+                    frisch: bool = False):
         """Die Zutaten kommen aus dem geholten Rezept, nicht aus dem Modell.
 
         Gibt `None` zurück, wenn dieser Weg doch nicht gangbar ist; der
@@ -731,7 +742,7 @@ class Chat:
         # — `herkunft` weiss es, aber ein Begriff kann zu beiden passen. Der
         # seltene Fall zahlt weiter das Modell.
         gemerkt = (zuordnung.lesen(con, int(quellen[0]["id"]))
-                   if len(quellen) == 1 else None)
+                   if len(quellen) == 1 and not frisch else None)
         if gemerkt is not None:
             # `herkunft.zuordnen` läuft neu und wird nicht mitgespeichert:
             # `bedarf`, `einheit` und die Herkunftszutat entstehen ohne
@@ -775,7 +786,8 @@ class Chat:
             auswahl, choose_kaputt = self._waehlen_gemerkt(
                 con, int(quellen[0]["id"]), gemerkt, aufgaben)
         else:
-            auswahl, choose_kaputt = self._waehlen("", aufgaben)
+            auswahl, choose_kaputt = self._waehlen(
+                con, "", aufgaben, gedaechtnis=not frisch)
             if merken is not None:
                 zuordnung.schreiben(con, int(quellen[0]["id"]), merken,
                                     auswahl)
@@ -876,7 +888,7 @@ class Chat:
                 return "notbehelf"
             aufgaben = self._suchen(con, begriffe)
             try:
-                auswahl, kaputt = self._waehlen("", aufgaben)
+                auswahl, kaputt = self._waehlen(con, "", aufgaben)
             except ChatNichtVerfuegbar:
                 return "kein_modell"
             if kaputt is not None:
@@ -939,8 +951,8 @@ class Chat:
                 f"Für {len(offen)} Begriff(e) stand nichts im Gedächtnis, "
                 f"und das Modell bedient gerade nicht ({zustand.grund or ''}"
                 ").".replace(" ()", ""))
-        frisch, kaputt = self._waehlen("", offen)
-        zusammen = zuordnung.verschmelzen(aus_speicher, frisch)
+        neue, kaputt = self._waehlen(con, "", offen)
+        zusammen = zuordnung.verschmelzen(aus_speicher, neue)
         # Was zum REZEPT gehörte und neu gewählt wurde, wird nachgetragen —
         # sonst fragte ein verschwundenes Produkt bei jedem Zug aufs Neue.
         bekannt = {g["suchbegriffe"][0] for g in gemerkt if g["suchbegriffe"]}
@@ -1102,7 +1114,7 @@ class Chat:
     # -- Die gewählten Sorten (WB-368) ------------------------------------
 
     def _aus_sorten(self, con, text: str, kategorie: str,
-                    sorten: list[str]):
+                    sorten: list[str], *, frisch: bool = False):
         """Eine gewählte Sorte -> der normale Kandidatenablauf.
 
         **Nur Stufe 2 ist eine andere.** Statt der Volltextsuche liefert der
@@ -1126,8 +1138,9 @@ class Chat:
             raise ChatNichtVerfuegbar(zustand)
 
         aufgaben = self._sorten_suchen(con, kategorie, sorten)
-        auswahl, choose_kaputt = self._waehlen(text, aufgaben,
-                                               self.system_choose_sorte)
+        auswahl, choose_kaputt = self._waehlen(
+            con, text, aufgaben, self.system_choose_sorte,
+            gedaechtnis=not frisch)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
 
         n = len(sorten)
@@ -1183,7 +1196,8 @@ class Chat:
 
     # -- Weg 3: Modell ----------------------------------------------------
 
-    def _aus_modell(self, con, text: str, *, auffaechern: bool = True):
+    def _aus_modell(self, con, text: str, *, auffaechern: bool = True,
+                    frisch: bool = False):
         """Die drei Stufen aus Spec 6.
 
         Reihenfolge mit Absicht: erst der Weckzustand (billig, und ohne
@@ -1286,7 +1300,8 @@ class Chat:
             # weggeworfen — es war der Preis dafür, den Gerichtsnamen
             # überhaupt zu kennen, und eine geratene Zutatenliste neben
             # einer echten stehen zu lassen wäre der schlechteste Ausgang.
-            aus_quelle = self._aus_quelle(con, text, gefunden)
+            aus_quelle = self._aus_quelle(con, text, gefunden,
+                                          frisch=frisch)
             if aus_quelle is not None:
                 (zeilen, meldung, begriffe, verworfen, aufgaben,
                  zusatz) = aus_quelle
@@ -1294,7 +1309,8 @@ class Chat:
                         {**zusatz, "abruf": abruf, "weg": WEG_QUELLE})
 
         aufgaben = self._suchen(con, begriffe)
-        auswahl, choose_kaputt = self._waehlen(text, aufgaben)
+        auswahl, choose_kaputt = self._waehlen(con, text, aufgaben,
+                                               gedaechtnis=not frisch)
         zeilen, freitext = self._zeilen(aufgaben, auswahl)
 
         meldung = self._meldung_modell(begriffe, freitext, auswahl,
@@ -1392,7 +1408,8 @@ class Chat:
                                                              aufgehoben)})
         return aufgaben
 
-    def _waehlen(self, text: str, aufgaben: list[dict], system=None):
+    def _waehlen(self, con, text: str, aufgaben: list[dict], system=None, *,
+                 gedaechtnis: bool = True):
         """Stufe 3: das Modell wählt aus den VORGELEGTEN Kandidaten.
 
         `system` überschreibt den Prompt für DIESEN Aufruf — gebraucht wird
@@ -1407,20 +1424,41 @@ class Chat:
         Die Zusicherung der Stufe ist davon unberührt — gewählt wird nach wie
         vor nur aus den vorgelegten Kandidaten.
         """
+        bekannt, offen = [], list(aufgaben)
+        if gedaechtnis and con is not None:
+            bekannt, offen = ged.teilen(aufgaben, ged.lesen(con, aufgaben))
+        aus_speicher = ged.auswahl_aus(bekannt)
+        if not offen:
+            # Nichts zu fragen. Der teuerste Teil des Zugs entfällt ganz —
+            # gemessen 14,71 s Median.
+            ged.benutzt(con, bekannt)
+            return aus_speicher, None
         try:
-            with obs.stufe("plan.choose"):
-                auswahl = plan.choose(self.zugang, text, aufgaben,
-                                      guided=self.guided, denken=self.denken,
-                                      system=system or self.system_choose)
-            return auswahl, None
+            with obs.stufe("plan.choose") as span:
+                obs.setze(span, {"zettel.aus_gedaechtnis": len(bekannt),
+                                 "zettel.gefragt": len(offen)})
+                frisch = plan.choose(self.zugang, text, offen,
+                                     guided=self.guided, denken=self.denken,
+                                     system=system or self.system_choose)
         except plan.PlanFehler as e:
             # Auch das kostet keinen Begriff: ohne Wahl wird JEDER Begriff zu
             # einem Freitext-Vorschlag. Lieber eine Liste, in der die Nutzerin
-            # selbst sucht, als eine leere.
-            return plan.Auswahl(), str(e)
+            # selbst sucht, als eine leere. Was aus dem Gedächtnis kam, bleibt
+            # trotzdem stehen — es hat mit dieser Antwort nichts zu tun.
+            return aus_speicher, str(e)
         except ModellNichtErreichbar as e:
             raise ChatNichtVerfuegbar(
                 wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
+        if con is not None:
+            # **Geschrieben wird immer, gelesen nur mit `gedaechtnis`.** Das
+            # ist der Unterschied, an dem „Neu suchen" hängt (WB-411): der
+            # Lauf soll die alte Erinnerung übergehen UND die neue an ihre
+            # Stelle setzen. Wäre auch das Schreiben abgeschaltet, hiesse
+            # „neu suchen" nur „diesmal anders" — und beim nächsten Satz
+            # stünde die verworfene Wahl wieder da.
+            ged.merken(con, offen, frisch)
+            ged.benutzt(con, bekannt)
+        return zuordnung.verschmelzen(aus_speicher, frisch), None
 
     def _zeilen(self, aufgaben: list[dict], auswahl):
         """Aus Aufgaben und Wahl die Vorschlagszeilen. Kein Begriff fällt weg.
@@ -1507,8 +1545,21 @@ class Chat:
         return 1 if aufgabe.get("bedarf") is not None else geraten
 
     def _meldung_auswahl(self, auswahl, choose_kaputt) -> list[str]:
-        """Was an Stufe 3 schiefging — auf beiden Modellwegen derselbe Satz."""
+        """Was an Stufe 3 schiefging — auf beiden Modellwegen derselbe Satz.
+
+        **Und was gar nicht erst gefragt wurde** (WB-411). „Melde dass sie
+        cached sind" — der Satz steht hier und nicht in der Oberfläche, weil
+        er zur ANTWORT gehört: er bleibt im Verlauf stehen, auch nach dem
+        Neuladen, und er ist die Begründung für den Knopf „Neu suchen"
+        daneben.
+        """
         teile = []
+        aus_speicher = sum(1 for w in auswahl.gewaehlt if w.get("gedaechtnis"))
+        if aus_speicher:
+            teile.append(
+                f"{aus_speicher} von {len(auswahl.gewaehlt)} Zeilen kamen aus "
+                "dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne "
+                "Modell. „Neu suchen“ fragt es noch einmal.")
         if auswahl.verworfen:
             # Das ist die Zahl, um die es in Spec 6 geht. Sie wird angezeigt
             # und nicht bloss protokolliert: ein Modell, das erfindet, soll
