@@ -32,7 +32,14 @@
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}"
         hx-disabled-elt="find button">
-    <button class="mini" type="submit">Alles verwerfen</button>
+    {# Rotstift, wie überall im Blatt, wo etwas wegkommt (WB-400 Runde 3):
+       „gab's nicht" auf /pick, das „×" im Korb, „Ja, Rezept löschen" auf der
+       Rückfrage-Seite. Die beiden Sammelknöpfe sahen bis hierher identisch
+       aus — derselbe Kasten, dieselbe Schrift —, obwohl der eine fünfzehn
+       Zeilen in den Korb legt und der andere fünfzehn wegwirft. Nur die
+       Schriftfarbe, keine Füllung: die Füllung gehört dem Zustand, und der
+       Knopf steht an jedem noch offenen Zug. #}
+    <button class="mini loeschen" type="submit">Alles verwerfen</button>
   </form>
 </div>
 {% endif %}

@@ -190,6 +190,67 @@ def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
     assert "display: none" not in balken
 
 
+def test_die_leiste_rastet_auf_den_anfang_eines_ziels():
+    """Sie darf weitergehen, aber links darf kein halbes Wort stehen
+    (WB-400 Runde 3).
+
+    Gemessen wurde am Bild und im Browser: mit `scrollIntoView({inline:
+    'center'})` und `scroll-snap-align: end` blieben auf acht von zwölf
+    Seiten zwischen 10 und 58 px eines Ziels am linken Rand stehen — „pte"
+    auf /bestellungen, „en" auf /pick. Ob ein Fetzen SICHTBAR ist,
+    entscheidet ein Gerät; hier steht, dass die beiden Stellschrauben, die
+    ihn erzeugt haben, in die andere Richtung stehen."""
+    stil = STIL.read_text(encoding="utf-8")
+    nav = stil.split(".kopf nav {", 1)[1].split("}", 1)[0]
+    assert "scroll-snap-type: x mandatory" in nav
+    ziel = stil.split(".kopf nav a {", 1)[1].split("}", 1)[0]
+    assert "scroll-snap-align: start" in ziel
+    assert "scroll-snap-align: end" not in ziel
+
+
+def test_das_letzte_ziel_der_leiste_ist_erreichbar():
+    """Firefox rechnet den Überhang des letzten Flex-Kindes nicht in
+    `scrollWidth`: „wer bin ich?" blieb auch am Anschlag angeschnitten. Der
+    Abstandhalter am Ende der Leiste IST ein Flex-Kind und zählt mit."""
+    stil = STIL.read_text(encoding="utf-8")
+    assert ".kopf nav::after" in stil
+    block = stil.split(".kopf nav::after", 1)[1].split("}", 1)[0]
+    assert "flex:" in block
+
+
+def test_das_foto_faengt_auf_derselben_hoehe_an_wie_der_name():
+    """Eine Zeile trägt einen Satz von einer bis sechs Zeilen; ein mittig
+    ausgerichtetes Foto rutschte mit ihm nach unten und ergab neun
+    verschiedene Abstände auf EINER Seite (WB-400 Runde 3). Bild und Text
+    beginnen oben — ein Abstand statt neun."""
+    stil = STIL.read_text(encoding="utf-8")
+    bild = stil.split(".zeile > .bild {", 1)[1].split("}", 1)[0]
+    text = stil.split(".zeile > .text {", 1)[1].split("}", 1)[0]
+    assert "align-self: start" in bild
+    assert "align-self: start" in text
+
+
+def test_der_sammelknopf_der_wegwirft_traegt_den_rotstift(client, con):
+    """„Alles übernehmen" und „Alles verwerfen" sahen gleich aus — derselbe
+    Kasten, dieselbe Schrift —, obwohl der eine eine ganze Liste in den Korb
+    legt und der andere sie wegwirft. Überall sonst im Blatt trägt das
+    Wegnehmen den Rotstift (`.mini.loeschen`, `.knopf.loeschen`)."""
+    con.execute("INSERT INTO orders (state, created_at)"
+                " VALUES ('draft', '2026-08-30 00:00:00')")
+    oid = con.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+    con.execute("INSERT INTO chat_message (order_id, role, content,"
+                " created_at) VALUES (?, 'agent', 'da', '2026-08-30 00:00:00')",
+                (oid,))
+    mid = con.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+    con.execute("INSERT INTO chat_suggestion (chat_message_id, product_id,"
+                " free_text, qty, search_term) VALUES (?, NULL, 'Salz', 1, 'Salz')",
+                (mid,))
+    con.commit()
+    text = client.get("/chat").text
+    assert 'class="mini loeschen" type="submit">Alles verwerfen' in text
+    assert 'class="mini" type="submit">Alles übernehmen' in text
+
+
 # --------------------------------------------------------------------------
 # 3. Kein Eingabefeld unter 16 px
 
