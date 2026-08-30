@@ -739,3 +739,52 @@ zu treffen.
 
 **Der Kamera-Take mit Modell und Phoenix steht noch aus** — die Box war den
 ganzen Abend am Laden.
+
+
+## Der Take vom 31.08. — der letzte (WB-420)
+
+„Wir machen später keinen neuen Take mehr." Also steht hier, was drin ist,
+damit ein Schnitt ohne neue Aufnahme wiederholbar bleibt.
+
+**Rohaufnahme:** `~/picknick-video/take_a.mkv` (275 s, 1920×1080, 30 fps,
+13,1 MB), Zeitmarken daneben in `zeitmarken.txt`.
+**Schnitt:** `zettel_demo_2026-08-31.mp4` (85,5 s) und `.srt`.
+
+Drei ältere Takes desselben Abends liegen daneben und sind NICHT verwendbar,
+jeder aus einem benannten Grund:
+
+    take_a_2247.mkv   Sammelknöpfe nicht gefunden, Phoenix auf der Übersicht
+    take_a_2345.mkv   Sammelknöpfe nicht gefunden
+    take_a_2353.mkv   sauber, aber Shot 7 zeigt eine korb.menge-Spur
+
+**Der letzte Lauf hat als einziger keine Warnung erzeugt** — und das ist die
+Bedingung, unter der die Untertitel benutzt werden dürfen (siehe
+`schnitt.py`): jede Aussage im Text ist eine Wirkung, die `dreh.py` in der
+Datenbank nachgeprüft hat.
+
+| Marke | s | was im Bild steht |
+|---|---|---|
+| ABGESCHICKT | 12,6 | der Satz ist weg, die 3090 springt an |
+| Antwort da | 32,5 | **19,9 s** Modelllauf, zwei Stufen |
+| Portionen umgestellt | 56,3 | 4 → 6, Bedarf Spinat **1200 g** |
+| Ja beim Spinat / Klopapier | 76,4 / 123,0 | zwei Zeilen einzeln, eine davon Freitext |
+| Alles übernehmen | 150,2 | offen 0, **Korb 2 → 14** |
+| Doch nicht alles | 162,3 | offen 12, kept 2 — die zwei einzeln bestätigten bleiben |
+| Bestellung abgeschickt | 196,2 | 14 Posten |
+| abgehakt / gab's nicht | 218,1 / 224,1 | `missing_at` gesetzt |
+| chat.turn geöffnet | 236,5 | 11 Span-Namen sichtbar |
+| catalog.search geöffnet | 246,2 | Retriever-Dokumente mit Score |
+
+Die letzte Einstellung zeigt den Trace `57c1a081…` mit **24,9 s Latenz** und
+dem Baum `recipe.zuordnung → plan.extract → 12 × catalog.search →
+plan.choose`; aufgeklappt ist ein Retriever-Span mit Input `"Aubergine"` und
+Output `document 5005`, Score **13,08**, „Aubergine – Japanische Aubergine,
+Beutel · 250 g · 2,99 €" samt `via`, Kategorie, Preis und `vorraetig: false`.
+
+### Was am Schnitt noch fehlt
+
+* **Shot 0 (Gesicht) und das Voice-Over** — die 5 s Schwarz am Anfang sind
+  dafür reserviert, das Sprechskript steht oben.
+* Die Aufnahme ist 2,5 s kürzer als der Durchlauf; abgeschnitten ist nur die
+  Schlusspause nach der letzten Marke. Wer nachträgt, setzt `DAUER` in
+  `aufnahme.sh` auf 300.
