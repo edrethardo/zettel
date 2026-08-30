@@ -102,3 +102,40 @@ def test_derselbe_befund_wird_nicht_zweimal_geholt():
         assert len(gefragt) == 2, "Der Befund wurde nie erneuert."
     finally:
         wake.health = echt
+
+
+def test_die_trefferzahl_liest_aus_der_fts_heraus(tmp_path):
+    """`count()` darf nicht über den Katalog laufen (WB-410).
+
+    Mit einem gewöhnlichen `JOIN` drehte SQLite die Reihenfolge um — Index
+    `ix_product_active` zuerst, also alle aktiven Produkte, und je Zeile eine
+    FTS-Anfrage. Gemessen am echten Katalog: „bio joghurt natur" 1.871 ms für
+    die Zahl 43, während `search()` dieselben Treffer in 1,3 ms holte.
+
+    Geprüft wird der PLAN und nicht die Zeit: eine Zeitmessung im Testlauf
+    misst die Maschine, auf der sie läuft. Der Plan sagt dieselbe Sache
+    schärfer — steht die virtuelle Tabelle nicht an erster Stelle, ist der
+    Fehler wieder da.
+    """
+    from zettel.catalog import search
+
+    con = db.connect(tmp_path / "zettel.db")
+    db.migrate(con)
+    try:
+        con.execute(
+            "INSERT INTO product (source, external_id, name, price_cents,"
+            " unit_text, category_l1) VALUES ('knuspr', 'x1', 'Bio Joghurt"
+            " natur', 99, '500 g', 'Molkerei')")
+        con.commit()
+        query = search.fts_query("bio joghurt natur")
+        platz = ", ".join("?" for _ in search.AUSGESCHLOSSENE_KATEGORIEN)
+        plan = [tuple(r)[3] for r in con.execute(
+            "EXPLAIN QUERY PLAN SELECT count(*) AS n"
+            "  FROM product_fts f CROSS JOIN product p ON p.id = f.rowid"
+            " WHERE product_fts MATCH ? AND p.active = 1"
+            f"   AND coalesce(p.category_l1, '') NOT IN ({platz})",
+            (query, *search.AUSGESCHLOSSENE_KATEGORIEN))]
+        assert plan and "VIRTUAL TABLE" in plan[0], plan
+        assert search.count(con, "bio joghurt natur") == 1
+    finally:
+        con.close()
