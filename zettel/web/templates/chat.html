@@ -48,6 +48,35 @@
    Ohne JavaScript gibt es keinen Tausch und also auch nichts anzukern; die
    Vollseite kommt zurück und der Browser stellt seine Position selbst her. #}
 <script>
+{# Der Wartezähler tickt im Browser (WB-414).
+
+   Der Kasten fragt alle drei Sekunden nach; sein Zählerstand käme also in
+   Dreiersprüngen. Das sieht aus wie ein hängender Fortschrittsbalken —
+   besonders beim Aufwachen, wo aus dem Schlaf gemessene 96 Sekunden
+   vergehen. Einmal je Sekunde ist der Unterschied zwischen „es läuft" und
+   „es steht".
+
+   EIN Intervall für die ganze Seite, das bei jedem Tick nachsieht: der Kasten
+   wird alle drei Sekunden ausgetauscht, und ein Zähler je Kasten müsste
+   danach neu angehängt werden. Läuft nichts, kostet der Tick eine
+   erfolglose Suche im Dokument.
+
+   Die Zahl steht in `data-warten-bis` und wird dort auch fortgeschrieben,
+   damit der nächste Tick nicht den TEXT lesen muss. #}
+(function () {
+  setInterval(function () {
+    var z = document.querySelector('[data-warten-bis]');
+    if (!z) return;
+    var rest = parseInt(z.getAttribute('data-warten-bis'), 10) - 1;
+    if (rest >= 1) {
+      z.setAttribute('data-warten-bis', rest);
+      z.textContent = 'noch ~' + rest + ' s';
+    } else {
+      z.removeAttribute('data-warten-bis');
+      z.textContent = 'es dauert länger als sonst';
+    }
+  }, 1000);
+})();
 (function () {
   var merk = null;
   addEventListener('htmx:beforeSwap', function (e) {

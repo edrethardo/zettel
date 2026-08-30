@@ -1,0 +1,66 @@
+{# Der Shop fragt von selbst noch einmal (WB-414).
+
+   Der Nutzer: „Sorg dafür dass der Timer bis die Antwort kommt interaktiv ist
+   wenn das Modell aufgerufen wird, besonders wenn es schläft. Und dass man
+   danach nicht nochmal klicken muss."
+
+   Bis hierher endete ein Satz an eine schlafende Box in einer Meldung:
+   „Das Modell wacht gerade auf — dein Satz steht noch im Feld. Gleich noch
+   einmal „Fragen“ tippen." Das ist zweimal schlecht. Der Satz war schon
+   getippt und schon abgeschickt; ihn ein zweites Mal abzuschicken ist Arbeit,
+   die der Shop selbst tun kann. Und „gleich" ist keine Angabe — die Box
+   braucht aus dem Schlaf gemessene 96 Sekunden, und in denen steht ein Band,
+   das sich alle fünf Sekunden um denselben Satz erneuert.
+
+   **Dieser Kasten ersetzt sich selbst, bis die Antwort da ist.** Alle drei
+   Sekunden fragt er `/chat/warten` mit demselben Satz. Bedient die Box nicht,
+   kommt derselbe Kasten zurück — 700 Bytes, mit neuem Zählerstand. Bedient
+   sie, läuft der Zug, und die Antwort kommt mit `HX-Retarget` an den ganzen
+   Chat. Es ist derselbe Eingang für beides, weil es dieselbe Frage ist.
+
+   **Warum nicht der ganze Chat je Runde?** Weil WB-372 ihn von 215 KB auf
+   45 KB gedrückt hat und dreissig Runden Warten daraus 1,3 MB machten. Der
+   Kasten tauscht sich selbst (`hx-target="this"`); nur der geglückte Zug
+   tauscht mehr, und das sagt die Antwort per Kopfzeile.
+
+   **Der Zähler tickt im Browser, nicht im Takt der Anfragen** (`data-warten-bis`,
+   die Sekunden in `chat.html`). Alle drei Sekunden um drei zu springen sähe
+   aus wie ein hängender Fortschrittsbalken; einmal je Sekunde ist der
+   Unterschied zwischen „es läuft" und „es steht".
+
+   **Kein `role="status"` am Zähler.** Er ändert sich jede Sekunde, und ein
+   Vorleser, der jede Sekunde eine neue Zahl sagt, ist unbenutzbar — derselbe
+   Befund wie an der Quittung in WB-400. Angesagt wird der SATZ, einmal, wenn
+   der Kasten erscheint; die Zahl daneben ist `aria-hidden`.
+
+   Ohne JavaScript gibt es diesen Kasten trotzdem: dann tickt nichts und
+   nichts fragt nach, aber der Knopf darin schickt denselben Satz noch
+   einmal — genau das, was vorher der einzige Weg war. #}
+<div id="chat-warten"
+     hx-post="/chat/warten"
+     hx-vals='{"satz": {{ warten_satz | tojson }}}'
+     hx-trigger="load delay:3s"
+     hx-target="this" hx-swap="outerHTML">
+  <p class="band chatband laeuft">
+    <span role="status">{{ warten_meldung }}</span>
+    {%- if warten_rest %}
+    <span class="warten-zaehler" aria-hidden="true"
+          data-warten-bis="{{ warten_rest }}">noch ~{{ warten_rest }} s</span>
+    {%- elif warten_ueberfaellig %}
+    <span class="warten-zaehler" aria-hidden="true">es dauert länger als sonst</span>
+    {%- endif %}
+    {%- if warten_grund %}<span class="fussnote">{{ warten_grund }}</span>{% endif %}
+    <span class="fussnote">Dein Satz: „{{ warten_satz }}“ — er läuft, sobald
+      das Modell antwortet. Du musst nichts weiter tun.</span>
+  </p>
+  {# Ohne JavaScript der einzige Weg, und mit JavaScript der Weg für den, der
+     nicht warten will. Dieselbe Adresse wie der Zähler, damit es keine zweite
+     Wahrheit gibt. #}
+  <form class="warten-jetzt" method="post" action="/chat"
+        hx-post="/chat/warten" hx-target="#chat-warten" hx-swap="outerHTML"
+        hx-disabled-elt="find button">
+    <input type="hidden" name="satz" value="{{ warten_satz }}">
+    <button class="mini" type="submit">Jetzt versuchen</button>
+    <a class="ausgang fussnote" href="/chat">Abbrechen</a>
+  </form>
+</div>

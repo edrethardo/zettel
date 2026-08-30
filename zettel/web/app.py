@@ -1163,11 +1163,26 @@ def create_app(db_path: str | Path | None = None,
                                               zeile["vorschlaege"])
         return zeile
 
+    def _warten_kontext(satz: str, zustand) -> dict:
+        """Was der Wartezähler braucht (WB-414).
+
+        Leer, wenn niemand wartet — die Vorlage prüft auf `warten_satz`.
+        """
+        if not satz or zustand is None or zustand.bedient:
+            return {}
+        return {"warten_satz": satz,
+                "warten_meldung": _nicht_verfuegbar_kurz(zustand),
+                "warten_rest": (round(zustand.rest_s)
+                                if zustand.rest_s else None),
+                "warten_ueberfaellig": zustand.ueberfaellig,
+                "warten_grund": zustand.grund}
+
     def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
                       zustand=None, satz: str = "",
                       aufklappen: int | None = None, alles: bool = False,
                       leeren_fragt: bool = False, geleert=None,
-                      gewechselt: str | None = None) -> dict:
+                      gewechselt: str | None = None,
+                      warten: str = "") -> dict:
         """Alles, was `_chat.html` braucht — für Vollseite und Bruchstück.
 
         **Gerendert wird nur der Schwanz des Verlaufs** (WB-372): die letzten
@@ -1212,7 +1227,8 @@ def create_app(db_path: str | Path | None = None,
                 # Chat die halbe Rezeptliste durch das Modell zu schicken.
                 "vorwaermen": max((z["id"] for z in verlauf
                                    if z["role"] == vorschlagsliste.ROLLE_AGENT),
-                                  default=None)}
+                                  default=None),
+                **_warten_kontext(warten, zustand)}
 
     def _nicht_verfuegbar(e: chatmodul.ChatNichtVerfuegbar) -> str:
         """Was am Eingabefeld stehen soll, wenn die Box nicht bedient (WB-378).
@@ -1226,12 +1242,23 @@ def create_app(db_path: str | Path | None = None,
         `str(e)` wäre der Grund selbst („wake-vllm endete mit Code 1 …"). Er
         ist richtig und für diese Stelle unbrauchbar.
         """
-        if e.zustand.zustand == wake.WACHT_AUF:
-            return ("Das Modell wacht gerade auf — dein Satz steht noch im "
-                    "Feld. Gleich noch einmal „Fragen“ tippen.")
-        return ("Das Modell antwortet gerade nicht — dein Satz steht noch im "
-                "Feld. Ein gespeichertes Rezept beim Namen zu nennen, geht "
-                "auch ohne Modell.")
+        return _nicht_verfuegbar_kurz(e.zustand)
+
+    def _nicht_verfuegbar_kurz(zustand) -> str:
+        """Derselbe Satz für die Fehlerzeile und für den Wartezähler.
+
+        **Er sagt seit WB-414 nicht mehr „gleich noch einmal tippen".** Der
+        Satz war schon getippt und schon abgeschickt; ihn ein zweites Mal
+        abzuschicken ist Arbeit, die der Shop selbst tun kann — und seither
+        tut er sie (`/chat/warten`).
+        """
+        if zustand.zustand == wake.WACHT_AUF:
+            return ("Das Modell wacht auf. Dein Satz ist gemerkt und läuft "
+                    "von selbst, sobald es antwortet.")
+        return ("Das Modell antwortet gerade nicht. Dein Satz ist gemerkt und "
+                "läuft von selbst, sobald es wieder da ist — ein "
+                "gespeichertes Rezept beim Namen zu nennen, geht auch ohne "
+                "Modell.")
 
     def _alternativen(c: sqlite3.Connection, v: dict) -> list[dict]:
         """Die aufgehobenen Kandidaten einer verworfenen Zeile (WB-359).
@@ -1253,7 +1280,8 @@ def create_app(db_path: str | Path | None = None,
                       fehler: str | None = None, zustand=None,
                       satz: str = "", aufklappen: int | None = None,
                       alles: bool = False, leeren_fragt: bool = False,
-                      geleert=None, gewechselt: str | None = None):
+                      geleert=None, gewechselt: str | None = None,
+                      warten: str = ""):
         """HTMX bekommt den Chat, ein Formular ohne JavaScript die Seite.
 
         Die GRÖSSTE der drei Antworten (WB-372) und seit dem Ticket die
@@ -1266,7 +1294,8 @@ def create_app(db_path: str | Path | None = None,
         Zeilen — nur die Zahl für die Brücke und den Kopf.
         """
         kontext = {**_chat_kontext(c, fehler, zustand, satz, aufklappen,
-                                   alles, leeren_fragt, geleert, gewechselt),
+                                   alles, leeren_fragt, geleert, gewechselt,
+                                   warten),
                    **_korb_zahlen(c)}
         if ist_htmx(request):
             return vorlagen.TemplateResponse(request, "_chat_antwort.html",
@@ -1436,12 +1465,71 @@ def create_app(db_path: str | Path | None = None,
                 # und die Meldung steht daneben (WB-378), nicht bloss oben am
                 # Band.
                 return _chat_antwort(request, c, zustand=e.zustand, satz=satz,
-                                     fehler=_nicht_verfuegbar(e))
+                                     fehler=_nicht_verfuegbar(e),
+                                     warten=satz)
             except chatmodul.ChatFehler as e:
                 return _chat_antwort(request, c, fehler=str(e), satz=satz)
             return _chat_antwort(request, c)
         finally:
             c.close()
+
+    @app.post("/chat/warten")
+    def chat_warten(request: Request,
+                    werte: Formular = Depends(formular)):
+        """Derselbe Satz noch einmal — von selbst, bis die Box antwortet.
+
+        „Sorg dafür dass der Timer bis die Antwort kommt interaktiv ist …
+        und dass man danach nicht nochmal klicken muss." (WB-414.)
+
+        **Ein Eingang für beides, weil es dieselbe Frage ist.** Bedient die
+        Box nicht, kommt der Wartekasten zurück (rund 700 Bytes, mit neuem
+        Zählerstand) und tauscht sich selbst. Bedient sie, läuft der Zug — und
+        die Antwort ist der ganze Chat, also muss sie woanders hin als der
+        Kasten. Das sagt `HX-Retarget`, nicht eine zweite Adresse.
+
+        **Der ganze Chat je Wartesekunde wäre das falsche Paket.** WB-372 hat
+        ihn von 215 KB auf 45 KB gedrückt; dreissig Runden Warten daraus
+        wären 1,3 MB auf einem Telefon.
+        """
+        satz = werte.get("satz", "")
+        c = con()
+        try:
+            if not satz.strip():
+                return _chat_antwort(request, c,
+                                     fehler="Schreib hin, was du brauchst — "
+                                            "leer geht nicht.")
+            try:
+                app.state.chat.turn(c, satz)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                if not ist_htmx(request):
+                    # Ohne JavaScript gibt es nichts, was sich selbst
+                    # tauschen könnte: dann die Vollseite mit dem Kasten
+                    # darin, und der Knopf darin ist der Weg.
+                    return _chat_antwort(request, c, zustand=e.zustand,
+                                         satz=satz,
+                                         fehler=_nicht_verfuegbar(e),
+                                         warten=satz)
+                return vorlagen.TemplateResponse(
+                    request, "_chatwarten.html",
+                    _warten_kontext(satz, e.zustand))
+            except chatmodul.ChatFehler as e:
+                return _mit_ziel(_chat_antwort(request, c, fehler=str(e),
+                                               satz=satz), request)
+            return _mit_ziel(_chat_antwort(request, c), request)
+        finally:
+            c.close()
+
+    def _mit_ziel(antwort, request: Request):
+        """Die Antwort gehört an den ganzen Chat und nicht an den Kasten.
+
+        Der Wartekasten tauscht sich selbst (`hx-target="this"`), weil er das
+        dreissigmal tut. Der eine geglückte Zug tauscht mehr — und sagt es
+        per Kopfzeile, statt dafür eine zweite Adresse zu brauchen.
+        """
+        if ist_htmx(request):
+            antwort.headers["HX-Retarget"] = "#chat"
+            antwort.headers["HX-Reswap"] = "outerHTML"
+        return antwort
 
     @app.post("/chat/{mid}/sorten")
     def chat_sorten(request: Request, mid: int,

@@ -1362,13 +1362,21 @@ def test_die_schlafende_box_meldet_sich_am_eingabefeld(db_datei, tmp_path):
     assert "Box antwortet nicht." in antwort
 
 
-def test_die_wachende_box_sagt_am_feld_dass_es_gleich_geht(db_datei, tmp_path):
+def test_die_wachende_box_sagt_am_feld_dass_es_von_selbst_geht(db_datei,
+                                                                tmp_path):
+    """Der Satz am Knopf sagt nicht mehr „noch einmal tippen" (WB-414).
+
+    Er war schon getippt und schon abgeschickt. Ihn ein zweites Mal
+    abzuschicken ist Arbeit, die der Shop selbst tut.
+    """
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
     antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX).text
     unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
-    assert "wacht gerade auf" in unten
+    assert "Modell wacht auf" in unten
+    assert "läuft von selbst" in unten
+    assert "noch einmal" not in unten, unten
     assert 'value="Landmilch"' in antwort
 
 
