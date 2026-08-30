@@ -426,6 +426,92 @@ Und die Meldung hat aufgehört, den Wechsel zu behaupten. Sie lautete „„X" i
 jetzt das Rezept zu „Y". <Weckzustand>" — sie stimmte sogar, und genau das
 war der Schaden.
 
+### Die Zuordnung gehört dem Rezept, nicht dem Zug
+
+„Der Wechsel klappt nichteinmal. Fix das so dass es schnell ist. Fix es vor
+allem im Design." (WB-408.) Er dauerte 24 bis 27 Sekunden, weil er denselben
+Satz noch einmal durch `chat.turn` schickte — beide Modellstufen, jedes Mal,
+auch beim Zurückwechseln zu einem Rezept, das eine Minute vorher schon
+gerechnet worden war.
+
+**Das war kein fehlender Zwischenspeicher, sondern eine falsche Zugehörigkeit.**
+Auf dem Quellenweg hängt die Modellarbeit an nichts, was ein Wechsel ändert:
+
+| Stufe | Eingabe | hängt ab von |
+|---|---|---|
+| `plan.zutatenbegriffe` | Zutatenliste, Titel, Portionen | **nur dem Rezept** |
+| `catalog.search` | die Begriffe | Rezept + Katalog |
+| `plan.choose` | Begriffe und Kandidaten, **ohne den Satz** (WB-386) | Rezept + Katalog |
+
+Der Satz steht seit WB-386 ausdrücklich nicht mehr in Stufe 3 — er kostete
+dort die ganze Zutatenliste, sobald das geholte Rezept nicht zu ihm passte.
+Damit ist die gesamte Modellarbeit eines Rezeptzugs eine **reine Funktion des
+Rezepts und des Katalogs**. Sie wurde bloss jedem Zug einzeln in Rechnung
+gestellt.
+
+Also steht sie jetzt am Rezept (`recipe_zuordnung`): je Begriff die Kette aus
+Stufe 1 und das Produkt aus Stufe 3. Ein Zug baut seine Vorschlagsliste daraus
+zusammen; gerechnet wird einmal.
+
+Gemessen am laufenden Shop, echte Box, echter Katalog (2026-08-30):
+
+| | Zeit |
+|---|---|
+| Wechsel auf ein **unbekanntes** Rezept | 30,2 s |
+| Wechsel auf ein **gemerktes** Rezept | **0,29 s** |
+| die Karte davor (unverändert, WB-402) | 0,04 s |
+
+Hundertmal schneller, und die Vorschlagsliste ist dieselbe — dieselben 13
+Zeilen, dieselben Produkte.
+
+**Drei Folgen, die nicht Geschwindigkeit heissen.**
+
+* **Ein Wechsel braucht kein Modell mehr.** Zu einem gemerkten Rezept läuft er
+  auch bei schlafender Box. Genau daran waren die zwei letzten Versuche des
+  Nutzers gescheitert (WB-406).
+* **Dasselbe Rezept kostet die GPU nie zweimal** — auch nicht beim nächsten
+  „alles für Lasagne" in einer Woche.
+* **Die Zuordnung ist auswertbar geworden.** „Welche Produkte hat das Modell
+  diesem Rezept zugeordnet" war vorher eine Frage an die Traces und ist jetzt
+  eine Abfrage. Ein Eval kann dieselbe Zeile bewerten, die der Shop benutzt.
+
+`gewaehlt` und `product_id` beantworten dabei zwei verschiedene Fragen. `NULL`
+bei `gewaehlt = 1` heisst „das Produkt ist aus dem Katalog gefallen" (`ON
+DELETE SET NULL`) und wird neu gefragt; `gewaehlt = 0` heisst „das Modell
+wollte hier nichts" und bleibt zu — sonst kostete jede Zutat ohne
+Katalogtreffer für immer einen Modellaufruf, und die Antwort wäre jedes Mal
+dieselbe. Ein Notbehelf aus `chefkoch.zutat_kette` wird nicht gemerkt: er gäbe
+sich für immer als Modellantwort aus. Und ein neu geholtes Rezept vergisst
+seine Zuordnung, denn sie gehört zu einer Zutatenliste, die es nicht mehr gibt.
+
+### Gerechnet wird, während der Mensch liest
+
+Das Gemerkte macht den zweiten Tipp sofort. Der ERSTE kostete weiter dreissig
+Sekunden — und „quasi sofort" war die Bitte, nicht „beim zweiten Mal sofort".
+
+Also rechnet die Rezeptkarte die obersten **drei** Alternativen vor, während
+das Rezept gelesen wird: drei `hx-post` auf `/chat/<mid>/rezept/vorwaermen`
+mit `hx-trigger="load delay:1s"`, um je eine Sekunde gestaffelt. Die Box
+bedient vier Anfragen nebeneinander mit 74,8 tok/s gegen 24,9 einzeln; ein
+eigener Zug soll dabei trotzdem nicht hinten anstehen.
+
+Vier Regeln halten das im Rahmen:
+
+* **Nur am jüngsten Zug.** Die Karten weiter oben stehen im Verlauf und nicht
+  vor Augen; für sie zu rechnen hiesse, bei jedem Blick in den Chat die halbe
+  Rezeptliste durch das Modell zu schicken.
+* **Vorwärmen ist keine Wahl.** Der Zeiger des Gerichts wird nicht angefasst
+  (`Quelle.bereitstellen` hängt hinterher zurück), und ein Zug entsteht nicht.
+* **Es antwortet immer mit 204.** Niemand hat etwas gefragt; was hier
+  schiefgeht, kostet die Wartezeit des nächsten Tipps und sonst nichts. Eine
+  Seite, die jemand gerade ansieht, darf daran nicht zerbrechen.
+* **Der zweite Aufruf rechnet nicht.** Steht die Zuordnung, ist der Eingang
+  eine Abfrage — sonst kostete jedes Ansehen der Seite drei Modellläufe.
+
+Der Span heisst `recipe.zuordnung` und nicht `chat.turn`. Hier antwortet
+niemand jemandem: kein Satz, keine Nutzerin, keine Vorschlagsliste. Ein
+Vorwärmlauf unter demselben Namen verdürbe jede Auswertung über Züge.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist

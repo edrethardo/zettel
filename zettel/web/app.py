@@ -1157,7 +1157,14 @@ def create_app(db_path: str | Path | None = None,
                 # Zusage über den Korb: die Oberfläche sagt vor dem Wechsel,
                 # dass nichts herausfliegt, und danach, dass nichts
                 # herausgeflogen ist.
-                "gewechselt": gewechselt}
+                "gewechselt": gewechselt,
+                # **Wer vorwärmen darf** (WB-408): genau der jüngste Zug, und
+                # nur er. Die Karten darüber stehen im Verlauf, nicht vor
+                # Augen — für sie zu rechnen hiesse, bei jedem Blick in den
+                # Chat die halbe Rezeptliste durch das Modell zu schicken.
+                "vorwaermen": max((z["id"] for z in verlauf
+                                   if z["role"] == vorschlagsliste.ROLLE_AGENT),
+                                  default=None)}
 
     def _nicht_verfuegbar(e: chatmodul.ChatNichtVerfuegbar) -> str:
         """Was am Eingabefeld stehen soll, wenn die Box nicht bedient (WB-378).
@@ -1545,6 +1552,47 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    @app.post("/chat/{mid}/rezept/vorwaermen")
+    async def chat_rezept_vorwaermen(request: Request, mid: int):
+        """Die Zuordnung einer Alternative rechnen, bevor jemand sie antippt.
+
+        **Der zweite Teil von WB-408.** Die gemerkte Zuordnung macht einen
+        Wechsel zu einem BEKANNTEN Rezept zu einer Datenbankabfrage; damit
+        auch der ERSTE Tipp sofort ist, muss sie schon dastehen. Also rechnet
+        die Karte sie für die obersten Alternativen, während der Mensch das
+        Rezept liest — angestossen aus `_zugrezept.html` mit
+        `hx-trigger="load delay:Ns"`, gestaffelt, ohne Antwort im Dokument.
+
+        **Der Zeiger des Gerichts wird dabei nicht angefasst** (WB-406).
+        Vorwärmen ist keine Wahl: `Quelle.bereitstellen` holt das Detail und
+        hängt hinterher zurück auf das Rezept, das der Chat zeigt.
+
+        **Antwortet immer mit 204 und nie mit einem Fehler.** Niemand hat
+        etwas gefragt; was hier schiefgeht, kostet die Wartezeit des nächsten
+        Tipps und sonst nichts. `HX-Reswap: none` hält auch eine Antwort mit
+        Körper aus dem Dokument heraus.
+        """
+        werte = await eingaben(request)
+        gewuenscht = (werte.get("rezept") or "").strip()
+        leer = Response(status_code=204)
+        c = con()
+        try:
+            karte, treffer = _andere_wahl(c, mid, gewuenscht)
+            if treffer is None or not karte.get("id"):
+                return leer
+            rid = app.state.chat.quelle.bereitstellen(
+                c, karte["gericht"], treffer, zurueck_auf=int(karte["id"]))
+            if rid is None:
+                return leer
+            app.state.chat.zuordnung_vorwaermen(c, int(rid))
+            return leer
+        except Exception:                        # noqa: BLE001 — bewusst breit
+            # Ein Vorwärmlauf darf keine Seite zerbrechen, die jemand ansieht.
+            # Er hat kein Ergebnis, das jemand vermisst.
+            return leer
+        finally:
+            c.close()
+
     def _wahl_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
                          gewuenscht: str):
         """Prüft die gewählte Rezept-ID und holt ihr Rezept.
@@ -1776,6 +1824,10 @@ def create_app(db_path: str | Path | None = None,
             {"mid": mid, "rest": rest, "neue": zeilen,
              "gewechselt": gewechselt, "aufklappen": None, "gerade": None,
              "chat_fehler": None, "chat_zustand": None, "oob": True,
+             # Der frische Zug darf vorwärmen (WB-408) — wer einmal
+             # gewechselt hat, wechselt oft noch einmal, und dann soll die
+             # nächste Wahl schon gerechnet sein.
+             "vorwaermen": zeilen[-1]["id"] if zeilen else None,
              **_korb_zahlen(c)})
 
     @app.post("/chat/{mid}/portionen")

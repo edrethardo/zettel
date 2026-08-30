@@ -113,6 +113,32 @@ class Quelle:
         """Der angebotene Treffer zu dieser Rezept-ID, oder `None`."""
         return speicher.angeboten(con, dish_id, source_id)
 
+    def bereitstellen(self, con: sqlite3.Connection, name: str, treffer: dict,
+                      zurueck_auf: int | None = None) -> int | None:
+        """Sorgt dafür, dass das Detail eines Treffers vorliegt. Gibt die id.
+
+        **Ohne das Gericht umzuhängen** — das ist der ganze Unterschied zu
+        `waehlen()` (WB-408). Gebraucht wird das beim Vorwärmen: die
+        Zuordnung eines Rezepts zu rechnen, das noch niemand gewählt hat,
+        darf nicht bedeuten, dass es plötzlich das Rezept des Gerichts ist.
+
+        `merken()` hängt beim Schreiben um — es ist der gewöhnliche Weg eines
+        frisch geholten Rezepts. Also wird danach zurückgehängt, auf das, was
+        vorher galt. Zwei Zeilen in `dish` statt einer, und dafür kein
+        zweiter Schreibweg durch den ganzen Speicher.
+
+        `None`, wenn die Quelle nicht herausrückte.
+        """
+        vorhanden = speicher.rezept_zur_quelle(con, treffer["rezept_id"])
+        if vorhanden is not None:
+            return int(vorhanden["id"])
+        if self.waehlen(con, name, treffer) != speicher.OK:
+            return None
+        if zurueck_auf:
+            self.zeigt_auf(con, name, int(zurueck_auf))
+        row = speicher.rezept_zur_quelle(con, treffer["rezept_id"])
+        return int(row["id"]) if row is not None else None
+
     def zeigt_auf(self, con: sqlite3.Connection, name: str,
                   recipe_id: int) -> None:
         """Hängt ein Gericht auf ein bereits geholtes Rezept — ohne Netz.
