@@ -13,3 +13,8 @@ data/bons/
 # Private Betriebswerte (WB-388): die echte Adresse der vLLM-Box steht in
 # dieser Datei statt im Code. Sie darf nie Teil des Repos werden.
 picknick.env
+
+# Arbeitsstand des Gestaltungs-Tickets (WB-400): 127 MB Vergleichsbilder,
+# regenerierbar wie graft/. Aus der Git-Historie bekaeme man sie nie wieder raus.
+.wb400/
+.wb393/
