@@ -319,12 +319,75 @@ noch nachgeholt wurden:
 * **`show:` holt die Antwort ins Bild.** Ohne es ändert sich im sichtbaren
   Bereich nichts; dasselbe Mittel wie bei der Katalog-Trefferliste.
 
-**Der alte Zug bleibt dabei stehen**, im Dokument wie in der Datenbank
-(`hx-swap="afterend"`). Das Band verspricht „die alten Vorschläge stehen
-unverändert im Verlauf" — ein Tausch, der sie für eine halbe Minute
-herausnähme, machte den Satz in genau der halben Minute falsch, in der jemand
-nachsehen wollte. Er macht die zweite Antwort nebenbei um seine ganze Grösse
-kleiner.
+**Der alte Zug blieb dabei zunächst stehen**, im Dokument wie in der Datenbank
+(`hx-swap="afterend"`). Das war die halbe Kur, und der Nutzer hat es sofort
+gemeldet — siehe den nächsten Abschnitt.
+
+### Ein Wechsel ist ein Ersatz und kein Nachtrag
+
+„Das ist auch katastrophal. Sorg dafür dass das inplace passiert anstatt dass
+gescrollt wird." (WB-403.) `afterend` hängte den neuen Zug HINTER den alten
+und `show:` holte den Blick dorthin — beides zusammen ist genau der Bildlauf,
+den er meint. Die eigene Datenbank zeigte den Schaden am Bestand: drei
+„Pizza bufala"-Züge untereinander, zwei davon nahezu gleich, weil er zweimal
+ein anderes Rezept gewählt hatte.
+
+**Das Argument für das Anhängen trug nicht.** Angelegt wurde der zweite Zug
+wegen der Eval-Labels (WB-387): jeder Zug trägt seine `mapping_precision`.
+Nach Spec 8.1 zählen offene Vorschläge aber nirgends — weder im Zähler noch
+im Nenner —, und beim Wechsel ist zum alten Rezept per Definition noch nichts
+entschieden. Ein Zug, dessen Zeilen alle offen sind, trägt `quote = None` und
+liefert überhaupt kein Label.
+
+Also ersetzt der Wechsel den Zug an seiner Stelle. Drei Entscheidungen dazu:
+
+* **Markiert wird, nicht gelöscht.** Die neue Chatzeile trägt in
+  `chat_message.ersetzt` die id der abgelösten (dieselbe Richtung wie
+  `corrected_from` in WB-359), und `verlauf()` zeigt von einer Kette nur ihr
+  letztes Glied. Löschen wäre kürzer und wäre falsch: an der alten Zeile
+  hängen Vorschläge, `ON DELETE CASCADE` nähme sie mit, und darunter wären
+  die entschiedenen — die mit Label und Korbwirkung.
+* **Was entschieden wurde, bleibt stehen.** Eine abgelöste Zeile mit einem
+  „Ja" oder „Nein" fällt nicht aus dem Verlauf, sondern schrumpft auf genau
+  diese Zeilen zusammen: kein Rezept mehr (es ist abgewählt), keine offenen
+  Vorschläge (sie meinten es), keine Sammelknöpfe. Was übrig bleibt, ist eine
+  Quittung — und der Weg zurück, denn ein „Ja" ist rücknehmbar (WB-361).
+* **`ersetzt` ist auch die Sortiergrösse.** `ORDER BY coalesce(ersetzt, id)`
+  hält den neuen Zug an der Stelle des alten. Sonst stünde er im Dokument
+  mittendrin und nach dem nächsten Neuladen ganz unten — und ein Wechsel wäre
+  wieder das, was der Nutzer gemeldet hat: etwas, das die Seite umbaut.
+
+**Und der Bildlauf wird ausdrücklich festgehalten.** Zwischen den beiden
+Hälften steht an der Stelle des Zugs nur die Karte: keine Vorschlagsliste,
+keine Zutaten. Die Seite schrumpft dabei um mehrere tausend Pixel und wächst
+danach wieder; Firefox' „scroll anchoring" gleicht das aus, hält sich aber an
+einen Knoten seiner Wahl — am Messstand landete der Blick nach dem zweiten
+und dritten Wechsel am Seitenende, 3.839 und 4.455 Pixel unter dem Tipp.
+Fünfzehn Zeilen in `chat.html` merken sich stattdessen, wie weit der obere
+Rand des getauschten Stücks vom Fensterrand entfernt war, und setzen das neue
+genau dorthin. Das ist wörtlich, was „an Ort und Stelle" heisst.
+
+Dazu zwei Nachzieher, die aus dem Ersetzen folgen: der Indikator ist jetzt
+der Wartekasten selbst (den alten Zug gibt es nicht mehr), und die
+Fehlerantwort bringt den alten Zug wieder mit — sonst bliebe eine Lücke, wo
+eben noch die Karte war, und ein misslungener Wechsel sähe aus wie ein
+geglückter.
+
+Dreimal hintereinander gewechselt, an der echten Box und an einer Kopie der
+echten Datenbank (`scripts/dreh/wechsel_probe.py`, Firefox über geckodriver,
+390 px):
+
+| Wechsel | scrollY | Seitenhöhe | Zug-Kästen | Karte im Bild | „läuft" im Bild |
+|---|---|---|---|---|---|
+| 1 → Pizza Fiji | 9889 → **9889** | 14.487 → 14.250 | 6 → **6** | 0,12 s | 142 von 144 |
+| 2 → Familienpizza | 10110 → **10110** | 14.250 → 14.771 | 6 → **6** | 0,11 s | 168 von 170 |
+| 3 → sehr ursprünglich | 10331 → **10331** | 14.771 → 15.677 | 6 → **6** | 0,11 s | 214 von 216 |
+
+Der Blick steht still, und die Zahl der Zug-Kästen auch. Die 1.190 Pixel, um
+die die Seite über drei Wechsel wächst, sind kein Zuwachs an Zügen: die drei
+Rezepte sind verschieden gross (24,7 / 29,8 / 35,6 KB Antwort). Zwischen den
+beiden Hälften schrumpft die Seite auf rund 11.000 Pixel — dann steht an der
+Stelle des Zugs nur die Karte — und kommt danach zurück.
 
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 

@@ -22,4 +22,51 @@
 <div id="korbbruecke">{% include "_korbbruecke.html" %}</div>
 
 {% include "_chat.html" %}
+
+{# **Der getauschte Zug bleibt an Ort und Stelle** (WB-403) — auch gegen den
+   Bildlauf, den der Browser selbst macht.
+
+   Der Rezeptwechsel ersetzt einen Zug durch einen anderen, und dazwischen
+   liegt eine halbe Minute, in der an seiner Stelle nur die Karte steht: ohne
+   Vorschlagsliste, ohne Zutaten, ohne Alternativen. Die Seite schrumpft dabei
+   um mehrere tausend Pixel und wächst danach wieder. Firefox' „scroll
+   anchoring" versucht das auszugleichen, hält sich aber an einen Knoten
+   SEINER Wahl — am Messstand landete der Blick nach dem zweiten und dritten
+   Wechsel am Seitenende, 3.839 und 4.455 Pixel unter dem Tipp (WB-403,
+   `scripts/dreh/wechsel_probe.py`).
+
+   Also wird der Anker hier ausdrücklich gesetzt: gemerkt wird, wie weit der
+   OBERE RAND des getauschten Stücks vom Fensterrand entfernt war, und danach
+   steht das neue Stück genau dort. Das ist wörtlich, was „an Ort und Stelle"
+   heisst — und es ist dieselbe Zusage für jeden Zugtausch, nicht nur für den
+   Wechsel.
+
+   Der Bezugspunkt ist der VORGÄNGER im Dokument und nicht das Element selbst:
+   das getauschte gibt es nach dem Tausch nicht mehr (`outerHTML`), sein
+   Vorgänger steht unverändert da, und was danach kommt, ist das Neue.
+
+   Ohne JavaScript gibt es keinen Tausch und also auch nichts anzukern; die
+   Vollseite kommt zurück und der Browser stellt seine Position selbst her. #}
+<script>
+(function () {
+  var merk = null;
+  addEventListener('htmx:beforeSwap', function (e) {
+    var ziel = e.detail && e.detail.target;
+    merk = null;
+    if (!ziel || !ziel.matches || !ziel.matches('.zug, .zugwechsel')) return;
+    merk = {oben: ziel.getBoundingClientRect().top,
+            davor: ziel.previousElementSibling,
+            eltern: ziel.parentElement};
+  });
+  addEventListener('htmx:afterSettle', function () {
+    if (!merk) return;
+    var neu = merk.davor ? merk.davor.nextElementSibling
+                         : (merk.eltern && merk.eltern.firstElementChild);
+    if (neu) {
+      scrollBy(0, Math.round(neu.getBoundingClientRect().top - merk.oben));
+    }
+    merk = null;
+  });
+})();
+</script>
 {% endblock %}

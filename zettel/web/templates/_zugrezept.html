@@ -93,26 +93,33 @@
      übersehen worden.
 
      Die Antwort ist die Karte des gewählten Rezepts (`_zugwechsel.html`), und
-     sie kommt sofort — die Vorschläge laufen darin nach. `show:` holt sie an
-     den oberen Fensterrand: dasselbe Mittel wie bei der Trefferliste des
-     Katalogs, und aus demselben Grund — ohne es ändert sich im sichtbaren
-     Bereich nichts.
+     sie kommt sofort — die Vorschläge laufen darin nach.
 
-     **`afterend` und nicht `outerHTML`**, obwohl der Kasten den Zug ersetzt,
-     solange man hinsieht: der alte Zug bleibt im Dokument stehen. Das Band
-     sagt „die alten Vorschläge stehen unverändert im Verlauf" — nähme dieser
-     Tausch sie für eine halbe Minute heraus, wäre der Satz in genau der
-     halben Minute falsch, in der jemand nachsehen wollte. Und die Antwort
-     danach wird um seine Grösse kleiner: gemessen 64.733 -> 34.855 Bytes.
+     **`outerHTML` und kein `show:`** (WB-403). WB-402 setzte den Kasten mit
+     `afterend` HINTER den Zug und holte ihn mit `show:` ins Bild — der alte
+     Zug blieb stehen, der neue kam darunter, und der Blick sprang dorthin.
+     Der Nutzer hat genau das gemeldet: „Sorg dafür dass das inplace passiert
+     anstatt dass gescrollt wird." Nach drei Wechseln standen vier fast
+     gleiche Züge untereinander.
+
+     Also tritt der Kasten AN DIE STELLE des Zugs, und die Seite bewegt sich
+     nicht: was der Nutzer angetippt hat, ist genau da, wo es war. Ein `show:`
+     wäre hier ein Bildlauf ohne Anlass — das Tauschziel steht schon vor
+     Augen. Nur die Fehlerantwort hängt sich eins an (`HX-Reswap`), denn eine
+     Meldung, die niemand sieht, ist keine.
+
+     Was der alte Zug an ENTSCHEIDUNGEN trug, bleibt: die Antwort bringt ihn
+     verkürzt wieder mit, sobald an ihm ein „Ja" oder „Nein" hängt (siehe
+     `_zug.html`). Was er an OFFENEN Vorschlägen trug, kommt nicht wieder —
+     sie meinten das Rezept, das gerade abgewählt wurde, und zählen nach
+     Spec 8.1 nirgends.
 
      Der Indikator ist das Tauschziel (WB-378): blass wird der Zug, aus dem
-     heraus gewechselt wird — und zwar über BEIDE Hälften, denn
-     `_zugwechsel.html` zeigt ihn ebenfalls an. `pointer-events: none` daran
-     verhindert nebenbei den zweiten Tipp, während der erste läuft. #}
+     heraus gewechselt wird. `pointer-events: none` daran verhindert nebenbei
+     den zweiten Tipp, während der erste läuft. #}
   <form class="andere" method="post" action="/chat/{{ m.id }}/rezept"
         hx-post="/chat/{{ m.id }}/rezept"
-        hx-target="#zug-{{ m.id }}"
-        hx-swap="afterend show:#wechsel-{{ m.id }}:top"
+        hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <p class="andere-kopf">Nicht gemeint? {{ r.alternativen | length - 1 }}
       andere Rezepte zu „{{ r.gericht }}“ aus derselben Suche.</p>
@@ -150,9 +157,10 @@
        Der zweite: was ein Wechsel mit dem Korb macht — nämlich nichts. Was
        bestätigt wurde, gehört dem Korb (dieselbe Haltung wie in WB-361 und
        WB-384), und wer das nicht weiss, traut sich nicht zu wechseln. #}
-    <p class="fussnote">Ein anderes Rezept fragt neu — <strong>was schon im
-      Korb liegt, bleibt liegen</strong>. Zutatenzahl und Kochzeit stehen erst
-      im Rezept selbst; die Suche nennt nur die Arbeitszeit.</p>
+    <p class="fussnote">Ein anderes Rezept ersetzt diesen Zug hier —
+      <strong>was schon im Korb liegt, bleibt liegen</strong>, offene
+      Vorschläge zum alten Rezept fallen weg. Zutatenzahl und Kochzeit stehen
+      erst im Rezept selbst; die Suche nennt nur die Arbeitszeit.</p>
   </form>
   {%- endif %}
 

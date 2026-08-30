@@ -10,9 +10,38 @@
    Freitext legen eine NEUE Vorschlagszeile an (WB-359) — sie hat noch kein
    Element im Dokument, in das sie getauscht werden könnte. Dasselbe gilt für
    die Sammelknöpfe und für den Rezeptentwurf, die beide mehrere Zeilen
-   zugleich betreffen. #}
-<div class="zug" id="zug-{{ m.id }}">
-  {% if m.role == "user" %}
+   zugleich betreffen.
+
+   **Ein ÜBERHOLTER Zug steht verkürzt da** (WB-403). Wer ein anderes Rezept
+   wählt, ersetzt den Zug an seiner Stelle; die abgelöste Antwortzeile fällt
+   aus dem Verlauf — es sei denn, ein Mensch hat sie angefasst. Dann bleibt
+   von ihr genau das übrig: die Zeilen, zu denen „Ja" oder „Nein" gesagt
+   wurde, und die, die schon einmal im Korb lagen (`_BERUEHRT`). Sie liegen
+   im Korb oder tragen ein Eval-Label (Spec 8.1), beides gehört der Nutzerin
+   und nicht dem Vorschlag.
+
+   Was dabei WEGFÄLLT, fällt aus einem Grund weg: die Rezeptkarte zeigte ein
+   abgewähltes Rezept, die unberührten Zeilen fragten danach, die
+   Sammelknöpfe entschieden über sie, und die Sorten führten in eine neue
+   Suche zu ihm.
+   Der Entwurf bleibt nur, wenn daraus schon ein Rezept geworden ist — das
+   ist keine Frage mehr, sondern ein Verweis. #}
+<div class="zug{% if m.ueberholt %} ersetzt{% endif %}" id="zug-{{ m.id }}">
+  {% if m.ueberholt %}
+    <p class="band zugband" role="status">Vom vorigen Rezept bleibt, was du
+      entschieden hattest — und was schon einmal im Korb lag.
+      <span class="fussnote">Der Vorschlag selbst ist ersetzt, seine
+        unberührten Zeilen sind weg. Was du bestätigt hast, liegt im
+        Korb.</span></p>
+    <ul class="vorschlaege">
+      {% for v in m.vorschlaege %}
+      {% include "_vorschlag.html" %}
+      {% endfor %}
+    </ul>
+    {% if m.entwurf and m.entwurf.saved_at %}
+    <div id="entwurf-{{ m.id }}">{% include "_entwurf.html" %}</div>
+    {% endif %}
+  {% elif m.role == "user" %}
     <p class="chatzeile ich">{{ m.content }}</p>
   {% else %}
     <p class="chatzeile agent">{{ m.content }}</p>

@@ -399,28 +399,134 @@ def verlauf(con: sqlite3.Connection, order_id: int,
     bleiben bei dem Einkauf, zu dem sie gehören. Der eigene Ort aus WB-382
     ist eine eigene Ansicht, kein eigener Besitzer.
 
-    `ab` schneidet vorne ab und rendert nur die Chatzeilen ab dieser id
+    `ab` schneidet vorne ab und rendert nur die Chatzeilen ab dieser Stelle
     (WB-372). **Das ist eine Anzeigegrenze und keine Löschung** — die Zeilen
     davor stehen unangetastet in der Datenbank, und alles, was am Verlauf
-    hängt (die Eval-Labels aus WB-329, die Rezeptentwürfe aus WB-337, der
-    Zusammenhang, den `chat.turn` liest), sieht ihn weiter ganz. Wer die
-    Grenze setzt, ist die Oberfläche und niemand sonst; die Grenze selbst
-    kommt aus `verlauf_ab()`.
+    hängt (die Eval-Labels aus WB-329, die Rezeptentwürfe aus WB-337), sieht
+    ihn weiter ganz. Wer die Grenze setzt, ist die Oberfläche und niemand
+    sonst; die Grenze selbst kommt aus `verlauf_ab()`.
+
+    **Überholte Zeilen stehen nicht darin** (WB-403). Wer im Chat ein anderes
+    Rezept wählt, ersetzt den Zug an seiner Stelle; die abgelöste Zeile bleibt
+    in der Datenbank und fällt hier heraus — es sei denn, ein Mensch hat eine
+    ihrer Vorschlagszeilen angefasst. Siehe `_SICHTBAR`.
     """
-    bedingung = "" if ab is None else " AND id >= :ab"
+    bedingung = "" if ab is None else " AND coalesce(m.ersetzt, m.id) >= :ab"
     return [_mit_vorschlaegen(con, m) for m in con.execute(
-        _CHATZEILE + " WHERE order_id = :order" + bedingung + " ORDER BY id",
-        {"order": order_id, "ab": ab}).fetchall()]
+        _CHATZEILE + " WHERE m.order_id = :order AND (" + _SICHTBAR + ")"
+        + bedingung + _ORDNUNG,
+        {"order": order_id, "ab": ab, "offen": OFFEN}).fetchall()]
 
 
-_CHATZEILE = ("SELECT id, order_id, role, content, span_id, created_at"
-              "  FROM chat_message")
+#: Hat ein Mensch diese Vorschlagszeile angefasst? (WB-403)
+#:
+#: Zwei Fälle, und beide hinterlassen etwas, das den Zug überlebt:
+#:
+#:   1. sie ist entschieden — „Ja" oder „Nein". Daraus wird beim Abschicken
+#:      ein Eval-Label (Spec 8.1, WB-329).
+#:   2. sie war schon einmal im Korb (`eingelegt_at`), auch wenn die
+#:      Entscheidung zurückgenommen wurde. Der Korbposten bleibt dabei
+#:      absichtlich liegen (WB-361) — verschwände die Zeile trotzdem aus dem
+#:      Verlauf, stünde ein Posten im Korb, zu dem es keine Zeile mehr gibt,
+#:      und der Weg zurück wäre zu.
+#:
+#: Eine zurückgenommene Ablehnung fällt NICHT darunter: sie ist wieder offen
+#: und hat nirgends eine Spur hinterlassen, die zu pflegen wäre.
+_BERUEHRT = "s.decision <> :offen OR s.eingelegt_at IS NOT NULL"
+
+
+def _beruehrt(v: dict) -> bool:
+    """Dieselbe Frage wie `_BERUEHRT`, an einer schon geholten Zeile."""
+    return v["decision"] != OFFEN or v["eingelegt_at"] is not None
+
+
+#: Steht diese Chatzeile noch im Verlauf? (WB-403)
+#:
+#: Zwei Fälle, und der zweite ist der Grund, warum hier nichts gelöscht wird:
+#:
+#:   1. Niemand hat sie abgelöst — der Normalfall, jede Zeile bis WB-403.
+#:   2. Sie ist abgelöst, trägt aber eine BERÜHRTE Zeile (`_BERUEHRT`). Ein
+#:      „Ja" liegt im Korb und ein „Nein" trägt ein Eval-Label (Spec 8.1);
+#:      beides gehört der Nutzerin und nicht dem Vorschlag. Sie bleibt
+#:      sichtbar — in verkürzter Gestalt, siehe `_zug.html`.
+#:
+#: Unberührte Vorschläge einer abgelösten Zeile fallen dagegen weg, und das
+#: ist dieselbe Regel wie in Spec 8.1: **offen zählt nirgends.** Sie tragen
+#: kein Label, sie liegen in keinem Korb, und zu dem Rezept, das sie meinten,
+#: hat die Nutzerin gerade „nicht gemeint" gesagt.
+_SICHTBAR = """
+    NOT EXISTS (SELECT 1 FROM chat_message n
+                 WHERE n.order_id = m.order_id
+                   AND coalesce(n.ersetzt, n.id) = coalesce(m.ersetzt, m.id)
+                   AND n.id > m.id)
+    OR EXISTS (SELECT 1 FROM chat_suggestion s
+                WHERE s.chat_message_id = m.id AND (""" + _BERUEHRT + """))
+"""
+
+#: Die Reihenfolge des Verlaufs — nach der WURZEL und nicht nach der id.
+#:
+#: Ein ersetzter Zug behält seinen Platz (WB-403): die neue Zeile trägt die
+#: id der abgelösten in `ersetzt` und sortiert sich damit dorthin, wo ihre
+#: Vorgängerin stand. Sonst spränge ein Zug, den jemand mitten im Verlauf
+#: wechselt, beim nächsten Neuladen ans Ende — im Dokument stünde er an
+#: seiner Stelle, in der Datenbank ganz unten, und das wäre genau der
+#: Unterschied, den dieses Ticket abschaffen soll.
+#:
+#: `, m.id` als zweites: bleibt eine abgelöste Zeile sichtbar (sie trägt eine
+#: Entscheidung), steht sie vor ihrer Nachfolgerin — die ältere zuerst, wie
+#: überall sonst im Verlauf.
+_ORDNUNG = " ORDER BY coalesce(m.ersetzt, m.id), m.id"
+
+_CHATZEILE = ("SELECT m.id, m.order_id, m.role, m.content, m.span_id,"
+              "       m.created_at, m.ersetzt,"
+              # Ist sie abgelöst? Sichtbar ist sie dann nur noch wegen ihrer
+              # Entscheidungen, und `_zug.html` zeigt sie verkürzt: ohne
+              # Rezeptkarte, ohne die offenen Zeilen, mit einem Band davor.
+              "       EXISTS (SELECT 1 FROM chat_message n"
+              "                WHERE n.order_id = m.order_id"
+              "                  AND coalesce(n.ersetzt, n.id)"
+              "                      = coalesce(m.ersetzt, m.id)"
+              "                  AND n.id > m.id) AS ueberholt"
+              "  FROM chat_message m")
 
 
 def _mit_vorschlaegen(con: sqlite3.Connection, row: sqlite3.Row) -> dict:
     eintrag = dict(row)
+    eintrag["ueberholt"] = bool(eintrag.get("ueberholt"))
     eintrag["vorschlaege"] = liste(con, eintrag["id"])
+    if eintrag["ueberholt"]:
+        # Von einer abgelösten Zeile bleibt genau das, was die Nutzerin
+        # angefasst hat (WB-403, siehe `_BERUEHRT`). Die unberührten Zeilen
+        # daran meinten ein Rezept, das sie gerade abgewählt hat; sie stehen
+        # weiter in der Datenbank, aber sie hier zu zeigen hiesse, zu einem
+        # Vorschlag zu fragen, den es nicht mehr gibt.
+        eintrag["vorschlaege"] = [v for v in eintrag["vorschlaege"]
+                                  if _beruehrt(v)]
     return eintrag
+
+
+def ersetzen(con: sqlite3.Connection, alt_id: int, neu_id: int) -> int:
+    """`neu_id` löst `alt_id` ab (WB-403). Gibt die Wurzel der Kette zurück.
+
+    Der Rezeptwechsel ist der einzige Aufrufer. Er lässt `chat.turn` einen
+    ganz gewöhnlichen Zug schreiben — derselbe Weg, dieselben Labels — und
+    sagt hinterher, welcher alte Zug damit gemeint war.
+
+    **Geschrieben wird die WURZEL und nicht `alt_id` selbst.** Wer dreimal
+    hintereinander wechselt, hat sonst eine Kette, die nur rekursiv zu lesen
+    ist; so tragen alle drei neuen Zeilen dieselbe Zahl, und „welche ist die
+    aktuelle" ist „die mit der grössten id".
+    """
+    row = con.execute("SELECT coalesce(ersetzt, id) AS wurzel"
+                      "  FROM chat_message WHERE id = ?",
+                      (alt_id,)).fetchone()
+    if row is None:
+        raise VorschlagFehler(f"Chatzeile {alt_id} gibt es nicht.")
+    wurzel = int(row["wurzel"])
+    con.execute("UPDATE chat_message SET ersetzt = ? WHERE id = ?",
+                (wurzel, neu_id))
+    con.commit()
+    return wurzel
 
 
 def zug(con: sqlite3.Connection, chat_message_id: int) -> dict | None:
@@ -432,7 +538,7 @@ def zug(con: sqlite3.Connection, chat_message_id: int) -> dict | None:
     Vollansicht dürfen nicht auseinanderlaufen — dieselbe Regel wie bei der
     Trefferliste in WB-323.
     """
-    row = con.execute(_CHATZEILE + " WHERE id = ?",
+    row = con.execute(_CHATZEILE + " WHERE m.id = ?",
                       (chat_message_id,)).fetchone()
     return None if row is None else _mit_vorschlaegen(con, row)
 
@@ -449,22 +555,31 @@ def verlauf_ab(con: sqlite3.Connection, order_id: int,
 
     Gibt `None` zurück, wenn es ohnehin nicht mehr Züge gibt als erlaubt: dann
     ist nichts eingeklappt und die Oberfläche soll auch nicht so tun.
+
+    **Gezählt wird, was im Verlauf STEHT** (WB-403), und die Grenze ist eine
+    Wurzel und keine id: eine überholte Zeile ist kein eigener Zug, sonst
+    schöbe jeder Rezeptwechsel die Grenze um einen Zug weiter und der
+    sichtbare Verlauf schrumpfte bei jedem Wechsel.
     """
     if zuege is None or zuege <= 0:
         return None
     row = con.execute(
-        "SELECT min(id) AS ab FROM ("
-        "  SELECT id FROM chat_message WHERE order_id = ? AND role = ?"
-        "   ORDER BY id DESC LIMIT ?)",
-        (order_id, ROLLE_NUTZERIN, zuege)).fetchone()
+        "SELECT min(wurzel) AS ab FROM ("
+        "  SELECT coalesce(m.ersetzt, m.id) AS wurzel FROM chat_message m"
+        "   WHERE m.order_id = :order AND m.role = :rolle"
+        "     AND (" + _SICHTBAR + ")"
+        "   ORDER BY wurzel DESC LIMIT :zuege)",
+        {"order": order_id, "rolle": ROLLE_NUTZERIN, "zuege": zuege,
+         "offen": OFFEN}).fetchone()
     ab = row["ab"] if row else None
     if ab is None:
         return None
     # Nichts abzuschneiden ist kein Abschneiden. Ohne diese Prüfung stünde
     # über einem kurzen Verlauf ein Knopf „0 ältere Züge anzeigen".
     aelteste = con.execute(
-        "SELECT min(id) AS erste FROM chat_message WHERE order_id = ?",
-        (order_id,)).fetchone()["erste"]
+        "SELECT min(coalesce(m.ersetzt, m.id)) AS erste FROM chat_message m"
+        " WHERE m.order_id = :order AND (" + _SICHTBAR + ")",
+        {"order": order_id, "offen": OFFEN}).fetchone()["erste"]
     return None if aelteste is None or ab <= aelteste else ab
 
 
@@ -480,22 +595,29 @@ def umfang(con: sqlite3.Connection, order_id: int,
     wartet („84 Vorschläge, 12 entschieden"), und in der Rückfrage vor dem
     Leeren sagen sie, was verloren ginge. „Ältere Züge" ohne Zahl wäre an
     beiden Stellen eine Beruhigung statt einer Auskunft.
+
+    **Gezählt wird nur, was im Verlauf steht** (WB-403): eine überholte Zeile
+    ist für die Nutzerin nicht da, und beide Sätze oben sprächen sonst über
+    Zeilen, die sie nie gesehen hat. Verloren geht dabei nichts Zählbares —
+    eine überholte Zeile ohne Entscheidung trägt nach Spec 8.1 kein Label,
+    und eine MIT Entscheidung steht weiter im Verlauf.
     """
-    nur_aeltere = "" if bis is None else " AND id < :bis"
-    nur_aeltere_m = "" if bis is None else " AND m.id < :bis"
+    nur_aeltere = "" if bis is None else " AND coalesce(m.ersetzt, m.id) < :bis"
     zeilen = con.execute(
         "SELECT count(*) AS nachrichten,"
-        "       coalesce(sum(CASE WHEN role = :nutzerin THEN 1 ELSE 0 END), 0)"
-        "           AS zuege"
-        "  FROM chat_message WHERE order_id = :order" + nur_aeltere,
-        {"order": order_id, "nutzerin": ROLLE_NUTZERIN, "bis": bis}).fetchone()
+        "       coalesce(sum(CASE WHEN m.role = :nutzerin THEN 1 ELSE 0 END),"
+        "                0) AS zuege"
+        "  FROM chat_message m WHERE m.order_id = :order"
+        "   AND (" + _SICHTBAR + ")" + nur_aeltere,
+        {"order": order_id, "nutzerin": ROLLE_NUTZERIN, "bis": bis,
+         "offen": OFFEN}).fetchone()
     vorschlaege = con.execute(
         "SELECT count(*) AS vorschlaege,"
         "       coalesce(sum(CASE WHEN s.decision <> :offen THEN 1 ELSE 0 END),"
         "                0) AS entschieden"
         "  FROM chat_suggestion s"
         "  JOIN chat_message m ON m.id = s.chat_message_id"
-        " WHERE m.order_id = :order" + nur_aeltere_m,
+        " WHERE m.order_id = :order AND (" + _SICHTBAR + ")" + nur_aeltere,
         {"order": order_id, "offen": OFFEN, "bis": bis}).fetchone()
     return {**dict(zeilen), **dict(vorschlaege)}
 

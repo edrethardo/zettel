@@ -1,19 +1,30 @@
-{# Ein Rezeptwechsel, der gar nicht erst losgelaufen ist (WB-402).
+{# Ein Rezeptwechsel, der nicht durchgekommen ist (WB-402/WB-403).
 
-   Drei Gründe, und alle drei stehen in `_wahl_vollziehen`: die ID wurde nicht
+   Vier Gründe. Drei stehen in `_wahl_vollziehen` — die ID wurde nicht
    angeboten, es ist ohnehin schon das vorgeschlagene Rezept, oder Chefkoch
-   war beim Holen des Details nicht zu erreichen.
+   war beim Holen des Details nicht zu erreichen. Der vierte steht in
+   `_wechsel_vollziehen`: das Rezept ist gewechselt, aber der Zug dazu ist
+   nicht gelaufen (die Box antwortet nicht).
 
-   **Dieselbe Hülle wie der Wartekasten**, und das ist kein Zufall: das
-   Tauschziel der Alternativenliste ist `afterend` mit
-   `show:#wechsel-N:top` — die Meldung landet dort, wo sonst die neue Karte
-   stünde, und wird ins Bild geholt. Eine Antwort in Zuggrösse wäre hier
-   falsch: `afterend` würde den Zug ein zweites Mal ins Dokument setzen.
+   **Der alte Zug reist mit, und das ist der Unterschied zu WB-402.** Solange
+   der Wartekasten HINTER den Zug gesetzt wurde (`afterend`), stand der Zug
+   auch im Fehlerfall noch da und die Meldung genügte allein. Seit WB-403 der
+   Tausch ihn ERSETZT, nimmt jede Antwort seinen Platz ein — eine Meldung
+   ohne ihn liesse eine Lücke, wo eben noch die Karte war, und ein
+   misslungener Wechsel sähe aus wie ein geglückter. Er kommt unverändert
+   zurück: abgelöst hat ihn nichts, denn es ist nichts an seine Stelle
+   getreten.
 
-   Kein `hx-trigger` daran: hier läuft nichts nach. Der Kasten bleibt stehen,
-   bis jemand neu wählt — dann setzt `afterend` den neuen davor, und
-   `querySelector` nimmt den ersten. #}
+   **Und die Meldung wird ins Bild geholt** — `HX-Reswap` hängt dem Tausch
+   genau hier ein `show:` an. Der gelungene Wechsel scrollt nicht, darum geht
+   das Ticket; aber diese Hülle steht am oberen Rand des ersetzten Stücks,
+   und eine Begründung, die niemand sieht, ist genau die Sorte Rückmeldung,
+   die WB-378 abgeschafft hat.
+
+   Kein `hx-trigger` daran: hier läuft nichts nach. #}
 <div class="zugwechsel" id="wechsel-{{ mid }}">
   <p class="band zugband" role="status">{{ chat_fehler }}</p>
 </div>
+{% if alt %}{% with m = alt %}{% include "_zug.html" %}{% endwith %}{% endif %}
 {% include "_nachtrag.html" %}
+{% if chat_zustand %}{% include "_chatzustand.html" %}{% endif %}
