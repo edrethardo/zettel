@@ -113,6 +113,23 @@ class Quelle:
         """Der angebotene Treffer zu dieser Rezept-ID, oder `None`."""
         return speicher.angeboten(con, dish_id, source_id)
 
+    def zeigt_auf(self, con: sqlite3.Connection, name: str,
+                  recipe_id: int) -> None:
+        """Hängt ein Gericht auf ein bereits geholtes Rezept — ohne Netz.
+
+        Der Rückweg zu `waehlen()`. Er steht hier und nicht nur in
+        `speicher`, weil der Shop mit der Quelle spricht und nicht mit dem
+        Speicher — und weil die Frist an DIESER Uhr hängt.
+
+        **Gebraucht wird er, wo ein Wechsel steckenbleibt.** `waehlen()`
+        hängt das Gericht um, sobald das Detail da ist; der Zug dazu läuft
+        erst danach und kann ausfallen. Dann zeigt das Gericht auf ein
+        Rezept, zu dem es keinen Zug gibt, und der Chat zeigt weiter das
+        alte — gemessen am laufenden Shop, siehe
+        `tests/test_wechselabbruch.py`.
+        """
+        speicher.zeigt_auf(con, name, int(recipe_id), self._uhr)
+
     # -- Holen (jetzt, mit Frist) -----------------------------------------
 
     def holen(self, con: sqlite3.Connection, name: str) -> str | None:

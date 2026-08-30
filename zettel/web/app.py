@@ -1459,10 +1459,16 @@ def create_app(db_path: str | Path | None = None,
         **Seit WB-402 antwortet dieser Eingang in ZWEI Schritten**, und das
         ist die ganze Kur des Tickets:
 
-            1. hier          Detail holen (~20 ms), `dish` umhängen,
-                             die KARTE zurückgeben — sofort
-            2. `/rezept/vorschlaege`   der Zug mit den zwei Modellstufen,
-                             gemessen 24,29 s
+            1. hier          Detail holen (~20 ms) und die KARTE
+                             zurückgeben — sofort
+            2. `/rezept/vorschlaege`   das Gericht umhängen und der Zug mit
+                             den zwei Modellstufen, gemessen 24,29 s
+
+        **Umgehängt wird erst im zweiten Schritt** (WB-406). Schritt 1
+        kostet kein Modell und kommt immer durch; Schritt 2 kann ausfallen,
+        und dann hätte die Wahl in der Datenbank gestanden, ohne dass je ein
+        Zug zu ihr entstanden wäre. Das Detail bleibt geholt — es kostet
+        nichts und liegt danach in `recipe`.
 
         Der Grund steht in `zugrezept.zur_wahl`: alles, was die Karte zeigt,
         liegt in der Datenbank, und nur die Vorschlagsliste kostet das
@@ -1488,11 +1494,26 @@ def create_app(db_path: str | Path | None = None,
             # nach `waehlen` bereits auf das gewählte Rezept — Name, Zeiten,
             # Zutatenliste, Bewertung stehen in der Datenbank und kosten kein
             # Modell. Die Vorschläge holt das Bruchstück selbst nach.
+            vorschau = zugrezepte.zur_wahl(c, int(karte["dish_id"]))
+            # **Und dann zeigt das Gericht wieder dorthin, wo der Chat
+            # hinzeigt** (WB-406). Umgehängt wird erst in der zweiten Hälfte,
+            # zusammen mit dem Zug — denn diese hier kommt IMMER durch (sie
+            # kostet kein Modell), und die zweite kann ausfallen. Gemessen am
+            # laufenden Shop am 2026-08-30: zwei Wechsel, beide Hälften mit
+            # 200 beantwortet, kein einziger neuer Zug in `chat_message` — und
+            # `dish` zeigte danach auf ein Rezept, das im Chat als „noch
+            # wählbar" dastand. Kommt die zweite Hälfte gar nicht (Telefon zu,
+            # Verbindung weg), war die Wahl sonst gebucht, ohne dass je etwas
+            # zu ihr entstanden wäre.
+            #
+            # Das Detail bleibt geholt: es kostet nichts, liegt in `recipe`,
+            # und die zweite Hälfte findet es dort wieder (WB-387).
+            app.state.chat.quelle.zeigt_auf(c, karte["gericht"],
+                                            int(karte["id"]))
             return vorlagen.TemplateResponse(
                 request, "_zugwechsel.html",
                 {"mid": mid, "rezept": treffer["rezept_id"],
-                 "gewechselt": treffer["titel"],
-                 "r": zugrezepte.zur_wahl(c, int(karte["dish_id"]))})
+                 "gewechselt": treffer["titel"], "r": vorschau})
         finally:
             c.close()
 
@@ -1526,13 +1547,18 @@ def create_app(db_path: str | Path | None = None,
 
     def _wahl_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
                          gewuenscht: str):
-        """Prüft die gewählte Rezept-ID und lässt das Gericht darauf zeigen.
+        """Prüft die gewählte Rezept-ID und holt ihr Rezept.
 
         Gibt `(karte, treffer)` zurück — oder `(None, antwort)` mit einer
         fertigen Fehlerantwort; `karte is None` unterscheidet die beiden
-        Fälle. Die Antwort hat die Grösse des Wartekastens (WB-402): das
-        Tauschziel ist `#zug-N` mit `afterend`, und ein ganzer Zug als Antwort
-        stünde danach zweimal im Dokument.
+        Fälle. Die Antwort hat die Grösse des Wartekastens (WB-402/403): sie
+        tritt an die STELLE des Zugs, und ein ganzer Zug als Antwort stünde
+        danach zweimal im Dokument.
+
+        **`waehlen` hängt das Gericht dabei um** — der Aufrufer entscheidet,
+        ob es so bleibt. Die zweite Hälfte lässt es stehen, die erste hängt
+        es zurück (WB-406): sie ist nur die Vorschau, und was sie zeigt, ist
+        noch keine Entscheidung in der Datenbank.
         """
         karte, treffer = _andere_wahl(c, mid, gewuenscht)
         if treffer is None:
@@ -1620,19 +1646,45 @@ def create_app(db_path: str | Path | None = None,
         try:
             app.state.chat.turn(c, satz, gewechselt=treffer["titel"])
         except chatmodul.ChatNichtVerfuegbar as e:
-            # Das Rezept ist gewechselt, der Zug nicht gelaufen. Beides
-            # sagen — sonst sieht es aus, als sei nichts passiert. Ersetzt
-            # wird nichts: es gibt nichts, was den alten Zug ablösen könnte.
+            # **Kein Zug, kein Wechsel** (WB-406). Bis dahin stand hier „„Pho
+            # Ga“ ist jetzt das Rezept zu „Pho“" — und das stimmte sogar, war
+            # aber genau der Schaden: das Gericht zeigte auf ein Rezept, zu
+            # dem es keinen Zug gab, während der Chat unverändert das alte
+            # zeigte und es weiter zur Wahl stellte. Ersetzt wird nichts, also
+            # ändert sich auch nichts.
+            _zurueck_zum_zug(c, karte)
             return _wechsel_fehler(
                 request, c, mid, zustand=e.zustand,
-                fehler=f"„{treffer['titel']}“ ist jetzt das Rezept zu "
-                       f"„{karte['gericht']}“. {_nicht_verfuegbar(e)}")
+                fehler=f"„{treffer['titel']}“ liess sich nicht wählen: "
+                       f"{_nicht_verfuegbar(e)} Das bisherige Rezept steht "
+                       "unverändert da.")
         except chatmodul.ChatFehler as e:
-            return _wechsel_fehler(request, c, mid, fehler=str(e))
+            _zurueck_zum_zug(c, karte)
+            return _wechsel_fehler(
+                request, c, mid,
+                fehler=f"„{treffer['titel']}“ liess sich nicht wählen: {e} "
+                       "Das bisherige Rezept steht unverändert da.")
         neue = _zug_ersetzen(c, mid, zeile["id"] if zeile is not None else None,
                              stand)
         return _wechsel_antwort(request, c, mid, neue,
                                 gewechselt=treffer["titel"])
+
+    def _zurueck_zum_zug(c: sqlite3.Connection, karte: dict) -> None:
+        """Das Gericht zeigt wieder auf das Rezept, das der Chat zeigt (WB-406).
+
+        **Die Karte des Zugs IST der Beleg dafür, was gilt.** Sie steht in
+        `chat_rezept` und ändert sich nicht, wenn ein Wechsel scheitert; der
+        Verweis in `dish` dagegen wurde von `waehlen` schon umgehängt. Beide
+        wieder gleichzuziehen ist dieselbe Zusicherung, die WB-403 für den
+        Verlauf gibt: was im Dokument steht und was in der Datenbank steht,
+        soll dasselbe sein.
+
+        Kein Netz und keine Anfrage — das Rezept ist geholt, es geht nur um
+        eine Zeile in `dish`.
+        """
+        if karte.get("gericht") and karte.get("id"):
+            app.state.chat.quelle.zeigt_auf(c, karte["gericht"],
+                                            int(karte["id"]))
 
     def _zug_ersetzen(c: sqlite3.Connection, mid: int, satz_id: int | None,
                       stand: int | None) -> list[int]:

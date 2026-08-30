@@ -216,7 +216,7 @@ def _antworten(pfad, n: int = 2):
     return paar * n
 
 
-def _shop(pfad, tmp_path, *, waehler=None, antworten=None):
+def _shop(pfad, tmp_path, *, waehler=None, antworten=None, box=None):
     """Der Shop mit einem Chefkoch, der nur das Detail der Alternative kennt.
 
     `holer=nicht_holen`: das Gericht steht schon im Speicher, ein Zug darf es
@@ -227,7 +227,9 @@ def _shop(pfad, tmp_path, *, waehler=None, antworten=None):
     waehler = waehler if waehler is not None else Waehler(http)
     llm = FakeLLM(*(antworten if antworten is not None
                     else _antworten(pfad)))
-    agent = chatmodul.Chat(llm, wecker=Box(),
+    # `box`: ein Wecker, den ein Test mitten im Ablauf abschalten kann
+    # (WB-406). Die Vorgabe bleibt die immer bediente `Box`.
+    agent = chatmodul.Chat(llm, wecker=box if box is not None else Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen,
                                                 waehler=waehler))
     app = webapp.create_app(db_path=pfad, image_dir=tmp_path / "bilder",

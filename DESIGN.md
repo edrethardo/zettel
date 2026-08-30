@@ -389,6 +389,43 @@ Rezepte sind verschieden gross (24,7 / 29,8 / 35,6 KB Antwort). Zwischen den
 beiden Hälften schrumpft die Seite auf rund 11.000 Pixel — dann steht an der
 Stelle des Zugs nur die Karte — und kommt danach zurück.
 
+### Umgehängt wird erst, wenn der Zug steht
+
+Die Zweiteilung aus WB-402 hat eine Nahtstelle, und sie ist im Betrieb
+aufgerissen (WB-406). Die erste Hälfte holte das Detail **und hängte
+`dish.recipe_id` gleich um**; sie kostet kein Modell und kommt deshalb immer
+durch. Die zweite läuft durch die zwei Modellstufen und kann ausfallen. Dann
+stand die Wahl in der Datenbank, ohne dass je ein Zug zu ihr entstanden wäre.
+
+Gemessen am laufenden Shop, 2026-08-30, aus dem Verlauf des Nutzers: zwei
+Wechsel, alle vier Requests mit 200 beantwortet — und danach
+
+    dish 8 „Lasagne Bolognese"  ->  recipe 13 „Lasagne alla Bolognese
+                                    mit Béchamelsoße"
+    chat_rezept zu Zug 38       ->  recipe 11 „Lasagne"
+    chat_message                    kein einziger neuer Zug
+
+Im Chat stand die Karte „Lasagne", markiert als „vorgeschlagen", und darunter
+„Lasagne alla Bolognese mit Béchamelsoße" als etwas, das man noch **wählen
+kann**. Man hatte es zwanzig Minuten vorher gewählt.
+
+Die Phoenix-Spuren nennen den Auslöser: beide `chat.turn` endeten nach genau
+3,04 s mit `ChatNichtVerfuegbar` — dem health-Timeout aus `zettel.llm.wake`.
+**Der Wecker hatte recht**: eine rohe `/v1/models`-Anfrage lief zur selben
+Zeit in dieselbe Zeitüberschreitung. Nicht der Weckzustand war der Fehler,
+sondern was der Wechsel aus ihm machte.
+
+Also hängt jetzt nur die zweite Hälfte um, und scheitert sie, zeigt das
+Gericht wieder auf das Rezept, **das der Chat zeigt** — die Karte des Zugs,
+der stehen bleibt. Das ist dieselbe Zusicherung wie beim Ersetzen des Zugs:
+was im Dokument steht und was in der Datenbank steht, soll dasselbe sein.
+Das geholte Detail bleibt liegen; es kostet nichts und macht den nächsten
+Versuch anfragenfrei (WB-387).
+
+Und die Meldung hat aufgehört, den Wechsel zu behaupten. Sie lautete „„X" ist
+jetzt das Rezept zu „Y". <Weckzustand>" — sie stimmte sogar, und genau das
+war der Schaden.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist
