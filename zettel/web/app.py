@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, urlsplit
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -541,6 +541,54 @@ async def mehrfach(request: Request, name: str) -> list[str]:
         werte += [v for k, v in parse_qsl(rumpf, keep_blank_values=True)
                   if k == name and v]
     return werte
+
+
+class Formular(dict):
+    """Die Eingaben eines Requests, EINMAL gelesen (WB-409).
+
+    Sie sieht aus wie das Wörterbuch aus `eingaben()` und kann daneben
+    `alle()` wie `mehrfach()`. Der Grund für sie ist nicht Bequemlichkeit,
+    sondern das `await`: solange ein Eingang den Rumpf selbst liest, MUSS er
+    `async def` sein — und ein `async def`, das danach dreissig Sekunden auf
+    ein Modell wartet, hält die ganze Ereignisschleife an.
+
+    Gemessen am laufenden Shop, 2026-08-30: während eines Modellaufrufs
+    brauchte `GET /chat` **14,17 s** statt 4 ms. Der Shop stand für BEIDE
+    Nutzerinnen, solange irgendwo ein Zug lief — und ein zweiter Wechsel
+    stellte sich hinter den ersten, statt neben ihn.
+
+    Mit dieser Abhängigkeit liest die Ereignisschleife den Rumpf, und der
+    Eingang selbst ist ein gewöhnliches `def`. FastAPI führt ein solches im
+    Threadpool aus, und die Schleife bleibt frei.
+    """
+
+    def __init__(self, werte: dict, mehrfach_werte: dict):
+        super().__init__(werte)
+        self._mehrfach = mehrfach_werte
+
+    def alle(self, name: str) -> list[str]:
+        """Alle Werte eines Feldes, das mehrfach vorkommen darf (Kästchen)."""
+        return list(self._mehrfach.get(name, ()))
+
+
+async def formular(request: Request) -> Formular:
+    """Query und Rumpf in EINEM Lesevorgang — als Abhängigkeit.
+
+    Der Rumpf gewinnt über die URL, genau wie in `eingaben()`: er trägt die
+    Eingabe, die der Mensch gerade gemacht hat.
+    """
+    paare = list(request.query_params.multi_items())
+    if request.method in ("POST", "PUT", "PATCH"):
+        rumpf = (await request.body()).decode("utf-8", "replace")
+        if rumpf:
+            paare += parse_qsl(rumpf, keep_blank_values=True)
+    werte: dict = {}
+    viele: dict = {}
+    for k, v in paare:
+        werte[k] = v
+        if v:
+            viele.setdefault(k, []).append(v)
+    return Formular(werte, viele)
 
 
 def zahl(wert, vorgabe: int) -> int:
@@ -1374,9 +1422,9 @@ def create_app(db_path: str | Path | None = None,
                                          {"chat_zustand": app.state.chat.zustand()})
 
     @app.post("/chat")
-    async def chat_senden(request: Request):
+    def chat_senden(request: Request,
+                    werte: Formular = Depends(formular)):
         """Ein Chat-Zug. Legt NICHTS in den Korb — nur Vorschläge (Spec 6)."""
-        werte = await eingaben(request)
         satz = werte.get("satz", "")
         c = con()
         try:
@@ -1396,7 +1444,8 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/chat/{mid}/sorten")
-    async def chat_sorten(request: Request, mid: int):
+    def chat_sorten(request: Request, mid: int,
+                    werte: Formular = Depends(formular)):
         """Die angekreuzten Sorten einer Auffächerung (WB-368).
 
         Zwei Ausgänge, und beide führen in den NORMALEN Ablauf:
@@ -1413,7 +1462,7 @@ def create_app(db_path: str | Path | None = None,
         In beiden Fällen wird NICHT noch einmal aufgefächert — dieselbe Frage
         zweimal wäre eine Schleife statt einer Auswahl.
         """
-        gewuenscht = await mehrfach(request, "sorte")
+        gewuenscht = werte.alle("sorte")
         c = con()
         try:
             faecher = oberbegriffe.zu_nachricht(c, mid)
@@ -1440,7 +1489,8 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/chat/{mid}/rezept")
-    async def chat_rezept(request: Request, mid: int):
+    def chat_rezept(request: Request, mid: int,
+                    werte: Formular = Depends(formular)):
         """Ein anderes Rezept zu demselben Gericht (WB-387).
 
         Chefkoch liefert zwölf Rezepte je Suche; eines wurde vorgeschlagen,
@@ -1484,7 +1534,6 @@ def create_app(db_path: str | Path | None = None,
         danach wurde die ganze Seite getauscht und die Bildlaufposition war
         weg. Ohne JavaScript bleibt es bei EINEM Request und der Vollseite.
         """
-        werte = await eingaben(request)
         gewuenscht = (werte.get("rezept") or "").strip()
         c = con()
         try:
@@ -1525,7 +1574,8 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/chat/{mid}/rezept/vorschlaege")
-    async def chat_rezept_vorschlaege(request: Request, mid: int):
+    def chat_rezept_vorschlaege(request: Request, mid: int,
+                                werte: Formular = Depends(formular)):
         """Die zweite Hälfte des Wechsels: der Zug selbst (WB-402).
 
         **Das ist der Teil, der wirklich dauert** — `plan.zutatenbegriffe`,
@@ -1541,7 +1591,6 @@ def create_app(db_path: str | Path | None = None,
         gewählt. `waehlen` läuft dabei zum zweiten Mal und kostet nichts: das
         Rezept ist schon geholt, es bleibt eine Zeile in `dish` (WB-387).
         """
-        werte = await eingaben(request)
         gewuenscht = (werte.get("rezept") or "").strip()
         c = con()
         try:
@@ -1553,7 +1602,8 @@ def create_app(db_path: str | Path | None = None,
             c.close()
 
     @app.post("/chat/{mid}/rezept/vorwaermen")
-    async def chat_rezept_vorwaermen(request: Request, mid: int):
+    def chat_rezept_vorwaermen(request: Request, mid: int,
+                               werte: Formular = Depends(formular)):
         """Die Zuordnung einer Alternative rechnen, bevor jemand sie antippt.
 
         **Der zweite Teil von WB-408.** Die gemerkte Zuordnung macht einen
@@ -1572,24 +1622,32 @@ def create_app(db_path: str | Path | None = None,
         Tipps und sonst nichts. `HX-Reswap: none` hält auch eine Antwort mit
         Körper aus dem Dokument heraus.
         """
-        werte = await eingaben(request)
         gewuenscht = (werte.get("rezept") or "").strip()
-        leer = Response(status_code=204)
+
+        def leer(warum: str) -> Response:
+            # **Der Grund steht im Kopf und nicht im Körper.** 204 heisst
+            # „nichts anzuzeigen", und das bleibt so. Aber ein Eingang, der
+            # jeden Ausgang gleich beantwortet, ist von aussen nicht mehr zu
+            # unterscheiden — „stand schon da" und „mir ist etwas
+            # kaputtgegangen" sähen identisch aus. Diese Zeile kostet nichts
+            # und macht den Vorwärmlauf im Protokoll lesbar.
+            return Response(status_code=204,
+                            headers={"X-Zettel-Vorwaermen": warum})
+
         c = con()
         try:
             karte, treffer = _andere_wahl(c, mid, gewuenscht)
             if treffer is None or not karte.get("id"):
-                return leer
+                return leer("nicht_angeboten")
             rid = app.state.chat.quelle.bereitstellen(
                 c, karte["gericht"], treffer, zurueck_auf=int(karte["id"]))
             if rid is None:
-                return leer
-            app.state.chat.zuordnung_vorwaermen(c, int(rid))
-            return leer
-        except Exception:                        # noqa: BLE001 — bewusst breit
+                return leer("kein_detail")
+            return leer(app.state.chat.zuordnung_vorwaermen(c, int(rid)))
+        except Exception as e:                   # noqa: BLE001 — bewusst breit
             # Ein Vorwärmlauf darf keine Seite zerbrechen, die jemand ansieht.
             # Er hat kein Ergebnis, das jemand vermisst.
-            return leer
+            return leer(f"fehler: {type(e).__name__}")
         finally:
             c.close()
 

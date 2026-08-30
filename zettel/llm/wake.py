@@ -65,7 +65,31 @@ NEUVERSUCH_S = 60.0
 
 #: Kurz — dieser Aufruf sitzt im Request-Pfad. Die Box antwortet im LAN in
 #: Millisekunden oder gar nicht.
-HEALTH_TIMEOUT_S = 3.0
+#:
+#: **Eine Sekunde und nicht mehr drei** (WB-409). Gemessen 2026-08-30 gegen
+#: die echte Box, `GET /v1/models`, 15 Proben: Median 2 ms, langsamste
+#: 163 ms — der erste Aufruf mit der mDNS-Auflösung. Drei Sekunden waren das
+#: Tausendfache des Üblichen und wurden trotzdem VOLL bezahlt, sooft die Box
+#: nicht bediente: `/chat/zustand` brauchte dann 3,07 s, bei einem Ziel von
+#: unter 100 ms für alles, was kein Modell fragt.
+#:
+#: Eine Sekunde ist immer noch das Sechsfache der langsamsten Messung. Was
+#: darüber liegt, ist nicht „langsam", sondern der socket-aktivierte
+#: Endpunkt, der annimmt und dann zwei Minuten Gewichte lädt — und genau das
+#: heisst `LAEDT`.
+HEALTH_TIMEOUT_S = 1.0
+
+#: So lange gilt ein Befund als frisch (WB-409). Die Oberfläche fragt alle
+#: fünf Sekunden nach, und ein Chat-Zug fragt zwei- bis dreimal in derselben
+#: Sekunde — für dieselbe Auskunft. Ohne diese Frist kostet jede dieser
+#: Fragen eine eigene Runde zur Box, und bei einer Box, die NICHT bedient,
+#: kostet sie den vollen Timeout.
+#:
+#: Vier Sekunden sind kürzer als der Abstand der Abfragen und viel kürzer als
+#: die Weckdauer (90 s), um die es dem Zähler geht. Was hier veraltet, ist
+#: höchstens eine Sekunde Anzeige — und ein Zug, der gegen eine gerade
+#: gestorbene Box startet, scheitert am echten Aufruf und nicht am Befund.
+HEALTH_CACHE_S = 4.0
 
 
 @dataclass(frozen=True)
@@ -204,6 +228,9 @@ class Wecker:
         self._beginn: float | None = None
         self._fehlschlag: float | None = None
         self._grund: str | None = None
+        # Der letzte Befund und wann er entstand (WB-409).
+        self._befund: Befund | None = None
+        self._befund_um: float | None = None
 
     def zustand(self) -> Zustand:
         """Bedient / wacht auf / nicht erreichbar — und weckt, falls nötig.
@@ -214,7 +241,7 @@ class Wecker:
         steht dann vollständig innerhalb der Sperre — sonst starten zwei
         Requests zwei Weckvorgänge.
         """
-        befund = health(self.endpunkt, http=self._http)
+        befund = self._befund_frisch()
         with self._sperre:
             if befund.zustand == BEDIENT:
                 self._vergiss_weckvorgang()
@@ -259,6 +286,23 @@ class Wecker:
                 return Zustand(NICHT_ERREICHBAR, seit_s=seit, grund=self._grund)
 
             return self._wecke(jetzt)
+
+    def _befund_frisch(self) -> Befund:
+        """Der letzte Blick auf die Box, wenn er jünger als `HEALTH_CACHE_S` ist.
+
+        Steht ausserhalb der Sperre wie der `health()`-Aufruf selbst: zwei
+        Requests, die gleichzeitig nachfragen, sollen sich nicht aufhalten.
+        Im schlimmsten Fall messen beide — das ist eine Runde zu viel und
+        keine falsche Auskunft.
+        """
+        jetzt = self._uhr()
+        letzter, um = self._befund, self._befund_um
+        if letzter is not None and um is not None \
+                and jetzt - um < HEALTH_CACHE_S:
+            return letzter
+        befund = health(self.endpunkt, http=self._http)
+        self._befund, self._befund_um = befund, jetzt
+        return befund
 
     def _laeuft_noch(self) -> bool:
         return self._prozess is not None and self._prozess.poll() is None

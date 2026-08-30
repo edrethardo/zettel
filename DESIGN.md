@@ -512,6 +512,64 @@ Der Span heisst `recipe.zuordnung` und nicht `chat.turn`. Hier antwortet
 niemand jemandem: kein Satz, keine Nutzerin, keine Vorschlagsliste. Ein
 Vorwärmlauf unter demselben Namen verdürbe jede Auswertung über Züge.
 
+### Unter 100 ms — und dabei bleibt es, während das Modell antwortet
+
+„Schau dass alles in unter 100ms geht." (WB-409.) Drei Dinge standen dem im
+Weg, und keines davon war die Arbeit selbst.
+
+**1. Der Shop stand still, solange irgendwo ein Modell antwortete.** Die
+Chat-Eingänge waren `async def` — sie mussten es sein, weil sie den Rumpf
+selbst mit `await request.body()` lasen — und riefen darin blockierend das
+Modell auf. Damit hielt jeder Zug die Ereignisschleife an:
+
+| | vorher | nachher |
+|---|---|---|
+| `GET /chat`, während ein Modellaufruf lief | **14,17 s** | **6,6 ms** |
+| drei gleichzeitige Vorwärmläufe | 31 / 57 / 57 s (in Reihe) | nebeneinander |
+
+Für BEIDE Nutzerinnen, und für jede Seite — auch die Pick-Liste im Laden. Die
+Kur ist eine Abhängigkeit: `formular()` liest den Rumpf auf der
+Ereignisschleife, der Eingang selbst ist ein gewöhnliches `def`, und FastAPI
+führt ein solches im Threadpool aus.
+
+**2. Ein Chat-Zug machte dreissig fsyncs.** cProfile über einen Zug aus dem
+Gedächtnis, echte Datenbank, echter Katalog:
+
+    chat.turn                            264 ms
+      _schreiben                         220 ms
+        30 × sqlite3.commit              216 ms   (7,2 ms je Aufruf)
+      _aus_quelle                         43 ms
+        _suchen (13 FTS-Ketten)           31 ms
+
+Die Datenbank lief in WAL, aber mit `synchronous = FULL` — jedes `commit`
+drückte die WAL durch. Das ist die Plattenumdrehung und nicht die Arbeit.
+`synchronous = NORMAL` ist die übliche Stellung dazu: **264 ms -> 16 ms**, und
+die Testsuite fiel nebenbei von 73 s auf 43 s. Verlieren kann das nur ein
+Stromausfall, und dann die letzten Sekunden; ein Absturz des Shops nicht.
+
+**3. Der health-Timeout war das Tausendfache der Messung.** Drei Sekunden,
+während `GET /v1/models` im Median 2 ms braucht und im schlechtesten von
+fünfzehn Fällen 163 ms — und die drei Sekunden wurden voll bezahlt, sooft die
+Box nicht bediente. Jetzt eine Sekunde, immer noch das Sechsfache der
+langsamsten Messung, dazu ein Befund, der vier Sekunden gilt: dieselbe Frage
+in derselben Sekunde geht nicht dreimal zur Box.
+
+Gemessen am laufenden Shop, **während im Hintergrund ein echter Modellaufruf
+von 22,2 s lief**:
+
+| | |
+|---|---|
+| `GET /chat` | 6,6 ms |
+| `GET /pick` | 2,3 ms |
+| `GET /warenkorb` | 1,8 ms |
+| `GET /katalog` | 57,6 ms |
+| `GET /chat/zustand` | 50,1 ms |
+| **Rezeptwechsel, erste Hälfte** | **3,8 ms** |
+| **Rezeptwechsel, zweite Hälfte** | **46,2 ms** |
+
+Ein kompletter Wechsel in 50 ms, neben einem laufenden Modellaufruf. Vorher
+waren es 26,7 s, und die Seite daneben stand.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist
