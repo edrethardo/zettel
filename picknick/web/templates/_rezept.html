@@ -58,12 +58,6 @@
     {% endif %}
     <span class="text">
       <span class="name">{{ z.name }}</span>
-      <span class="menge">
-        {% if z.ist_freitext %}Freitext
-        {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
-        {%- if z.nicht_im_katalog %}
-        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
-      </span>
       {# Die benötigte Menge — die Grösse, die mit den Portionen wächst
          (WB-362). Die Zahl rechts daneben ist die PACKUNGSZAHL und wächst
          nicht mit; ohne diese Zeile sähen beide gleich aus.
@@ -96,23 +90,37 @@
         <noscript><button class="mini" type="submit">ok</button></noscript>
       </form>
       {% endif %}
+      {# Packung und Preis stehen UNTER der benötigten Menge (WB-400) —
+         dieselbe Rangfolge wie im Korb, am Vorschlag und auf /pick: erst
+         was gebraucht wird, dann was im Regal steht. #}
+      <span class="menge">
+        {% if z.ist_freitext %}Freitext
+        {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
+        {%- if z.nicht_im_katalog %}
+        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
+      </span>
     </span>
     <span class="stellen">
-      <form method="post"
-            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
-            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
-            hx-target="#rezept" hx-swap="innerHTML">
-        <button class="mini" type="submit"
-                aria-label="weniger {{ z.name }}">&minus;</button>
-      </form>
-      <span class="anzahl">{{ z.qty }}</span>
-      <form method="post"
-            action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
-            hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
-            hx-target="#rezept" hx-swap="innerHTML">
-        <button class="mini" type="submit"
-                aria-label="mehr {{ z.name }}">+</button>
-      </form>
+      {# Dieselbe gemeinsame Hülle wie im Korb (WB-400) — es ist dasselbe
+         Bedienteil, und die Packungszahl am Rezept ist dieselbe Sache wie
+         die Packungszahl im Korb. #}
+      <span class="steller">
+        <form method="post"
+              action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
+              hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
+              hx-target="#rezept" hx-swap="innerHTML">
+          <button class="mini" type="submit"
+                  aria-label="weniger {{ z.name }}">&minus;</button>
+        </form>
+        <span class="anzahl">{{ z.qty }}</span>
+        <form method="post"
+              action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
+              hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
+              hx-target="#rezept" hx-swap="innerHTML">
+          <button class="mini" type="submit"
+                  aria-label="mehr {{ z.name }}">+</button>
+        </form>
+      </span>
       <form method="post"
             action="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/loeschen"
             hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/loeschen"

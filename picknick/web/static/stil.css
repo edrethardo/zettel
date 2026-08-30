@@ -39,7 +39,32 @@
 
 :root {
   --tap: 44px;
-  --rand: 12px;
+
+  /* DIE TYPOSKALA. Sieben Stufen, jede mit einer Aufgabe — zwölf Tickets
+     hatten zwölf Grössen erfunden (12/13/14/15/16/17/18/19/20/22/26/30), und
+     die Hälfte davon meinte dasselbe. Wer eine achte braucht, hat vermutlich
+     eine der sieben nicht gefunden. */
+  --t-h1: 30px;      /* Seitentitel                                    */
+  --t-zahl: 22px;    /* die eine Leitzahl einer Karte, das Plus-Zeichen */
+  --t-h2: 20px;      /* Abschnitt, Kartentitel, Aufklapp-Pfeil         */
+  --t-text: 17px;    /* Fliesstext, Name, Knopfschrift                 */
+  --t-feld: 16px;    /* EINGABEFELD — nie kleiner, sonst zoomt iOS in
+                        die Seite und nicht zurück (WB-379)            */
+  --t-klein: 15px;   /* Nebenangabe, Antwort im Chat                   */
+  --t-fein: 13px;    /* Fussnote, Abzeichen, Zurückgesetztes           */
+
+  /* DER RHYTHMUS. Ein 4er-Raster; vorher standen 22 verschiedene Abstände
+     im Blatt, darunter jede Ganzzahl von 1 bis 10. */
+  --v0: 2px;         /* haarfein: in einer Pille, in einem Raster      */
+  --v1: 4px;         /* innerhalb einer Zeile                          */
+  --v2: 8px;         /* zwischen Geschwistern                          */
+  --v3: 12px;        /* Kartenpolster und Seitenrand                   */
+  --v4: 16px;        /* zwischen zwei Bausteinen                       */
+  --v5: 24px;        /* Luft vor einer Überschrift                     */
+  --v6: 40px;        /* Fuss der Seite                                 */
+  --einzug: 32px;    /* Text unter einem Pfeil oder einem Punkt        */
+
+  --rand: var(--v3);
   --radius: 12px;        /* Karten: Blätter                   */
   --radius-knopf: 10px;  /* Knöpfe und Felder: Kästen         */
 
@@ -79,6 +104,11 @@
 
   --bildfond: #ffffff;
   --schatten: 0 1px 2px rgba(29, 39, 51, 0.05), 0 3px 8px rgba(29, 39, 51, 0.06);
+  /* Für die Kante einer Liste, die in sich scrollt: derselbe Ton wie
+     `--karte-tief`, nur durchsichtig — `transparent` ist in einem Verlauf
+     durchsichtiges SCHWARZ und zöge einen grauen Schleier hinein. */
+  --karte-tief-null: rgba(231, 235, 241, 0);
+  --kante: rgba(29, 39, 51, 0.16);
 
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
           "Liberation Mono", monospace;
@@ -120,6 +150,8 @@
 
     --bildfond: #dfe2e4;
     --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --karte-tief-null: rgba(38, 48, 59, 0);
+    --kante: rgba(0, 0, 0, 0.55);
   }
   /* Die Fotos haben weissen Fond ab Werk. Ungedimmt sind sie nachts das
      hellste auf der Tafel und blenden — leicht heruntergedreht wirken sie
@@ -133,7 +165,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 17px;              /* iOS zoomt Eingabefelder unter 16px heran */
+  font-size: var(--t-text);     /* die Textstufe der Skala; Eingabefelder
+                                   bleiben davon unberührt bei --t-feld  */
   line-height: 1.45;
   color: var(--tinte);
   background:
@@ -144,16 +177,18 @@ body {
   overflow-wrap: anywhere;
 }
 
-main { padding: var(--rand) var(--rand) 40px; max-width: 680px; margin: 0 auto; }
+main { padding: var(--rand) var(--rand) var(--v6); max-width: 680px; margin: 0 auto; }
 
-/* Typografie-Skala: 30 / 20 / 17 / 15 / 13. Überschriften eng und schwer —
-   die Systemschrift bekommt ihren Charakter über Gewicht und Laufweite,
-   nicht über eine Datei aus dem Netz. Gerechnete Zahlen: Monospace. */
+/* Die Skala steht in `:root` und wird von dort geholt — bis WB-400 stand sie
+   nur in diesem Kommentar, während das Blatt daneben zwölf Grössen
+   deklarierte. Überschriften eng und schwer: die Systemschrift bekommt ihren
+   Charakter über Gewicht und Laufweite, nicht über eine Datei aus dem Netz.
+   Gerechnete Zahlen: Monospace. */
 h1, h2 {
   font-weight: 800; letter-spacing: -0.03em;
 }
-h1 { font-size: 30px; margin: 20px 0 10px; }
-h2 { font-size: 20px; margin: 26px 0 8px; }
+h1 { font-size: var(--t-h1); margin: var(--v5) 0 var(--v3); }
+h2 { font-size: var(--t-h2); margin: var(--v5) 0 var(--v2); }
 
 :is(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid var(--akzent); outline-offset: 2px; border-radius: 8px;
@@ -167,14 +202,14 @@ button, .knopf { overflow-wrap: normal; }
 
 /* Kopf ------------------------------------------------------------------ */
 .kopf {
-  display: flex; align-items: center; gap: 4px var(--rand);
+  display: flex; align-items: center; gap: var(--v1) var(--rand);
   padding: 0 var(--rand);
   background: var(--karte); border-bottom: 1px solid var(--linie);
 }
 .kopf .marke {
-  font-weight: 800; font-size: 20px; letter-spacing: -0.02em;
+  font-weight: 800; font-size: var(--t-h2); letter-spacing: -0.02em;
   text-decoration: none; color: var(--tinte);
-  min-height: var(--tap); display: flex; align-items: center; gap: 7px;
+  min-height: var(--tap); display: flex; align-items: center; gap: var(--v2);
   white-space: nowrap;
 }
 /* Der eine kleine Schmuck: ein schief angepinnter gelber Merkzettel hinter
@@ -183,7 +218,7 @@ button, .knopf { overflow-wrap: normal; }
   content: ""; width: 9px; height: 9px; border-radius: 1.5px;
   background: var(--merker); transform: rotate(-8deg);
   box-shadow: 0 1px 1px rgba(29, 39, 51, 0.25);
-  margin-top: -8px;
+  margin-top: calc(var(--v2) * -1);
 }
 /* Neun Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
    statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
@@ -191,9 +226,18 @@ button, .knopf { overflow-wrap: normal; }
    Die Bildlaufleiste ist dünn statt weg: ein 3-px-Strich, der die Leiste
    nicht höher macht und trotzdem sagt, dass sie weitergeht. */
 .kopf nav {
-  display: flex; gap: 2px; margin-left: auto; min-width: 0;
+  display: flex; gap: var(--v0); margin-left: auto; min-width: 0;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   scrollbar-width: thin; scrollbar-color: var(--linie) transparent;
+  /* Die Kante ausblenden statt Wörter abhacken (WB-400): ohne Maske stand
+     auf fast jeder Seite ein Fetzen am Rand („llungen", „Rezep") — das
+     Erste, was man von der Seite sieht. 14 px sind schmaler als das
+     10-px-Polster eines Ziels plus die Lücke, treffen also im Ruhezustand
+     kaum einen Buchstaben und sagen beim Scrollen „hier geht es weiter".
+     Dazu Rastpunkte: gescrollt wird auf ganze Ziele, nicht mitten hinein. */
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px,
+                              #000 calc(100% - 14px), transparent 100%);
+  scroll-snap-type: x proximity;
 }
 .kopf nav::-webkit-scrollbar { height: 3px; }
 .kopf nav::-webkit-scrollbar-thumb {
@@ -202,9 +246,10 @@ button, .knopf { overflow-wrap: normal; }
 .kopf nav::-webkit-scrollbar-track { background: transparent; }
 .kopf nav a {
   min-height: var(--tap); display: flex; align-items: center;
-  padding: 0 10px; border-radius: var(--radius-knopf);
+  padding: 0 var(--v3); border-radius: var(--radius-knopf);
   color: var(--gedaempft); text-decoration: none;
-  font-size: 15px; font-weight: 500; white-space: nowrap;
+  font-size: var(--t-klein); font-weight: 500; white-space: nowrap;
+  scroll-snap-align: end;
 }
 .kopf nav a:active { background: var(--karte-tief); }
 /* Wo man gerade ist. Nicht nur Farbe: /bestellungen und /pick sind zwei sehr
@@ -217,9 +262,9 @@ button, .knopf { overflow-wrap: normal; }
 
 /* Hinweisband (Spec 11): der Textmarker quer über die Seite. -------------- */
 .band {
-  margin: 0; padding: 10px var(--rand) 10px 34px; position: relative;
+  margin: 0; padding: var(--v3) var(--rand) var(--v3) var(--einzug); position: relative;
   background: var(--honig-hell); color: var(--honig);
-  border-bottom: 1px solid var(--honig-linie); font-size: 15px;
+  border-bottom: 1px solid var(--honig-linie); font-size: var(--t-klein);
 }
 .band::before {
   content: ""; position: absolute; left: var(--rand); top: 17px;
@@ -228,15 +273,15 @@ button, .knopf { overflow-wrap: normal; }
 .band .fussnote { color: inherit; opacity: 0.85; }
 
 /* Suche ------------------------------------------------------------------ */
-.suche { display: flex; gap: 8px; margin: var(--rand) 0 16px; }
+.suche { display: flex; gap: var(--v2); margin: var(--rand) 0 var(--v4); }
 .suche input {
   flex: 1 1 auto; min-width: 0;          /* sonst sprengt das Feld die Zeile */
-  min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .suche button, .knopf, .rollen button {
-  min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
+  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 600;
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -245,7 +290,7 @@ button, .knopf { overflow-wrap: normal; }
 }
 .suche button { flex: 0 0 auto; }
 .suche button:active, .knopf:active, .rollen button:active { transform: scale(0.96); }
-.rollen { display: flex; flex-direction: column; gap: 10px; }
+.rollen { display: flex; flex-direction: column; gap: var(--v3); }
 .rollen button { width: 100%; min-height: 56px; }
 .rollen .gewaehlt { background: var(--akzent-hell); border-color: var(--akzent);
                     color: var(--akzent-tinte); }
@@ -254,17 +299,17 @@ button, .knopf { overflow-wrap: normal; }
    Die Karte selbst klappt zu (WB-379). 138 Zeilen à 44 px sind 6.100 px
    zwischen dem Suchfeld und den Treffern; zugeklappt sind es eine Zeile. */
 .kategorienkarte {
-  margin-bottom: 16px; background: var(--karte);
+  margin-bottom: var(--v4); background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius);
   box-shadow: var(--schatten); overflow: hidden;
 }
 .kategorienkarte > summary {
-  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
-  padding: 0 14px; font-weight: 700; cursor: pointer; list-style: none;
+  min-height: var(--tap); display: flex; align-items: center; gap: var(--v2);
+  padding: 0 var(--v3); font-weight: 700; cursor: pointer; list-style: none;
 }
 .kategorienkarte > summary::-webkit-details-marker { display: none; }
 .kategorienkarte > summary::before {
-  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  content: "\203A"; color: var(--gedaempft); font-size: var(--t-h2);
   width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
 }
 .kategorienkarte[open] > summary::before { transform: rotate(90deg); }
@@ -272,24 +317,24 @@ button, .knopf { overflow-wrap: normal; }
 .kategorien { margin: 0; }
 .kategorien summary,
 .zweig {
-  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
-  padding: 0 14px; border-bottom: 1px solid var(--linie);
+  min-height: var(--tap); display: flex; align-items: center; gap: var(--v2);
+  padding: 0 var(--v3); border-bottom: 1px solid var(--linie);
   color: inherit; text-decoration: none; cursor: pointer;
 }
 .kategorien summary { list-style: none; font-weight: 600; }
 .kategorien summary::-webkit-details-marker { display: none; }
 .kategorien summary::before {
-  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  content: "\203A"; color: var(--gedaempft); font-size: var(--t-h2);
   width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
 }
 .kategorien details[open] > summary::before { transform: rotate(90deg); }
 .kategorien details:last-child .zweig:last-child,
 .kategorien > .zweig.alle:last-child { border-bottom: none; }
-.zweig { padding-left: 34px; color: var(--akzent-tinte); }
-.zweig.alle { padding-left: 14px; font-weight: 700; color: var(--tinte); }
+.zweig { padding-left: var(--einzug); color: var(--akzent-tinte); }
+.zweig.alle { padding-left: var(--v3); font-weight: 700; color: var(--tinte); }
 .anzahl {
-  margin-left: auto; color: var(--gedaempft); font-size: 13px;
-  background: var(--karte-tief); border-radius: 999px; padding: 2px 9px;
+  margin-left: auto; color: var(--gedaempft); font-size: var(--t-fein);
+  background: var(--karte-tief); border-radius: 999px; padding: var(--v0) var(--v2);
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -297,13 +342,13 @@ button, .knopf { overflow-wrap: normal; }
 /* Kacheln: die Produktfotos sind das Beste am Shop und liegen gross auf
    eigenen Blättern — 88 px auf weissem Teller. */
 .kacheln { list-style: none; margin: 0; padding: 0;
-           display: flex; flex-direction: column; gap: 10px; }
+           display: flex; flex-direction: column; gap: var(--v3); }
 .kachel {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr) max-content;
   grid-template-areas: "bild text plus" "bild fuss plus";
-  column-gap: var(--rand); row-gap: 2px; align-items: center;
-  padding: 10px; min-height: 72px;
+  column-gap: var(--rand); row-gap: var(--v0); align-items: center;
+  padding: var(--v3); min-height: 72px;
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
@@ -312,11 +357,11 @@ button, .knopf { overflow-wrap: normal; }
 .kachel .preis { grid-area: fuss; align-self: start; }
 .einlegen { grid-area: plus; margin: 0; align-self: center; }
 .rueckmeldung { grid-area: fuss; justify-self: end; align-self: start;
-                min-width: 0; font-size: 14px; }
+                min-width: 0; font-size: var(--t-fein); }
 
 .bild {
   width: 72px; height: 72px; flex: 0 0 72px; object-fit: contain;
-  border-radius: 8px; background: var(--bildfond); padding: 3px;
+  border-radius: 8px; background: var(--bildfond); padding: var(--v0);
 }
 /* Kein Bild: ein leer gelassener, gestrichelter Rahmen — dieselbe Sprache
    wie die leeren Zustände. Eine volle graue Kachel sah aus wie ein kaputtes
@@ -325,30 +370,30 @@ button, .knopf { overflow-wrap: normal; }
               border: 1.5px dashed var(--linie); }
 .text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .name { font-weight: 600; }
-.menge { color: var(--gedaempft); font-size: 15px; }
+.menge { color: var(--gedaempft); font-size: var(--t-klein); }
 .preis { white-space: nowrap; font-family: var(--mono);
          font-variant-numeric: tabular-nums; font-weight: 700;
-         font-size: 16px; }
+         font-size: var(--t-feld); }
 
 /* Leere Zustände sind gestaltet, nicht übrig: eine ruhige, gestrichelte
    Karte mit einem Satz, der sagt, was als Nächstes sinnvoll ist. */
 .leer {
-  margin: 14px 0; padding: 26px 16px; text-align: center;
+  margin: var(--v3) 0; padding: var(--v5) var(--v4); text-align: center;
   color: var(--gedaempft); background: var(--karte);
   border: 1.5px dashed var(--knopflinie); border-radius: var(--radius);
 }
-.leer .knopf { margin-top: 12px; }
+.leer .knopf { margin-top: var(--v3); }
 /* Zwei Wege aus dem leeren Korb (WB-382), und sie sind nicht gleich viel
    wert: „Zum Chat" ist ein Satz, „Zum Katalog" zwölf Suchen. `.still` nimmt
    dem zweiten die Fläche, nicht die Grösse — 44 px bleiben 44 px. */
-.leer .knopf + .knopf { margin-left: 8px; }
+.leer .knopf + .knopf { margin-left: var(--v2); }
 .knopf.still { font-weight: 500; color: var(--gedaempft);
                background: none; }
 /* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Der
    Textmarker in der Liste: honig heisst in diesem Blatt „lies mich, es
    fehlt etwas". */
 .gekappt {
-  margin: 0 0 12px; padding: 8px 14px; font-size: 14px;
+  margin: 0 0 var(--v3); padding: var(--v2) var(--v3); font-size: var(--t-fein);
   color: var(--honig); background: var(--honig-hell);
   border: 1px solid var(--honig-linie); border-radius: var(--radius-knopf);
 }
@@ -359,7 +404,7 @@ button, .knopf { overflow-wrap: normal; }
 #treffer { scroll-margin-top: 12px; }
 #rezept-treffer { scroll-margin-top: 96px; }
 
-.fussnote { color: var(--gedaempft); font-size: 14px; margin-top: 20px; }
+.fussnote { color: var(--gedaempft); font-size: var(--t-fein); margin-top: var(--v5); }
 .fussnote a { color: inherit; }
 
 /* Warenkorb, Bestellungen, Pick-Ansicht (WB-324) --------------------------
@@ -371,19 +416,25 @@ button, .knopf { overflow-wrap: normal; }
 .plus {
   width: var(--tap); height: var(--tap);
   min-width: var(--tap); min-height: var(--tap);
-  font-size: 26px; line-height: 1; padding: 0;
+  font-size: var(--t-zahl); line-height: 1; padding: 0;
   border: none; border-radius: 50%;
   background: var(--akzent); color: var(--auf-akzent);
   box-shadow: var(--schatten); cursor: pointer;
   transition: transform 0.12s ease;
 }
 .plus:active { transform: scale(0.85); }
-.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
-      animation: auftauchen 0.3s ease; }
+/* Die Rückmeldung „2× im Korb" am Plus-Knopf. `span.ok` und nicht `.ok`:
+   ein Crawler-Lauf trägt seinen Zustand als Klasse (`<li class="lauf ok">`),
+   und der nackte Klassenname färbte auf /status eine ganze Lauf-Zeile grün
+   und setzte sie auf `nowrap` — die Uhrzeit lief über den Kartenrand hinaus
+   und die Seite scrollte waagerecht (WB-400). Dieselbe Vorsicht wie bei
+   `span.marke`. */
+span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
+          animation: auftauchen 0.3s ease; }
 .korbzahl {
-  display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 4px;
+  display: inline-block; min-width: 22px; padding: var(--v0) var(--v2); margin-left: var(--v1);
   border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
-  font-size: 14px; font-weight: 700; text-align: center;
+  font-size: var(--t-fein); font-weight: 700; text-align: center;
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   animation: plopp 0.35s ease;
 }
@@ -400,7 +451,7 @@ button, .knopf { overflow-wrap: normal; }
    Die Liste ist EINE Karte, die Zeilen trennen sich mit feinen Linien —
    Karten je Zeile frässen auf dem Telefon zu viel Höhe. */
 .korb {
-  list-style: none; margin: 0; padding: 0 10px;
+  list-style: none; margin: 0; padding: 0 var(--v3);
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
@@ -408,8 +459,8 @@ button, .knopf { overflow-wrap: normal; }
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
   grid-template-areas: "bild text" "stellen stellen" "voll voll";
-  column-gap: 10px; row-gap: 4px; align-items: center;
-  padding: 10px 4px; border-bottom: 1px solid var(--linie);
+  column-gap: var(--v3); row-gap: var(--v1); align-items: center;
+  padding: var(--v3) var(--v1); border-bottom: 1px solid var(--linie);
 }
 .korb > .zeile:last-child { border-bottom: none; }
 .zeile > .bild { grid-area: bild; }
@@ -417,55 +468,79 @@ button, .knopf { overflow-wrap: normal; }
 .zeile > .stellen { grid-area: stellen; }
 .zeile > .alternativen, .zeile > .korrektur { grid-area: voll; }
 .zeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
-.stellen { display: flex; align-items: center; gap: 6px; margin-left: auto;
+.stellen { display: flex; align-items: center; gap: var(--v2); margin-left: auto;
            flex-wrap: wrap; justify-content: flex-end; }
 .stellen form { margin: 0; }
 .mini {
-  min-width: var(--tap); min-height: var(--tap); padding: 0 12px;
-  font-size: 16px; font-weight: 600;
+  min-width: var(--tap); min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-feld); font-weight: 600;
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); cursor: pointer;
   transition: transform 0.12s ease; white-space: nowrap;
 }
 .mini:active { transform: scale(0.94); }
 .mini.loeschen { color: var(--beere); }
+
+/* Der Mengensteller ist EIN Bedienteil (WB-400). Vorher standen −, die nackte
+   Zahl und + als drei einzelne Kästen im selben 6-px-Rhythmus wie die
+   Ladenwahl und das löschende „×" — fünf gleichrangige Kästen, von denen
+   einer die Zeile wegnimmt. Jetzt teilen sich die drei einen Rahmen, und
+   „×" rückt ab. Die 44 px je Knopf bleiben: getrennt wird optisch, nicht
+   im Daumen. */
+.steller {
+  display: flex; align-items: stretch; background: var(--karte);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  overflow: hidden;
+}
+.steller form { margin: 0; display: flex; }
+.steller .mini {
+  border: none; border-radius: 0; background: none; padding: 0 var(--v3);
+}
 .stellen .anzahl { margin: 0; min-width: 2ch; text-align: center;
-                   padding: 0; background: none; font-size: 17px;
+                   padding: 0; background: none; font-size: var(--t-text);
                    color: inherit; font-family: var(--mono);
                    font-variant-numeric: tabular-nums;
                    font-weight: 600; }
+.steller .anzahl {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 3ch; padding: 0 var(--v0);
+  border-left: 1.5px solid var(--linie);
+  border-right: 1.5px solid var(--linie);
+}
+/* Löschen läuft nicht im Rhythmus der Mengenknöpfe mit. */
+.stellen .mini.loeschen { margin-left: var(--v2); }
 .stellen select {
-  min-height: var(--tap); font-size: 16px; padding: 0 8px;
+  min-height: var(--tap); font-size: var(--t-feld); padding: 0 var(--v2);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte);
 }
 
-.freitext { display: flex; gap: 8px; margin: var(--rand) 0; }
+.freitext { display: flex; gap: var(--v2); margin: var(--rand) 0; }
 .freitext input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .freitext button, .abschicken .gross {
-  min-height: var(--tap); padding: 0 16px; font-size: 17px; font-weight: 600;
+  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 600;
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); cursor: pointer;
   transition: transform 0.12s ease; white-space: nowrap;
 }
 .freitext button { flex: 0 0 auto; }
 .freitext button:active { transform: scale(0.96); }
-.abschicken { margin-top: 16px; }
+.abschicken { margin-top: var(--v4); }
 .abschicken .gross {
-  width: 100%; min-height: 54px; font-size: 18px; font-weight: 700;
+  width: 100%; min-height: 54px; font-size: var(--t-text); font-weight: 700;
   border: none; background: var(--akzent); color: var(--auf-akzent);
   box-shadow: var(--schatten);
 }
 .abschicken .gross:active { transform: scale(0.98); }
 
-.fehler { padding: 12px 14px; border-radius: var(--radius);
+.fehler { padding: var(--v3) var(--v3); border-radius: var(--radius);
           background: var(--fehler-hell); color: var(--fehler-text);
           border: 1px solid var(--fehler-linie); }
-.fertig { padding: 12px 14px; border-radius: var(--radius);
+.fertig { padding: var(--v3) var(--v3); border-radius: var(--radius);
           background: var(--ok-hell); color: var(--ok-text);
           border: 1px solid var(--ok-linie); font-weight: 600;
           animation: auftauchen 0.35s ease; }
@@ -473,11 +548,11 @@ button, .knopf { overflow-wrap: normal; }
 
 /* Bestellübersicht: dieselbe Karten-Liste wie der Korb. */
 .bestellungen, .rezepte {
-  list-style: none; margin: 0; padding: 0 10px;
+  list-style: none; margin: 0; padding: 0 var(--v3);
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
-.bestellungen .zweig, .rezepte .zweig { padding: 10px 4px; align-items: flex-start; }
+.bestellungen .zweig, .rezepte .zweig { padding: var(--v3) var(--v1); align-items: flex-start; }
 .bestellungen > li:last-child .zweig,
 .rezepte > li:last-child .zweig { border-bottom: none; }
 .bestellung.erledigt .name { color: var(--gedaempft); }
@@ -486,8 +561,8 @@ button, .knopf { overflow-wrap: normal; }
    Laden-Überschriften — im Laden zählt Kontrast und ein Daumen, der trifft. */
 .gruppe h2 {
   position: sticky; top: 0; z-index: 2;
-  display: flex; align-items: center; gap: 8px; font-size: 20px;
-  margin: 20px 0 4px; padding: 8px 0 6px;
+  display: flex; align-items: center; gap: var(--v2); font-size: var(--t-h2);
+  margin: var(--v5) 0 var(--v1); padding: var(--v2) 0 var(--v2);
   background: var(--grund); border-bottom: 2px solid var(--tinte);
 }
 .pickliste { list-style: none; margin: 0; padding: 0; }
@@ -500,46 +575,83 @@ button, .knopf { overflow-wrap: normal; }
 .pickzeile form { display: flex; align-items: center; margin: 0; }
 .pickzeile > form { flex: 1 1 100%; min-width: 0; }
 .pickzeile .stellen { flex: 1 1 auto; margin-left: auto;
-                      padding: 0 4px 10px; }
+                      padding: 0 var(--v1) var(--v3); }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
   flex: 1 1 auto; min-width: 0; min-height: 64px;
                                         /* deutlich über 44 px: hier wird im
                                            Gehen getippt */
-  padding: 6px 4px; cursor: pointer;
+  padding: var(--v2) var(--v1); cursor: pointer;
 }
+/* Das Kästchen auf dem Zettel — gezeichnet, nicht vom Betriebssystem
+   geliehen (WB-400). `accent-color` allein liess die Füllung des leeren
+   Kästchens vom Browser kommen: auf einer „gab's nicht"-Zeile stand sie
+   nachts mit 1,08:1 gegen den Zeilengrund, nur ein Haarrand hielt sie
+   sichtbar. Jetzt trägt es Kartenfarbe und einen eigenen Rand, und der Haken
+   ist grün wie überall im Blatt, wo etwas erledigt ist. 32 px im 64 px
+   hohen Griff: getippt wird auf das Label, nicht auf das Kästchen. */
 .haken input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
   width: 32px; height: 32px; flex: 0 0 32px; margin: 0;
-  accent-color: var(--akzent);
+  background: var(--karte); border: 2px solid var(--knopflinie);
+  border-radius: 7px; cursor: pointer;
 }
-.pickzeile .name { font-size: 18px; }
+.haken input[type="checkbox"]:checked {
+  background: var(--ok-text); border-color: var(--ok-text);
+}
+.haken input[type="checkbox"]:checked::after {
+  content: ""; display: block; width: 8px; height: 15px;
+  margin: var(--v0) auto 0; transform: rotate(42deg);
+  border: solid var(--karte); border-width: 0 3px 3px 0;
+}
+/* Im Laden schwerer statt grösser (WB-400): der Name stand auf 18 px, einer
+   Stufe, die es sonst nirgends gab. 17 px mit 700 lesen sich im Gehen
+   mindestens so gut und kosten keine eigene Grösse. */
+.pickzeile .name { font-size: var(--t-text); font-weight: 700; }
 .pickzeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
 .pickzeile .text { min-width: 0; }
-.pickzeile.ab { opacity: 0.55; }
 /* Abgehakt heisst durchgestrichen — mit dem dicken Stift, nicht mit der
-   Haarlinie: auf dem Zettel wird gestrichen, was im Wagen liegt. */
+   Haarlinie: auf dem Zettel wird gestrichen, was im Wagen liegt.
+
+   Gedimmt wird das BEIWERK, nicht die Aussage (WB-400). Ein `opacity: 0.55`
+   auf der ganzen Zeile multiplizierte auch „2 Stk gebraucht — 1 × 1 kg,
+   nicht ausrechenbar" herunter, bis der Satz auf 2,5:1 stand. Jetzt nimmt
+   das Foto die Zurücknahme auf sich, und die Zahlen wechseln auf die
+   gedämpfte Textfarbe, die ihre 4,5:1 behält. */
 .pickzeile.ab .name { text-decoration: line-through 2px; color: var(--gedaempft); }
+.pickzeile.ab .menge, .pickzeile.ab .gebinde { color: var(--gedaempft); }
+.pickzeile.ab .bild { filter: grayscale(0.6); opacity: 0.7; }
 /* „Gab's nicht" (WB-373): Rotstift wie das „Nein" am Chat-Vorschlag, denn es
    ist dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
    Zeichen: vor dem Regal wird nicht geraten, was ein Symbol bedeutet. */
-.pickzeile .stellen .mini { font-size: 15px; white-space: nowrap; }
+.pickzeile .stellen .mini { font-size: var(--t-klein); white-space: nowrap; }
+/* Nur die Kontur, keine Füllung (WB-400). Der Knopf steht an JEDER offenen
+   Zeile — als gefüllte rote Pille las sich die halbe Liste, als wäre sie
+   schon gescheitert, und auf einer abgehakten Zeile war er das Lauteste im
+   Bild. Die Füllung gehört dem ZUSTAND (`.pickzeile.gabs-nicht` und
+   `.vermisst`), nicht dem Angebot. Der Rotstift bleibt als Schriftfarbe:
+   die Geste ist unverändert dieselbe wie das „Nein" im Chat. */
+.pickzeile .stellen .mini.nein {
+  min-width: 0; font-weight: 600;
+  background: none; border-color: var(--knopflinie);
+}
 .pickzeile.gabs-nicht { background: var(--beere-hell); border-radius: var(--radius-knopf); }
 .pickzeile.gabs-nicht .name { color: var(--gedaempft); }
-.vermisst { font-size: 14px; line-height: 1.3; white-space: normal;
+.vermisst { font-size: var(--t-fein); line-height: 1.3; white-space: normal;
             color: var(--beere); font-weight: 600; }
 
 /* Die Hauptangabe der Einkaufszeile ist die GEBRAUCHTE Menge (WB-381) und
    nicht die Packungsgrösse. Sie ist gerechnet — also Monospace, wie von der
    Kasse gedruckt: die Wahrheit über Mengen hat hier eine eigene Schrift. */
-.pickzeile .menge { color: var(--tinte); font-size: 16px; font-weight: 600;
+.pickzeile .menge { color: var(--tinte); font-size: var(--t-feld); font-weight: 600;
                     font-family: var(--mono); }
 /* Die Packungsangabe („dafür 2 × 1 kg"). Sie steht gross, SOLANGE sie die
    einzige Mengenangabe der Zeile ist; steht die gebrauchte Menge darüber,
    rückt sie hinter sie zurück. */
-.pickzeile .gebinde { font-size: 15px; color: var(--gedaempft);
+.pickzeile .gebinde { font-size: var(--t-klein); color: var(--gedaempft);
                       line-height: 1.35; white-space: normal;
                       font-family: var(--mono); }
-.pickzeile .menge + .gebinde { font-size: 13px; }
+.pickzeile .menge + .gebinde { font-size: var(--t-fein); }
 
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
    weil es dieselbe Sache ist. */
@@ -554,7 +666,7 @@ button, .knopf { overflow-wrap: normal; }
 /* Im Warenkorb und auf der Pickliste (WB-335) hängt der Hinweis an der
    ZEILE, nicht an einem Band am Seitenkopf: im Laden wird gescrollt. */
 .zeile .ausgemustert, .pickzeile .ausgemustert {
-  font-size: 14px; line-height: 1.3; white-space: normal;
+  font-size: var(--t-fein); line-height: 1.3; white-space: normal;
 }
 /* Abgehakt schlägt Warnung: was im Wagen liegt, muss niemand mehr suchen. */
 .pickzeile.ab .ausgemustert { color: var(--gedaempft); font-weight: 400; }
@@ -564,24 +676,35 @@ button, .knopf { overflow-wrap: normal; }
    Rezeptzeile — es ist dieselbe Sorte Nebensatz: leiser als der Name, aber
    lesbar, und im Umbruch statt abgeschnitten. */
 .zeile .hinweis, .kachel .hinweis, .pickzeile .hinweis {
-  font-size: 13px; color: var(--gedaempft); line-height: 1.35;
+  font-size: var(--t-fein); color: var(--gedaempft); line-height: 1.35;
   white-space: normal;
 }
+/* EINE Rangfolge für jede Zeile des Shops, von /pick abgeschaut (WB-400):
+   Name -> was gebraucht wird -> Packung und Preis. Der gerechnete Satz war
+   im Korb und am Vorschlag die dritte und kleinste Zeile, unter einer
+   grösseren, die die PACKUNG nannte — genau die Umkehrung dessen, was das
+   Projekt zeigen will. Er steht jetzt oben und trägt die Textfarbe; die
+   Packungszeile rückt hinter ihn zurück, so wie `.gebinde` auf /pick hinter
+   `.menge`. */
+.zeile .hinweis.gebraucht {
+  font-size: var(--t-klein); color: var(--tinte); line-height: 1.4;
+}
+.zeile .hinweis.gebraucht + .menge { font-size: var(--t-fein); }
 
 /* Die benötigte Menge an der Rezeptzutat (WB-362): ein schmales Feld und
    ein Nebensatz, in derselben Zeile wie der Name. `wrap`, seit die Einheit
    ein zweites Feld ist (WB-375): auf einem schmalen Telefon bricht der
    Hinweis unter die beiden Felder, statt sie zu quetschen. */
-.bedarf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-          margin: 4px 0 0; }
+.bedarf { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2);
+          margin: var(--v1) 0 0; }
 .bedarf .hinweis { flex: 1 1 12ch; }
 /* 16 px, nicht 15: Safari zoomt bei einem kleineren Feld beim Hineintippen in
    die Seite und zoomt nicht zurück (WB-379). Die Breiten stehen in `ch` und
    wachsen mit. */
 .bedarf input[type="text"] {
-  width: 5ch; min-height: var(--tap); text-align: right; font-size: 16px;
+  width: 5ch; min-height: var(--tap); text-align: right; font-size: var(--t-feld);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
-  padding: 0 6px; background: var(--karte); color: var(--tinte);
+  padding: 0 var(--v2); background: var(--karte); color: var(--tinte);
 }
 /* Die Einheit als eigenes Feld neben der Zahl (WB-375). Linksbündig und
    breiter als die Menge: dort steht Text („Scheibe"), keine Ziffer — und
@@ -591,36 +714,36 @@ button, .knopf { overflow-wrap: normal; }
 /* Die Portionszahl steht neben dem Korb-Knopf und nicht darüber: sie gehört
    zu diesem Griff. Auf dem Telefon bricht sie darüber um. */
 .abschicken.portionen {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v3);
 }
 .abschicken.portionen label {
-  display: flex; align-items: center; gap: 8px; font-size: 15px;
+  display: flex; align-items: center; gap: var(--v2); font-size: var(--t-klein);
   color: var(--gedaempft);
 }
 .abschicken.portionen input {
-  width: 4.5ch; min-height: 44px; text-align: center; font-size: 17px;
+  width: 4.5ch; min-height: 44px; text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
-  background: var(--karte); color: var(--tinte); padding: 0 6px;
+  background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
   font-family: var(--mono);
 }
 .abschicken.portionen .gross { flex: 1 1 12ch; }
 .abschicken.portionen .hinweis {
-  flex-basis: 100%; font-size: 13px; color: var(--gedaempft);
+  flex-basis: 100%; font-size: var(--t-fein); color: var(--gedaempft);
 }
 
 /* Kopfdaten des Rezepts. */
-.rezeptkopf { display: flex; flex-direction: column; gap: 10px;
+.rezeptkopf { display: flex; flex-direction: column; gap: var(--v3);
               margin: var(--rand) 0; }
-.rezeptkopf label { display: flex; flex-direction: column; gap: 4px;
-                    color: var(--gedaempft); font-size: 15px; }
+.rezeptkopf label { display: flex; flex-direction: column; gap: var(--v1);
+                    color: var(--gedaempft); font-size: var(--t-klein); }
 .rezeptkopf input, .rezeptkopf textarea {
-  min-height: var(--tap); padding: 10px 14px; font-size: 17px;
+  min-height: var(--tap); padding: var(--v3) var(--v3); font-size: var(--t-text);
   color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   width: 100%; font-family: inherit;
 }
 .rezeptkopf .knopf { align-self: flex-start; }
-.rezeptloeschen { margin: 24px 0; }
+.rezeptloeschen { margin: var(--v5) 0; }
 .rezeptloeschen .knopf.loeschen { color: var(--beere); border-color: var(--beere-hell);
                                   background: var(--beere-hell); }
 
@@ -629,25 +752,47 @@ button, .knopf { overflow-wrap: normal; }
    kleine Blätter (Pillen), keine mit Punkten verketteten Halbsätze: die
    Trennpunkte hingen beim Umbruch am Zeilenende in der Luft. */
 .rezeptherkunft {
-  display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;
-  margin: 0 0 12px; color: var(--gedaempft); font-size: 15px;
+  display: flex; flex-wrap: wrap; gap: var(--v2) var(--v2); align-items: center;
+  margin: 0 0 var(--v3); color: var(--gedaempft); font-size: var(--t-klein);
+}
+/* Auf der Rezeptseite steht der Kopf auf einem BLATT — demselben, in dem die
+   Rezeptkarte im Chat steht (WB-400). Dieselben Angaben trugen bisher zwei
+   Gestalten: im Chat eine Karte mit Rand und Schatten, hier ein loser
+   Absatz auf dem Karo, dessen Pillen in drei zerfranste Zeilen brachen. Die
+   Naht zwischen den beiden Bausteinen war damit sichtbarer als vorher. */
+main > .rezeptherkunft {
+  padding: var(--v3); margin: 0 0 var(--v4);
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius); box-shadow: var(--schatten);
 }
 .rezeptherkunft .zeit {
-  background: var(--karte); border: 1px solid var(--linie);
-  border-radius: 999px; padding: 3px 12px; font-size: 14px;
+  background: var(--karte-tief); border: 1px solid var(--linie);
+  border-radius: 999px; padding: var(--v0) var(--v3); font-size: var(--t-fein);
   white-space: nowrap;
 }
-.rezeptherkunft .quelle { color: var(--akzent-tinte); text-decoration: underline; }
+/* Die Herkunft ist ein AUSGANG und deshalb ein Tap-Ziel wie jedes andere
+   (WB-400). Sie war 151 × 20 px — zusammen mit „Das ganze Rezept ansehen"
+   das einzige Ziel des Blattes unter 44 px, und ausgerechnet an der Karte,
+   die nach draussen führt. Auf der Rezeptseite lief sie ausserdem als roher
+   blauer Link über zwei Zeilen; hier bekommt sie dieselbe Gestalt wie in der
+   Chat-Karte. Volle Breite, damit sie nach den Pillen eine eigene Zeile
+   bekommt statt sich zwischen sie zu quetschen. */
+.rezeptherkunft .quelle {
+  flex: 1 0 100%; min-height: var(--tap);
+  display: inline-flex; align-items: center;
+  color: var(--akzent-tinte); text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 .rezeptzutaten { list-style: none; margin: 0 0 var(--rand); padding: 0; }
 .rezeptzutaten li {
-  display: flex; gap: 10px; padding: 7px 4px; line-height: 1.4;
+  display: flex; gap: var(--v3); padding: var(--v2) var(--v1); line-height: 1.4;
   border-bottom: 1px solid var(--linie);
 }
 .rezeptzutaten li:last-child { border-bottom: none; }
 .rezeptzutaten .menge { flex: 0 0 8ch; text-align: right;
                         color: var(--gedaempft);
-                        font-family: var(--mono); font-size: 15px; }
+                        font-family: var(--mono); font-size: var(--t-klein); }
 /* Der Griff „Zutat im Katalog suchen" ist ein Tap-Ziel wie jedes andere und
    hatte ~24 px — die Höhe der Textzeile. In diesem Blatt sind es 44 (WB-379).
    Volle Restbreite, damit auch neben einem kurzen Namen getroffen wird. */
@@ -657,18 +802,18 @@ button, .knopf { overflow-wrap: normal; }
 }
 .rezeptzutaten .hinweis { color: var(--gedaempft); }
 .rezeptzutaten .gruppe {
-  display: block; margin-top: 10px; font-weight: 700; color: var(--tinte);
+  display: block; margin-top: var(--v3); font-weight: 700; color: var(--tinte);
   border-bottom: none;
 }
 
 .zubereitung { margin: 0 0 var(--rand); padding-left: 1.4em; }
-.zubereitung li { margin-bottom: 12px; line-height: 1.55; }
+.zubereitung li { margin-bottom: var(--v3); line-height: 1.55; }
 
 /* „Daraus ein Rezept machen" an der erledigten Bestellung (Spec 6). */
-.rezept-daraus { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 10px; }
+.rezept-daraus { display: flex; flex-wrap: wrap; gap: var(--v2); padding: 0 var(--v1) var(--v3); }
 .rezept-daraus input {
-  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 
@@ -677,7 +822,7 @@ button, .knopf { overflow-wrap: normal; }
    demselben Raster folgt wie eine Korbzeile: dieselbe Sache, nur noch nicht
    bestätigt. */
 .chat { margin: 0; }
-.chat h2 { margin: 0 0 8px; }
+.chat h2 { margin: 0 0 var(--v2); }
 
 /* Die Korbbrücke (WB-382) — der Weg zwischen Chat und Korb, und zugleich die
    Rückmeldung, dass ein „Ja" angekommen ist. Sie KLEBT auf der Chatseite
@@ -689,12 +834,12 @@ button, .knopf { overflow-wrap: normal; }
 .korbbruecke {
   position: sticky; top: 0; z-index: 3;
   display: flex; justify-content: center;
-  margin: 0 0 8px; padding: 6px 0;
+  margin: 0 0 var(--v2); padding: var(--v2) 0;
   background: var(--grund);
-  font-size: 14px; color: var(--gedaempft);
+  font-size: var(--t-fein); color: var(--gedaempft);
 }
 .korbbruecke.unten { position: static; margin-top: var(--rand); }
-.korbbruecke .knopf { font-size: 15px; }
+.korbbruecke .knopf { font-size: var(--t-klein); }
 /* Der leere Korb bekommt keinen Knopf: ein Link auf eine leere Liste ist eine
    Sackgasse mit Einladung. Der Satz bleibt trotzdem stehen, damit die Stelle
    nicht erst auftaucht, wenn etwas passiert. */
@@ -709,42 +854,55 @@ button, .knopf { overflow-wrap: normal; }
 .chatband::before { animation: puls 1.6s ease-in-out infinite; }
 .chatband .fussnote { display: block; }
 
-.chatzeile { margin: 10px 0; padding: 10px 14px; border-radius: 14px;
+.chatzeile { margin: var(--v3) 0; padding: var(--v3) var(--v3); border-radius: 14px;
              max-width: 92%; width: fit-content; }
 .chatzeile.ich { background: var(--akzent-hell); color: var(--tinte);
                  margin-left: auto; border-bottom-right-radius: 4px; }
 .chatzeile.agent { background: var(--karte); border: 1px solid var(--linie);
-                   color: var(--tinte); font-size: 15px;
+                   color: var(--tinte); font-size: var(--t-klein);
                    border-bottom-left-radius: 4px; }
 
-.vorschlaege { list-style: none; margin: 0 0 8px; padding: 0; }
+.vorschlaege { list-style: none; margin: 0 0 var(--v2); padding: 0; }
 .vorschlaege > .zeile {
   background: var(--karte); border: 1px solid var(--linie);
   border-radius: var(--radius); box-shadow: var(--schatten);
-  padding: 10px; margin: 8px 0;
+  padding: var(--v3); margin: var(--v2) 0;
 }
 .vorschlaege > .zeile.fehlt-im-katalog { background: var(--honig-hell);
                                          border-color: var(--honig-linie); }
 /* Woraus die Zeile entstanden ist: Suchbegriff und Rang (Spec 8.1). */
-.vorschlag .woher { font-size: 13px; color: var(--gedaempft); }
-.vorschlag.entschieden { opacity: 0.6; }
+.vorschlag .woher { font-size: var(--t-fein); color: var(--gedaempft); }
+/* Entschieden heisst zurückgetreten, nicht unlesbar (WB-400). `opacity: 0.6`
+   auf der ganzen Karte legte auch „400 g gebraucht — im Katalog nicht
+   gefunden." auf 2,5:1 — ausgerechnet den Satz, der die Rechnung erklärt.
+   Die Karte tritt jetzt über ihren Grund zurück, das Foto über den Filter;
+   die Sätze behalten ihre Farbe. */
+.vorschlag.entschieden { background: var(--karte-tief); }
+.vorschlag.entschieden .name { color: var(--gedaempft); }
+.vorschlag.entschieden .bild { filter: grayscale(0.6); opacity: 0.7; }
 .vorschlag .stellen { align-items: center; }
+/* „Ja" und „Nein" sind EIN Paar und werden auch so gebaut (WB-400): gleiche
+   Breite, gleicher Rand, nur die Farbe unterscheidet sie. Vorher war „Ja"
+   44 px und „Nein" 67 px — das positive Ziel war das kleinere, und „Nein"
+   trug als einziges der beiden einen unsichtbaren Rand. Die Breite kommt von
+   `min-width` und nicht von der Wortlänge; 68 px fasst beide Wörter. */
+.mini.ja, .mini.nein { min-width: 68px; font-weight: 700; }
 .mini.ja { color: var(--ok-text); background: var(--ok-hell);
-           border-color: var(--ok-linie); font-weight: 700; }
+           border-color: var(--ok-text); }
 .mini.nein { color: var(--beere); background: var(--beere-hell);
-             border-color: transparent; }
+             border-color: var(--beere); }
 /* Der Rückweg (WB-361): kleiner als die Entscheidung, aber nicht kleiner als
    der Daumen. Die Grösse kommt von `.mini` und bleibt damit bei 44 px; hier
    werden nur Gewicht, Rahmen und Farbe zurückgenommen, damit „rückgängig"
    neben „Ja"/„Nein" nicht wie eine dritte gleichrangige Wahl aussieht. */
 .mini.zurueck {
-  font-size: 14px; font-weight: 500; padding: 0 10px;
+  font-size: var(--t-fein); font-weight: 500; padding: 0 var(--v3);
   color: var(--gedaempft); background: none; border-color: transparent;
   text-decoration: underline; text-underline-offset: 3px;
 }
 
 /* Entschieden-Marken: kleine Pillen statt nackter Wörter. */
-span.marke { font-size: 13px; font-weight: 600; padding: 5px 10px;
+span.marke { font-size: var(--t-fein); font-weight: 600; padding: var(--v1) var(--v3);
              border-radius: 999px; background: var(--karte-tief);
              color: var(--gedaempft); white-space: nowrap; }
 span.marke.ja { background: var(--ok-hell); color: var(--ok-text); }
@@ -757,26 +915,44 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    `min-width: 0`: als Rasterzelle erbt der Block sonst die Mindestbreite
    seines Inhalts — und die Liste ragte messbar 90 px über den rechten
    Bildschirmrand hinaus (WB-400). */
-.alternativen { grid-area: voll; min-width: 0; margin-top: 4px; }
+.alternativen { grid-area: voll; min-width: 0; margin-top: var(--v1); }
 .alternativen > summary {
-  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
-  padding: 0 4px; font-size: 15px; color: var(--gedaempft); cursor: pointer;
+  min-height: var(--tap); display: flex; align-items: center; gap: var(--v2);
+  padding: 0 var(--v1); font-size: var(--t-klein); color: var(--gedaempft); cursor: pointer;
   list-style: none;
 }
 .alternativen > summary::-webkit-details-marker { display: none; }
 .alternativen > summary::before {
-  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  content: "\203A"; color: var(--gedaempft); font-size: var(--t-h2);
   width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
 }
 .alternativen[open] > summary::before { transform: rotate(90deg); }
+/* Der Kantenschatten sagt, dass es weitergeht (WB-400): die Liste schnitt
+   die letzte Zeile mitten durch „Butter" und sah aus wie zu Ende. Zwei
+   Verläufe liegen `local` (sie scrollen mit und decken den Schatten am
+   jeweiligen Ende ab), zwei liegen fest — dadurch erscheint der Schatten
+   NUR, solange in diese Richtung noch etwas kommt. Kein JavaScript, keine
+   zweite Animation; die Verläufe sind Malerei und keine Bewegung. */
 .altliste { max-height: 60vh; overflow-y: auto; margin: 0;
-            background: var(--karte-tief); border-radius: var(--radius-knopf);
-            padding: 0 8px; }
+            background:
+              linear-gradient(var(--karte-tief) 30%,
+                              var(--karte-tief-null)) top / 100% 16px local no-repeat,
+              linear-gradient(var(--karte-tief-null),
+                              var(--karte-tief) 70%) bottom / 100% 16px local no-repeat,
+              radial-gradient(farthest-side at 50% 0,
+                              var(--kante),
+                              var(--karte-tief-null)) top / 100% 8px scroll no-repeat,
+              radial-gradient(farthest-side at 50% 100%,
+                              var(--kante),
+                              var(--karte-tief-null)) bottom / 100% 8px scroll no-repeat,
+              var(--karte-tief);
+            border-radius: var(--radius-knopf);
+            padding: 0 var(--v2); }
 /* In der Alternativenliste bleibt die Zeile EINE Zeile: Bild, Text und der
    eine Knopf nebeneinander — kleinere Bilder, denn das ist die zweite
    Ebene, nicht die erste. */
 .altliste > .zeile { background: none; border: none; box-shadow: none;
-                     border-radius: 0; margin: 0; padding: 8px 0;
+                     border-radius: 0; margin: 0; padding: var(--v2) 0;
                      border-bottom: 1px solid var(--linie);
                      grid-template-columns: 48px minmax(0, 1fr) auto;
                      grid-template-areas: "bild text stellen"; }
@@ -785,44 +961,44 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 /* „Nichts davon, ich schreibe es selbst" — bei einer echten Katalog-Lücke
    der richtige Ausgang und nicht der Notausgang. */
-.selbst { display: flex; gap: 8px; margin: 8px 0 4px; }
+.selbst { display: flex; gap: var(--v2); margin: var(--v2) 0 var(--v1); }
 .selbst input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .selbst button { white-space: nowrap; flex: 0 0 auto; }
 
 /* Nur über den allgemeinsten Kettenbegriff gefunden (WB-359): Textmarker,
    nicht Rotstift — kein Fehler, aber auch kein sicherer Treffer. */
-.vorschlag .schwach { font-size: 13px; color: var(--honig); }
+.vorschlag .schwach { font-size: var(--t-fein); color: var(--honig); }
 
 /* Nach einem zurückgenommenen „Ja" (WB-361): die Zeile bleibt im Korb, und
    das muss dastehen. Gedämpft und nicht rot — es ist keine Warnung, sondern
    eine Auskunft. */
-.vorschlag .hinweis { font-size: 13px; color: var(--gedaempft); }
+.vorschlag .hinweis { font-size: var(--t-fein); color: var(--gedaempft); }
 
-.sammel { display: flex; gap: 8px; margin: 0 0 var(--rand); }
+.sammel { display: flex; gap: var(--v2); margin: 0 0 var(--rand); }
 
 /* Der Sammelrückweg (WB-397). Der Satz gehört zum Knopf darüber und nicht in
    den Abstand danach — er sagt VOR dem Tipp, was „Doch nicht alles" NICHT
    anfasst (einzeln Entschiedenes, den Korb). */
-.sammel + .fussnote { margin: -8px 0 var(--rand); }
+.sammel + .fussnote { margin: calc(var(--v2) * -1) 0 var(--rand); }
 
 /* Der eingeklappte Teil des Verlaufs (WB-372). Er sieht wie eine Trennlinie
    mit Aufschrift aus und nicht wie eine Handlung. Volle Breite, weil die
    Aufschrift Zahlen trägt und umbrechen darf. */
 .aeltere { margin: 0 0 var(--rand); }
 .aeltere button {
-  width: 100%; height: auto; min-height: var(--tap); padding: 8px 14px;
-  font-size: 14px; font-weight: 500; color: var(--gedaempft);
+  width: 100%; height: auto; min-height: var(--tap); padding: var(--v2) var(--v3);
+  font-size: var(--t-fein); font-weight: 500; color: var(--gedaempft);
   background: var(--karte-tief); border: 1.5px dashed var(--knopflinie);
   white-space: normal;
 }
 
 /* Der Weg aus dem Verlauf heraus (WB-372). Ganz unten, gedämpft und einzeln:
    er löscht Entscheidungen, aus denen später Eval-Labels werden. */
-.verlauf-leeren { margin: var(--rand) 0 8px; }
+.verlauf-leeren { margin: var(--rand) 0 var(--v2); }
 
 /* Die Rückfrage davor. Sie erbt das Hinweisband und bekommt seinen Rahmen,
    damit sie als eigener Block dasteht und nicht als Randnotiz. */
@@ -830,41 +1006,44 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   border: 1px solid var(--honig-linie); border-radius: var(--radius);
   margin: var(--rand) 0;
 }
-.band.frage p { margin: 0 0 10px; }
-.band.frage .fussnote { display: block; margin-top: 4px; }
+.band.frage p { margin: 0 0 var(--v3); }
+.band.frage .fussnote { display: block; margin-top: var(--v1); }
 .band.frage .sammel { margin: 0; }
 
 /* Der Rezeptentwurf (WB-337): eine ruhige Karte unter den Vorschlägen. Hier
    wird nichts entschieden, hier wird nur beschrieben, was beim Abschicken
    entsteht. Eine herausgenommene Zeile bleibt stehen und wird blass. */
 .entwurf {
-  margin: 0 0 var(--rand); padding: 12px; background: var(--karte-tief);
+  margin: 0 0 var(--rand); padding: var(--v3); background: var(--karte-tief);
   border-radius: var(--radius);
 }
-.entwurf h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: -0.01em; }
-.entwurf-name { display: flex; gap: 8px; margin-bottom: 8px; }
+.entwurf h3 { margin: 0 0 var(--v2); font-size: var(--t-feld); letter-spacing: -0.01em; }
+.entwurf-name { display: flex; gap: var(--v2); margin-bottom: var(--v2); }
 .entwurf-name input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; font-weight: 600; color: var(--tinte);
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); font-weight: 600; color: var(--tinte);
   background: var(--karte); border: 1.5px solid var(--knopflinie);
   border-radius: var(--radius-knopf);
 }
-.entwurfsliste { list-style: none; margin: 0 0 8px; padding: 0; }
+.entwurfsliste { list-style: none; margin: 0 0 var(--v2); padding: 0; }
 .entwurfsliste > li {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  padding: 6px 0; border-bottom: 1px solid var(--linie);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2);
+  padding: var(--v2) 0; border-bottom: 1px solid var(--linie);
 }
 .entwurfsliste > li:last-child { border-bottom: none; }
 .entwurfsliste .text { flex: 1 1 140px; min-width: 0; }
 .entwurfsliste .name { font-weight: 600; }
-.entwurfsliste .menge { display: block; font-size: 13px;
+.entwurfsliste .menge { display: block; font-size: var(--t-fein);
                         color: var(--gedaempft); font-family: var(--mono); }
-.entwurfsliste > li.raus { opacity: 0.55; }
-.entwurf-menge { display: flex; gap: 4px; }
+/* Herausgenommen — wieder: das Beiwerk dimmen, die Menge nicht (WB-400). */
+.entwurfsliste > li.raus .name { color: var(--gedaempft);
+                                 text-decoration: line-through 2px; }
+.entwurfsliste > li.raus .menge { color: var(--gedaempft); }
+.entwurf-menge { display: flex; gap: var(--v1); }
 /* 16 px und keinen Punkt weniger: Safari zoomt bei einem kleineren Feld beim
    Hineintippen in die Seite — und zoomt NICHT zurück. */
 .entwurf-menge input {
-  min-height: var(--tap); padding: 0 10px; font-size: 16px;
+  min-height: var(--tap); padding: 0 var(--v3); font-size: var(--t-feld);
   color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
@@ -879,31 +1058,36 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    warum jemand „nein" sagt (Pho Bo: 9½ Stunden). Der Rest ist ruhig und
    klein — die Karte soll gelesen und nicht bedient werden. */
 .zugrezept {
-  margin: 0 0 var(--rand); padding: 14px; background: var(--karte);
+  margin: 0 0 var(--rand); padding: var(--v3); background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius);
   box-shadow: var(--schatten);
 }
-.zugrezept h3 { margin: 0 0 6px; font-size: 19px; font-weight: 800;
+.zugrezept h3 { margin: 0 0 var(--v2); font-size: var(--t-h2); font-weight: 800;
                 letter-spacing: -0.02em; }
 /* Eine eigene Klasse und nicht das `.zeit` der Rezeptseite: dort ist es die
    kleine Pille in `.rezeptherkunft`, und die steht in dieser Karte auch.
-   Monospace: die Zeit ist eine gerechnete Zahl, die grösste der Karte. */
+   Monospace: die Zeit ist eine gerechnete Zahl, die grösste der Karte.
+
+   In Tinte und nicht in Tintenblau (WB-400): das Blatt hat EINE
+   Handlungsfarbe, und die grösste statische Zahl der Karte trug sie —
+   buchstabengleich mit dem Link „Original auf Chefkoch" zwei Zeilen
+   darunter, der wirklich irgendwohin führt. */
 .zugrezept .gesamtzeit {
-  margin: 0 0 4px; font-size: 22px; font-weight: 700; line-height: 1.2;
-  color: var(--akzent-tinte); font-family: var(--mono);
+  margin: 0 0 var(--v1); font-size: var(--t-zahl); font-weight: 700; line-height: 1.2;
+  color: var(--tinte); font-family: var(--mono);
   letter-spacing: -0.02em;
 }
 /* Die Ruhezeit gehört zur Zahl und nicht daneben: sie ist die Erklärung
    dafür, dass aus 90 Minuten neuneinhalb Stunden werden. */
 .zugrezept .gesamtzeit .ruhe {
-  display: block; font-size: 13px; font-weight: 500; color: var(--gedaempft);
+  display: block; font-size: var(--t-fein); font-weight: 500; color: var(--gedaempft);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   letter-spacing: 0;
 }
-.zugrezept .deckung { margin: 0 0 8px; font-size: 15px; color: var(--tinte); }
-.zugrezept .rezeptherkunft { margin: 0 0 10px; font-size: 14px; }
-.zugrezept .rezeptzutaten { margin: 0 0 8px; font-size: 15px; }
-.zugrezept .rezeptzutaten li { padding: 5px 2px; }
+.zugrezept .deckung { margin: 0 0 var(--v2); font-size: var(--t-klein); color: var(--tinte); }
+.zugrezept .rezeptherkunft { margin: 0 0 var(--v3); font-size: var(--t-fein); }
+.zugrezept .rezeptzutaten { margin: 0 0 var(--v2); font-size: var(--t-klein); }
+.zugrezept .rezeptzutaten li { padding: var(--v1) var(--v0); }
 /* Ohne Suchgriff und deshalb ohne Tap-Höhe: hier wird gelesen, nicht
    getippt — 23 Zeilen à 44 px wären eine halbe Bildschirmlänge Luft.
    Und leise: eine Leseliste in lauter fetter Schrift war eine Wand. */
@@ -911,17 +1095,25 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
                                   font-weight: 400; }
 .zugrezept .rezeptzutaten .menge { flex: 0 0 7ch; }
 .zugrezept .fussnote { margin: 0; }
+/* Die Ausgänge der Karte sind Tap-Ziele und keine Fussnoten (WB-400): „Das
+   ganze Rezept ansehen" mass 176 × 17 px und war zusammen mit der Herkunft
+   das einzige zu kleine Ziel des Blattes — ausgerechnet an der Karte, die
+   nach draussen führt. Die Schrift bleibt die der Fussnote, die Höhe nicht. */
+.zugrezept a.ausgang {
+  display: inline-flex; align-items: center; min-height: var(--tap);
+  text-underline-offset: 3px;
+}
 
 /* Die anderen Rezepte derselben Suche (WB-387). Sie stehen IN der Karte, vor
    der Zutatenliste — die Wahl kommt vor dem Lesen. Eine Zeile ist ein Knopf:
    der ganze Streifen ist das Ziel, mit `--tap` als Untergrenze. */
-.andere { margin: 0 0 10px; }
-.andere-kopf { margin: 0 0 6px; font-size: 14px; color: var(--gedaempft); }
-.andereliste { list-style: none; margin: 0 0 6px; padding: 0; }
-.andereliste > li { margin: 6px 0; }
+.andere { margin: 0 0 var(--v3); }
+.andere-kopf { margin: 0 0 var(--v2); font-size: var(--t-fein); color: var(--gedaempft); }
+.andereliste { list-style: none; margin: 0 0 var(--v2); padding: 0; }
+.andereliste > li { margin: var(--v2) 0; }
 .andereliste .wahl {
-  display: flex; flex-direction: column; gap: 2px; width: 100%;
-  min-height: var(--tap); padding: 8px 12px; text-align: left;
+  display: flex; flex-direction: column; gap: var(--v0); width: 100%;
+  min-height: var(--tap); padding: var(--v2) var(--v3); text-align: left;
   background: var(--karte-tief); color: var(--tinte);
   border: 1.5px solid var(--linie); border-radius: var(--radius-knopf);
   font: inherit; cursor: pointer;
@@ -932,16 +1124,19 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .andereliste .ist .wahl {
   background: transparent; border-style: dashed; cursor: default;
 }
-.andereliste .name { font-size: 15px; font-weight: 600; }
+.andereliste .name { font-size: var(--t-klein); font-weight: 600; }
 .andereliste .marke {
-  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  font-size: var(--t-fein); font-weight: 600; padding: var(--v0) var(--v2); border-radius: 999px;
   background: var(--akzent-hell); color: var(--akzent-tinte);
   white-space: nowrap;
 }
+/* KEIN Monospace: „35 Minuten Arbeitszeit", „4.74 aus 1420 Stimmen" sind von
+   Chefkoch abgeschrieben und nicht gerechnet. Die Kassenschrift ist in
+   diesem Blatt die Auszeichnung für die eigene Rechnung (Bedarfsmenge,
+   Preis, Zähler); sie hier zu tragen kehrte ihre Aussage um (WB-400). */
 .andereliste .zahlen {
-  display: flex; flex-wrap: wrap; gap: 2px 12px;
-  font-size: 13px; color: var(--gedaempft);
-  font-family: var(--mono);
+  display: flex; flex-wrap: wrap; gap: var(--v0) var(--v3);
+  font-size: var(--t-fein); color: var(--gedaempft);
 }
 .andere .fussnote { margin: 0; }
 
@@ -949,17 +1144,17 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    das Feld an „Alles in den Warenkorb" (`.abschicken.portionen`) — es ist
    dieselbe Frage an einem anderen Ort. */
 .zugportionen {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-  margin: 0 0 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v3);
+  margin: 0 0 var(--v3);
 }
 .zugportionen label {
-  display: flex; align-items: center; gap: 8px; font-size: 15px;
+  display: flex; align-items: center; gap: var(--v2); font-size: var(--t-klein);
   color: var(--gedaempft);
 }
 .zugportionen input {
-  width: 4.5ch; min-height: var(--tap); text-align: center; font-size: 17px;
+  width: 4.5ch; min-height: var(--tap); text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
-  background: var(--karte); color: var(--tinte); padding: 0 6px;
+  background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
   font-family: var(--mono);
 }
 .zugportionen .fussnote { flex-basis: 100%; margin: 0; }
@@ -967,28 +1162,28 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 /* Der einzige eingeklappte Teil. Die Schritte werden beim Aufklappen
    NACHGELADEN (WB-383) — ein `<details>` versteckt sonst nur, was trotzdem
    übertragen wurde, und Pho Bos Zubereitung sind 3.924 Zeichen. */
-.zubereitung-klapp { margin: 0 0 10px; }
+.zubereitung-klapp { margin: 0 0 var(--v3); }
 .zubereitung-klapp > summary {
-  min-height: var(--tap); display: flex; align-items: center; gap: 6px;
-  font-size: 15px; color: var(--gedaempft); cursor: pointer;
+  min-height: var(--tap); display: flex; align-items: center; gap: var(--v2);
+  font-size: var(--t-klein); color: var(--gedaempft); cursor: pointer;
   list-style: none;
 }
 .zubereitung-klapp > summary::-webkit-details-marker { display: none; }
 .zubereitung-klapp > summary::before {
-  content: "\203A"; color: var(--gedaempft); font-size: 19px;
+  content: "\203A"; color: var(--gedaempft); font-size: var(--t-h2);
   width: 14px; flex: 0 0 14px; transition: transform 0.15s ease;
 }
 .zubereitung-klapp[open] > summary::before { transform: rotate(90deg); }
-.zubereitung-klapp .zubereitung { margin: 4px 0 0; font-size: 15px; }
+.zubereitung-klapp .zubereitung { margin: var(--v1) 0 0; font-size: var(--t-klein); }
 
 /* Die Sorten eines Oberbegriffs (WB-368): Kästchen, die mit dem Daumen zu
    treffen sind — eine Zeile je Sorte, das ganze Feld ist das Ziel, und die
    echte Stückzahl steht als Pille daneben. */
-.sortenliste { list-style: none; margin: 0 0 8px; padding: 0; }
-.sortenliste > li { margin: 8px 0; }
+.sortenliste { list-style: none; margin: 0 0 var(--v2); padding: 0; }
+.sortenliste > li { margin: var(--v2) 0; }
 .sortenliste label {
-  display: flex; align-items: center; gap: 12px; min-height: var(--tap);
-  padding: 4px 12px; background: var(--karte);
+  display: flex; align-items: center; gap: var(--v3); min-height: var(--tap);
+  padding: var(--v1) var(--v3); background: var(--karte);
   border: 1px solid var(--linie); border-radius: var(--radius-knopf);
   box-shadow: var(--schatten); cursor: pointer;
 }
@@ -996,19 +1191,19 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
                      accent-color: var(--akzent); }
 .sortenliste .name { flex: 1 1 auto; font-weight: 600; }
 .sortenliste .anzahl {
-  font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  font-size: var(--t-fein); font-weight: 600; padding: var(--v1) var(--v3); border-radius: 999px;
   background: var(--karte-tief); color: var(--gedaempft);
 }
 .sorten-weiter { margin: 0 0 var(--rand); }
 
-.chatform { display: flex; gap: 8px; margin-top: var(--rand); }
+.chatform { display: flex; gap: var(--v2); margin-top: var(--rand); }
 .chatform input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 .chatform button {
-  min-height: var(--tap); padding: 0 18px; font-size: 17px; font-weight: 700;
+  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 700;
   border: none; border-radius: var(--radius-knopf);
   background: var(--akzent); color: var(--auf-akzent);
   box-shadow: var(--schatten); cursor: pointer;
@@ -1030,13 +1225,13 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 /* Der Weg aus dem Fehlerzustand von Hand (WB-378) — er sitzt unter dem Band
    und hängt daran, statt eine eigene Zeile aufzumachen. */
-.zustand-nachsehen { margin: -8px 0 var(--rand); }
+.zustand-nachsehen { margin: calc(var(--v2) * -1) 0 var(--rand); }
 
 /* Rückmeldung auf der Pick-Liste (WB-373). Sie klebt unten am Bildrand, weil
    im Laden gescrollt wird und der Daumen unten ist. */
 .pick-meldung {
   position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5;
-  margin: 0; padding: 10px 14px; border-radius: var(--radius);
+  margin: 0; padding: var(--v3) var(--v3); border-radius: var(--radius);
   box-shadow: var(--schatten); text-align: center; font-weight: 600;
   animation: auftauchen 0.25s ease;
 }
@@ -1044,34 +1239,47 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
                color: var(--gedaempft); }
 
 /* Statusseite (WB-331): dieselbe Karten-Liste, nur ohne Bild. */
-.laeufe { list-style: none; margin: 0; padding: 0 10px;
+.laeufe { list-style: none; margin: 0; padding: 0 var(--v3);
           background: var(--karte); border: 1px solid var(--linie);
           border-radius: var(--radius); box-shadow: var(--schatten); }
-.lauf { display: flex; flex-direction: column; padding: 10px 4px;
+.lauf { display: flex; flex-direction: column; padding: var(--v3) var(--v1);
         border-bottom: 1px solid var(--linie); }
 .laeufe > .lauf:last-child { border-bottom: none; }
 .lauf .name { font-weight: 600; }
 .lauf.verworfen { background: var(--honig-hell); border-radius: var(--radius-knopf); }
 .lauf.error .name { color: var(--fehler-text); }
-code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
-       font-size: 15px; font-family: var(--mono); }
+code { background: var(--karte-tief); border-radius: 6px; padding: var(--v0) var(--v1);
+       font-size: var(--t-klein); font-family: var(--mono); }
 
 /* Bons (WB-344): der Upload ist eine gestrichelte Ablagefläche — man legt
    etwas hinein. Eine Spalte, weil die Dateiauswahl des Telefons die volle
    Breite braucht. */
-.bonupload { display: flex; flex-direction: column; gap: 10px;
-             margin-bottom: var(--rand); padding: 14px;
+.bonupload { display: flex; flex-direction: column; gap: var(--v3);
+             margin-bottom: var(--rand); padding: var(--v3);
              background: var(--karte); border: 1.5px dashed var(--knopflinie);
              border-radius: var(--radius); }
 /* Auch hier 16 px (WB-379): die Regel „kein Eingabefeld unter 16" ohne
    Sonderfall ist die, die man beim nächsten Feld noch kennt. */
+/* Der Knopf IM Dateifeld war der letzte Rest Betriebssystem-Blech im Blatt
+   (WB-400) — als Hauptaktion einer deutschen Seite. Das WORT darin gehört
+   dem Browser (auf dem Telefon steht es deutsch da, im Firefox dieses
+   Rechners „Browse…"); die Gestalt gehört uns und folgt `.mini`. Ein
+   nachgebautes Feld ohne Dateinamen wäre ohne JavaScript schlechter als ein
+   echtes mit fremder Aufschrift. */
+.bonupload input[type="file"]::file-selector-button {
+  min-height: 34px; margin-right: var(--v3); padding: 0 var(--v3);
+  font: inherit; font-size: var(--t-feld); font-weight: 600;
+  color: var(--tinte); background: var(--karte);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  cursor: pointer;
+}
 .bonupload input[type="file"] {
-  width: 100%; min-height: var(--tap); padding: 9px 10px; font-size: 16px;
+  width: 100%; min-height: var(--tap); padding: var(--v2) var(--v3); font-size: var(--t-feld);
   color: var(--tinte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--grund);
 }
-.bonupload button { width: 100%; min-height: 52px; font-size: 17px;
+.bonupload button { width: 100%; min-height: 52px; font-size: var(--t-text);
                     font-weight: 700; border: none;
                     border-radius: var(--radius-knopf);
                     background: var(--akzent);
@@ -1079,27 +1287,27 @@ code { background: var(--karte-tief); border-radius: 6px; padding: 1px 5px;
                     cursor: pointer; transition: transform 0.12s ease;
                     white-space: nowrap; }
 .bonupload button:active { transform: scale(0.98); }
-.bons { list-style: none; margin: 0; padding: 0 10px;
+.bons { list-style: none; margin: 0; padding: 0 var(--v3);
         background: var(--karte); border: 1px solid var(--linie);
         border-radius: var(--radius); box-shadow: var(--schatten); }
-.bonzeile { display: flex; align-items: center; gap: 8px;
-            padding: 10px 4px; border-bottom: 1px solid var(--linie);
+.bonzeile { display: flex; align-items: center; gap: var(--v2);
+            padding: var(--v3) var(--v1); border-bottom: 1px solid var(--linie);
             min-height: var(--tap); flex-wrap: wrap; }
 .bons > .bonzeile:last-child { border-bottom: none; }
 .bonzeile a { color: inherit; }
 .bonzeile .text { display: flex; flex-direction: column; min-width: 0; }
-.bonzeile .stellen { display: flex; align-items: center; gap: 6px;
+.bonzeile .stellen { display: flex; align-items: center; gap: var(--v2);
                      margin-left: auto; }
 .bonzeile form { margin: 0; }
-.bonzeile .woher { font-size: 13px; color: var(--gedaempft); }
+.bonzeile .woher { font-size: var(--t-fein); color: var(--gedaempft); }
 
 /* Eine Bon-Zeile korrigieren (WB-358): klappt UNTER der Zeile auf. */
 .korrektur:empty { display: none; }
-.korrektur { flex-basis: 100%; min-width: 0; margin-top: 8px; }
-.bonsuche { display: flex; gap: 8px; margin-bottom: 8px; }
+.korrektur { flex-basis: 100%; min-width: 0; margin-top: var(--v2); }
+.bonsuche { display: flex; gap: var(--v2); margin-bottom: var(--v2); }
 .bonsuche input {
-  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 14px;
-  font-size: 17px; color: var(--tinte); background: var(--karte);
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
+  font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
 
@@ -1143,7 +1351,7 @@ a.mini {
 .stellen .platzhalter { visibility: hidden; }
 
 /* Die Rückfrage: Abbrechen zuerst, das Zerstörende zweit und in Rotstift. */
-.bestaetigen { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+.bestaetigen { display: flex; flex-wrap: wrap; gap: var(--v3); margin: var(--v5) 0; }
 .bestaetigen form { margin: 0; }
 .bestaetigen .knopf.loeschen {
   color: var(--beere); border-color: var(--beere-hell);
@@ -1151,14 +1359,14 @@ a.mini {
 }
 /* Was verloren geht, Zeile für Zeile — mit Luft, weil es gelesen und nicht
    überflogen werden soll. */
-.verlust { margin: 14px 0; padding-left: 22px; line-height: 1.6; }
-.verlust li { margin-bottom: 6px; }
+.verlust { margin: var(--v3) 0; padding-left: var(--v5); line-height: 1.6; }
+.verlust li { margin-bottom: var(--v2); }
 
 /* Der Rückweg im Korb: Meldung und „rückgängig" in einer Zeile, damit der
    Knopf zu dem Satz gehört, den er zurücknimmt. */
-.rueckweg { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rueckweg { display: flex; align-items: center; flex-wrap: wrap; gap: var(--v2); }
 .rueckweg form { margin: 0; }
 
 /* Die Wege zurück auf der 404-Seite: nebeneinander, mittig unter dem Satz. */
-.wege { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-        margin-top: 14px; }
+.wege { display: flex; flex-wrap: wrap; gap: var(--v3); justify-content: center;
+        margin-top: var(--v3); }

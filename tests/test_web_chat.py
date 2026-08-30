@@ -716,12 +716,21 @@ def test_das_tap_ziel_des_rueckwegs_ist_gross_genug(db_datei, tmp_path):
 
     Die Grösse kommt von `.mini` (44 px); `.mini.zurueck` nimmt nur Gewicht
     und Farbe zurück und darf sie nicht überschreiben.
+
+    Die Schriftgrösse steht seit WB-400 als Marke da (`--t-fein`) und nicht
+    mehr als Zahl: das Blatt hatte 13 und 14 px nebeneinander für dieselbe
+    Aufgabe. Geprüft wird deshalb die AUSSAGE — kleiner als der Fliesstext —
+    und nicht die Zahl, die diese Aussage gerade einlöst.
     """
     stil = (Path(webapp.__file__).parent / "static" / "stil.css").read_text(
         encoding="utf-8")
     block = stil.split(".mini.zurueck")[1].split("}")[0]
     assert "min-height" not in block and "min-width" not in block
-    assert "font-size: 14px" in block
+    assert "font-size: var(--t-fein)" in block
+    wurzel = stil.split(":root {")[1].split("}")[0]
+    fein = float(re.search(r"--t-fein:\s*(\d+)px", wurzel).group(1))
+    text = float(re.search(r"--t-text:\s*(\d+)px", wurzel).group(1))
+    assert fein < text
     grund = stil.split(".mini {")[1].split("}")[0]
     assert "min-height: var(--tap)" in grund
 
