@@ -275,6 +275,29 @@ def count(con: sqlite3.Connection, begriff: str) -> int:
     Absicht — auf dem Telefon scrollt niemand durch 657 Kacheln. Dass die
     Liste darüber schweigt, ist der Fehler: wer sein Produkt nicht sieht, hält
     den Katalog für lückenhaft statt die Suche für zu weit.
+
+    **`CROSS JOIN`, und das ist die ganze Abfrage** (WB-410). Mit einem
+    gewöhnlichen `JOIN` drehte SQLite die Reihenfolge um: es lief über den
+    Index `ix_product_active` — also über alle zehntausend aktiven Produkte —
+    und stellte je Zeile eine FTS-Anfrage. `search()` daneben lief andersherum
+    und war tausendmal schneller, weil ein `ORDER BY` mit `bm25` den Planer
+    zwingt, aus der FTS heraus zu lesen.
+
+    Gemessen am echten Katalog (10.361 Produkte, 2026-08-30):
+
+        „bio joghurt natur"   count 1.871 ms   search 1,3 ms   -> 43 Treffer
+        „milch"                     448 ms          5,1 ms        657
+        „passierte tomaten"         397 ms          0,6 ms          7
+        die reine FTS-Abfrage         0 ms
+
+        SEARCH p USING INDEX ix_product_active (active=?)   <- der Fehler
+        SCAN f VIRTUAL TABLE INDEX 0:=M7
+
+    `CROSS JOIN` ist in SQLite kein anderer Join, sondern die Anweisung an den
+    Planer, die Reihenfolge NICHT zu vertauschen. Genau das ist hier gewollt:
+    die FTS liefert dreiundvierzig Zeilen, `product` hat zehntausend, und
+    welche der beiden zuerst gelesen wird, entscheidet über drei
+    Grössenordnungen.
     """
     query = fts_query(begriff)
     if query is None:
@@ -282,7 +305,7 @@ def count(con: sqlite3.Connection, begriff: str) -> int:
     platzhalter = ", ".join("?" for _ in AUSGESCHLOSSENE_KATEGORIEN)
     return int(con.execute(
         "SELECT count(*) AS n"
-        "  FROM product_fts f JOIN product p ON p.id = f.rowid"
+        "  FROM product_fts f CROSS JOIN product p ON p.id = f.rowid"
         " WHERE product_fts MATCH ? AND p.active = 1"
         f"   AND coalesce(p.category_l1, '') NOT IN ({platzhalter})",
         (query, *AUSGESCHLOSSENE_KATEGORIEN)).fetchone()["n"])
