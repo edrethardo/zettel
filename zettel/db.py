@@ -882,6 +882,26 @@ def connect(path: str | Path = DEFAULT_DB) -> sqlite3.Connection:
     # oben wäre stille Dekoration.
     con.execute("PRAGMA foreign_keys = ON")
     con.execute("PRAGMA journal_mode = WAL")
+    # **Ein Chat-Zug schreibt dreissig Mal, und jedes `commit` war ein fsync**
+    # (WB-409). Gemessen am laufenden Shop mit cProfile, echter Katalog,
+    # echte Datenbank:
+    #
+    #     chat.turn aus dem Gedächtnis        264 ms
+    #       davon `_schreiben`                220 ms
+    #         davon 30 × sqlite3.commit       216 ms   (7,2 ms je Aufruf)
+    #
+    # Das ist die Plattenumdrehung und nicht die Arbeit. `synchronous = NORMAL`
+    # ist in WAL die übliche und empfohlene Stellung: die WAL wird nicht bei
+    # jedem `commit` durchgedrückt, sondern beim Checkpoint.
+    #
+    # **Was das kostet, und was nicht.** Ein Absturz des Shops kann nichts
+    # verlieren — die WAL bleibt in sich schlüssig, und ein neuer Prozess
+    # spielt sie zu Ende. Verlieren kann nur ein Stromausfall oder ein
+    # Kernel-Absturz, und dann die letzten Sekunden. Das ist ein Einkaufszettel
+    # zweier Menschen auf einem Rechner im eigenen Zimmer; die Sekunde vor dem
+    # Stromausfall dafür mit siebentausend Millisekunden je Einkauf zu
+    # bezahlen, ist der schlechtere Handel.
+    con.execute("PRAGMA synchronous = NORMAL")
     return con
 
 
