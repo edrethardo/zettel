@@ -42,7 +42,12 @@
    - Die Pick-Ansicht bleibt nüchtern: Grund statt Karten, grosse Zeilen,
      klebende Laden-Überschriften. Im Laden zählt Kontrast, nicht Charme.
 
-   Farbwelt als Variablen in :root; der Dunkelmodus tauscht NUR die Variablen.
+   Farbwelt als Variablen in :root — und zwar DUNKEL, ohne Media-Query
+   (WB-418). Die beiden, die den Shop benutzen, benutzen ihn abends und im
+   Laden; „hell, wenn das Betriebssystem hell sagt" hiess für sie: auf dem
+   Telefon dunkel, auf dem Laptop nicht. Ein Shop, der je nach Gerät anders
+   aussieht, hat kein Aussehen. Die helle Fassung steht in der Geschichte
+   (bis 7b001fe) und wäre eine Media-Query weit weg.
    Achtung: Tests schneiden Blöcke am Selektortext auf — teils samt öffnender
    Klammer, teils am nackten Klassennamen (siehe tests/test_web_chat.py,
    test_web_recipes.py, test_web_orders.py). Die Schreibweise dieser
@@ -84,95 +89,55 @@
   --radius-knopf: 10px;  /* Knöpfe und Felder: Kästen         */
 
   /* Papier und Tinte */
-  --grund: #eef0f4;
-  --karte: #fdfdfc;
-  --karte-tief: #e7ebf1;
-  --tinte: #1d2733;
-  --gedaempft: #5d6b7c;
-  --linie: #d9dfe7;
-  --knopflinie: #c2ccd9;
-  --karo: rgba(45, 90, 170, 0.07);
+  --grund: #12171e;
+  --karte: #1b232c;
+  --karte-tief: #26303b;
+  --tinte: #e8edf3;
+  --gedaempft: #93a1b1;
+  --linie: #313d4a;
+  --knopflinie: #43536a;
+  --karo: rgba(180, 205, 235, 0.045);
 
   /* Tintenblau — der Kugelschreiber, die eine Handlungsfarbe */
-  --akzent: #2456b8;
-  --auf-akzent: #ffffff;
-  --akzent-tinte: #1c4494;
-  --akzent-hell: #e3ebfa;
+  --akzent: #82aaf5;
+  --auf-akzent: #0d1523;
+  --akzent-tinte: #aac6fa;
+  --akzent-hell: #223250;
 
   /* Rotstift — wegnehmen, streichen, „gab's nicht" */
-  --beere: #c0382b;
-  --beere-hell: #fae8e4;
+  --beere: #f0917d;
+  --beere-hell: #3e2019;
 
   /* Textmarker — Warnung, alte Preise, ausgemustert */
-  --honig: #6d5804;
-  --honig-hell: #fcf3c8;
-  --honig-linie: #eadf9d;
-  --merker: #f2c94c;
+  --honig: #e5cf7d;
+  --honig-hell: #34301a;
+  --honig-linie: #564f2c;
+  --merker: #d9b84a;
 
   /* Rückmeldungen: der grüne Haken und der rote Stift */
-  --fehler-text: #ab3325;
-  --fehler-hell: #fae9e4;
-  --fehler-linie: #eab9ab;
-  --ok-text: #22672f;
-  --ok-hell: #e2f2e4;
-  --ok-linie: #b5d9bb;
+  --fehler-text: #f2a08c;
+  --fehler-hell: #3d211a;
+  --fehler-linie: #5e332a;
+  --ok-text: #9bd9ac;
+  --ok-hell: #1e3226;
+  --ok-linie: #3a5a45;
 
-  --bildfond: #ffffff;
-  --schatten: 0 1px 2px rgba(29, 39, 51, 0.05), 0 3px 8px rgba(29, 39, 51, 0.06);
+  --bildfond: #dfe2e4;
+  --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
   /* Für die Kante einer Liste, die in sich scrollt: derselbe Ton wie
      `--karte-tief`, nur durchsichtig — `transparent` ist in einem Verlauf
      durchsichtiges SCHWARZ und zöge einen grauen Schleier hinein. */
-  --karte-tief-null: rgba(231, 235, 241, 0);
-  --kante: rgba(29, 39, 51, 0.16);
+  --karte-tief-null: rgba(38, 48, 59, 0);
+  --kante: rgba(0, 0, 0, 0.55);
 
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
           "Liberation Mono", monospace;
 }
 
-/* Abends in der Küche: die Kreidetafel. Schiefer statt Papier, Kreide statt
-   Tinte — warm abgedunkelt, nicht invertiert. Die Stifte werden zu
-   Kreidefarben: heller, weicher, auf dunklem Grund lesbar. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --grund: #12171e;
-    --karte: #1b232c;
-    --karte-tief: #26303b;
-    --tinte: #e8edf3;
-    --gedaempft: #93a1b1;
-    --linie: #313d4a;
-    --knopflinie: #43536a;
-    --karo: rgba(180, 205, 235, 0.045);
-
-    --akzent: #82aaf5;
-    --auf-akzent: #0d1523;
-    --akzent-tinte: #aac6fa;
-    --akzent-hell: #223250;
-
-    --beere: #f0917d;
-    --beere-hell: #3e2019;
-
-    --honig: #e5cf7d;
-    --honig-hell: #34301a;
-    --honig-linie: #564f2c;
-    --merker: #d9b84a;
-
-    --fehler-text: #f2a08c;
-    --fehler-hell: #3d211a;
-    --fehler-linie: #5e332a;
-    --ok-text: #9bd9ac;
-    --ok-hell: #1e3226;
-    --ok-linie: #3a5a45;
-
-    --bildfond: #dfe2e4;
-    --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-    --karte-tief-null: rgba(38, 48, 59, 0);
-    --kante: rgba(0, 0, 0, 0.55);
-  }
-  /* Die Fotos haben weissen Fond ab Werk. Ungedimmt sind sie nachts das
-     hellste auf der Tafel und blenden — leicht heruntergedreht wirken sie
-     wie angeleuchtet statt wie ein Loch im Dunkel. */
-  img.bild { filter: brightness(0.86); }
-}
+/* Die Fotos haben weissen Fond ab Werk. Ungedimmt sind sie auf der Tafel das
+   hellste Element und blenden — leicht heruntergedreht wirken sie wie
+   angeleuchtet statt wie ein Loch im Dunkel. */
+img.bild { filter: brightness(0.86); }
 
 /* Das Karo des Blocks: zwei feine Linienraster auf dem Grund. Es liegt auf
    dem BODY und nirgends sonst — Karten und klebende Stücke decken es ab wie

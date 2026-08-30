@@ -11,9 +11,14 @@
   {# Beide Farbmodi sind gemeint (WB-360): das sagt dem Browser, dass er
      Formulare und Bildlaufleisten gleich mit umfärben darf, und färbt die
      Adressleiste des Telefons passend zum Kopf der Seite. #}
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fdfdfc">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b232c">
+  {# **Dunkel, und zwar immer** (WB-418). `content="dark"` sagt dem Browser,
+     welche Grundfarbe er für Formularelemente, Bildlaufleisten und die
+     Fläche VOR dem Stylesheet nehmen soll — ohne das blitzt beim Laden ein
+     weisses Blatt auf, und auf dem Telefon ist genau dieser Blitz das, was
+     man sieht. Eine Farbe und keine Media-Query: es gibt nur noch einen
+     Modus. #}
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#12171e">
   <title>{% block titel %}Zettel{% endblock %}</title>
   <link rel="stylesheet" href="/static/stil.css">
   {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:
