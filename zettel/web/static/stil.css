@@ -1291,6 +1291,35 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .zugband .fussnote { display: block; margin-top: var(--v1); }
 .zugband.laeuft::before { animation: puls 1.6s ease-in-out infinite; }
 .wechsel-laeuft { margin: 0; }
+/* Das laufende Band KLEBT am oberen Rand (WB-403). Seit der Wechsel den Zug
+   an seiner Stelle ersetzt, wird nichts mehr ins Bild geholt — und der Tipp
+   sitzt mitten in der Karte, deren oberer Rand eine halbe Bildschirmhöhe
+   darüber liegt. Ohne das hier stünde die Auskunft genau dort, wo sie in
+   WB-402 nachweislich niemand sah (1 von 224 Proben).
+
+   `top: 0` und `z-index: 4`: die Korbbrücke klebt auf derselben Höhe mit
+   `z-index: 3`. Solange gesucht wird, ist „das Rezept ist jetzt X" die
+   dringendere Auskunft; danach ist dieses Band weg und die Brücke wieder
+   frei. Ein eigener Untergrund, weil ein klebendes Band sonst den Text
+   durchscheinen liesse. */
+.zugwechsel .zugband.laeuft {
+  position: sticky; top: 0; z-index: 4; background: var(--honig-hell);
+}
+/* Blass wird, was gleich ersetzt wird (WB-378) — hier der Wartekasten selbst,
+   denn den alten Zug gibt es nicht mehr. Das Band bleibt lesbar: es ist die
+   Auskunft, um die es geht, und eine halbdurchsichtige Auskunft ist keine. */
+.zugwechsel.htmx-request { opacity: 0.5; pointer-events: none; }
+.zugwechsel.htmx-request .zugband { opacity: 1; }
+
+/* Was von einem ERSETZTEN Zug übrig bleibt (WB-403): die Zeilen, zu denen
+   „Ja" oder „Nein" gesagt wurde. Sie sind kein Vorschlag mehr, sondern eine
+   Quittung — darum kein Kartenrand und keine Überschrift, nur das Band und
+   die Zeilen. Eingerückt und leiser, damit der Blick am neuen Zug darunter
+   hängen bleibt und nicht an der Quittung darüber. */
+.zug.ersetzt { opacity: 0.85; }
+.zug.ersetzt .zugband { background: var(--karte-tief); color: var(--gedaempft);
+                        border-color: var(--linie); }
+.zug.ersetzt .zugband::before { background: var(--gedaempft); }
 
 /* Für wie viele Portionen dieser Zug rechnet (WB-384). Dieselbe Gestalt wie
    das Feld an „Alles in den Warenkorb" (`.abschicken.portionen`) — es ist

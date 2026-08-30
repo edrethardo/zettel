@@ -174,7 +174,15 @@ def annotationen(con, order_id: int) -> list[dict]:
 
     raus: list[dict] = []
     zuege = con.execute(
-        "SELECT DISTINCT m.id AS id, m.span_id AS span_id"
+        "SELECT DISTINCT m.id AS id, m.span_id AS span_id,"
+        # Ist dieser Zug abgelöst worden (WB-403)? Ein Rezeptwechsel ersetzt
+        # den Zug an seiner Stelle; die alte Zeile bleibt stehen, damit
+        # Entscheidungen und Korbwirkung nicht verschwinden.
+        "       EXISTS (SELECT 1 FROM chat_message n"
+        "                WHERE n.order_id = m.order_id"
+        "                  AND coalesce(n.ersetzt, n.id)"
+        "                      = coalesce(m.ersetzt, m.id)"
+        "                  AND n.id > m.id) AS ueberholt"
         "  FROM chat_message m"
         "  JOIN chat_suggestion s ON s.chat_message_id = m.id"
         " WHERE m.order_id = ? AND m.span_id IS NOT NULL"
@@ -205,8 +213,18 @@ def annotationen(con, order_id: int) -> list[dict]:
                           "kept": q["behalten"], "removed": q["verworfen"],
                           "open": q["offen"], "withdrawn": zurueck}))
 
-        rezept = _rezept_anno(entwurf.zu_nachricht(con, msg_id, zeilen),
-                              span_id, order_id, msg_id)
+        # **Ein abgelöster Zug bekommt KEINE Rezept-Annotation** (WB-403).
+        # Aus ihm ist kein Rezept geworden, weil die Nutzerin ein anderes
+        # gewählt hat — nicht, weil keine Zutat bestätigt wurde. Ein `empty`
+        # dafür wäre ein Fehlschlag, wo eine Wahl stattfand, und jeder
+        # Rezeptwechsel schöbe einen in die Statistik aus WB-337.
+        #
+        # Die Entscheidungen darin bleiben dagegen gezählt: `quote` oben und
+        # die Zeilen unten sind Aussagen über Vorschläge, die die Nutzerin
+        # wirklich beurteilt hat. Der Wechsel ist kein Urteil darüber.
+        rezept = (None if zug["ueberholt"] else
+                  _rezept_anno(entwurf.zu_nachricht(con, msg_id, zeilen),
+                               span_id, order_id, msg_id))
         if rezept is not None:
             raus.append(rezept)
 

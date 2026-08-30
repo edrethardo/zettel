@@ -360,6 +360,32 @@ SCHEMA = [
         -- Span-ID des zugehörigen chat.turn (Spec 7.1). Die Annotationen aus
         -- Spec 8.1 hängen später genau hier dran.
         span_id    TEXT,
+        -- WELCHE Chatzeile diese hier ablöst (WB-403). Sie steht an der
+        -- NEUEN Zeile und zeigt zurück — dieselbe Richtung wie
+        -- `chat_suggestion.corrected_from` (WB-359), und aus demselben
+        -- Grund: die alte Zeile weiss beim Schreiben noch nichts von ihrem
+        -- Nachfolger, die neue kennt ihren Vorgänger immer.
+        --
+        -- Gefüllt wird sie einzig beim Rezeptwechsel. Ein anderes Rezept zu
+        -- wählen heisst „das war nicht gemeint" — der Zug dazu wird an
+        -- seiner Stelle ersetzt und nicht darunter angehängt. Gelöscht wird
+        -- nichts: dieses Projekt macht Entscheidungen nachvollziehbar,
+        -- statt sie zu tilgen (WB-361, WB-359), und an der alten Zeile
+        -- hängen Vorschläge, die im Korb liegen können.
+        --
+        -- **Sie trägt die WURZEL der Kette und nicht den direkten
+        -- Vorgänger.** Wer dreimal hintereinander wechselt, erzeugt drei
+        -- Zeilen mit derselben `ersetzt` — daran ist mit einer Abfrage ohne
+        -- Rekursion zu erkennen, welche die aktuelle ist (die grösste id)
+        -- und an welcher Stelle des Verlaufs sie steht (`coalesce(ersetzt,
+        -- id)` ist die Sortiergrösse). Mit dem direkten Vorgänger bräuchte
+        -- beides eine rekursive Abfrage.
+        --
+        -- `ON DELETE SET NULL`: wer den Verlauf leert, löscht alle Zeilen
+        -- der Bestellung in EINER Anweisung — ein RESTRICT stolperte über
+        -- die eigene Kette. Und bliebe eine Zeile übrig, wäre sie ohne
+        -- Vorgänger ein ganz gewöhnlicher Zug.
+        ersetzt    INTEGER REFERENCES chat_message(id) ON DELETE SET NULL,
         created_at TEXT NOT NULL
     )
     """,
@@ -932,6 +958,12 @@ NACHGETRAGENE_SPALTEN = (
     # Herkunft. NULL heisst hier „dazu wurde nichts mitgeschrieben".
     ("chat_rezept", "dish_id",
      "INTEGER REFERENCES dish(id) ON DELETE SET NULL"),
+    # WB-403: welche Chatzeile diese hier abgelöst hat. Ohne Nachtrag für
+    # den Altbestand, und richtigerweise: vor diesem Ticket hat kein Wechsel
+    # je einen Zug ersetzt — er hängte einen neuen an. NULL heisst „diese
+    # Zeile löst nichts ab", und das ist für jede der 270 vorhandenen wahr.
+    ("chat_message", "ersetzt",
+     "INTEGER REFERENCES chat_message(id) ON DELETE SET NULL"),
     # WB-384: die Portionszahl, für die ein Chat-Zug rechnet. Ohne Nachtrag
     # für den Altbestand, und richtigerweise: an keinem der 270 Züge hat je
     # jemand eine Portionszahl gewählt — es gab kein Feld. NULL heisst „es

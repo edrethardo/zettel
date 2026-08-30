@@ -1,36 +1,44 @@
-{# Der Rezeptwechsel, zweite Hälfte: die Vorschläge stehen (WB-402).
+{# Der Rezeptwechsel, zweite Hälfte: die Vorschläge stehen (WB-402/WB-403).
 
    Sie ersetzt den Kasten aus `_zugwechsel.html` — also genau die Stelle, an
-   der er stand — durch das, was auch aus `/chat` käme:
+   der vorher der ALTE Zug stand — durch drei Stücke:
 
-       1. das Band          „Das Rezept ist jetzt …"  (oder der Grund,
-                            warum es nicht geklappt hat)
-       2. die neuen Zeilen  der Satz und die Antwort darauf, mit Karte,
-                            Vorschlägen und Ja/Nein
+       1. der Rest      was am alten Zug entschieden wurde, falls etwas
+                        entschieden wurde — sonst gar nichts
+       2. das Band      „Das Rezept ist jetzt …"
+       3. der Zug       die neue Antwort mit Karte, Vorschlägen und Ja/Nein
 
-   **Der alte Zug steht nicht darin, weil er nie weg war.** `hx-swap` der
-   Alternativenliste ist `afterend`: der Wartekasten wird HINTER den Zug
-   gesetzt, nicht an seine Stelle. Das spart hier seine ganze Grösse
-   (gemessen 64.733 -> 34.855 Bytes) und hält die Zusage des Bandes ein —
-   die alten Vorschläge stehen unverändert im Verlauf, auch während gesucht
-   wird.
+   **Der alte Zug ist ersetzt und nicht angehängt** (WB-403). WB-402 setzte
+   den Wartekasten mit `afterend` hinter ihn: der alte blieb stehen, der neue
+   kam darunter, und nach drei Wechseln standen vier fast gleiche Züge
+   untereinander. Der Nutzer hat genau das gemeldet. Jetzt sagt die neue
+   Chatzeile in `chat_message.ersetzt`, welche sie ablöst, und der Verlauf
+   zeigt von einer Kette nur ihr letztes Glied — im Dokument wie nach dem
+   Neuladen.
 
-   **Punkt 2 sind ZWEI Zeilen und nicht eine.** `chat.turn` schreibt Frage und
-   Antwort (`_schreiben`); die Frage wegzulassen ergäbe eine Vorschlagsliste
-   ohne den Satz, aus dem sie entstanden ist — genau die Angabe, an der später
-   abzulesen ist, warum etwas vorgeschlagen wurde (siehe `verlauf_ab`).
+   **Der Rest steht VOR dem Band**, weil er älter ist: dieselbe Reihenfolge,
+   die `verlauf()` liefert (`ORDER BY coalesce(ersetzt, id), id`). Und er
+   steht überhaupt da, weil eine Entscheidung der Nutzerin gehört und nicht
+   dem Vorschlag: ein „Ja" liegt im Korb, ein „Nein" trägt ein Eval-Label
+   (Spec 8.1). Was am alten Zug OFFEN war, kommt nicht wieder — es meinte das
+   Rezept, das gerade abgewählt wurde, und zählt nach Spec 8.1 nirgends.
 
-   Das Band trägt die `id`, auf die das `show:` des Tauschs zielt: der Blick
-   landet auf der Auskunft, und darunter steht die Karte, auf die der Nutzer
-   eben eine halbe Minute geschaut hat. Es steht auch im Fehlerfall da und
-   trägt dann den Grund — sonst zielte `show:` ins Leere und die Begründung
-   stünde nur in den beiden Fehlerhüllen, eine am Seitenkopf und eine am
-   Eingabefeld, mit dem ganzen Verlauf dazwischen (WB-378). #}
-<p class="band zugband" id="gewechselt-{{ mid }}" role="status">
-  {%- if gewechselt %}Das Rezept ist jetzt „{{ gewechselt }}“ — der Zug darunter ist neu.
+   **Die neue FRAGE ist nicht dabei, und das ist kein Versehen.** Sie ist Wort
+   für Wort derselbe Satz wie die alte (`_wechsel_vollziehen` schickt ihn noch
+   einmal durch `chat.turn`), und die alte steht als eigene Zeile über dem
+   getauschten Stück — sie mitzuschicken setzte den Satz zweimal untereinander
+   und liesse die Seite bei jedem Wechsel wachsen. In der Datenbank löst sie
+   ihre Vorgängerin trotzdem ab; nach dem Neuladen steht sie an deren Stelle,
+   mit demselben Text an derselben Stelle.
+
+   Das Band trägt weiter eine `id`. Kein `show:` zielt mehr darauf — getauscht
+   wird, worauf der Nutzer ohnehin sieht —, aber die Fehlerantwort daneben
+   braucht ein Sprungziel, und die beiden Hüllen sollen gleich gebaut
+   bleiben. #}
+{% if rest %}{% with m = rest %}{% include "_zug.html" %}{% endwith %}{% endif %}
+<p class="band zugband" id="gewechselt-{{ mid }}" role="status">Das Rezept ist
+  jetzt „{{ gewechselt }}“ — dieser Zug ist neu.
   <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im Korb;
-    die alten Vorschläge stehen unverändert im Verlauf.</span>
-  {%- else %}{{ chat_fehler }}{% endif %}</p>
+    offene Vorschläge zum alten Rezept sind weg.</span></p>
 {% for m in neue %}{% include "_zug.html" %}{% endfor %}
 {% include "_nachtrag.html" %}
-{% if chat_zustand %}{% include "_chatzustand.html" %}{% endif %}

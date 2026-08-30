@@ -75,10 +75,11 @@ def test_der_tipp_zielt_auf_den_zug_und_nicht_auf_den_chat(datei, tmp_path):
     form = karte.split('<form class="andere"', 1)[1].split(">", 1)[0]
     assert f'hx-target="#zug-{mid}"' in form, form
     assert 'hx-target="#chat"' not in form, form
-    # `afterend`: der alte Zug bleibt stehen. Das Band verspricht es, und
-    # nähme dieser Tausch ihn für eine halbe Minute heraus, wäre der Satz in
-    # genau der halben Minute falsch, in der jemand nachsehen wollte.
-    assert 'hx-swap="afterend' in form, form
+    # `outerHTML` und nicht `afterend` (WB-403): der Zug wird ERSETZT. Mit
+    # `afterend` blieb der alte stehen, und nach drei Wechseln standen vier
+    # fast gleiche Züge untereinander.
+    assert 'hx-swap="outerHTML"' in form, form
+    assert "afterend" not in form, form
 
 
 def test_die_antwort_traegt_den_verlauf_nicht_mehr_mit(datei, tmp_path):
@@ -103,12 +104,14 @@ def test_die_antwort_traegt_den_verlauf_nicht_mehr_mit(datei, tmp_path):
     assert bytes_(erste) < bytes_(ganzer_chat)
 
 
-def test_die_karte_wird_ins_bild_geholt(datei, tmp_path):
-    """Ohne `show:` ändert sich im sichtbaren Bereich nichts.
+def test_der_gelungene_wechsel_scrollt_nicht(datei, tmp_path):
+    """Der Satz des Nutzers, wörtlich (WB-403).
 
-    Gemessen: scrollY blieb bei 820, die neue Karte lag bei y = 16.248 —
-    zwanzig Bildschirme unter dem Fensterrand. Dasselbe Mittel wie bei der
-    Katalog-Trefferliste (WB-376) und aus demselben Grund.
+    „Sorg dafür dass das inplace passiert anstatt dass gescrollt wird."
+    WB-402 hängte den Wartekasten hinter den Zug und holte ihn mit `show:`
+    ins Bild — beides zusammen ist genau der Bildlauf, den er meint. Der
+    Kasten steht jetzt AN der Stelle, auf die getippt wurde; dorthin muss
+    niemand erst geholt werden.
     """
     _pho_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
@@ -117,11 +120,13 @@ def test_die_karte_wird_ins_bild_geholt(datei, tmp_path):
     karte = _karte(client.get("/chat").text)
 
     form = karte.split('<form class="andere"', 1)[1].split(">", 1)[0]
-    assert f"show:#wechsel-{mid}:top" in form, form
-    # Und das Sprungziel gibt es auch: es steht in der Antwort auf den Tipp.
+    assert "show:" not in form, form
+    # Der Kasten kommt trotzdem — er ist nur nicht mehr ein Sprungziel.
     erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
                         headers=HTMX).text
     assert f'id="wechsel-{mid}"' in erste
+    block = erste.split('<div class="zugwechsel"', 1)[1].split(">", 1)[0]
+    assert "show:" not in block, block
 
 
 def test_der_indikator_haengt_am_getauschten_zug(datei, tmp_path):
@@ -194,9 +199,12 @@ def test_die_karte_holt_sich_die_vorschlaege_selbst_nach(datei, tmp_path):
         in block, block
     assert 'hx-trigger="load"' in block, block
     assert 'hx-target="this"' in block, block
-    # Der Indikator zeigt auf den alten Zug: er ist blass und untippbar,
-    # solange sein Nachfolger entsteht (WB-378 über beide Hälften).
-    assert f'hx-indicator="#zug-{mid}"' in block, block
+    # Der Indikator ist der Kasten selbst (WB-403): den alten Zug gibt es
+    # nicht mehr, er steht an dessen Stelle. Blass wird damit weiterhin
+    # genau das, was gleich getauscht wird (WB-378).
+    assert 'hx-indicator="this"' in block, block
+    stil = STIL.read_text(encoding="utf-8")
+    assert ".zugwechsel.htmx-request" in stil, "der Kasten wird nicht blass"
 
 
 def test_der_fortschritt_steht_in_dem_stueck_das_getauscht_wird(datei,
@@ -254,9 +262,9 @@ def test_die_vorschau_bietet_keine_zweite_wahl_und_kein_portionsfeld(datei,
 def test_die_zweite_haelfte_traegt_nur_das_neue(datei, tmp_path):
     """Der alte Zug steht schon im Dokument — er wird nicht mitgeschickt.
 
-    `afterend` setzt den Wartekasten HINTER den Zug statt an seine Stelle;
-    damit bleibt der alte Zug stehen, und diese Antwort wird um seine ganze
-    Grösse kleiner (am Messstand 64.733 -> 34.855 Bytes).
+    Der alte Zug ist ersetzt (WB-403) und hatte nichts Entschiedenes an sich
+    hängen — dann bleibt von ihm nichts übrig, und diese Antwort trägt genau
+    den neuen Zug und sonst nichts.
     """
     _pho_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
@@ -271,32 +279,17 @@ def test_die_zweite_haelfte_traegt_nur_das_neue(datei, tmp_path):
     assert 'id="chat"' not in zweite.text, "die Antwort trägt den Verlauf mit"
 
 
-def test_die_zweite_haelfte_stellt_den_blick_auf_das_band(datei, tmp_path):
-    """Der alte Zug rückt wieder ein — die Seite wächst an dieser Stelle.
+def test_die_neue_frage_wird_nicht_zweimal_gesetzt(datei, tmp_path):
+    """Die alte Frage steht schon da — Wort für Wort dieselbe (WB-403).
 
-    Ohne `show:` schöbe sich alles darunter um seine ganze Höhe nach unten,
-    und der Nutzer suchte die Karte wieder, auf die er eben eine halbe Minute
-    geschaut hat. Das Sprungziel ist das Band: seine `id` steht schon fest,
-    wenn der Tipp abgeschickt wird — die Nummer des neuen Zugs gibt es erst,
-    wenn er geschrieben ist.
-    """
-    _pho_geholt(datei)
-    client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
-    mid = _zug_id(datei)
+    `_wechsel_vollziehen` schickt DENSELBEN Satz noch einmal durch
+    `chat.turn`; die Zeile dazu steht über dem getauschten Stück und wird
+    nicht mitgetauscht. Sie mitzuschicken setzte den Satz zweimal
+    untereinander — genau der Zuwachs, den dieses Ticket abschafft.
 
-    erste, zweite = _wechsel(client, mid, PHO_GA)
-    block = erste.text.split('<div class="zugwechsel"', 1)[1].split(">", 1)[0]
-    assert f"show:#gewechselt-{mid}:top" in block, block
-    assert f'id="gewechselt-{mid}"' in zweite.text, "das Sprungziel fehlt"
-
-
-def test_die_neue_frage_steht_ueber_ihrer_antwort(datei, tmp_path):
-    """`chat.turn` schreibt Frage UND Antwort — beide gehören in die Antwort.
-
-    Ohne die Frage stünde eine Vorschlagsliste ohne den Satz da, aus dem sie
-    entstanden ist — dieselbe Überlegung wie bei der Verlaufsgrenze, die
-    deshalb immer auf einer Zeile der Nutzerin liegt.
+    In der Datenbank löst sie ihre Vorgängerin trotzdem ab: nach dem
+    Neuladen steht dieselbe Frage an derselben Stelle, nur mit einer anderen
+    Nummer.
     """
     _pho_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
@@ -304,18 +297,30 @@ def test_die_neue_frage_steht_ueber_ihrer_antwort(datei, tmp_path):
     mid = _zug_id(datei)
 
     _erste, zweite = _wechsel(client, mid, PHO_GA)
-    # Genau die Zeilen, die auch `/chat` an dieser Stelle zeigt.
     con = db.connect(datei)
     try:
-        neue = [r["id"] for r in con.execute(
-            "SELECT id FROM chat_message WHERE id > ? ORDER BY id", (mid,))]
+        neue = [dict(r) for r in con.execute(
+            "SELECT id, role, ersetzt FROM chat_message WHERE id > ?"
+            " ORDER BY id", (mid,))]
+        alt_frage = con.execute(
+            "SELECT id FROM chat_message WHERE role = 'user'"
+            " ORDER BY id LIMIT 1").fetchone()["id"]
     finally:
         con.close()
-    assert len(neue) == 2, neue
-    for i in neue:
-        assert f'id="zug-{i}"' in zweite.text, i
-    assert zweite.text.index(f'id="zug-{neue[0]}"') \
-        < zweite.text.index(f'id="zug-{neue[1]}"')
+    assert [z["role"] for z in neue] == ["user", "assistant"], neue
+    frage, antwort = neue
+    # Beide lösen ab, jede ihre eigene Rolle.
+    assert frage["ersetzt"] == alt_frage
+    assert antwort["ersetzt"] == mid
+    # Nur die Antwort steht im Bruchstück.
+    assert f'id="zug-{antwort["id"]}"' in zweite.text
+    assert f'id="zug-{frage["id"]}"' not in zweite.text
+    assert zweite.text.count("alles für Pho") == 0, \
+        "der Satz kommt ein zweites Mal mit"
+    # Und der Verlauf zeigt danach genau eine Frage und eine Antwort.
+    seite = client.get("/chat").text
+    assert seite.count('class="chatzeile ich"') == 1, "die Frage steht doppelt"
+    assert seite.count("alles für Pho") == 1
 
 
 def test_ohne_javascript_bleibt_es_bei_einem_request(datei, tmp_path):
@@ -341,10 +346,15 @@ def test_ohne_javascript_bleibt_es_bei_einem_request(datei, tmp_path):
 def test_eine_meldung_landet_dort_wo_die_karte_stuende(datei, tmp_path):
     """Auch der Fehlerweg darf weder den Verlauf noch einen Zug liefern.
 
-    Das Tauschziel ist `#zug-N` mit `afterend` — ein ganzer Zug als Antwort
-    stünde danach zweimal im Dokument, eine ganze Chatseite ergäbe einen
-    zweiten `#chat` im ersten. Die Meldung kommt deshalb in der Hülle des
-    Wartekastens und wird von demselben `show:` ins Bild geholt.
+    Das Tauschziel ist `#zug-N` mit `outerHTML` — eine ganze Chatseite
+    ergäbe einen zweiten `#chat` im ersten. Die Meldung kommt deshalb in der
+    Hülle des Wartekastens.
+
+    **Und der alte Zug kommt mit** (WB-403). Seit der Tausch ihn ersetzt,
+    nimmt jede Antwort seinen Platz ein; eine Meldung allein liesse eine
+    Lücke, wo eben noch die Karte war. `HX-Reswap` holt die Meldung ins
+    Bild — der gelungene Wechsel tut das ausdrücklich nicht, aber eine
+    Begründung, die niemand sieht, ist keine (WB-378).
     """
     _pho_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
@@ -355,10 +365,12 @@ def test_eine_meldung_landet_dort_wo_die_karte_stuende(datei, tmp_path):
                           headers=HTMX)
     assert "nicht (mehr) zur Wahl" in antwort.text
     assert 'id="chat"' not in antwort.text
-    assert f'id="zug-{mid}"' not in antwort.text
     assert f'id="wechsel-{mid}"' in antwort.text
+    assert f'id="zug-{mid}"' in antwort.text, "der alte Zug fehlt"
+    assert "Pho Bo" in antwort.text, "die alte Karte fehlt"
+    assert antwort.headers["HX-Reswap"] == f"outerHTML show:#wechsel-{mid}:top"
     # Und kein Nachladen: hier läuft nichts.
-    assert "hx-trigger" not in antwort.text
+    assert 'hx-trigger="load"' not in antwort.text
 
 
 def test_das_schon_gewaehlte_meldet_sich_an_derselben_stelle(datei, tmp_path):
@@ -372,6 +384,7 @@ def test_das_schon_gewaehlte_meldet_sich_an_derselben_stelle(datei, tmp_path):
     assert "bereits das vorgeschlagene Rezept" in antwort.text
     assert 'id="chat"' not in antwort.text
     assert f'id="wechsel-{mid}"' in antwort.text
+    assert f'id="zug-{mid}"' in antwort.text, "der alte Zug fehlt"
 
 
 # --------------------------------------------------------------------------

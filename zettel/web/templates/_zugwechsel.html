@@ -21,41 +21,51 @@
    nach. Der Nutzer sieht in derselben Sekunde, dass seine Wahl angekommen
    ist.
 
-   **Dieser Kasten steht HINTER dem alten Zug** (`hx-swap="afterend"`, siehe
-   `_zugrezept.html`) und wird von `show:` an den oberen Fensterrand geholt.
-   Er sieht damit aus wie ein Ersatz, ist aber keiner: der alte Zug bleibt im
-   Dokument, weil das Band verspricht, dass er dort bleibt. Die zweite Hälfte
-   (`_zugwechsel_fertig.html`) ersetzt genau diesen Kasten durch das Band und
-   die beiden neuen Chatzeilen — danach steht im Dokument dasselbe wie in der
-   Datenbank.
+   **Dieser Kasten steht AN DER STELLE des alten Zugs** (`hx-swap="outerHTML"`,
+   siehe `_zugrezept.html`) — seit WB-403, und das war der eigentliche Wunsch:
+   „Sorg dafür dass das inplace passiert anstatt dass gescrollt wird." WB-402
+   setzte ihn mit `afterend` dahinter und holte ihn mit `show:` ins Bild; der
+   alte Zug blieb stehen, und nach drei Wechseln standen vier fast gleiche
+   Züge untereinander. Die zweite Hälfte (`_zugwechsel_fertig.html`) ersetzt
+   dann genau diesen Kasten durch das Band und den neuen Zug — danach steht im
+   Dokument dasselbe wie in der Datenbank.
+
+   Kein `show:` an keiner der beiden Hälften: getauscht wird, worauf der
+   Nutzer sieht, und dorthin muss ihn niemand erst holen.
 
    Ohne JavaScript gibt es dieses Bruchstück gar nicht: dann läuft der ganze
    Wechsel in einem Request und die Vollseite kommt zurück (siehe
    `chat_rezept`). #}
 {# Die Attribute hängen am KASTEN und nicht an einem Formular darin, damit
-   `hx-target="this"` genügt. Zwei Kästen mit derselben `id` kann es geben —
-   wenn ein Wechsel mit einer Meldung endete und jemand es gleich noch einmal
-   versucht. `afterend` setzt den neuen davor, und `querySelector` nimmt den
-   ersten: der neue gewinnt, der alte steht nur noch da.
+   `hx-target="this"` genügt.
 
    `hx-trigger="load"` und nicht ein Knopf: die Wahl ist getroffen, hier
    wartet nur noch jemand. Ein Knopf wäre eine zweite Frage auf eine schon
    beantwortete.
 
-   Der Indikator zeigt auf den ALTEN Zug — er ist blass und untippbar,
-   solange sein Nachfolger entsteht. Das ist WB-378 über beide Hälften
-   hinweg und nebenbei die Sperre gegen den zweiten Tipp. #}
+   **Der Indikator ist der Kasten selbst** (WB-403). Bis dahin zeigte er auf
+   den alten Zug — den gibt es seit diesem Ticket nicht mehr, dieser Kasten
+   steht an seiner Stelle. Ein `hx-indicator` auf ein Element, das nicht mehr
+   im Dokument ist, wäre gar keiner. Blass wird damit das, was gleich ersetzt
+   wird (WB-378), und `pointer-events: none` daran ist die Sperre gegen den
+   zweiten Tipp. Das Band bleibt lesbar: es ist die Auskunft, um die es
+   geht. #}
 <div class="zugwechsel" id="wechsel-{{ mid }}"
      hx-post="/chat/{{ mid }}/rezept/vorschlaege?rezept={{ rezept | urlencode }}"
      hx-trigger="load"
      hx-target="this"
-     hx-swap="outerHTML show:#gewechselt-{{ mid }}:top"
-     hx-indicator="#zug-{{ mid }}">
+     hx-swap="outerHTML"
+     hx-indicator="this">
   {# **Das Band steht ÜBER der Karte, und das ist gemessen.** Zuerst stand es
      darunter — dann war es in 1 von 224 Proben im Bild, denn die Karte ist
-     eine Bildschirmhöhe lang und `show:` setzt den KASTEN an den oberen
-     Rand. Der Indikator ist das Tauschziel, aber er muss auch darin zu sehen
-     sein.
+     eine Bildschirmhöhe lang. Der Indikator ist das Tauschziel, aber er muss
+     auch darin zu sehen sein.
+
+     Seit WB-403 wird der Kasten nicht mehr ins Bild geholt, sondern steht
+     schon dort, wo hingesehen wird — dafür KLEBT das Band am oberen Rand,
+     solange der Kasten das Fenster füllt. Der Tipp sitzt mitten in der Karte,
+     ihr oberer Rand liegt eine halbe Bildschirmhöhe darüber; ohne `sticky`
+     wäre die Auskunft wieder da, wo sie niemand sieht.
 
      Ein Band statt zweier: „das ist jetzt dein Rezept" und „die Vorschläge
      laufen noch" sind zwei Hälften derselben Auskunft. Der pulsende Punkt
@@ -63,8 +73,7 @@
      ist unterwegs" sieht hier aus wie beim aufwachenden Modell. #}
   <p class="band zugband laeuft" role="status">Das Rezept ist jetzt „{{ gewechselt }}“ — die Vorschläge dazu werden gesucht …
     <span class="fussnote">Zutaten aus dem Rezept, Katalogsuche, Auswahl —
-      das ist der Teil, der wirklich dauert. Was du vorher bestätigt hast, liegt weiter im Korb;
-      die alten Vorschläge stehen unverändert im Verlauf.</span>
+      das ist der Teil, der wirklich dauert. Was du vorher bestätigt hast, liegt weiter im Korb.</span>
     {# Der Ausweg, falls die Antwort nie ankommt (abgebrochene Verbindung,
        geschlossenes Telefon). Ohne ihn stünde „wird gesucht" für immer da,
        und das wäre die Sorte Anzeige, die man nicht mehr glaubt. #}

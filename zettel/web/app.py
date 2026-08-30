@@ -1561,17 +1561,38 @@ def create_app(db_path: str | Path | None = None,
         return karte, treffer
 
     def _wechsel_fehler(request: Request, c: sqlite3.Connection, mid: int,
-                        fehler: str):
+                        fehler: str, zustand=None):
         """Eine Meldung dort, wo die neue Karte gestanden hätte (WB-402).
 
         Ohne HTMX geht die Vollseite zurück — dann gibt es kein Bruchstück,
         in das etwas getauscht werden könnte, und die Meldung steht am Chat.
+
+        **Der alte Zug reist mit, und das ist neu in WB-403.** Solange der
+        Wartekasten HINTER den Zug gesetzt wurde (`afterend`), stand der Zug
+        auch im Fehlerfall noch da. Seit der Tausch ihn ERSETZT, nimmt jede
+        Antwort seinen Platz ein — eine Meldung allein liesse eine Lücke, wo
+        eben noch die Karte war, und der Wechsel sähe aus wie geglückt.
+
+        `HX-Reswap` hängt dem Tausch ein `show:` an, aber nur hier: die
+        Meldung steht am oberen Rand des ersetzten Stücks und wäre sonst
+        genau die Sorte Rückmeldung, die niemand sieht (WB-378). Der
+        gelungene Wechsel scrollt nicht — darum geht dieses Ticket.
         """
         if not ist_htmx(request):
-            return _chat_antwort(request, c, fehler=fehler)
-        return vorlagen.TemplateResponse(
+            return _chat_antwort(request, c, fehler=fehler, zustand=zustand)
+        alt = vorschlagsliste.zug(c, mid)
+        if alt is not None:
+            _zug_fuellen(c, alt)
+        antwort = vorlagen.TemplateResponse(
             request, "_zugwechsel_fehler.html",
-            {"mid": mid, "chat_fehler": fehler, **_korb_zahlen(c)})
+            # `chat_zustand` trägt das Band mit dem Weckzustand. Es hängt am
+            # Seitenkopf und nicht am Zug, kommt also out-of-band mit —
+            # dieselbe Zeile wie in `_chat_antwort.html`.
+            {"mid": mid, "chat_fehler": fehler, "alt": alt,
+             "chat_zustand": zustand, "oob": True,
+             "aufklappen": None, "gerade": None, **_korb_zahlen(c)})
+        antwort.headers["HX-Reswap"] = f"outerHTML show:#wechsel-{mid}:top"
+        return antwort
 
     def _wechsel_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
                             karte: dict, treffer: dict):
@@ -1586,68 +1607,124 @@ def create_app(db_path: str | Path | None = None,
         # herauskommt: „alles für Lasagne, und Klopapier" hängt das
         # Klopapier auch diesmal an. Fehlt er (ein Verlauf, den jemand
         # zwischendurch geleert hat), tut es der Gerichtsname.
-        satz = _satz_zum_zug(c, mid) or karte["gericht"]
+        zeile = _satzzeile_zum_zug(c, mid)
+        satz = (zeile["content"] if zeile is not None else None) \
+            or karte["gericht"]
+        # Der Stand VOR dem Zug. „Alles nach `mid`" wäre falsch, sobald
+        # jemand einen ÄLTEREN Zug wechselt — dann läge der halbe Verlauf
+        # dahinter, und der würde mit abgelöst.
+        stand = c.execute(
+            "SELECT max(id) AS letzte FROM chat_message"
+            " WHERE order_id = (SELECT order_id FROM chat_message WHERE id = ?)",
+            (mid,)).fetchone()["letzte"]
         try:
             app.state.chat.turn(c, satz, gewechselt=treffer["titel"])
         except chatmodul.ChatNichtVerfuegbar as e:
             # Das Rezept ist gewechselt, der Zug nicht gelaufen. Beides
-            # sagen — sonst sieht es aus, als sei nichts passiert.
-            return _wechsel_antwort(
+            # sagen — sonst sieht es aus, als sei nichts passiert. Ersetzt
+            # wird nichts: es gibt nichts, was den alten Zug ablösen könnte.
+            return _wechsel_fehler(
                 request, c, mid, zustand=e.zustand,
                 fehler=f"„{treffer['titel']}“ ist jetzt das Rezept zu "
                        f"„{karte['gericht']}“. {_nicht_verfuegbar(e)}")
         except chatmodul.ChatFehler as e:
-            return _wechsel_antwort(request, c, mid, fehler=str(e))
-        return _wechsel_antwort(request, c, mid, gewechselt=treffer["titel"])
+            return _wechsel_fehler(request, c, mid, fehler=str(e))
+        neue = _zug_ersetzen(c, mid, zeile["id"] if zeile is not None else None,
+                             stand)
+        return _wechsel_antwort(request, c, mid, neue,
+                                gewechselt=treffer["titel"])
+
+    def _zug_ersetzen(c: sqlite3.Connection, mid: int, satz_id: int | None,
+                      stand: int | None) -> list[int]:
+        """Der frische Zug tritt an die Stelle des gewechselten (WB-403).
+
+        **Das ist die Hälfte des Tickets, die in der Datenbank steht.** Bis
+        WB-402 hängte ein Wechsel einen zweiten Zug unter den ersten: nach
+        drei Versuchen standen vier fast gleiche Lasagne-Züge untereinander,
+        und ein Neuladen brachte sie alle wieder. Jetzt sagt jede neue Zeile,
+        welche sie ablöst (`chat_message.ersetzt`), und der Verlauf zeigt von
+        einer Kette nur ihr letztes Glied.
+
+        **Gelöscht wird nichts**, und das ist die begründete Wahl zwischen
+        den beiden Wegen des Tickets: an der alten Antwortzeile hängen
+        Vorschläge, und ein bestätigter Vorschlag liegt im Korb und trägt ein
+        Eval-Label (Spec 8.1, WB-329). `ON DELETE CASCADE` nähme beim Löschen
+        der Zeile genau die mit. Dieses Projekt hat mehrfach anders
+        entschieden — `zurueckgenommen` in WB-361, `corrected_from` in
+        WB-359 —, und hier kostet es eine Spalte statt einer Entscheidung.
+
+        Zugeordnet wird über die ROLLE und nicht über die Reihenfolge: Frage
+        löst Frage ab, Antwort löst Antwort ab. Beide behalten damit ihren
+        Platz im Verlauf, denn `ersetzt` ist auch die Sortiergrösse.
+
+        `stand` ist die höchste id VOR dem Zug — nicht `mid`. Wer einen
+        älteren Zug wechselt, hätte sonst alles dahinter mit abgelöst.
+        """
+        alt = {vorschlagsliste.ROLLE_NUTZERIN: satz_id,
+               vorschlagsliste.ROLLE_AGENT: mid}
+        neue = []
+        for r in c.execute(
+                "SELECT id, role FROM chat_message WHERE id > ?"
+                "   AND order_id = (SELECT order_id FROM chat_message"
+                "                    WHERE id = ?)"
+                " ORDER BY id", (stand if stand is not None else mid, mid)):
+            neue.append(int(r["id"]))
+            # `pop`: jede alte Zeile wird höchstens einmal abgelöst. Schriebe
+            # ein Zug je Rolle zwei Zeilen, wäre die zweite ein neuer Zug und
+            # kein Ersatz — und nicht stillschweigend die Wurzel der ersten.
+            vorher = alt.pop(r["role"], None)
+            if vorher is not None:
+                vorschlagsliste.ersetzen(c, vorher, int(r["id"]))
+        return neue
 
     def _wechsel_antwort(request: Request, c: sqlite3.Connection, mid: int,
-                         fehler: str | None = None, zustand=None,
-                         gewechselt: str | None = None):
-        """Das Band und die neuen Zeilen — an der Stelle des Wartekastens.
+                         neue: list[int], gewechselt: str | None = None):
+        """Das Band und der neue Zug — AN DER STELLE des alten (WB-403).
 
         Ohne HTMX geht die Vollseite zurück; dort steht das Band oben am Chat
-        und der neue Zug unten, wie vor diesem Ticket.
+        und der neue Zug an der Stelle des alten, wie im Bruchstück.
 
-        **Der alte Zug ist nicht dabei, weil er nie weg war.** Der Wartekasten
-        stand HINTER ihm (`afterend`), nicht an seiner Stelle — das spart hier
-        seine ganze Grösse und hält die Zusage des Bandes ein. Das Band trägt
-        die `id`, auf die das `show:` des Tauschs zielt: der Blick landet auf
-        der Auskunft, und darunter steht die Karte, auf die der Nutzer eben
-        eine halbe Minute geschaut hat.
+        Drei Stücke, und jedes hat einen Grund:
+
+            1. der REST des alten Zugs, falls an ihm eine Entscheidung
+               hängt — sonst gar nichts
+            2. das Band mit dem Namen des neuen Rezepts
+            3. der neue Zug
+
+        **Die neue FRAGE ist nicht dabei.** Sie ist Wort für Wort derselbe
+        Satz wie die alte (`_wechsel_vollziehen` schickt ihn noch einmal
+        durch `chat.turn`), und die alte steht als eigene Zeile über dem
+        getauschten Stück. Sie mitzuschicken hiesse, den Satz zweimal
+        untereinander zu setzen — genau der Zuwachs, den dieses Ticket
+        abschafft. In der Datenbank löst sie die alte trotzdem ab, und nach
+        dem Neuladen steht sie an ihrer Stelle.
+
+        **Der Rest des alten Zugs steht davor und nicht darunter**, weil er
+        älter ist: dieselbe Reihenfolge, die `verlauf()` nach dem Neuladen
+        liefert (`ORDER BY coalesce(ersetzt, id), id`). Was im Dokument steht
+        und was in der Datenbank steht, soll dasselbe sein.
         """
+        rest = vorschlagsliste.zug(c, mid)
+        if rest is not None and (not rest["ueberholt"]
+                                 or not rest["vorschlaege"]):
+            # Nicht abgelöst gibt es hier nicht (der Zug lief gerade), und
+            # ohne entschiedene Zeile bleibt von ihm nichts übrig — offene
+            # Vorschläge zu einem abgewählten Rezept zählen nach Spec 8.1
+            # nirgends.
+            rest = None
         if not ist_htmx(request):
-            return _chat_antwort(request, c, fehler=fehler, zustand=zustand,
-                                 gewechselt=gewechselt)
-        neue = [z for z in (vorschlagsliste.zug(c, i)
-                            for i in _seit(c, mid)) if z is not None]
-        for z in neue:
+            return _chat_antwort(request, c, gewechselt=gewechselt)
+        gesucht = (vorschlagsliste.zug(c, i) for i in neue)
+        zeilen = [z for z in gesucht if z is not None
+                  and z["role"] != vorschlagsliste.ROLLE_NUTZERIN]
+        for z in ([rest] if rest is not None else []) + zeilen:
             _zug_fuellen(c, z)
         return vorlagen.TemplateResponse(
             request, "_zugwechsel_fertig.html",
-            # `chat_zustand` trägt das Band mit dem Weckzustand. Es hängt am
-            # Seitenkopf und nicht am Zug, kommt also out-of-band mit —
-            # dieselbe Zeile wie in `_chat_antwort.html`.
-            {"mid": mid, "neue": neue, "gewechselt": gewechselt,
-             "aufklappen": None, "gerade": None, "chat_fehler": fehler,
-             "chat_zustand": zustand, "oob": True, **_korb_zahlen(c)})
-
-    def _seit(c: sqlite3.Connection, nach: int) -> list[int]:
-        """Die Chatzeilen, die seit `nach` dazugekommen sind — beide Rollen.
-
-        `chat.turn` schreibt FRAGE UND ANTWORT (`_schreiben`). Nur die
-        Antwortzeile zu rendern ergäbe eine Vorschlagsliste ohne den Satz, aus
-        dem sie entstanden ist — dieselbe Überlegung wie bei der
-        Verlaufsgrenze in `vorschlaege.verlauf_ab`, die deshalb immer auf
-        einer Zeile der Nutzerin liegt.
-
-        Über die id und nicht über den Zeitstempel: zwei Zeilen können
-        dieselbe Sekunde tragen (siehe `_satz_zum_zug`). Leer, wenn keine
-        dazugekommen ist — dann ist der Zug nicht gelaufen.
-        """
-        return [r["id"] for r in c.execute(
-            "SELECT id FROM chat_message WHERE id > ?"
-            "   AND order_id = (SELECT order_id FROM chat_message WHERE id = ?)"
-            " ORDER BY id", (nach, nach))]
+            {"mid": mid, "rest": rest, "neue": zeilen,
+             "gewechselt": gewechselt, "aufklappen": None, "gerade": None,
+             "chat_fehler": None, "chat_zustand": None, "oob": True,
+             **_korb_zahlen(c)})
 
     @app.post("/chat/{mid}/portionen")
     async def chat_portionen(request: Request, mid: int):
@@ -1717,21 +1794,26 @@ def create_app(db_path: str | Path | None = None,
                 return karte, treffer
         return None, None
 
-    def _satz_zum_zug(c: sqlite3.Connection, mid: int) -> str | None:
-        """Der Satz, auf den dieser Zug geantwortet hat.
+    def _satzzeile_zum_zug(c: sqlite3.Connection, mid: int):
+        """Die Zeile mit dem Satz, auf den dieser Zug geantwortet hat.
 
         Die letzte Nutzerinnenzeile VOR der Antwortzeile. `chat.turn` schreibt
         beide in derselben Sekunde (`_schreiben`), also ist es die davor —
         über die id und nicht über den Zeitstempel, denn zwei Zeilen können
         dieselbe Sekunde tragen.
+
+        Die ID kommt seit WB-403 mit: beim Rezeptwechsel löst die neue Frage
+        die alte ab, und dafür muss man wissen, welche das war. `None` ist
+        praktisch nicht zu erreichen — `chat.turn` schreibt immer beide
+        Zeilen —, und der Wechsel kommt auch damit zurecht: dann bleibt die
+        neue Frage eine Zeile ohne Vorgängerin.
         """
-        row = c.execute(
-            "SELECT content FROM chat_message"
+        return c.execute(
+            "SELECT id, content FROM chat_message"
             " WHERE role = ? AND id < ?"
             "   AND order_id = (SELECT order_id FROM chat_message WHERE id = ?)"
             " ORDER BY id DESC LIMIT 1",
             (vorschlagsliste.ROLLE_NUTZERIN, mid, mid)).fetchone()
-        return row["content"] if row else None
 
     @app.post("/chat/vorschlag/{sid}/entscheiden")
     async def vorschlag_entscheiden(request: Request, sid: int):
