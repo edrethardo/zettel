@@ -669,6 +669,48 @@ Ein ganzer Zug zu einem **neuen** Gericht, gemessen an der echten Box:
 | vier Spuren, leeres Gedächtnis | **16,6 s** |
 | dasselbe Gericht noch einmal | **< 0,1 s** |
 
+### Stufe 1 verträgt das Zerlegen NICHT — gemessen, nicht vermutet
+
+Nach WB-412 lag es nahe, dasselbe mit Stufe 1 zu machen: sie ist mit 11,53 s
+Median der zweitteuerste Teil, und die Zerlegung von Stufe 3 hatte nichts
+gekostet. **Es ist aber nicht dieselbe Aufgabe.** Stufe 3 beantwortet je
+Begriff eine für sich stehende Frage; Stufe 1 bekommt EINE Zutatenliste und
+soll daraus EINE Liste machen — sie sieht heute alles auf einmal und nutzt
+das.
+
+`scripts/spur_probe.py` hat es ausgemessen: 15 Rezepte ab acht Zutaten, drei
+Varianten, je zwei Läufe, 88 Messzeilen (`evals/spur_probe-2026-08-30.jsonl`).
+
+| Variante | Sekunden | Ketten | Abdeckung | Dubletten | Deckung |
+|---|---|---|---|---|---|
+| ganz | 9,9 s | 11,0 | 69 % | **0** | **100 %** |
+| 2 Spuren | 6,6 s | 11,0 | 69 % | 4 | 87 % |
+| 4 Spuren | 5,5 s | 11,0 | 68 % | 6 | 87 % |
+
+**Das Rauschband ist null.** Dreissig Läufe von `ganz`, keine einzige
+Abweichung, identische Zeiten auf die Zehntelsekunde — bei Temperatur 0 mit
+guided JSON ist diese Stufe reproduzierbar. Damit ist jede Abweichung der
+zerlegten Läufe dem Zerlegen zuzuschreiben und nicht dem Zufall. Genau dafür
+war das Band da.
+
+Drei Befunde, und der dritte entscheidet:
+
+* **14 von 15 Rezepten ändern sich.** Im schlimmsten Fall stimmen nur 62 %
+  der Ketten überein (Ratatouille), 67 % bei „Einfache Lasagne Bolognese".
+  *Das allein wäre kein Urteil* — eine andere Kette kann gleich gut sein
+  („Möhren" statt „Karotten"). Die Probe misst Abweichung, nicht Güte.
+* **Dubletten, wo es vorher keine gab** (0 -> 4 -> 6, in zwei Rezepten).
+  Keine Spur sieht die andere, also kommt dieselbe Zutat zweimal auf den
+  Zettel. Das ist kein Geschmacksurteil, das sieht man.
+* **Ein Totalausfall.** Bei „Käse-Lauch-Suppe mit Hackfleisch" lieferte eine
+  Spur mit drei Zutaten gar keine Begriffe — `PlanFehler`, und die ganze
+  Stufe fällt auf `chefkoch.zutat_kette` zurück, die gemessen 10 von 14
+  statt 12 von 12 trifft. Beide Läufe, reproduzierbar.
+
+Für 4,4 gesparte Sekunden. **Also nicht gebaut** (WB-413). Die Probe bleibt
+im Baum: sie ist die Antwort auf „warum eigentlich nicht", und sie lässt sich
+gegen ein anderes Modell noch einmal fahren.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist
