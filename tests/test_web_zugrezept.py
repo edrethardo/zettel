@@ -22,13 +22,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db, recipes
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import zugrezept
-from picknick.gerichte import lauf, quelle
-from picknick.llm import wake
-from picknick.llm.client import Antwort
-from picknick.web import app as webapp
+from zettel import db, recipes
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import zugrezept
+from zettel.gerichte import lauf, quelle
+from zettel.llm import wake
+from zettel.llm.client import Antwort
+from zettel.web import app as webapp
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SUCHE = json.loads((FIXTURES / "chefkoch_pho_suche.json")
@@ -105,7 +105,7 @@ def _zusatz(con):
 @pytest.fixture
 def datei(vorlagen, tmp_path):
     """Katalog plus die drei Produkte, die der Pho-Zug findet."""
-    return vorlagen.datei(tmp_path / "picknick.db", "zugrezept_katalog",
+    return vorlagen.datei(tmp_path / "zettel.db", "zugrezept_katalog",
                           vorlagen.katalog, _zusatz)
 
 

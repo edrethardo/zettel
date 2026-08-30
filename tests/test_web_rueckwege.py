@@ -27,9 +27,9 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import bons, db, orders, recipes
-from picknick.bons import zerlegen
-from picknick.web import app as webapp
+from zettel import bons, db, orders, recipes
+from zettel.bons import zerlegen
+from zettel.web import app as webapp
 
 HTMX = {"HX-Request": "true"}
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64

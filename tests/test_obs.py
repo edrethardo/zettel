@@ -37,11 +37,11 @@ from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter)
 
-from picknick import db, obs, recipes
-from picknick.assistant import chat as chatmodul
-from picknick.llm import wake
-from picknick.llm.client import Modellzugang, ModellNichtErreichbar
-from picknick.obs import otel as tracermodul
+from zettel import db, obs, recipes
+from zettel.assistant import chat as chatmodul
+from zettel.llm import wake
+from zettel.llm.client import Modellzugang, ModellNichtErreichbar
+from zettel.obs import otel as tracermodul
 
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 DOKS = SpanAttributes.RETRIEVAL_DOCUMENTS
@@ -173,13 +173,13 @@ def _nach_namen(exporter):
 def _suche(exporter, begriff):
     """Der `catalog.search`-Span dieser Zutat.
 
-    Gefunden über `picknick.term` — den genauesten Begriff der Kette.
+    Gefunden über `zettel.term` — den genauesten Begriff der Kette.
     `input.value` ist seit WB-340 die ganze Kette als JSON und taugt nicht
     mehr als Schlüssel.
     """
     treffer = [s for s in exporter.get_finished_spans()
                if s.name == "catalog.search"
-               and s.attributes.get("picknick.term") == begriff]
+               and s.attributes.get("zettel.term") == begriff]
     assert len(treffer) == 1, f"{begriff}: {len(treffer)} Spans, erwartet 1"
     return treffer[0]
 
@@ -261,12 +261,12 @@ def test_chat_turn_traegt_satz_und_vorschlagsliste(con, spans):
         p["name"] for p in ergebnis.vorschlaege]
     assert ausgabe[0]["begriff"] == "Butter"
     assert a[obs.PFAD] == "llm"
-    assert a["picknick.terms"] == 2
-    assert a["picknick.products"] == 2
-    assert a["picknick.free_text"] == 0
-    assert a["picknick.rejected"] == 0
-    assert a["picknick.order_id"] == ergebnis.order_id
-    assert a["picknick.chat_message_id"] == ergebnis.chat_message_id
+    assert a["zettel.terms"] == 2
+    assert a["zettel.products"] == 2
+    assert a["zettel.free_text"] == 0
+    assert a["zettel.rejected"] == 0
+    assert a["zettel.order_id"] == ergebnis.order_id
+    assert a["zettel.chat_message_id"] == ergebnis.chat_message_id
     # Die Sitzung ist der Warenkorb: mehrere Sätze zu einem Einkauf gehören
     # in Phoenix zusammen.
     assert a["session.id"] == f"korb-{ergebnis.order_id}"
@@ -314,7 +314,7 @@ def test_kandidaten_stehen_als_dokumente_mit_id_inhalt_und_score(con, spans):
 
     butter = _suche(spans, "Butter")
     a = butter.attributes
-    assert a["picknick.candidates"] == 3
+    assert a["zettel.candidates"] == 3
 
     for i in range(3):
         p = f"{DOKS}.{i}."
@@ -331,7 +331,7 @@ def test_kandidaten_stehen_als_dokumente_mit_id_inhalt_und_score(con, spans):
     scores = [a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_SCORE]
               for i in range(3)]
     assert scores == sorted(scores, reverse=True)
-    assert a["picknick.rank_top"] == scores[0]
+    assert a["zettel.rank_top"] == scores[0]
     # Der Inhalt ist das, was das Modell sah: Name, Gebinde, Preis.
     assert a[f"{DOKS}.0." + DocumentAttributes.DOCUMENT_CONTENT].endswith("€")
 
@@ -351,11 +351,11 @@ def test_ein_span_je_zutat_mit_ihrer_ganzen_begriffskette(con, spans):
 
     suchen = [s for s in spans.get_finished_spans()
               if s.name == "catalog.search"]
-    assert [s.attributes["picknick.term"] for s in suchen] == [
+    assert [s.attributes["zettel.term"] for s in suchen] == [
         "Salzbutter", "Zwiebeln"]
     a = suchen[0].attributes
     assert json.loads(a[SpanAttributes.INPUT_VALUE]) == ["Salzbutter", "Butter"]
-    assert a["picknick.search_terms"] == "Salzbutter, Butter"
+    assert a["zettel.search_terms"] == "Salzbutter, Butter"
 
 
 def test_der_span_nennt_je_kandidat_den_begriff_der_ihn_brachte(con, spans):
@@ -368,7 +368,7 @@ def test_der_span_nennt_je_kandidat_den_begriff_der_ihn_brachte(con, spans):
     agent.turn(con, "Butter")
 
     a = _einer(spans, "catalog.search").attributes
-    n = a["picknick.candidates"]
+    n = a["zettel.candidates"]
     assert n == 3, "Die drei Butter-Produkte, nach Produkt-ID entdoppelt."
     via = [json.loads(a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_METADATA]
                       )["via"] for i in range(n)]
@@ -389,12 +389,12 @@ def test_suche_ohne_treffer_ist_ein_span_ohne_dokumente(con, spans):
     ergebnis = agent.turn(con, "Wachsmalstifte")
 
     span = _einer(spans, "catalog.search")
-    assert span.attributes["picknick.candidates"] == 0
+    assert span.attributes["zettel.candidates"] == 0
     assert f"{DOKS}.0." + DocumentAttributes.DOCUMENT_ID not in span.attributes
     wurzel = _einer(spans, "chat.turn").attributes
-    assert wurzel["picknick.free_text"] == 1
-    assert wurzel["picknick.weakest_term"] == "Wachsmalstifte"
-    assert wurzel["picknick.weakest_rank"] == 0.0
+    assert wurzel["zettel.free_text"] == 1
+    assert wurzel["zettel.weakest_term"] == "Wachsmalstifte"
+    assert wurzel["zettel.weakest_rank"] == 0.0
     assert ergebnis.n_freitext == 1
 
 
@@ -408,29 +408,29 @@ def test_der_butterfall_ist_am_trace_als_retrieval_fehler_zu_erkennen(
     Das Modell wählt eine handgemachte BIO-Salzbutter für 4,69 € — ein
     Fehlgriff. Am Trace ist zu sehen, dass es NICHT das Modell war: alle
     vorgelegten Kandidaten waren Spezialbutter, normale Butter stand nie zur
-    Wahl. Der Rang sagt es vorher, und `picknick.weakest_term` auf der Wurzel
+    Wahl. Der Rang sagt es vorher, und `zettel.weakest_term` auf der Wurzel
     sagt es, ohne dass man einen Ast aufklappt.
     """
     _butter_und_zwiebeln(con).turn(con, "Butter und Zwiebeln")
 
     wurzel = _einer(spans, "chat.turn").attributes
     # Das Modell hat nichts erfunden — an ihm lag es nicht.
-    assert wurzel["picknick.rejected"] == 0
+    assert wurzel["zettel.rejected"] == 0
     # Die Suche hat bei „Butter" am schwächsten vorgelegt.
-    assert wurzel["picknick.weakest_term"] == "Butter"
+    assert wurzel["zettel.weakest_term"] == "Butter"
 
-    raenge = {s.attributes["picknick.term"]:
-              s.attributes["picknick.rank_top"]
+    raenge = {s.attributes["zettel.term"]:
+              s.attributes["zettel.rank_top"]
               for s in spans.get_finished_spans()
               if s.name == "catalog.search"}
     assert raenge["Butter"] < raenge["Zwiebeln"]
-    assert wurzel["picknick.weakest_rank"] == raenge["Butter"]
+    assert wurzel["zettel.weakest_rank"] == raenge["Butter"]
 
     # Und die Vorlage selbst: keine normale Butter darunter.
     butter = _suche(spans, "Butter")
     inhalte = [butter.attributes[f"{DOKS}.{i}."
                                  + DocumentAttributes.DOCUMENT_CONTENT]
-               for i in range(butter.attributes["picknick.candidates"])]
+               for i in range(butter.attributes["zettel.candidates"])]
     assert all("ButterBoyz" in i for i in inhalte)
 
 
@@ -442,10 +442,10 @@ def test_eine_erfundene_id_zeigt_der_trace_als_modellfehler(con, spans):
     wurzel = _einer(spans, "chat.turn").attributes
     # Kandidaten waren da …
     such = _einer(spans, "catalog.search").attributes
-    assert such["picknick.candidates"] == 1
+    assert such["zettel.candidates"] == 1
     # … und trotzdem kam nichts heraus. Das ist ein Modellfehler.
-    assert wurzel["picknick.rejected"] == 1
-    assert wurzel["picknick.products"] == 0
+    assert wurzel["zettel.rejected"] == 1
+    assert wurzel["zettel.products"] == 0
 
 
 # --------------------------------------------------------------------------
@@ -521,14 +521,14 @@ def test_rezepttreffer_hat_keine_llm_spans(con, spans):
     assert _nach_namen(spans) == ["chat.turn"]
     a = _einer(spans, "chat.turn").attributes
     assert a[obs.PFAD] == "recipe"
-    assert a["picknick.recipes"] == "Zwiebelkuchen"
+    assert a["zettel.recipes"] == "Zwiebelkuchen"
     # Kein Begriff, keine Suche, keine schwächste Suche — und deshalb auch
     # kein Attribut dafür. `None` wäre ein Wert, der behauptet, es hätte eine
     # Suche gegeben.
-    assert "picknick.weakest_term" not in a
+    assert "zettel.weakest_term" not in a
     # Ohne Rest im Satz behauptet auch nichts einen (WB-370).
-    assert "picknick.rest" not in a
-    assert "picknick.rest_added" not in a
+    assert "zettel.rest" not in a
+    assert "zettel.rest_added" not in a
     assert a[SpanAttributes.OUTPUT_VALUE]
 
 
@@ -549,8 +549,8 @@ def test_was_neben_dem_gericht_stand_steht_im_span(con, spans):
 
     a = _einer(spans, "chat.turn").attributes
     assert a[obs.PFAD] == "recipe"
-    assert a["picknick.rest"] == "Klopapier"
-    assert a["picknick.rest_added"] is True
+    assert a["zettel.rest"] == "Klopapier"
+    assert a["zettel.rest_added"] is True
     assert "Klopapier" in [v["name"] for v in ergebnis.vorschlaege]
 
 
@@ -559,7 +559,7 @@ def test_was_neben_dem_gericht_stand_steht_im_span(con, spans):
 
 def test_span_id_landet_an_beiden_chatzeilen(con, spans):
     """Der Haken für die Annotationen aus Spec 8.1 (WB-329)."""
-    from picknick.assistant import vorschlaege
+    from zettel.assistant import vorschlaege
 
     ergebnis = _butter_und_zwiebeln(con).turn(con, "Butter und Zwiebeln")
 
@@ -575,7 +575,7 @@ def test_ohne_tracer_bleibt_span_id_leer(con):
     Eine Null-ID (`0000000000000000`) wäre schlimmer als `NULL`: sie sähe aus
     wie ein Verweis und zeigte ins Leere.
     """
-    from picknick.assistant import vorschlaege
+    from zettel.assistant import vorschlaege
 
     ergebnis = _butter_und_zwiebeln(con).turn(con, "Butter und Zwiebeln")
     assert [m["span_id"]
@@ -671,10 +671,10 @@ def test_ohne_phoenix_richtet_einrichten_nichts_ein_und_wirft_nicht():
 
 
 def test_tracing_laesst_sich_ueber_die_umgebung_abschalten():
-    assert not obs.an({"PICKNICK_TRACING": "0"})
-    assert not obs.an({"PICKNICK_TRACING": "aus"})
+    assert not obs.an({"ZETTEL_TRACING": "0"})
+    assert not obs.an({"ZETTEL_TRACING": "aus"})
     assert obs.an({})
-    assert obs.an({"PICKNICK_TRACING": "1"})
+    assert obs.an({"ZETTEL_TRACING": "1"})
 
 
 # --------------------------------------------------------------------------
@@ -829,15 +829,15 @@ def test_die_packungsrechnung_steht_im_span(con, spans):
 
     span = _einer(spans, "korb.menge")
     a = span.attributes
-    assert a["picknick.servings"] == 8
-    assert a["picknick.need_added"] == 800.0      # 400 g für 4 -> 800 g für 8
-    assert a["picknick.need_amount"] == 800.0     # die Summe an der Zeile
-    assert a["picknick.need_unit"] == "g"
-    assert a["picknick.pack_text"] == "1 kg"
-    assert a["picknick.pack_amount"] == 1000.0
-    assert a["picknick.computable"] is True
-    assert a["picknick.packages"] == 1
-    assert a["picknick.qty"] == 1
+    assert a["zettel.servings"] == 8
+    assert a["zettel.need_added"] == 800.0      # 400 g für 4 -> 800 g für 8
+    assert a["zettel.need_amount"] == 800.0     # die Summe an der Zeile
+    assert a["zettel.need_unit"] == "g"
+    assert a["zettel.pack_text"] == "1 kg"
+    assert a["zettel.pack_amount"] == 1000.0
+    assert a["zettel.computable"] is True
+    assert a["zettel.packages"] == 1
+    assert a["zettel.qty"] == 1
     assert "800 g gebraucht" in a[SpanAttributes.OUTPUT_VALUE]
 
 
@@ -852,9 +852,9 @@ def test_der_span_zeigt_das_zusammenzaehlen_ueber_zwei_rezepte(con, spans):
     assert len(spans_) == 2
     # Der EINZELNE Beitrag bleibt gleich, die SUMME wächst — erst der
     # Unterschied zwischen beiden macht das Zusammenzählen im Trace sichtbar.
-    assert [s.attributes["picknick.need_added"] for s in spans_] == [600.0, 600.0]
-    assert [s.attributes["picknick.need_amount"] for s in spans_] == [600.0, 1200.0]
-    assert [s.attributes["picknick.packages"] for s in spans_] == [1, 2]
+    assert [s.attributes["zettel.need_added"] for s in spans_] == [600.0, 600.0]
+    assert [s.attributes["zettel.need_amount"] for s in spans_] == [600.0, 1200.0]
+    assert [s.attributes["zettel.packages"] for s in spans_] == [1, 2]
 
 
 def test_nicht_ausrechenbar_steht_ausdruecklich_im_span(con, spans):
@@ -866,9 +866,9 @@ def test_nicht_ausrechenbar_steht_ausdruecklich_im_span(con, spans):
     recipes.in_den_korb(con, rid)
 
     a = _einer(spans, "korb.menge").attributes
-    assert a["picknick.computable"] is False
-    assert "picknick.packages" not in a
-    assert "1 kg" in a["picknick.reason"]
+    assert a["zettel.computable"] is False
+    assert "zettel.packages" not in a
+    assert "1 kg" in a["zettel.reason"]
 
 
 def test_ein_freitext_steht_mit_seiner_menge_im_span(con, spans):
@@ -881,7 +881,7 @@ def test_ein_freitext_steht_mit_seiner_menge_im_span(con, spans):
     anderswo besorgt werden muss. Der Grund sagt das und schiebt der Zeile
     keinen Produktmangel unter.
     """
-    from picknick import mengen
+    from zettel import mengen
 
     rid = recipes.anlegen(con, "Pho", servings=4, zutaten=[
         {"free_text": "Sternanis", "amount": 3, "unit": "Stk"}])
@@ -891,20 +891,20 @@ def test_ein_freitext_steht_mit_seiner_menge_im_span(con, spans):
     # Der Posten heisst im Trace, wie er überall sonst heisst.
     assert a[SpanAttributes.INPUT_VALUE] == "Sternanis"
     # Kein Produkt — daran ist ein Freitext-Span zu erkennen.
-    assert "picknick.product_id" not in a
-    assert a["picknick.need_added"] == 6.0     # 3 Stk für 4 -> 6 für 8
-    assert a["picknick.need_amount"] == 6.0
-    assert a["picknick.computable"] is False
-    assert "picknick.packages" not in a
-    assert a["picknick.reason"] == mengen.FREITEXT_GRUND
-    assert a["picknick.qty"] == 1
+    assert "zettel.product_id" not in a
+    assert a["zettel.need_added"] == 6.0     # 3 Stk für 4 -> 6 für 8
+    assert a["zettel.need_amount"] == 6.0
+    assert a["zettel.computable"] is False
+    assert "zettel.packages" not in a
+    assert a["zettel.reason"] == mengen.FREITEXT_GRUND
+    assert a["zettel.qty"] == 1
     assert "6 Stk gebraucht" in a[SpanAttributes.OUTPUT_VALUE]
 
 
 def test_ein_griff_ins_regal_erzeugt_keinen_rechenspan(con, spans):
     """Ein „+" an der Kachel rechnet nichts aus. Ein Span, der so aussähe, als
     hätte er es getan, wäre ein leerer Span mit einer Behauptung."""
-    from picknick import orders
+    from zettel import orders
 
     orders.einlegen(con, product_id=_pid(con, "Zwiebeln"), qty=2)
     assert "korb.menge" not in _nach_namen(spans)

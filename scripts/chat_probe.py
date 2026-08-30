@@ -29,20 +29,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402
 
-from picknick import db  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import plan  # noqa: E402
-from picknick.catalog import search  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
-from picknick.scrapers import knuspr  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import plan  # noqa: E402
+from zettel.catalog import search  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
+from zettel.scrapers import knuspr  # noqa: E402
 
 SATZ = "alles für Spaghetti Bolognese, und Klopapier"
 
 #: Ein kleiner, aber ehrlicher Ausschnitt: die Zutaten aus dem Beispielsatz und
 #: ein paar Nachbarn, damit die Suche etwas zu unterscheiden hat. Die Liste für
 #: den nächtlichen VOLLcrawl steht seit WB-331 nicht mehr hier, sondern in
-#: `picknick/scrapers/begriffe.py` — hier bleibt bewusst ein Ausschnitt, weil
+#: `zettel/scrapers/begriffe.py` — hier bleibt bewusst ein Ausschnitt, weil
 #: eine Handprobe nicht 20 Minuten crawlen soll.
 CRAWL_BEGRIFFE = [
     "hackfleisch", "tomaten", "nudeln", "spaghetti", "zwiebeln", "knoblauch",
@@ -69,7 +69,7 @@ def warte_bis_wach(frist_s: float = 300.0) -> bool:
 
 
 def krawl(con) -> None:
-    http = httpx.Client(timeout=30.0, headers={"User-Agent": "picknick-probe"})
+    http = httpx.Client(timeout=30.0, headers={"User-Agent": "zettel-probe"})
     try:
         bericht = knuspr.crawl(con, http, CRAWL_BEGRIFFE,
                                image_dir="data/images")

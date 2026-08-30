@@ -19,12 +19,12 @@ from pathlib import Path
 
 import pytest
 
-from picknick import db
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import plan
-from picknick.gerichte import chefkoch, lauf, quelle, speicher
-from picknick.llm import wake
-from picknick.llm.client import Antwort
+from zettel import db
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import plan
+from zettel.gerichte import chefkoch, lauf, quelle, speicher
+from zettel.llm import wake
+from zettel.llm.client import Antwort
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SUCHE = json.loads((FIXTURES / "chefkoch_pho_suche.json")
@@ -156,7 +156,7 @@ def con(vorlagen, tmp_path):
     # Gebaut wird sie einmal je Testlauf als Vorlage (`conftest.py`) und hier
     # nur kopiert — der eigene Name, weil `ZUSATZ` hier ein anderer ist als
     # in `test_assistant.py`.
-    c = db.connect(vorlagen.datei(tmp_path / "picknick.db", "gerichte_katalog",
+    c = db.connect(vorlagen.datei(tmp_path / "zettel.db", "gerichte_katalog",
                                   vorlagen.katalog, _zusatz))
     yield c
     c.close()
@@ -818,7 +818,7 @@ def test_ein_gespeichertes_rezept_mit_produkten_schlaegt_die_quelle(con):
     die Produkte, die die beiden selbst ausgesucht haben. Das kann keine
     fremde Seite besser wissen.
     """
-    from picknick import recipes
+    from zettel import recipes
 
     recipe_id = lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
                                 schreib=lambda _: None)
@@ -841,7 +841,7 @@ def test_ein_geholtes_rezept_ohne_produkte_faengt_den_zug_nicht_ab(con):
     Sonst schnitte das geholte Rezept den Weg ab und hätte nichts
     vorzuschlagen — 23 Zutaten, null Produkte.
     """
-    from picknick.assistant import rezeptweg
+    from zettel.assistant import rezeptweg
 
     lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
                     schreib=lambda _: None)
@@ -853,7 +853,7 @@ def test_ein_geholtes_rezept_ohne_produkte_faengt_den_zug_nicht_ab(con):
 # Was im Rezept landet — zum Kochen, nicht zum Einkaufen
 
 def test_das_geholte_rezept_steht_mit_zubereitung_in_der_sammlung(con):
-    from picknick import recipes
+    from zettel import recipes
 
     lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
                     schreib=lambda _: None)
@@ -876,7 +876,7 @@ def test_das_geholte_rezept_steht_mit_zubereitung_in_der_sammlung(con):
 
 
 def test_ein_selbst_angelegtes_rezept_hat_keine_zubereitung(con):
-    from picknick import recipes
+    from zettel import recipes
 
     recipe_id = recipes.anlegen(con, "Nudeln mit Butter", servings=2)
     r = recipes.rezept(con, recipe_id)
@@ -890,9 +890,9 @@ def test_die_rezeptseite_zeigt_zubereitung_und_herkunft(con, tmp_path):
     """Sichtbar, nicht nur gespeichert: das ist fremde Arbeit."""
     from fastapi.testclient import TestClient
 
-    from picknick.web import app as webapp
+    from zettel.web import app as webapp
 
-    datei = tmp_path / "picknick.db"
+    datei = tmp_path / "zettel.db"
     c = db.connect(datei)
     db.migrate(c)
     lauf.hole_eines(c, echtes_chefkoch(), "Pho", pause_s=0,

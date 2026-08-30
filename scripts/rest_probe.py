@@ -47,13 +47,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402
 
-from picknick import db  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import herkunft, plan  # noqa: E402
-from picknick.gerichte import chefkoch, quelle  # noqa: E402
-from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import herkunft, plan  # noqa: E402
+from zettel.gerichte import chefkoch, quelle  # noqa: E402
+from zettel.gerichte import lauf as gerichtelauf  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
 
 #: Die Gerichte der Messung. Breit gestreut und nicht ausgesucht: eine Quote
 #: über drei Gerichte ist keine Quote, und eine über die drei Gerichte, an

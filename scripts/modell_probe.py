@@ -15,12 +15,12 @@ import sys
 import time
 from pathlib import Path
 
-# Das Projekt hat keine Installationsdatei; `pytest` findet `picknick`, weil es
+# Das Projekt hat keine Installationsdatei; `pytest` findet `zettel`, weil es
 # aus dem Projektverzeichnis heraus läuft. Ein Skript in `scripts/` nicht.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import (Modellzugang,  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import (Modellzugang,  # noqa: E402
                                  ModellNichtErreichbar)
 
 

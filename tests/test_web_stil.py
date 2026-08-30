@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import picknick.web.app as webapp
+import zettel.web.app as webapp
 
 STIL = Path(webapp.STATIC_DIR) / "stil.css"
 

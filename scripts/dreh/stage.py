@@ -16,8 +16,8 @@ def post(pfad):
         return a.status
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
-from picknick import db
-from picknick.catalog import search
+from zettel import db
+from zettel.catalog import search
 
 con = db.connect(DB)
 

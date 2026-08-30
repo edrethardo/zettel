@@ -2,14 +2,14 @@
 
 **Kein Test schickt Spans an ein laufendes Phoenix.** Das ist nicht bloss die
 Regel „kein Test geht ins Netz" (Spec 13), sondern Selbstschutz: auf diesem
-Rechner läuft Phoenix auf `localhost:6006`, und `picknick.web.app` richtet den
+Rechner läuft Phoenix auf `localhost:6006`, und `zettel.web.app` richtet den
 Tracer schon beim Import ein. Ohne die Zeile unten liefe jeder Testlauf mit in
-das Projekt `Picknick Agent` — und die Zahlen, mit denen `scripts/trace_probe.py`
+das Projekt `Zettel Agent` — und die Zahlen, mit denen `scripts/trace_probe.py`
 die Verifikation aus Spec 7.4 belegt, wären ein Gemisch aus echten Chat-Zügen
 und Testrauschen.
 
 Hart gesetzt und nicht `setdefault`: eine Umgebung, in der jemand
-`PICKNICK_TRACING=1` exportiert hat, soll die Suite nicht umkonfigurieren
+`ZETTEL_TRACING=1` exportiert hat, soll die Suite nicht umkonfigurieren
 können.
 
 Was die Span-Tests brauchen, richten sie selbst ein — mit einem
@@ -17,11 +17,11 @@ In-Memory-Exporter (`tests/test_obs.py`).
 """
 import os
 
-os.environ["PICKNICK_TRACING"] = "0"
+os.environ["ZETTEL_TRACING"] = "0"
 
 import pytest  # noqa: E402
 
-from picknick import obs  # noqa: E402
+from zettel import obs  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +45,7 @@ def _kein_test_ruft_chefkoch_an(monkeypatch):
     es auch: sonst bliebe `hole_jetzt` selbst ungeprüft und die Tests
     liefen an der Funktion vorbei, um die es geht.
     """
-    from picknick.gerichte import lauf
+    from zettel.gerichte import lauf
 
     echt = lauf.hole_jetzt
 
@@ -204,7 +204,7 @@ import json  # noqa: E402
 import shutil  # noqa: E402
 import sqlite3  # noqa: E402
 
-from picknick import db  # noqa: E402
+from zettel import db  # noqa: E402
 
 
 class VorlagenHTTP:
@@ -240,7 +240,7 @@ def knuspr_katalog(con):
     FTS-Trigger auf dem Weg greifen, den der Katalog im Betrieb wirklich
     nimmt — genau wie vorher, als jede Testdatei das selbst tat.
     """
-    from picknick.scrapers import knuspr
+    from zettel.scrapers import knuspr
 
     payload = json.loads(
         (FIXTURES / "knuspr_milch.json").read_text(encoding="utf-8"))
@@ -331,7 +331,7 @@ def vorlagen(tmp_path_factory):
 @pytest.fixture
 def db_datei(vorlagen, tmp_path):
     """Der Katalog als eigene Datenbank-DATEI, frisch für diesen Test."""
-    return vorlagen.datei(tmp_path / "picknick.db", "katalog",
+    return vorlagen.datei(tmp_path / "zettel.db", "katalog",
                           vorlagen.katalog)
 
 
@@ -346,4 +346,4 @@ def katalog_con(vorlagen):
 @pytest.fixture
 def leere_db_datei(vorlagen, tmp_path):
     """Eine migrierte, sonst leere Datenbank-DATEI."""
-    return vorlagen.datei(tmp_path / "picknick.db", "leer")
+    return vorlagen.datei(tmp_path / "zettel.db", "leer")

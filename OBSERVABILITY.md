@@ -5,10 +5,10 @@ sie bedeuten. Dieses Dokument ist der Vertrag: was hier steht, prüfen
 `tests/test_obs.py` und `checks/smoke.py` gegen einen In-Memory-Exporter, und
 `scripts/trace_probe.py` gegen ein laufendes Phoenix.
 
-Projekt in Phoenix: **`Picknick Agent`**, OTLP/HTTP auf
-`http://localhost:6006/v1/traces`. Abschaltbar mit `PICKNICK_TRACING=0`; alles
-andere heisst „an", auch nichts. `PICKNICK_PHOENIX_PROJECT` benennt das
-Projekt um, `PICKNICK_PHOENIX_ENDPOINT` das Ziel — gebraucht wird das von
+Projekt in Phoenix: **`Zettel Agent`**, OTLP/HTTP auf
+`http://localhost:6006/v1/traces`. Abschaltbar mit `ZETTEL_TRACING=0`; alles
+andere heisst „an", auch nichts. `ZETTEL_PHOENIX_PROJECT` benennt das
+Projekt um, `ZETTEL_PHOENIX_ENDPOINT` das Ziel — gebraucht wird das von
 Eval-Läufen, die nicht ins Alltagsprojekt gehören (siehe unten, WB-393).
 
 ## Der Fall, um den es geht
@@ -24,7 +24,7 @@ Trace sagt warum. Das hier steht in den beiden `catalog.search`-Spans dieses
 Zugs (Ränge aus dem echten Katalog, 2026-08-28, 2.498 Produkte):
 
 ```
-„Butter“ — 5 Kandidaten vorgelegt          picknick.rejected = 0
+„Butter“ — 5 Kandidaten vorgelegt          zettel.rejected = 0
    4,01  #1771  ButterBoyz BIO Butter Chili & Röstzwiebel   4,79 €
    4,01  #1772  ButterBoyz BIO Butter Feige & Anis          4,69 €
    3,96  #1757  ButterBoyz BIO Kräuterbutter                4,79 €
@@ -33,7 +33,7 @@ Zugs (Ränge aus dem echten Katalog, 2026-08-28, 2.498 Produkte):
 „Zahnpasta“ — 0 Kandidaten vorgelegt
 ```
 
-`picknick.rejected = 0` heisst: **das Modell hat nichts erfunden.** Es hat aus
+`zettel.rejected = 0` heisst: **das Modell hat nichts erfunden.** Es hat aus
 der vorgelegten Liste gewählt — und in der Liste stand keine normale Butter.
 Die Wahl war unter den fünf Angeboten sogar vertretbar. Der Fehlgriff gehört
 dem Retrieval.
@@ -54,11 +54,11 @@ Box und das laufende Phoenix noch einmal gefahren worden. Der Trace
 `099d1fdd…`, `chat.turn`-Span `6734d91d3569c413`, trägt
 
 ```
-picknick.terms = 2   picknick.products = 1   picknick.free_text = 1
-picknick.rejected = 0
-picknick.weakest_term = "Zahnpasta"   picknick.weakest_rank = 0.0
-catalog.search „Butter“     picknick.candidates = 5, rank_top = 4,0057
-catalog.search „Zahnpasta“  picknick.candidates = 0, kein rank_top
+zettel.terms = 2   zettel.products = 1   zettel.free_text = 1
+zettel.rejected = 0
+zettel.weakest_term = "Zahnpasta"   zettel.weakest_rank = 0.0
+catalog.search „Butter“     zettel.candidates = 5, rank_top = 4,0057
+catalog.search „Zahnpasta“  zettel.candidates = 0, kein rank_top
 plan.extract   252 prompt / 39 completion Token
 plan.choose    527 prompt / 32 completion Token
 ```
@@ -79,7 +79,7 @@ Die Regel zum Ablesen ist kurz:
 |---|---|
 | das Richtige stand nicht unter den Dokumenten | Retrieval |
 | es stand darunter, das Modell nahm ein anderes | Modell |
-| `picknick.rejected > 0` | Modell, und zwar erfindend |
+| `zettel.rejected > 0` | Modell, und zwar erfindend |
 
 ## Der Baum
 
@@ -107,28 +107,28 @@ welchen Begriff ein einzelner Kandidat kam, steht an seinem Dokument
 (`document.metadata.via`).
 
 Der **Rezeptweg** erzeugt nur den `CHAIN`-Span, mit
-`picknick.path = "recipe"`: keine Modellstufe, keine Suche. Das ist auch der
+`zettel.path = "recipe"`: keine Modellstufe, keine Suche. Das ist auch der
 Weg, der noch funktioniert, wenn die vLLM-Box schläft.
 
-Der **Quellenweg** (`picknick.path = "chefkoch"`, WB-338) hat denselben Baum
+Der **Quellenweg** (`zettel.path = "chefkoch"`, WB-338) hat denselben Baum
 wie der Modellweg — nur bekommt `plan.extract` dort nicht den Satz zu lesen,
 sondern die Zutatenliste eines geholten Rezepts. Der Unterschied ist mit
 Absicht ein eigener `path`-Wert und kein Nebensatz: **die Frage, ob die
 Quelle wirklich besser ist als das Raten, wird an genau diesem Attribut
 gemessen.**
 
-Der **Auffächerungsweg** (`picknick.path = "fanout"`, WB-368) ist der
+Der **Auffächerungsweg** (`zettel.path = "fanout"`, WB-368) ist der
 kürzeste von allen: kein `catalog.search`, kein `plan.choose`, oft nicht
 einmal ein `plan.extract` — nur der `CHAIN`-Span. Er hat **null Vorschläge**,
 und das ist kein Fehlgriff, sondern eine Rückfrage: „Aufschnitt" ist ein
 Regal, keine Ware. Ohne den eigenen `path` sähe dieser Zug in jeder
 Auswertung aus wie einer, der nichts gefunden hat.
 
-Der Umweg lässt sich messen, weil `picknick.fanout_category` auf BEIDEN
+Der Umweg lässt sich messen, weil `zettel.fanout_category` auf BEIDEN
 Hälften steht: der `fanout`-Zug bietet die Sorten an, der `llm`-Zug daneben
-trägt `picknick.varieties_chosen` und die Vorschläge dazu. Wer die beiden
+trägt `zettel.varieties_chosen` und die Vorschläge dazu. Wer die beiden
 nebeneinanderlegt, sieht, ob aus der Rückfrage ein bestätigter Posten wurde —
-und `picknick.fanout_source` sagt, ob dafür überhaupt ein Modell nötig war
+und `zettel.fanout_source` sagt, ob dafür überhaupt ein Modell nötig war
 (`catalog` heisst: das getippte Wort war selbst eine Kategorie, der Zug lief
 in 0,0 s).
 
@@ -140,16 +140,16 @@ jemand entscheidet, und oft steht ein „Ja" zu einem Zug von gestern an. Ihn an
 den Baum oben zu hängen hiesse, eine Verwandtschaft zu behaupten, die es nicht
 gibt; er ist ein eigener Trace mit einer eigenen Frage („warum liegen hier
 zwei Packungen?"), und die Attribute stehen weiter unten. Verbunden sind die
-beiden über `picknick.search_term` und die Produkt-ID, nicht über den Baum.
+beiden über `zettel.search_term` und die Produkt-ID, nicht über den Baum.
 
-**Seit WB-367 ist ein `llm`-Zug MIT gesetztem `picknick.dish` ein Befund und
+**Seit WB-367 ist ein `llm`-Zug MIT gesetztem `zettel.dish` ein Befund und
 kein Normalfall.** Vorher war er die Regel: der erste Satz zu einem neuen
 Gericht riet, der Abruf lief daneben, und dasselbe Gericht tauchte zweimal
 auf — einmal `llm`, danach `chefkoch`. Heute wird im Zug selbst geholt, also
-heisst diese Kombination: der Abruf hat nicht getragen. `picknick.dish_fetch`
+heisst diese Kombination: der Abruf hat nicht getragen. `zettel.dish_fetch`
 sagt, warum (`leer`, `fehler`, oder leer für „gar nicht abgerufen").
 
-Die Zeilen daneben zu legen — `picknick.products`, `picknick.free_text` und
+Die Zeilen daneben zu legen — `zettel.products`, `zettel.free_text` und
 `dish` — bleibt der ganze Vergleich. Für „alles für Pho" sah er am 2026-08-28
 so aus (damals noch als die zwei Züge nacheinander, heute wäre die untere
 Zeile der erste Satz):
@@ -168,7 +168,7 @@ Entscheidungen der Nutzerin (Spec 8.1) machen sie beurteilbar.
 
 Die beiden `LLM`-Spans schreibt dieses Projekt **nicht selbst** — sie kommen
 vom `OpenAIInstrumentor` (die vLLM-Box ist OpenAI-kompatibel). Der nennt sie
-`ChatCompletion`; `picknick.obs.otel.StufenBenenner` benennt sie beim Öffnen
+`ChatCompletion`; `zettel.obs.otel.StufenBenenner` benennt sie beim Öffnen
 in `plan.extract` und `plan.choose` um.
 
 Der naheliegende Ausweg — einen eigenen LLM-Span um den Aufruf legen — wäre
@@ -185,41 +185,41 @@ ist. Aus demselben Grund setzt dieses Projekt **keine Tokenzahlen von Hand**.
 | `input.value` | Text | der Satz, wortwörtlich |
 | `output.value` | JSON | die Vorschlagsliste: `product_id`, `name`, `menge`, `begriff`, `rang`, `freitext` |
 | `session.id` | Text | `korb-<order_id>` — mehrere Sätze zu **einem** Einkauf liegen in Phoenix als eine Sitzung zusammen. Ohne das steht jeder Zug für sich und „sie hat nachgebessert" ist nicht mehr zu sehen. |
-| `picknick.order_id` | int | die Bestellung, an der der Zug hängt |
-| `picknick.path` | Text | `llm`, `recipe`, `chefkoch` oder `fanout` |
-| `picknick.chat_message_id` | int | die Antwortzeile in `chat_message` |
-| `picknick.terms` | int | Begriffe aus Stufe 1 |
-| `picknick.products` | int | Vorschläge mit echtem Produkt |
-| `picknick.free_text` | int | Vorschläge ohne Produkt (Begriff bleibt als Freitext stehen) |
-| `picknick.rejected` | int | **wie oft das Modell eine ID nannte, die ihm nie vorgelegt wurde** |
-| `picknick.recipes` | Text | die erkannten Rezepte, nur auf dem Rezeptweg |
-| `picknick.weakest_term` | Text | der Begriff mit dem schwächsten besten Treffer |
-| `picknick.weakest_rank` | float | dessen Rang; ein Begriff ganz ohne Treffer zählt als `0.0` |
-| `picknick.dish` | Text | das erkannte Gericht — **auf jedem Weg**, auch wenn die Zutaten noch geraten wurden (WB-338) |
-| `picknick.dish_recipe` | Text | der Rezeptname der Quelle, nur auf `chefkoch` |
-| `picknick.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
-| `picknick.dish_requested` | bool | dieser Zug hat das Gericht selbst bei Chefkoch geholt, statt es im Speicher zu finden (WB-367) |
-| `picknick.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
-| `picknick.dish_draft` | Text | der Name des Rezeptentwurfs, den dieser Zug angeboten hat (WB-337) — gesetzt heisst „daraus KANN ein Rezept werden“, nicht „es ist eines geworden“ |
-| `picknick.dish_items` | int | wie viele Vorschlagszeilen als Zutat des Gerichts erkannt wurden. Die Zeilen daneben (das Klopapier) zählen hier nicht mit |
-| `picknick.dish_switch` | Text | **das Rezept, das ein Mensch ANSTELLE der Vorauswahl genommen hat** (WB-387). Chefkoch liefert zwölf Rezepte je Suche; gesetzt heisst „am besten bewertet war nicht, was ich gemeint habe“ — die Zahl, an der sich die Schlagseite der Gewichtung messen lässt |
-| `picknick.rest` | Text | **was neben dem Gericht im Satz stand** (WB-370): „alles für Spaghetti Bolognese, und Klopapier“ -> `Klopapier`. Die andere Hälfte des Satzes zu `dish`; fehlt, wenn nichts danebenstand |
-| `picknick.rest_added` | bool | ob dieser Zug eine eigene Zeile dafür angelegt hat. `False` heisst „stand schon auf dem Zettel“ — der Rest fiel mit einer Zutat des Rezepts zusammen |
-| `picknick.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |
-| `picknick.fanout_varieties` | int | wie viele Sorten angeboten wurden |
-| `picknick.fanout_source` | Text | `catalog` (das getippte Wort IST eine Kategorie — kein Modellaufruf) oder `model` (Stufe 1 hat zugeordnet) |
-| `picknick.fanout_rejected` | Text | **die Kategorie, die das Modell nannte, obwohl es sie nicht gibt** — dieselbe Zahl wie `rejected`, eine Ebene höher |
-| `picknick.varieties_chosen` | Text | welche Sorten angekreuzt wurden: `Salami, Kochschinken` |
+| `zettel.order_id` | int | die Bestellung, an der der Zug hängt |
+| `zettel.path` | Text | `llm`, `recipe`, `chefkoch` oder `fanout` |
+| `zettel.chat_message_id` | int | die Antwortzeile in `chat_message` |
+| `zettel.terms` | int | Begriffe aus Stufe 1 |
+| `zettel.products` | int | Vorschläge mit echtem Produkt |
+| `zettel.free_text` | int | Vorschläge ohne Produkt (Begriff bleibt als Freitext stehen) |
+| `zettel.rejected` | int | **wie oft das Modell eine ID nannte, die ihm nie vorgelegt wurde** |
+| `zettel.recipes` | Text | die erkannten Rezepte, nur auf dem Rezeptweg |
+| `zettel.weakest_term` | Text | der Begriff mit dem schwächsten besten Treffer |
+| `zettel.weakest_rank` | float | dessen Rang; ein Begriff ganz ohne Treffer zählt als `0.0` |
+| `zettel.dish` | Text | das erkannte Gericht — **auf jedem Weg**, auch wenn die Zutaten noch geraten wurden (WB-338) |
+| `zettel.dish_recipe` | Text | der Rezeptname der Quelle, nur auf `chefkoch` |
+| `zettel.dish_url` | Text | die `siteUrl` des Rezepts — die Herkunft, nachvollziehbar |
+| `zettel.dish_requested` | bool | dieser Zug hat das Gericht selbst bei Chefkoch geholt, statt es im Speicher zu finden (WB-367) |
+| `zettel.dish_fetch` | Text | was der Abruf ergab: `ok`, `leer` (Chefkoch kennt es nicht), `fehler` (Störung/Zeitüberschreitung) |
+| `zettel.dish_draft` | Text | der Name des Rezeptentwurfs, den dieser Zug angeboten hat (WB-337) — gesetzt heisst „daraus KANN ein Rezept werden“, nicht „es ist eines geworden“ |
+| `zettel.dish_items` | int | wie viele Vorschlagszeilen als Zutat des Gerichts erkannt wurden. Die Zeilen daneben (das Klopapier) zählen hier nicht mit |
+| `zettel.dish_switch` | Text | **das Rezept, das ein Mensch ANSTELLE der Vorauswahl genommen hat** (WB-387). Chefkoch liefert zwölf Rezepte je Suche; gesetzt heisst „am besten bewertet war nicht, was ich gemeint habe“ — die Zahl, an der sich die Schlagseite der Gewichtung messen lässt |
+| `zettel.rest` | Text | **was neben dem Gericht im Satz stand** (WB-370): „alles für Spaghetti Bolognese, und Klopapier“ -> `Klopapier`. Die andere Hälfte des Satzes zu `dish`; fehlt, wenn nichts danebenstand |
+| `zettel.rest_added` | bool | ob dieser Zug eine eigene Zeile dafür angelegt hat. `False` heisst „stand schon auf dem Zettel“ — der Rest fiel mit einer Zutat des Rezepts zusammen |
+| `zettel.fanout_category` | Text | die Katalogkategorie einer Auffächerung (WB-368) — **auf beiden Hälften des Umwegs**: auf dem `fanout`-Zug, der die Sorten angeboten hat, und auf dem `llm`-Zug, der eine davon gewählt hat |
+| `zettel.fanout_varieties` | int | wie viele Sorten angeboten wurden |
+| `zettel.fanout_source` | Text | `catalog` (das getippte Wort IST eine Kategorie — kein Modellaufruf) oder `model` (Stufe 1 hat zugeordnet) |
+| `zettel.fanout_rejected` | Text | **die Kategorie, die das Modell nannte, obwohl es sie nicht gibt** — dieselbe Zahl wie `rejected`, eine Ebene höher |
+| `zettel.varieties_chosen` | Text | welche Sorten angekreuzt wurden: `Salami, Kochschinken` |
 
-`picknick.rejected` ist die härteste Zusicherung des Projekts, als Zahl. Das
+`zettel.rejected` ist die härteste Zusicherung des Projekts, als Zahl. Das
 Modell sieht in Stufe 1 keinen Katalog und darf in Stufe 3 nur nennen, was ihm
 vorgelegt wurde; eine fremde ID wird **verworfen und nicht repariert**. Wer in
-Phoenix nach `picknick.rejected > 0` filtert, bekommt genau die Züge, in denen
+Phoenix nach `zettel.rejected > 0` filtert, bekommt genau die Züge, in denen
 das Modell etwas erfunden hat. Im Butter-Fall sind es null — und deshalb ist
 er ein Retrieval-Fall.
 
 `weakest_term`/`weakest_rank` sind die Abkürzung: wer eine Zugliste nach
-`picknick.weakest_rank` aufsteigend sortiert, sieht die Retrieval-Probleme
+`zettel.weakest_rank` aufsteigend sortiert, sieht die Retrieval-Probleme
 zuerst, ohne einen einzigen Ast zu öffnen. Im Butter-Fall stünde dort
 `Zahnpasta` mit `0.0` — der Begriff, für den die Suche gar nichts hatte.
 
@@ -228,16 +228,16 @@ zuerst, ohne einen einzigen Ast zu öffnen. Im Butter-Fall stünde dort
 | Attribut | Bedeutung |
 |---|---|
 | `input.value` | die ganze Begriffskette der Zutat als JSON, vom genauesten zum allgemeinsten: `["Auberginen", "Aubergine"]` |
-| `picknick.term` | der genaueste Begriff — er steht für die Zutat, und `weakest_term` meint ihn |
-| `picknick.search_terms` | dieselbe Kette lesbar: `Auberginen, Aubergine` |
+| `zettel.term` | der genaueste Begriff — er steht für die Zutat, und `weakest_term` meint ihn |
+| `zettel.search_terms` | dieselbe Kette lesbar: `Auberginen, Aubergine` |
 | `output.value` | `[{id, name, rang, via}, …]` |
 | `retrieval.documents.N.document.id` | die Produkt-ID |
 | `retrieval.documents.N.document.content` | **was das Modell sah**: Name · Gebinde · Preis |
 | `retrieval.documents.N.document.score` | der Rang (siehe unten) |
 | `retrieval.documents.N.document.metadata` | `via` (der Begriff der Kette, der diesen Kandidaten brachte), Marke, Kategoriepfad, Preis in Cent, vorrätig — was das Modell NICHT sah, der Mensch beim Nachsehen aber braucht |
-| `picknick.candidates` | Zahl der vorgelegten Kandidaten |
-| `picknick.rank_top` | bester Rang dieser Suche; **fehlt**, wenn es keinen Treffer gab |
-| `picknick.qty` | die Menge, die Stufe 1 zu dieser Zutat nannte |
+| `zettel.candidates` | Zahl der vorgelegten Kandidaten |
+| `zettel.rank_top` | bester Rang dieser Suche; **fehlt**, wenn es keinen Treffer gab |
+| `zettel.qty` | die Menge, die Stufe 1 zu dieser Zutat nannte |
 
 Die Dokumente stehen in der Reihenfolge, in der sie dem Modell vorlagen: erst
 die Treffer des genauesten Begriffs (unter sich nach Wortstufe, dann nach
@@ -275,23 +275,23 @@ Er beantwortet die eine Frage, die man später an einen Warenkorb stellt:
 |---|---|---|
 | `input.value` | Text | der Produktname — beim Freitext dessen Wortlaut |
 | `output.value` | Text | der Satz, den die Nutzerin an der Zeile liest: „1000 ml gebraucht — 2 × Pomito 500 g." |
-| `picknick.item_id` | int | die Zeile in `order_item` |
-| `picknick.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird; **fehlt beim Freitext**, und genau daran ist er zu erkennen |
-| `picknick.search_term` | Text | der Suchbegriff, über den dieses Produkt in die Liste kam (WB-369); leer, wenn jemand am Regal auf „+" getippt hat |
-| `picknick.servings` | int | für wie viele Portionen dieses Einlegen gerechnet hat |
-| `picknick.need_added` | float | der Beitrag **dieses** Einlegens, schon skaliert |
-| `picknick.need_added_unit` | Text | dessen Einheit, wie das Rezept sie schreibt |
-| `picknick.need_amount` | float | die **Summe** an der Zeile, über alle Rezepte |
-| `picknick.need_unit` | Text | deren Grundeinheit: `g`, `ml`, `Stk` — oder eine eigene wie `bund` |
-| `picknick.pack_text` | Text | die Packungsgrösse, wie sie am Produkt steht: `0,75 l` |
-| `picknick.pack_amount` | float | dieselbe in der Grundeinheit: `750` |
-| `picknick.pack_unit` | Text | deren Einheit |
-| `picknick.hand_qty` | int | wie viele Packungen ausdrücklich verlangt wurden (Griff ins Regal, von Hand gesetzte Menge) |
-| `picknick.qty` | int | was am Ende im Korb liegt |
-| `picknick.computable` | bool | **liess sich die Packungszahl ausrechnen?** |
-| `picknick.packages` | int | die ausgerechnete Packungszahl; **fehlt**, wenn `computable` falsch ist |
-| `picknick.reason` | Text | warum nicht: „2 Stk passt nicht zur Packung ‚1 kg'" |
-| `picknick.assumption` | Text | die Annahme, unter der gerechnet wurde — bisher genau eine: `1 ml als 1 g gerechnet` |
+| `zettel.item_id` | int | die Zeile in `order_item` |
+| `zettel.product_id` | int | das Produkt — der Schlüssel, über den zusammengezählt wird; **fehlt beim Freitext**, und genau daran ist er zu erkennen |
+| `zettel.search_term` | Text | der Suchbegriff, über den dieses Produkt in die Liste kam (WB-369); leer, wenn jemand am Regal auf „+" getippt hat |
+| `zettel.servings` | int | für wie viele Portionen dieses Einlegen gerechnet hat |
+| `zettel.need_added` | float | der Beitrag **dieses** Einlegens, schon skaliert |
+| `zettel.need_added_unit` | Text | dessen Einheit, wie das Rezept sie schreibt |
+| `zettel.need_amount` | float | die **Summe** an der Zeile, über alle Rezepte |
+| `zettel.need_unit` | Text | deren Grundeinheit: `g`, `ml`, `Stk` — oder eine eigene wie `bund` |
+| `zettel.pack_text` | Text | die Packungsgrösse, wie sie am Produkt steht: `0,75 l` |
+| `zettel.pack_amount` | float | dieselbe in der Grundeinheit: `750` |
+| `zettel.pack_unit` | Text | deren Einheit |
+| `zettel.hand_qty` | int | wie viele Packungen ausdrücklich verlangt wurden (Griff ins Regal, von Hand gesetzte Menge) |
+| `zettel.qty` | int | was am Ende im Korb liegt |
+| `zettel.computable` | bool | **liess sich die Packungszahl ausrechnen?** |
+| `zettel.packages` | int | die ausgerechnete Packungszahl; **fehlt**, wenn `computable` falsch ist |
+| `zettel.reason` | Text | warum nicht: „2 Stk passt nicht zur Packung ‚1 kg'" |
+| `zettel.assumption` | Text | die Annahme, unter der gerechnet wurde — bisher genau eine: `1 ml als 1 g gerechnet` |
 
 **`need_added` und `need_amount` stehen beide da, und das ist der Punkt.**
 Erst ihr Unterschied macht das Zusammenzählen sichtbar: zwei Züge mit je
@@ -304,7 +304,7 @@ aus.
 er das nicht: `korb.einlegen()` verwarf die Menge, bevor irgendetwas zu messen
 war — 115 Zeilen in 37 von 64 Gerichten (WB-380) fielen damit aus dem Trace
 heraus, obwohl eine Menge dastand. Ein solcher Span hat kein
-`picknick.product_id`, kein `pack_*`, `computable = false` und als `reason`
+`zettel.product_id`, kein `pack_*`, `computable = false` und als `reason`
 immer denselben Satz: **„ein Freitext hat keine Packung"**. Das ist kein
 Mangel, sondern die Bauart der Zeile, und der Filter darauf ist die Antwort
 auf „was muss ich anderswo besorgen, und wie viel davon?".
@@ -321,10 +321,10 @@ entsteht er bei jedem „Ja" auf einen Vorschlag, der aus einem Rezept stammt.
 Der ganze Weg steht dann in vier Attributen nebeneinander, und genau dafür
 ist `search_term` dazugekommen:
 
-    picknick.search_term  = "gemischtes Hackfleisch"   welche Zutat
-    picknick.need_added   = 200                        welche Menge
-    picknick.product_id   = 4711                       welches Produkt
-    picknick.packages     = 1                          welche Packungszahl
+    zettel.search_term  = "gemischtes Hackfleisch"   welche Zutat
+    zettel.need_added   = 200                        welche Menge
+    zettel.product_id   = 4711                       welches Produkt
+    zettel.packages     = 1                          welche Packungszahl
 
 Wer eine falsche Menge im Korb findet, sieht daran, in welchem Schritt sie
 entstanden ist: bei einem falschen `search_term` hat Stufe 3 danebengegriffen
@@ -375,13 +375,13 @@ Namen zu raten, der wie eine Messung aussähe.
 ### Modellvergleiche laufen in eigene Projekte (WB-393)
 
 Ein Eval-Lauf, der ein anderes Modell misst, tract in ein EIGENES
-Phoenix-Projekt statt ins Alltagsprojekt `Picknick Agent` — sonst stünden
+Phoenix-Projekt statt ins Alltagsprojekt `Zettel Agent` — sonst stünden
 sechzig Messgerichte zwischen den echten Einkäufen. `llm.model_name`
 unterscheidet die Modelle INNERHALB eines Projekts, das Projekt trennt die
 Läufe:
 
 ```
-PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+ZETTEL_PHOENIX_PROJECT="Zettel Eval Qwen" \
 .venv/bin/python scripts/breite_probe.py --messen --db kopie.db --trace
 ```
 
@@ -411,7 +411,7 @@ nur weil der Index kleiner ist.
 Für „wo lohnt sich das Nachsehen zuerst" reicht die Zahl. Als absolutes
 Qualitätsmass taugt sie nicht, und **eine Eval, die daraus eine Schwelle
 macht, misst den Katalog und nicht den Agenten.** Deshalb wird
-`picknick.weakest_rank` in `EVALS.md` ausdrücklich nicht bewertet.
+`zettel.weakest_rank` in `EVALS.md` ausdrücklich nicht bewertet.
 
 ## Der Rückweg: Annotationen aus dem Produkt heraus
 
@@ -438,9 +438,9 @@ wurde:
 
 ```
 identifier              annotator_kind  label     score  explanation
-picknick-suggestion-41  HUMAN           kept       1,0   Zahnpasta
-picknick-suggestion-42  HUMAN           removed    0,0   Butter
-picknick-turn-22        HUMAN           —          0,5   1 von 2 entschiedenen Vorschlägen behalten.
+zettel-suggestion-41  HUMAN           kept       1,0   Zahnpasta
+zettel-suggestion-42  HUMAN           removed    0,0   Butter
+zettel-turn-22        HUMAN           —          0,5   1 von 2 entschiedenen Vorschlägen behalten.
 ```
 
 Die Erklärung ist der Suchbegriff. Damit steht im Trace direkt an der Zeile,
@@ -458,7 +458,7 @@ Ein Zug kann seit WB-337 ein Rezept hinterlassen: aus „alles für Spaghetti
 Bolognese, und Klopapier“ wird ein Entwurf mit den GERICHTSZUTATEN — das
 Klopapier gehört nicht dazu und steht nie darin. Beim Abschicken wird daraus
 ein Rezept, und ab dem nächsten passenden Satz nimmt das Gericht den
-Rezeptweg: `picknick.path = "recipe"`, kein `plan.extract`, kein
+Rezeptweg: `zettel.path = "recipe"`, kein `plan.extract`, kein
 `plan.choose`, keine Suche, null Token.
 
 Das ist im Trace der auffälligste Sprung, den dieses Projekt kennt — und
@@ -466,10 +466,10 @@ ohne zwei Zeilen wäre er unerklärlich. Deshalb steht am Zug, der ihn
 angerichtet hat:
 
 ```
-picknick.path        chefkoch
-picknick.dish        Spaghetti Bolognese
-picknick.dish_draft  Spaghetti Bolognese      <- daraus KANN ein Rezept werden
-picknick.dish_items  3                        <- so viele Zeilen gehören dazu
+zettel.path        chefkoch
+zettel.dish        Spaghetti Bolognese
+zettel.dish_draft  Spaghetti Bolognese      <- daraus KANN ein Rezept werden
+zettel.dish_items  3                        <- so viele Zeilen gehören dazu
 ```
 
 und beim Abschicken, auf demselben Span, die Annotation:
@@ -530,11 +530,11 @@ Seit WB-370 steht der Rest nicht mehr im Prompt und wird im Code angehängt.
 Was im Trace zu sehen ist:
 
 ```
-picknick.path        chefkoch
-picknick.dish        Quiche Lorraine
-picknick.rest        Klopapier          <- was daneben im Satz stand
-picknick.rest_added  true               <- dieser Zug hat die Zeile angelegt
-picknick.free_text   1                  <- und sie fand kein Katalogprodukt
+zettel.path        chefkoch
+zettel.dish        Quiche Lorraine
+zettel.rest        Klopapier          <- was daneben im Satz stand
+zettel.rest_added  true               <- dieser Zug hat die Zeile angelegt
+zettel.free_text   1                  <- und sie fand kein Katalogprodukt
 ```
 
 **Der Preis steht in derselben Zeile.** Ohne Prompt-Zeile gibt es keine
@@ -640,12 +640,12 @@ brauche Butter, Schmand und Sellerie“, zurückgelesen aus Phoenix:
 
 ```
 name               identifier                label      explanation
-suggestion         picknick-suggestion-98    removed    Butter — stattdessen: „Kerrygold irische Butter gesalzen“
-suggestion         picknick-suggestion-99    kept       Schmand
-suggestion         picknick-suggestion-100   removed    Sellerie — stattdessen: „Sellerie“
-correction         picknick-correction-101   corrected  „Butter“: statt „Weihenstephan Butter“ -> „Kerrygold irische Butter gesalzen“
-correction         picknick-correction-102   free_text  „Sellerie“ war falsch; nichts aus der Vorlage passte — von Hand: „Sellerie“
-mapping_precision  picknick-turn-34          —          1 von 3 entschiedenen Vorschlägen behalten.
+suggestion         zettel-suggestion-98    removed    Butter — stattdessen: „Kerrygold irische Butter gesalzen“
+suggestion         zettel-suggestion-99    kept       Schmand
+suggestion         zettel-suggestion-100   removed    Sellerie — stattdessen: „Sellerie“
+correction         zettel-correction-101   corrected  „Butter“: statt „Weihenstephan Butter“ -> „Kerrygold irische Butter gesalzen“
+correction         zettel-correction-102   free_text  „Sellerie“ war falsch; nichts aus der Vorlage passte — von Hand: „Sellerie“
+mapping_precision  zettel-turn-34          —          1 von 3 entschiedenen Vorschlägen behalten.
 ```
 
 Zwei Dinge daran sind Absicht und keine Kosmetik:
@@ -685,8 +685,8 @@ Richtungen:
 
 ```
 identifier              label     score  explanation
-picknick-suggestion-77  kept       1,0   Butter                       withdrawn = 1
-picknick-turn-31        —          0,5   1 von 2 entschiedenen Vorschlägen behalten; 1 Entscheidung zurückgenommen.
+zettel-suggestion-77  kept       1,0   Butter                       withdrawn = 1
+zettel-turn-31        —          0,5   1 von 2 entschiedenen Vorschlägen behalten; 1 Entscheidung zurückgenommen.
 ```
 
 Ein `kept` mit `withdrawn = 1` ist ein anderer Datenpunkt als ein `kept` beim
@@ -731,8 +731,8 @@ Drei Regeln halten die Zahlen ehrlich:
    Score.** Eine fehlende Zahl ist ehrlicher als eine erfundene: `0.0` hiesse
    „alles falsch", wo „noch nichts gesagt" richtig ist.
 
-`identifier` verhindert Dubletten (`picknick-turn-<id>`,
-`picknick-suggestion-<id>`): zweimal abschicken ergibt denselben Bestand, nicht
+`identifier` verhindert Dubletten (`zettel-turn-<id>`,
+`zettel-suggestion-<id>`): zweimal abschicken ergibt denselben Bestand, nicht
 den doppelten.
 
 ## Fällt Phoenix aus, fällt der Shop nicht aus
@@ -751,7 +751,7 @@ falsch. Der OTLP-Exporter behandelt „Connection refused" als vorübergehenden
 Fehler und versucht es mit wachsender Pause wieder (0,88 s, 1,83 s, 4,75 s …).
 Ein Chat-Zug hätte 35 Sekunden gebraucht, nur weil Phoenix nicht läuft.
 
-`picknick.obs.otel.NichtBlockierend` legt eine Schlange (10.000 Spans) und
+`zettel.obs.otel.NichtBlockierend` legt eine Schlange (10.000 Spans) und
 einen Hintergrund-Thread zwischen Span und Exporter. **Das ist kein
 Batching**: jeder Span geht einzeln und in Reihenfolge an denselben
 `SimpleSpanProcessor` — der `BatchSpanProcessor` verschluckte bei höherer
@@ -826,7 +826,7 @@ zeigte ins Leere.
   **keine einzige Ziffer** vor. **Was sich mit WB-384 geändert hat:** ein
   FELD ist kein Raten. An der Rezeptkarte im Chat steht seither eines, seine
   Zahl liegt in `chat_rezept.portionen`, und sie steht seither auch als
-  `picknick.servings` im Trace. Ein Zug, an dem niemand das Feld angefasst
+  `zettel.servings` im Trace. Ein Zug, an dem niemand das Feld angefasst
   hat, trägt dort die Zahl des Rezepts — nicht zu unterscheiden von einer
   bestätigten. Wer wissen will, wie oft wirklich gewählt wurde, zählt in
   `chat_rezept.portionen` (nicht NULL) und nicht in Phoenix; dieselbe
@@ -859,7 +859,7 @@ zeigte ins Leere.
   Modell die Zutaten, und es gibt keine Liste, gegen die sich prüfen liesse.
   Wer in Phoenix zählt, wie oft ein Zug ein Rezept hinterlässt, misst also
   auch, wie oft Chefkoch das Gericht kennt — und nicht nur, wie brauchbar der
-  Zug war. Die beiden Fragen trennt `picknick.path`.
+  Zug war. Die beiden Fragen trennt `zettel.path`.
 * **`dish_items` ist eine Untergrenze.** Die Zahl kommt aus derselben
   Wortzuordnung wie die Mengen (`assistant.herkunft`) und hat dieselbe Lücke:
   ein Begriff, der seiner Zutat nicht sicher zuzuordnen ist, fehlt im Entwurf

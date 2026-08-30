@@ -15,10 +15,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import betrieb, db
-from picknick.scrapers import begriffe as begriffsliste
-from picknick.scrapers import nachtlauf
-from picknick.web import app as webapp
+from zettel import betrieb, db
+from zettel.scrapers import begriffe as begriffsliste
+from zettel.scrapers import nachtlauf
+from zettel.web import app as webapp
 
 WURZEL = Path(__file__).resolve().parent.parent
 DEPLOY = WURZEL / "deploy"
@@ -285,7 +285,7 @@ def test_status_fragt_den_modellzustand_nicht_ab_und_weckt_die_box_nicht(
     Doppelgänger, der wirft: der Test bleibt nur grün, solange die Seite
     schweigt und den zuletzt bekannten Stand zeigt.
     """
-    from picknick.llm import wake
+    from zettel.llm import wake
 
     def _nie(*a, **k):
         raise AssertionError("/status hat die Box angefasst.")
@@ -385,12 +385,12 @@ def test_die_zuordnungen_stehen_mit_ihren_labelnamen_auf_der_seite(
 
 
 def test_die_seite_nennt_den_tracer_auch_ohne_phoenix(db_datei, client):
-    """Die Testsuite läuft mit `PICKNICK_TRACING=0` — genau der Fall, in dem
+    """Die Testsuite läuft mit `ZETTEL_TRACING=0` — genau der Fall, in dem
     eine Seite ohne diesen Abschnitt einfach schweigen würde."""
     text = client.get("/status").text
     assert "Beobachtung" in text
     assert "Tracing ist abgeschaltet" in text
-    assert "PICKNICK_TRACING" in text
+    assert "ZETTEL_TRACING" in text
 
 
 def test_ein_ablehnendes_phoenix_steht_auf_der_seite(db_datei, tmp_path):
@@ -400,8 +400,8 @@ def test_ein_ablehnendes_phoenix_steht_auf_der_seite(db_datei, tmp_path):
     from opentelemetry.sdk.trace.export import (SimpleSpanProcessor,
                                                 SpanExporter, SpanExportResult)
 
-    from picknick import obs
-    from picknick.obs import otel
+    from zettel import obs
+    from zettel.obs import otel
 
     class Ablehnend(SpanExporter):
         def export(self, spans):
@@ -433,7 +433,7 @@ def test_ein_ablehnendes_phoenix_steht_auf_der_seite(db_datei, tmp_path):
     assert "Phoenix nimmt die Spans nicht an" in text
     assert "1 Spans abgelehnt" in text
     # Ein gesetzter Provider schlägt die Umgebung: die Suite läuft mit
-    # PICKNICK_TRACING=0, und „abgeschaltet" wäre hier trotzdem gelogen.
+    # ZETTEL_TRACING=0, und „abgeschaltet" wäre hier trotzdem gelogen.
     assert "Tracing ist abgeschaltet" not in text
 
 
@@ -466,7 +466,7 @@ def test_eine_kaputte_modelladresse_steht_auf_der_seite(db_datei, tmp_path,
     """Ein Endpunkt, der keine Adresse sein kann, ist eine Altlast der
     Konfiguration und keine Netzstörung — und das ist die einzige Aussage
     über das Modell, die ohne Netzaufruf sicher zu treffen ist."""
-    monkeypatch.setenv("PICKNICK_LLM_ENDPOINT", "ftp://alte-box/v1")
+    monkeypatch.setenv("ZETTEL_LLM_ENDPOINT", "ftp://alte-box/v1")
     bilder = tmp_path / "bilder"
     bilder.mkdir()
     with TestClient(webapp.create_app(db_path=db_datei, image_dir=bilder,
@@ -481,7 +481,7 @@ def test_eine_kaputte_modelladresse_steht_auf_der_seite(db_datei, tmp_path,
 
 def test_nachtlauf_crawlt_und_sichert_ohne_netz(tmp_path):
     """Derselbe Weg wie nachts, nur mit einem Doppelgänger statt knuspr.de."""
-    pfad = tmp_path / "picknick.db"
+    pfad = tmp_path / "zettel.db"
     ziel_dir = tmp_path / "stände"
     ausgabe = []
     bericht = nachtlauf.lauf(str(pfad), begriffe=["milch"], image_dir=None,
@@ -499,7 +499,7 @@ def test_nachtlauf_sichert_auch_wenn_der_crawl_scheitert(tmp_path):
         def get(self, url):
             raise OSError("Name or service not known")
 
-    pfad = tmp_path / "picknick.db"
+    pfad = tmp_path / "zettel.db"
     ziel_dir = tmp_path / "stände"
     bericht = nachtlauf.lauf(str(pfad), begriffe=["milch"], image_dir=None,
                              http=KaputtesHTTP(), pause_s=0,
@@ -510,7 +510,7 @@ def test_nachtlauf_sichert_auch_wenn_der_crawl_scheitert(tmp_path):
 
 def test_nachtlauf_meldet_misserfolg_als_rueckgabewert(tmp_path, monkeypatch):
     """Ein Fehlschlag muss in `systemctl status` sichtbar sein, nicht nur in der DB."""
-    pfad = tmp_path / "picknick.db"
+    pfad = tmp_path / "zettel.db"
     monkeypatch.setattr(nachtlauf, "lauf",
                         lambda *a, **k: {"status": "rejected", "run_id": 1,
                                          "n_products": 3, "error": "zu wenig"})
@@ -550,29 +550,29 @@ def test_begriffe_aus_umgebung_nimmt_datei_und_aufzaehlung(tmp_path):
     datei.write_text("milch\n# ein Kommentar\n\nbutter  # mit Rest\n",
                      encoding="utf-8")
     assert begriffsliste.begriffe_aus_umgebung(
-        {"PICKNICK_BEGRIFFE": str(datei)}) == ["milch", "butter"]
+        {"ZETTEL_BEGRIFFE": str(datei)}) == ["milch", "butter"]
     assert begriffsliste.begriffe_aus_umgebung(
-        {"PICKNICK_BEGRIFFE": "milch, butter"}) == ["milch", "butter"]
+        {"ZETTEL_BEGRIFFE": "milch, butter"}) == ["milch", "butter"]
     assert begriffsliste.begriffe_aus_umgebung({}) == list(begriffsliste.BEGRIFFE)
     with pytest.raises(ValueError):
-        begriffsliste.begriffe_aus_umgebung({"PICKNICK_BEGRIFFE": " , "})
+        begriffsliste.begriffe_aus_umgebung({"ZETTEL_BEGRIFFE": " , "})
 
 
 def test_begriffsliste_liegt_im_paket_und_nicht_im_skript():
     """WB-321 hatte den Ort offen gelassen: das Probeskript war der falsche."""
-    assert (WURZEL / "picknick" / "scrapers" / "begriffe.py").is_file()
+    assert (WURZEL / "zettel" / "scrapers" / "begriffe.py").is_file()
 
 
 # --------------------------------------------------------------------------
 # systemd-Units
 
-@pytest.mark.parametrize("name", ["picknick.service", "picknick-crawl.service",
-                                  "picknick-crawl.timer"])
+@pytest.mark.parametrize("name", ["zettel.service", "zettel-crawl.service",
+                                  "zettel-crawl.timer"])
 def test_unit_existiert(name):
     assert (DEPLOY / name).is_file()
 
 
-@pytest.mark.parametrize("name", ["picknick.service", "picknick-crawl.service"])
+@pytest.mark.parametrize("name", ["zettel.service", "zettel-crawl.service"])
 def test_unit_startet_das_venv_und_nicht_system_python(name):
     """System-Python hat ein zu altes `websockets`, der Shop startet dort nicht."""
     text = (DEPLOY / name).read_text(encoding="utf-8")
@@ -580,7 +580,7 @@ def test_unit_startet_das_venv_und_nicht_system_python(name):
     assert len(zeilen) == 1
     (exec_start,) = zeilen
     assert exec_start.endswith(
-        ("-m picknick.web.app", "-m picknick.scrapers.nachtlauf"))
+        ("-m zettel.web.app", "-m zettel.scrapers.nachtlauf"))
     assert "/.venv/bin/python" in exec_start
     # Nicht bloss „enthält venv": ein zusätzliches nacktes python3 irgendwo im
     # Kommando wäre genau der Fehler, den dieser Test verhindern soll.
@@ -590,7 +590,7 @@ def test_unit_startet_das_venv_und_nicht_system_python(name):
 
 def test_timer_ist_persistent():
     """Ohne das fiele jeder Lauf aus, der in eine zugeklappte Nacht fällt."""
-    text = (DEPLOY / "picknick-crawl.timer").read_text(encoding="utf-8")
+    text = (DEPLOY / "zettel-crawl.timer").read_text(encoding="utf-8")
     zeilen = [z.strip() for z in text.splitlines()]
     assert "Persistent=true" in zeilen
     assert any(z.startswith("OnCalendar=") for z in zeilen)
@@ -599,11 +599,11 @@ def test_timer_ist_persistent():
 
 def test_units_tragen_installationsabschnitte():
     """Ohne [Install] kann `systemctl --user enable` sie nicht einhängen."""
-    web = (DEPLOY / "picknick.service").read_text(encoding="utf-8")
+    web = (DEPLOY / "zettel.service").read_text(encoding="utf-8")
     assert "WantedBy=default.target" in web
     # Die Crawl-Unit ausdrücklich NICHT: sie wird vom Timer gestartet, ein
     # eigenes enable würde sie bei jedem Anmelden einmal loslaufen lassen.
-    crawl = (DEPLOY / "picknick-crawl.service").read_text(encoding="utf-8")
+    crawl = (DEPLOY / "zettel-crawl.service").read_text(encoding="utf-8")
     assert "[Install]" not in crawl
 
 
@@ -616,7 +616,7 @@ def test_readme_nennt_linger_und_die_installationsbefehle():
     """
     readme = (WURZEL / "README.md").read_text(encoding="utf-8")
     assert "loginctl enable-linger <benutzer>" in readme
-    assert "systemctl --user enable --now picknick-crawl.timer" in readme
+    assert "systemctl --user enable --now zettel-crawl.timer" in readme
     assert "schläft" in readme
 
 
@@ -647,9 +647,9 @@ def test_keine_privaten_angaben_im_repo():
     assert funde == []
 
 
-def test_picknick_env_ist_gitignort():
-    """`picknick.env` trägt die private Adresse der vLLM-Box. Sie darf unter
+def test_zettel_env_ist_gitignort():
+    """`zettel.env` trägt die private Adresse der vLLM-Box. Sie darf unter
     keinen Umständen Teil des Repos werden (WB-388)."""
-    ergebnis = subprocess.run(["git", "check-ignore", "-q", "picknick.env"],
+    ergebnis = subprocess.run(["git", "check-ignore", "-q", "zettel.env"],
                               cwd=WURZEL)
     assert ergebnis.returncode == 0

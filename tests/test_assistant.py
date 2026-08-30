@@ -17,12 +17,12 @@ import json
 
 import pytest
 
-from picknick import orders, recipes
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import plan, rezeptweg, vorschlaege
-from picknick.catalog import search
-from picknick.llm import wake
-from picknick.llm.client import Antwort, ModellNichtErreichbar
+from zettel import orders, recipes
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import plan, rezeptweg, vorschlaege
+from zettel.catalog import search
+from zettel.llm import wake
+from zettel.llm.client import Antwort, ModellNichtErreichbar
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 
@@ -124,7 +124,7 @@ def _vorgelegt(con, begriff, limit=plan.KANDIDATEN_MODELL):
     Produkt bei „Milch" oben steht, entscheidet bm25 — und wer das in einem
     Test festschreibt, prüft irgendwann die Rangfolge statt der Zweistufigkeit.
     """
-    from picknick.catalog import search
+    from zettel.catalog import search
     return search.search(con, begriff, limit=limit)
 
 
@@ -687,7 +687,7 @@ def test_der_zweite_begriff_bringt_das_produkt_das_gemeint_ist(con):
     ergebnis = agent.turn(con, "Auberginen")
 
     # Nur der zweite Begriff findet sie …
-    from picknick.catalog import search
+    from zettel.catalog import search
     assert [t["name"] for t in search.search(con, "Auberginen")] == [
         "Gemüse-Auberginen-Masala mit Jasminreis"]
     # … und trotzdem steht sie in der Vorschlagsliste.

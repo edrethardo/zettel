@@ -24,10 +24,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import oberbegriffe  # noqa: E402
-from picknick.llm import wake  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import oberbegriffe  # noqa: E402
+from zettel.llm import wake  # noqa: E402
 
 
 def zeile(text=""):
@@ -57,7 +57,7 @@ def main() -> int:
         zeile("Die Box bedient nicht — `wake-vllm` und noch einmal.")
         return 1
 
-    with tempfile.TemporaryDirectory(prefix="picknick-sorten-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="zettel-sorten-") as tmp:
         kopie = Path(tmp) / "probe.db"
         shutil.copyfile(args.db, kopie)
         con = db.connect(kopie)

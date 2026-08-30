@@ -45,14 +45,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from picknick import db, orders  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import vorschlaege as vorschlagsliste  # noqa: E402
-from picknick.assistant import zugrezept  # noqa: E402
-from picknick.gerichte import lauf  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.scrapers import knuspr  # noqa: E402
-from picknick.web import app as webapp  # noqa: E402
+from zettel import db, orders  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import vorschlaege as vorschlagsliste  # noqa: E402
+from zettel.assistant import zugrezept  # noqa: E402
+from zettel.gerichte import lauf  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.scrapers import knuspr  # noqa: E402
+from zettel.web import app as webapp  # noqa: E402
 
 HTMX = {"HX-Request": "true"}
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
@@ -235,7 +235,7 @@ def main() -> None:
     mit_rezept = "--rezept" in sys.argv
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        pfad = tmp / "picknick.db"
+        pfad = tmp / "zettel.db"
         offene = baue(pfad)
         if mit_rezept:
             rezeptzug(pfad)

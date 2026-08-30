@@ -25,8 +25,8 @@ import sqlite3
 
 import pytest
 
-from picknick import db
-from picknick.catalog import search
+from zettel import db
+from zettel.catalog import search
 
 #: So viele Produkte hat die aufgezeichnete Knuspr-Antwort.
 PRODUKTE = 28

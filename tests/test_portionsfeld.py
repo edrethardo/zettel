@@ -25,8 +25,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db, orders, recipes
-from picknick.web import app as webapp
+from zettel import db, orders, recipes
+from zettel.web import app as webapp
 
 from test_web_zugrezept import HTMX, _karte, _pho_zug  # noqa: F401
 from test_web_zugrezept import datei  # noqa: F401  (Fixture)

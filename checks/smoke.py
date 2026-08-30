@@ -6,7 +6,7 @@
 Fünf Fragen, jede mit eigener Zeile in der Ausgabe:
 
 1. **Ist das Netz wirklich zu?** Nicht zugesichert, sondern erzwungen: bevor
-   irgendetwas aus `picknick` importiert wird, werden `connect`, `bind`,
+   irgendetwas aus `zettel` importiert wird, werden `connect`, `bind`,
    `sendto`, `create_connection` und `getaddrinfo` für IPv4/IPv6 im ganzen
    Prozess durch etwas ersetzt, das `NetzVerboten` wirft. Der erste Check
    *versucht* dann eine Verbindung nach `localhost:6006` — dort läuft auf
@@ -109,7 +109,7 @@ netz_sperren()
 # Kein Tracer, also kein Exporter, der beim Bauen der App nach Phoenix greift.
 # Die Span-Prüfung unten hängt ihren Provider selbst ein (`obs.setze_provider`)
 # und braucht diese Variable nicht.
-os.environ["PICKNICK_TRACING"] = "0"
+os.environ["ZETTEL_TRACING"] = "0"
 
 import httpx  # noqa: E402
 import openai  # noqa: E402
@@ -124,18 +124,18 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor  # noqa: E402
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (  # noqa: E402
     InMemorySpanExporter)
 
-from picknick import db, gerichte, obs, orders, recipes  # noqa: E402
-from picknick.gerichte import chefkoch  # noqa: E402
-from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import entwurf as entwuerfe  # noqa: E402
-from picknick.assistant import oberbegriffe  # noqa: E402
-from picknick.catalog import categories, search  # noqa: E402
-from picknick.assistant import vorschlaege  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
-from picknick.obs import labels  # noqa: E402
-from picknick.web import app as webapp  # noqa: E402
+from zettel import db, gerichte, obs, orders, recipes  # noqa: E402
+from zettel.gerichte import chefkoch  # noqa: E402
+from zettel.gerichte import lauf as gerichtelauf  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import entwurf as entwuerfe  # noqa: E402
+from zettel.assistant import oberbegriffe  # noqa: E402
+from zettel.catalog import categories, search  # noqa: E402
+from zettel.assistant import vorschlaege  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
+from zettel.obs import labels  # noqa: E402
+from zettel.web import app as webapp  # noqa: E402
 
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 DOKS = SpanAttributes.RETRIEVAL_DOCUMENTS
@@ -692,17 +692,17 @@ def _tokenzahlen(spans) -> str:
 
 
 def _suche(spans, begriff: str):
-    # Gefunden wird über `picknick.term` — die Zutat. `input.value` ist seit
+    # Gefunden wird über `zettel.term` — die Zutat. `input.value` ist seit
     # WB-340 die ganze Begriffskette als JSON.
     treffer = [s for s in spans if s.name == "catalog.search"
-               and s.attributes.get("picknick.term") == begriff]
+               and s.attributes.get("zettel.term") == begriff]
     gleich(len(treffer), 1, f"catalog.search({begriff})")
     return treffer[0]
 
 
 def _dokumente(spans, begriff: str) -> str:
     a = _suche(spans, begriff).attributes
-    n = a["picknick.candidates"]
+    n = a["zettel.candidates"]
     wahr(n == 5, f"{n} Kandidaten, erwartet 5 — genau der Fall aus OBSERVABILITY.md")
     scores = []
     for i in range(n):
@@ -720,14 +720,14 @@ def _dokumente(spans, begriff: str) -> str:
     # Wortstufe vor dem Rang (WB-339). Das sagt OBSERVABILITY.md auch so. Der
     # Score gilt innerhalb eines Begriffs; geprüft wird deshalb, dass er
     # positiv ist und dass `rank_top` wirklich der beste ist.
-    gleich(a["picknick.rank_top"], max(scores), "rank_top")
+    gleich(a["zettel.rank_top"], max(scores), "rank_top")
     return f"{n} Dokumente, bester Score {max(scores):.4g}"
 
 
 def _leere_suche(spans, begriff: str) -> str:
     a = _suche(spans, begriff).attributes
-    gleich(a["picknick.candidates"], 0, "candidates")
-    wahr("picknick.rank_top" not in a,
+    gleich(a["zettel.candidates"], 0, "candidates")
+    wahr("zettel.rank_top" not in a,
          "Ein rank_top ohne Treffer wäre eine erfundene Zahl.")
     return "candidates=0, kein rank_top"
 
@@ -736,14 +736,14 @@ def _zusammenfassung(spans, ergebnis) -> str:
     a = _wurzel(spans).attributes
     gleich(a[SpanAttributes.INPUT_VALUE],
            "dazu brauche ich noch Zahnpasta und Butter", "input")
-    gleich(a[obs.PFAD], "llm", "picknick.path")
-    gleich(a["picknick.terms"], 2, "terms")
-    gleich(a["picknick.products"], 1, "products")
-    gleich(a["picknick.free_text"], 1, "free_text")
+    gleich(a[obs.PFAD], "llm", "zettel.path")
+    gleich(a["zettel.terms"], 2, "terms")
+    gleich(a["zettel.products"], 1, "products")
+    gleich(a["zettel.free_text"], 1, "free_text")
     # Der Kern des Butter-Falls: das Modell hat NICHTS erfunden.
-    gleich(a["picknick.rejected"], 0, "rejected")
-    gleich(a["picknick.weakest_term"], "Zahnpasta", "weakest_term")
-    gleich(a["picknick.weakest_rank"], 0.0, "weakest_rank")
+    gleich(a["zettel.rejected"], 0, "rejected")
+    gleich(a["zettel.weakest_term"], "Zahnpasta", "weakest_term")
+    gleich(a["zettel.weakest_rank"], 0.0, "weakest_rank")
     gleich(a["session.id"], f"korb-{ergebnis.order_id}", "session.id")
     ausgabe = json.loads(a[SpanAttributes.OUTPUT_VALUE])
     gleich([v["name"] for v in ausgabe],
@@ -759,8 +759,8 @@ def _vereinigung(spans) -> str:
     a = _suche(spans, "Salzbutter").attributes
     gleich(json.loads(a[SpanAttributes.INPUT_VALUE]), ["Salzbutter", "Butter"],
            "input.value")
-    gleich(a["picknick.search_terms"], "Salzbutter, Butter", "search_terms")
-    n = a["picknick.candidates"]
+    gleich(a["zettel.search_terms"], "Salzbutter, Butter", "search_terms")
+    n = a["zettel.candidates"]
     ids = [a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_ID]
            for i in range(n)]
     gleich(n, 5, "Kandidaten der Vereinigung")
@@ -770,7 +770,7 @@ def _vereinigung(spans) -> str:
 
 def _herkunft(spans) -> str:
     a = _suche(spans, "Salzbutter").attributes
-    n = a["picknick.candidates"]
+    n = a["zettel.candidates"]
     via = [json.loads(a[f"{DOKS}.{i}." + DocumentAttributes.DOCUMENT_METADATA]
                       )["via"] for i in range(n)]
     gleich(sorted(via), ["Butter"] * 4 + ["Salzbutter"], "Herkunft je Dokument")
@@ -851,7 +851,7 @@ def checks_gerichte(b: Bericht, db_datei: Path) -> None:
         b.pruefe("der zweite Zugriff kommt aus dem Speicher, ohne Netz",
                  lambda: _aus_dem_speicher(con))
         b.pruefe("der Chat-Zug nimmt die Zutaten aus dem Rezept "
-                 "(picknick.path = chefkoch)", lambda: _zug_aus_quelle(con))
+                 "(zettel.path = chefkoch)", lambda: _zug_aus_quelle(con))
         b.pruefe("ein unbekanntes Gericht wird SOFORT geholt, und ein "
                  "Ausfall fällt sauber auf das Modell zurück",
                  lambda: _zug_ohne_speicher(con))
@@ -922,7 +922,7 @@ def _zug_aus_quelle(con) -> str:
     agent = chatmodul.Chat(zugang, wecker=_Box(),
                            quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
     ergebnis = agent.turn(con, "alles für Pho")
-    gleich(ergebnis.weg, "chefkoch", "picknick.path")
+    gleich(ergebnis.weg, "chefkoch", "zettel.path")
     wahr(ergebnis.quelle_url and ergebnis.quelle_name,
          "Die Herkunft steht nicht am Ergebnis.")
     return (f"{ergebnis.n_produkte} Produkte aus "
@@ -958,8 +958,8 @@ def _zug_ohne_speicher(con) -> str:
     agent = chatmodul.Chat(zugang, wecker=_Box(),
                            quelle=gerichte.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Spaghetti Carbonara")
-    gleich(ergebnis.weg, "chefkoch", "picknick.path")
-    gleich(ergebnis.abruf, "ok", "picknick.dish_fetch")
+    gleich(ergebnis.weg, "chefkoch", "zettel.path")
+    gleich(ergebnis.abruf, "ok", "zettel.dish_fetch")
     wahr(geholt == [("Spaghetti Carbonara", chefkoch.TIMEOUT_SYNC_S)],
          f"Nicht genau ein Abruf mit kurzer Frist: {geholt!r}")
 
@@ -973,8 +973,8 @@ def _zug_ohne_speicher(con) -> str:
     agent = chatmodul.Chat(zugang, wecker=_Box(),
                            quelle=gerichte.Quelle(holer=kaputt))
     ergebnis = agent.turn(con, "alles für Lasagne")
-    gleich(ergebnis.weg, "llm", "picknick.path")
-    gleich(ergebnis.abruf, "fehler", "picknick.dish_fetch")
+    gleich(ergebnis.weg, "llm", "zettel.path")
+    gleich(ergebnis.abruf, "fehler", "zettel.dish_fetch")
     wahr(ergebnis.n_produkte == 1, "Der Zug ist nicht zu Ende gelaufen.")
     wahr("Chefkoch" in ergebnis.meldung,
          "Die Meldung verschweigt, dass die Zutaten geraten sind.")
@@ -2018,7 +2018,7 @@ def checks_bindung(b: Bericht) -> None:
     for host, was in (("0.0.0.0", "0.0.0.0 lauscht auf jeder Schnittstelle"),
                       ("::", ":: ebenso, in IPv6"),
                       ("192.168.2.14", "die LAN-Adresse des Laptops"),
-                      ("picknick.local", "ein Name, den DNS irgendwohin "
+                      ("zettel.local", "ein Name, den DNS irgendwohin "
                                          "auflösen kann"),
                       ("", "eine leere Adresse")):
         b.pruefe(f"abgelehnt: {was}", lambda h=host: abgelehnt(h))
@@ -2062,10 +2062,10 @@ def checks_bindung(b: Bericht) -> None:
 
     def env_verboten():
         try:
-            webapp.hosts_aus_umgebung({"PICKNICK_HOST": "127.0.0.1,0.0.0.0"})
+            webapp.hosts_aus_umgebung({"ZETTEL_HOST": "127.0.0.1,0.0.0.0"})
         except webapp.UnsichereBindung:
-            return "PICKNICK_HOST wird geprüft, nicht geglaubt"
-        raise AssertionError("PICKNICK_HOST=…,0.0.0.0 kam durch.")
+            return "ZETTEL_HOST wird geprüft, nicht geglaubt"
+        raise AssertionError("ZETTEL_HOST=…,0.0.0.0 kam durch.")
 
     b.pruefe("auch aus der Umgebung kommt 0.0.0.0 nicht durch", env_verboten)
 
@@ -2086,11 +2086,11 @@ def checks_bindung(b: Bericht) -> None:
 
 def main() -> int:
     b = Bericht()
-    print("picknick — Rauchtest (checks/smoke.py)")
+    print("zettel — Rauchtest (checks/smoke.py)")
     checks_netz(b)
-    with tempfile.TemporaryDirectory(prefix="picknick-smoke-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="zettel-smoke-") as tmp:
         ordner = Path(tmp)
-        db_datei = ordner / "picknick.db"
+        db_datei = ordner / "zettel.db"
         bild_dir = ordner / "bilder"
         bild_dir.mkdir()
         katalog_anlegen(db_datei)

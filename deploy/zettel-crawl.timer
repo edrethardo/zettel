@@ -1,0 +1,23 @@
+# Wann der Katalog-Lauf startet (Spec 12).
+
+[Unit]
+Description=Zettel — Katalog-Lauf jede Nacht
+Documentation=file://%h/code/picknick_klon/README.md
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+
+# DER entscheidende Punkt dieses Tickets: der Laptop schläft nachts
+# zugeklappt. Ohne Persistent=true fiele jeder Lauf, dessen Zeitpunkt in eine
+# geschlossene Nacht fällt, ersatzlos aus — und der Katalog würde nie
+# aktualisiert, ohne dass irgendetwas nach einem Fehler aussähe. Mit
+# Persistent=true merkt sich systemd den letzten Start auf der Platte und holt
+# einen verpassten Lauf nach, sobald die Maschine wieder da ist.
+Persistent=true
+
+# Nicht in derselben Sekunde wie alles andere, was nach dem Aufwachen
+# nachgeholt wird — und knuspr.de sieht nicht jede Nacht dieselbe Uhrzeit.
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

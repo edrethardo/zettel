@@ -13,7 +13,7 @@ schreibt
     tests/fixtures/chefkoch_pho_rezept.json    GET /v2/recipes/<bestes>
 
 Bricht danach ein Test, ist das ein echter Fund: Chefkoch hat das Format
-geändert und `picknick.gerichte.chefkoch` muss nach.
+geändert und `zettel.gerichte.chefkoch` muss nach.
 
 **Höflich:** eine Pause zwischen den beiden Anfragen, ein ehrlicher
 User-Agent, und von Hand gestartet statt in einer Schleife. robots.txt
@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from picknick.gerichte import chefkoch  # noqa: E402
+from zettel.gerichte import chefkoch  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 

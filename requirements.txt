@@ -27,7 +27,7 @@ openinference-instrumentation-openai
 # Der Shop selbst benutzt pandas nirgends.
 pandas
 
-# Miniaturen für die Produktkacheln (WB-374, picknick/miniaturen.py). Läuft im
+# Miniaturen für die Produktkacheln (WB-374, zettel/miniaturen.py). Läuft im
 # Nachtlauf, nicht im Antwortweg des Shops — der Web-Prozess importiert das
 # Modul zwar, aber `PIL` erst innerhalb von `ableiten()`. Ein Shop ohne Pillow
 # startet und liefert weiter Bilder aus, nur eben die Originale.

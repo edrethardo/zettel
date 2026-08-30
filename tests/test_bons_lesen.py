@@ -15,8 +15,8 @@ import shutil
 
 import pytest
 
-from picknick import bons
-from picknick.bons import lesen, zerlegen
+from zettel import bons
+from zettel.bons import lesen, zerlegen
 
 from conftest import ZAHLUNGSDATEN, baue_pdf  # noqa: F401  (Pfad via rootdir)
 

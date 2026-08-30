@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from picknick import db
-from picknick.scrapers import knuspr
+from zettel import db
+from zettel.scrapers import knuspr
 
 FIXTURE = Path(__file__).parent / "fixtures" / "knuspr_milch.json"
 

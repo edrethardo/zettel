@@ -1,4 +1,4 @@
-"""Das Dataset `picknick-anfragen` (Spec 8.2).
+"""Das Dataset `zettel-anfragen` (Spec 8.2).
 
 Feste Eingaben mit erwartetem Ergebnis, vier Sorten, je drei Beispiele. Der
 ganze Wert dieses Moduls hängt an einer einzigen Entscheidung:
@@ -88,7 +88,7 @@ from pathlib import Path
 # Damit `python evals/dataset.py` genauso läuft wie `python -m evals.dataset`.
 # Beim Import als Paketmodul ist das Wurzelverzeichnis längst drin und die
 # Zeile ein No-Op; beim direkten Aufruf legt Python nur `evals/` auf den Pfad
-# und `import picknick` scheiterte sonst.
+# und `import zettel` scheiterte sonst.
 _WURZEL = str(Path(__file__).resolve().parent.parent)
 if _WURZEL not in sys.path:
     sys.path.insert(0, _WURZEL)
@@ -96,7 +96,7 @@ if _WURZEL not in sys.path:
 #: Der Name in Phoenix. Steht an genau einer Stelle, weil `experiment.py` ihn
 #: zum Nachladen braucht und zwei Schreibweisen ein stiller zweiter Datensatz
 #: wären.
-NAME = "picknick-anfragen"
+NAME = "zettel-anfragen"
 
 BESCHREIBUNG = (
     "Feste Einkaufsanfragen mit Erwartung auf Kategorieebene (Spec 8.2). "
@@ -163,10 +163,10 @@ def normbegriff(text: str) -> str:
 
     Dieselbe Umlautfaltung wie die Katalogsuche (`db.normalisiere`), damit
     „Spülmittel" und „Spuelmittel" derselbe Begriff sind. Der Import steht in
-    der Funktion, weil `picknick.db` das sqlite-Schema mitbringt und dieses
+    der Funktion, weil `zettel.db` das sqlite-Schema mitbringt und dieses
     Modul auch ohne Datenbank benutzbar bleiben soll.
     """
-    from picknick import db
+    from zettel import db
 
     return " ".join(db.normalisiere(text or "").casefold().split())
 
@@ -637,7 +637,7 @@ def klient(base_url: str | None = None):
     """
     from phoenix.client import Client
 
-    from picknick.obs import labels
+    from zettel.obs import labels
 
     return Client(base_url=base_url or labels.basis_url())
 
@@ -669,7 +669,7 @@ def _ist_unbekannt(fehler: Exception) -> bool:
 
 
 def anlegen(client=None, *, name: str = NAME) -> dict:
-    """Legt `picknick-anfragen` an — und zwar idempotent.
+    """Legt `zettel-anfragen` an — und zwar idempotent.
 
     Zweimal aufgerufen entsteht kein zweites Dataset und kein doppeltes
     Beispiel: der zweite Lauf findet den Bestand deckungsgleich vor und tut
@@ -736,7 +736,7 @@ def pruefe_katalog(con, *, limit: int = 20) -> list[dict]:
     Modellfehler. Was hier rot ist, gehört korrigiert oder aus dem Dataset
     heraus.
     """
-    from picknick.catalog import search
+    from zettel.catalog import search
 
     raus = []
     for b in BEISPIELE:
@@ -770,7 +770,7 @@ def main(argv=None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(
-        description="Legt das Phoenix-Dataset 'picknick-anfragen' an "
+        description="Legt das Phoenix-Dataset 'zettel-anfragen' an "
                     "(idempotent).")
     p.add_argument("--pruefen", action="store_true",
                    help="Nur nachsehen, ob der echte Katalog jede erwartete "
@@ -786,7 +786,7 @@ def main(argv=None) -> int:
         return 0
 
     if args.pruefen:
-        from picknick import db
+        from zettel import db
 
         con = db.connect(args.db or db.DEFAULT_DB)
         zeilen = pruefe_katalog(con)

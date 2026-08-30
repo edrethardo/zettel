@@ -2,7 +2,7 @@
 
     .venv/bin/python scripts/trace_probe.py
     .venv/bin/python scripts/trace_probe.py --satz "Milch und Klopapier"
-    .venv/bin/python scripts/trace_probe.py --projekt "Picknick Probe"
+    .venv/bin/python scripts/trace_probe.py --projekt "Zettel Probe"
 
 **Nicht über die Oberfläche.** Ein leerer Span sieht dort genauso gut aus wie
 ein voller und misst nichts — die Zusicherungen unten prüfen deshalb
@@ -29,9 +29,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db, obs  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.llm import wake  # noqa: E402
+from zettel import db, obs  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.llm import wake  # noqa: E402
 
 #: Der Satz aus WB-327, an dem der Unterschied zwischen Modell- und
 #: Retrieval-Fehler zuerst aufgefallen ist: bei „Butter" waren alle fünf
@@ -108,16 +108,16 @@ def _fehlend(zeile, spalten):
     return [s for s in spalten if _wert(zeile, s) is None]
 
 
-def _picknick(zeile, name):
-    """Ein `picknick.*`-Attribut.
+def _zettel(zeile, name):
+    """Ein `zettel.*`-Attribut.
 
     Phoenix fasst gleichnamige Präfixe zu einer verschachtelten Spalte
-    zusammen: die zehn `picknick.*`-Attribute kommen als EIN Wörterbuch in
-    `attributes.picknick` zurück und nicht als zehn Spalten. Wer sie als
+    zusammen: die zehn `zettel.*`-Attribute kommen als EIN Wörterbuch in
+    `attributes.zettel` zurück und nicht als zehn Spalten. Wer sie als
     Spalte sucht, findet nichts und hält den Span für leer — genau der
     Irrtum, den dieses Skript verhindern soll.
     """
-    kasten = _wert(zeile, "attributes.picknick")
+    kasten = _wert(zeile, "attributes.zettel")
     if not isinstance(kasten, dict):
         return None
     wert = kasten.get(name)
@@ -175,11 +175,11 @@ def pruefe(df, pruef: Pruefung, traces: set) -> None:
             # Dokumente nur da, wo die Suche welche hatte. Ein Begriff ohne
             # Treffer ist eine Retrieval-Lücke und kein fehlendes Attribut —
             # das eine gehört ins Eval, das andere wäre ein Fehler im Code.
-            if (_picknick(zeile, "candidates") or 0) > 0:
+            if (_zettel(zeile, "candidates") or 0) > 0:
                 pflicht.append("attributes.retrieval.documents")
         fehlt = _fehlend(zeile, pflicht)
-        if zeile["name"] == "chat.turn" and _picknick(zeile, "path") is None:
-            fehlt.append("picknick.path")
+        if zeile["name"] == "chat.turn" and _zettel(zeile, "path") is None:
+            fehlt.append("zettel.path")
         pruef(not fehlt,
               f"{zeile['name']:<16} {len(pflicht) + 1:>1} Pflichtattribute"
               if zeile["name"] == "chat.turn"
@@ -230,13 +230,13 @@ def zeige_schwachstelle(df, traces: set) -> None:
     print("\n== Modell- oder Retrieval-Fehler? ==")
     eigene = df[df["context.trace_id"].isin(traces)] if traces else df
     for _, z in eigene[eigene["name"] == "chat.turn"].iterrows():
-        schwach = _picknick(z, "weakest_term")
-        rang = _picknick(z, "weakest_rank")
-        verworfen = _picknick(z, "rejected") or 0
-        print(f"  Weg: {_picknick(z, 'path')}, "
-              f"Begriffe {_picknick(z, 'terms')}, "
-              f"Produkte {_picknick(z, 'products')}, "
-              f"Freitext {_picknick(z, 'free_text')}, "
+        schwach = _zettel(z, "weakest_term")
+        rang = _zettel(z, "weakest_rank")
+        verworfen = _zettel(z, "rejected") or 0
+        print(f"  Weg: {_zettel(z, 'path')}, "
+              f"Begriffe {_zettel(z, 'terms')}, "
+              f"Produkte {_zettel(z, 'products')}, "
+              f"Freitext {_zettel(z, 'free_text')}, "
               f"verworfene Modell-IDs {int(verworfen)}")
         print(f"  verworfene Modell-IDs = 0 heisst: das Modell hat nur "
               "vorgelegte Produkte genannt. Was schieflief, lief in der "

@@ -1,4 +1,4 @@
-"""Experiments über `picknick-anfragen` (Spec 8.3).
+"""Experiments über `zettel-anfragen` (Spec 8.3).
 
 Dieselbe Pipeline, dasselbe Dataset, **je eine Stellschraube verändert**. Das
 ist der ganze Punkt: „der Agent ist besser geworden" ist ohne einen zweiten
@@ -34,7 +34,7 @@ sonst unsichtbar bleibt (siehe `evals/dataset.py`, „Zwei Zahlen"):
 Was ausdrücklich NICHT gemessen wird
 ------------------------------------
 
-**`picknick.weakest_rank`.** Der bm25-Rang steht am Span und ist verlockend,
+**`zettel.weakest_rank`.** Der bm25-Rang steht am Span und ist verlockend,
 aber er ist über Abfragen hinweg nicht geeicht: ein seltenes Wort bekommt
 strukturell einen höheren Rang als ein häufiges (WB-328). Eine Schwelle
 darauf misst den Katalog und nicht den Agenten — und sie würde jedes Mal
@@ -100,12 +100,12 @@ if _WURZEL not in sys.path:
     sys.path.insert(0, _WURZEL)
 
 from evals import dataset  # noqa: E402
-from picknick.assistant import plan  # noqa: E402
+from zettel.assistant import plan  # noqa: E402
 
 #: Das Projekt, in dem die Chat-Spans der Läufe landen. Dasselbe wie im
 #: Betrieb (`obs.PROJEKT`), damit ein Experiment-Trace neben einem echten Zug
 #: liegt und sich vergleichen lässt.
-PROJEKT = "Picknick Agent"
+PROJEKT = "Zettel Agent"
 
 
 # --------------------------------------------------------------------------
@@ -278,10 +278,10 @@ class Lauf:
         self._kopie: str | None = None
 
     def __enter__(self) -> "Lauf":
-        from picknick import db
+        from zettel import db
 
         quelle = self._quelle or db.DEFAULT_DB
-        self._ordner = tempfile.mkdtemp(prefix="picknick-eval-")
+        self._ordner = tempfile.mkdtemp(prefix="zettel-eval-")
         self._kopie = str(Path(self._ordner) / "katalog.db")
         con = db.connect(quelle)
         try:
@@ -300,9 +300,9 @@ class Lauf:
 
     @property
     def chat(self):
-        from picknick.assistant.chat import Chat
+        from zettel.assistant.chat import Chat
 
-        from picknick import gerichte
+        from zettel import gerichte
 
         if not hasattr(self, "_chat"):
             self._chat = Chat(
@@ -319,7 +319,7 @@ class Lauf:
                 # schwerer: der Abruf läuft im Zug selbst, ein Lauf über
                 # dreissig Sätze fasste also dreissigmal eine fremde Seite
                 # an. Wer die Quelle messen will, füllt den Speicher VOR dem
-                # Lauf (`python -m picknick.gerichte.lauf --gericht …`).
+                # Lauf (`python -m zettel.gerichte.lauf --gericht …`).
                 quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
         return self._chat
 
@@ -331,7 +331,7 @@ class Lauf:
         stünde als 0,0 in den Scores und sähe aus wie ein Agent, der nichts
         kann.
         """
-        from picknick import db
+        from zettel import db
 
         con = db.connect(self._kopie)
         try:
@@ -346,14 +346,14 @@ class Lauf:
     def aufgabe(self):
         """Die Funktion, die `run_experiment(task=…)` bekommt.
 
-        Sie heisst `picknick_chat_turn`, weil Phoenix den Namen als
+        Sie heisst `zettel_chat_turn`, weil Phoenix den Namen als
         Wurzel-Span des Laufs führt (`Task: …`) — ein `<lambda>` dort wäre in
         der Oberfläche nicht wiederzuerkennen.
         """
-        def picknick_chat_turn(input: dict) -> dict:  # noqa: A002
+        def zettel_chat_turn(input: dict) -> dict:  # noqa: A002
             return self.einmal(input["satz"])
 
-        return picknick_chat_turn
+        return zettel_chat_turn
 
 
 # --------------------------------------------------------------------------
@@ -366,7 +366,7 @@ class Auswertung:
     `praezision` und `vollstaendigkeit` sind `None`, wenn es nichts zu
     bewerten gab — eine fehlende Zahl ist ehrlicher als eine 0,0, die
     „alles falsch" behauptet, wo „nichts gefragt" richtig wäre. Denselben
-    Grundsatz benutzt schon `picknick.obs.labels` für Züge ohne Entscheidung.
+    Grundsatz benutzt schon `zettel.obs.labels` für Züge ohne Entscheidung.
     """
     vollstaendigkeit: float | None
     praezision: float | None
@@ -704,8 +704,8 @@ def fahre(name: str, *, zugang=None, client=None, db_pfad: str | None = None,
     """
     from phoenix.client.experiments import evaluate_experiment, run_experiment
 
-    from picknick import obs
-    from picknick.llm.client import Modellzugang
+    from zettel import obs
+    from zettel.llm.client import Modellzugang
 
     variante = VARIANTEN[name]
     client = dataset.klient() if client is None else client
@@ -793,7 +793,7 @@ def main(argv=None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(
-        description="Fährt Varianten des Agenten über 'picknick-anfragen'. "
+        description="Fährt Varianten des Agenten über 'zettel-anfragen'. "
                     "Braucht Phoenix und die vLLM-Box — das Gate nicht.")
     p.add_argument("varianten", nargs="*", default=None,
                    help="Namen der Varianten. Ohne Angabe: nur die Basis.")

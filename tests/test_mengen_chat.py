@@ -23,12 +23,12 @@ import json
 
 import pytest
 
-from picknick import db
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import vorschlaege
-from picknick.gerichte import lauf, quelle
-from picknick.llm import wake
-from picknick.llm.client import Antwort
+from zettel import db
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import vorschlaege
+from zettel.gerichte import lauf, quelle
+from zettel.llm import wake
+from zettel.llm.client import Antwort
 
 
 # --------------------------------------------------------------------------
@@ -143,7 +143,7 @@ def _zusatz(con):
 @pytest.fixture
 def con(vorlagen, tmp_path):
     # Eine DATEI, weil der Abruf einen Pfad braucht (wie in test_gerichte.py).
-    c = db.connect(vorlagen.datei(tmp_path / "picknick.db", "mengen_katalog",
+    c = db.connect(vorlagen.datei(tmp_path / "zettel.db", "mengen_katalog",
                                   vorlagen.katalog, _zusatz))
     yield c
     c.close()
@@ -309,7 +309,7 @@ def test_der_span_zeigt_den_weg_von_der_zutat_zum_posten(con):
 
     Sonst ist später nicht zu sehen, wo eine falsche Menge entstanden ist.
     """
-    from picknick import obs
+    from zettel import obs
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -331,12 +331,12 @@ def test_der_span_zeigt_den_weg_von_der_zutat_zum_posten(con):
     spans = [s for s in exporter.get_finished_spans() if s.name == "korb.menge"]
     assert len(spans) == 1
     a = spans[0].attributes
-    assert a["picknick.need_added"] == 200.0
-    assert a["picknick.need_amount"] == 200.0
-    assert a["picknick.search_term"] == "Hackfleisch"
-    assert a["picknick.product_id"] == hack
-    assert a["picknick.packages"] == 1
-    assert a["picknick.computable"] is True
+    assert a["zettel.need_added"] == 200.0
+    assert a["zettel.need_amount"] == 200.0
+    assert a["zettel.search_term"] == "Hackfleisch"
+    assert a["zettel.product_id"] == hack
+    assert a["zettel.packages"] == 1
+    assert a["zettel.computable"] is True
 
 
 # --------------------------------------------------------------------------
