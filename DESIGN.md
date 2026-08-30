@@ -799,11 +799,31 @@ ohnehin zusammen. Gemessen:
 
     Kopfhöhe 108 px von 758 px Fenster — 14 %
 
-**Die frische Antwort wird ins Bild geholt** (`show:#chat-neuestes:bottom`).
-Das Feld steht oben, der neue Zug unten; ohne den Anker bliebe der Blick nach
-dem Abschicken am Kopf kleben und die Antwort stünde ungesehen darunter. Der
-Anker ist ein leeres Element am Ende des Verlaufs, weil der jüngste Zug seine
-`id` schon trägt (`zug-N`) und keine zweite bekommen kann.
+**Und der jüngste Zug rückt von oben nach** (WB-417). „Das Rezept soll auch
+von oben nachrücken." Ein Feld oben und eine Antwort fünftausend Pixel weiter
+unten wäre derselbe Weg noch einmal, nur andersherum. Also zeigt der Verlauf
+den jüngsten Zug zuerst; Älteres wandert nach unten, und der Knopf für die
+eingeklappten Züge steht jetzt unter ihnen statt darüber.
+
+    zug-41  Frage      <- jüngster Zug
+    zug-42  Antwort
+    zug-39 / zug-40
+    zug-37 / zug-38
+
+**Gedreht werden ZÜGE und nicht Zeilen.** Innerhalb eines Zugs bleibt die
+Frage über ihrer Antwort — sie ist der Grund, aus dem die Antwort dasteht,
+und eine Antwort über ihrer Frage wäre nicht „neu zuerst", sondern verdreht.
+
+**Und gedreht wird in `_chat_kontext`, nicht in `verlauf()`.** Die
+Reihenfolge in der Datenbank ist eine Tatsache — `ORDER BY coalesce(ersetzt,
+id), id` hält einen ersetzten Zug an seiner Stelle (WB-403), und daran hängt,
+welcher Zug welchen abgelöst hat. Die Reihenfolge auf dem Schirm ist eine
+Entscheidung, und sie gehört dorthin, wo der Schirm gebaut wird.
+
+Zwei Nachzieher folgen daraus: `show:window:top` am Eingabefeld, damit den
+neuen Zug auch sieht, wer beim Abschicken tief im Verlauf stand — und im
+Rezeptwechsel steht der Rest des alten Zugs jetzt UNTER dem neuen statt
+darüber, denn älter heisst auf dieser Seite weiter unten.
 
 **Und die Meldung steht nur noch einmal.** Sie stand zweimal, weil zwischen
 Chatkopf und Eingabefeld der ganze Verlauf lag (WB-378). Seit das Feld oben

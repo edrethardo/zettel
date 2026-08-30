@@ -102,10 +102,9 @@ def test_wacht_die_box_auf_laeuft_der_satz_ohne_zweiten_klick(db_datei,
     assert antwort.status_code == 200
     assert _zuege(db_datei) == 1, "Der Zug ist nicht von selbst gelaufen."
     assert antwort.headers.get("HX-Retarget") == "#chat"
-    # `show:` bringt die frische Antwort ins Bild — das Feld steht oben,
-    # der neue Zug unten (WB-416).
-    assert antwort.headers.get("HX-Reswap") == \
-        "outerHTML show:#chat-neuestes:bottom"
+    # `show:window:top` (WB-417): der jüngste Zug steht ganz oben, direkt
+    # unter dem klebenden Kopf.
+    assert antwort.headers.get("HX-Reswap") == "outerHTML show:window:top"
 
 
 def test_ohne_javascript_bleibt_der_knopf_der_weg(db_datei, tmp_path):

@@ -52,8 +52,12 @@
     <div id="chat-fehler">{% include "_chatfehler.html" %}</div>
 
     <form class="chatform" method="post" action="/chat"
+          {# `show:window:top` (WB-417): der jüngste Zug steht jetzt ganz
+             oben, direkt unter diesem Kopf. Wer beim Abschicken tief im
+             Verlauf stand, soll ihn sehen und nicht die Stelle, an der er
+             gerade war. #}
           hx-post="/chat" hx-target="#chat"
-          hx-swap="outerHTML show:#chat-neuestes:bottom"
+          hx-swap="outerHTML show:window:top"
           hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
       <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
              aria-label="Was brauchst du?" placeholder="Was brauchst du?">
@@ -92,6 +96,27 @@
       Korb; offene Vorschläge zum alten Rezept sind weg.</span></p>
   {% endif %}
 
+
+  {# **Der jüngste Zug steht OBEN** (WB-417). Der Nutzer: „Das Rezept soll
+     auch von oben nachrücken." Das Eingabefeld steht seit WB-416 im
+     klebenden Kopf — eine Antwort, die danach am unteren Ende einer 5.000 px
+     langen Seite erscheint, ist genau der Weg, den das Ticket abgeschafft
+     hat. Neues rückt jetzt von oben nach, Älteres wandert nach unten.
+
+     **Umgedreht werden ZÜGE und nicht Zeilen.** Innerhalb eines Zugs bleibt
+     die Frage über ihrer Antwort — sie ist der Grund, aus dem die Antwort
+     dasteht, und eine Antwort über ihrer Frage wäre nicht „neu zuerst",
+     sondern verdreht. Gedreht wird in `_chat_kontext`, nicht in `verlauf()`:
+     die Reihenfolge in der Datenbank ist eine Tatsache, die auf dem Schirm
+     eine Entscheidung. #}
+  {% for m in verlauf %}
+    {% include "_zug.html" %}
+  {% else %}
+  <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti
+    Bolognese, und Klopapier". Vorgeschlagen wird nur; in den Korb kommt
+    nichts, was du nicht bestätigst.</p>
+  {% endfor %}
+
   {% if aeltere %}
   {# Der eingeklappte Teil. Er sagt, WIE VIEL er verbirgt und wie viele
      Entscheidungen darin stecken — „ältere Züge" allein liesse offen, ob dort
@@ -114,14 +139,6 @@
       {{ aeltere.entschieden }} entschieden. Anzeigen</button>
   </form>
   {% endif %}
-
-  {% for m in verlauf %}
-    {% include "_zug.html" %}
-  {% else %}
-  <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti
-    Bolognese, und Klopapier". Vorgeschlagen wird nur; in den Korb kommt
-    nichts, was du nicht bestätigst.</p>
-  {% endfor %}
 
   {% if leeren_fragt %}
   {# Die Rückfrage vor dem Leeren (WB-372) — und sie sagt, was auf dem Spiel
@@ -167,10 +184,4 @@
   </form>
   {% endif %}
 
-  {# Der Anker für `show:` (WB-416). Das Eingabefeld steht oben, die frische
-     Antwort unten — ohne ihn bliebe der Blick nach dem Abschicken am Kopf
-     kleben, und die Antwort stünde ungesehen darunter. Ein leeres Element,
-     weil der jüngste Zug seine eigene `id` schon trägt (`zug-N`) und eine
-     zweite nicht bekommen kann. #}
-  <span id="chat-neuestes" aria-hidden="true"></span>
 </section>

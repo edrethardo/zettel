@@ -1177,6 +1177,34 @@ def create_app(db_path: str | Path | None = None,
                 "warten_ueberfaellig": zustand.ueberfaellig,
                 "warten_grund": zustand.grund}
 
+    def _zuege_umdrehen(verlauf: list[dict]) -> list[dict]:
+        """Der jüngste Zug nach oben (WB-417).
+
+        „Das Rezept soll auch von oben nachrücken." Das Eingabefeld steht seit
+        WB-416 im klebenden Kopf; eine Antwort, die danach am unteren Ende
+        einer 5.000 px langen Seite erscheint, ist genau der Weg, den jenes
+        Ticket abgeschafft hat.
+
+        **Gedreht werden ZÜGE und nicht Zeilen.** Innerhalb eines Zugs bleibt
+        die Frage über ihrer Antwort — sie ist der Grund, aus dem die Antwort
+        dasteht. Ein Zug beginnt an jeder Zeile der Nutzerin; was davor steht
+        (ein Verlauf, dessen Frage jemand gelöscht hat), bleibt eine Gruppe
+        für sich und rutscht als älteste nach unten.
+
+        **Und gedreht wird HIER und nicht in `verlauf()`.** Die Reihenfolge in
+        der Datenbank ist eine Tatsache — `ORDER BY coalesce(ersetzt, id), id`
+        hält einen ersetzten Zug an seiner Stelle (WB-403), und daran hängt
+        auch, welcher Zug welchen abgelöst hat. Die Reihenfolge auf dem Schirm
+        ist eine Entscheidung, und sie gehört dorthin, wo der Schirm gebaut
+        wird.
+        """
+        zuege: list[list[dict]] = []
+        for zeile in verlauf:
+            if zeile["role"] == vorschlagsliste.ROLLE_NUTZERIN or not zuege:
+                zuege.append([])
+            zuege[-1].append(zeile)
+        return [zeile for zug in reversed(zuege) for zeile in zug]
+
     def _chat_kontext(c: sqlite3.Connection, fehler: str | None = None,
                       zustand=None, satz: str = "",
                       aufklappen: int | None = None, alles: bool = False,
@@ -1203,6 +1231,7 @@ def create_app(db_path: str | Path | None = None,
         verlauf = vorschlagsliste.verlauf(c, korb_id, ab=ab) if korb_id else []
         for zeile in verlauf:
             _zug_fuellen(c, zeile)
+        verlauf = _zuege_umdrehen(verlauf)
         return {"verlauf": verlauf, "chat_fehler": fehler,
                 "chat_zustand": zustand, "satz": satz,
                 "aufklappen": aufklappen,
@@ -1528,10 +1557,9 @@ def create_app(db_path: str | Path | None = None,
         """
         if ist_htmx(request):
             antwort.headers["HX-Retarget"] = "#chat"
-            # `show:` wie am Eingabefeld (WB-416): das Feld steht oben, die
-            # frische Antwort unten. Ohne das bliebe der Blick am Kopf.
-            antwort.headers["HX-Reswap"] = \
-                "outerHTML show:#chat-neuestes:bottom"
+            # `show:` wie am Eingabefeld (WB-417): der jüngste Zug steht
+            # ganz oben, direkt unter dem klebenden Kopf.
+            antwort.headers["HX-Reswap"] = "outerHTML show:window:top"
         return antwort
 
     @app.post("/chat/{mid}/sorten")
