@@ -21,13 +21,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db, orders, recipes
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import vorschlaege as vorschlagsliste
-from picknick.catalog import search
-from picknick.llm import wake
-from picknick.llm.client import Antwort
-from picknick.web import app as webapp
+from zettel import db, orders, recipes
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import vorschlaege as vorschlagsliste
+from zettel.catalog import search
+from zettel.llm import wake
+from zettel.llm.client import Antwort
+from zettel.web import app as webapp
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HTMX = {"HX-Request": "true"}

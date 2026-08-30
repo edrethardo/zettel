@@ -12,8 +12,8 @@ import sqlite3
 
 import pytest
 
-from picknick import db
-from picknick.catalog import categories, search
+from zettel import db
+from zettel.catalog import categories, search
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 
@@ -484,7 +484,7 @@ def test_die_obergrenze_kuerzt_am_allgemeinen_ende_der_kette(con):
 def test_die_obergrenze_laesst_den_ersten_beiden_begriffen_alles(con):
     """Die Vorgabe nimmt nie weg, was der Agent vor WB-340 gesehen hätte:
     2 × `KANDIDATEN` fasst die vollen Treffer der ersten beiden Begriffe."""
-    from picknick.assistant import plan
+    from zettel.assistant import plan
 
     _kette_katalog(con)
     treffer = search.suche_kette(con, ["milch", "Aubergine", "Gemüse"],

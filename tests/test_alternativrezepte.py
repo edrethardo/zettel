@@ -30,12 +30,12 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db
-from picknick.assistant import chat as chatmodul
-from picknick.gerichte import chefkoch, lauf, quelle, speicher
-from picknick.llm import wake
-from picknick.llm.client import Antwort
-from picknick.web import app as webapp
+from zettel import db
+from zettel.assistant import chat as chatmodul
+from zettel.gerichte import chefkoch, lauf, quelle, speicher
+from zettel.llm import wake
+from zettel.llm.client import Antwort
+from zettel.web import app as webapp
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SUCHE = json.loads((FIXTURES / "chefkoch_pho_suche.json")
@@ -171,7 +171,7 @@ def _zusatz(con):
 
 @pytest.fixture
 def datei(vorlagen, tmp_path):
-    return vorlagen.datei(tmp_path / "picknick.db", "alternativen_katalog",
+    return vorlagen.datei(tmp_path / "zettel.db", "alternativen_katalog",
                           vorlagen.katalog, _zusatz)
 
 
@@ -383,7 +383,7 @@ def test_der_rezeptweg_bietet_nichts_an(datei, tmp_path):
     gesucht, also gibt es auch keine Alternativen. Eine Liste zu zeigen
     hiesse, eine Herkunft zu behaupten.
     """
-    from picknick import recipes
+    from zettel import recipes
 
     con = db.connect(datei)
     try:
@@ -594,7 +594,7 @@ def test_was_im_korb_liegt_bleibt_beim_wechsel_liegen(datei, tmp_path):
 # Der Trace
 
 def test_der_wechsel_steht_am_zug(datei, tmp_path):
-    """`picknick.dish_switch` — die Zahl, um die es im Ticket geht.
+    """`zettel.dish_switch` — die Zahl, um die es im Ticket geht.
 
     Ein Zug mit gesetztem Feld ist einer, in dem „am besten bewertet" nicht
     „was ich gemeint habe" war. Ohne ihn wäre die Schlagseite der Gewichtung

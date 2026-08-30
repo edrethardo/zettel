@@ -6,7 +6,7 @@ import sqlite3
 
 import pytest
 
-from picknick import db
+from zettel import db
 
 
 @pytest.fixture

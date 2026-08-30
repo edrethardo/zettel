@@ -33,13 +33,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from picknick import db
+from zettel import db
 
 from test_alternativrezepte import (HTMX, PHO_BO, PHO_GA, _karte, _pho_geholt,
                                     _shop, _wechsel, _zug_id, _eine_zeile)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 
-STIL = Path(__file__).resolve().parents[1] / "picknick" / "web" / "static" \
+STIL = Path(__file__).resolve().parents[1] / "zettel" / "web" / "static" \
     / "stil.css"
 
 

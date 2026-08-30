@@ -17,11 +17,11 @@ import shutil
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import bons, db
-from picknick.bons import lesen, zuordnung
-from picknick.llm import wake
-from picknick.llm.client import Antwort
-from picknick.web import app as webapp
+from zettel import bons, db
+from zettel.bons import lesen, zuordnung
+from zettel.llm import wake
+from zettel.llm.client import Antwort
+from zettel.web import app as webapp
 
 HTMX = {"HX-Request": "true"}
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
@@ -90,7 +90,7 @@ def db_datei(vorlagen, tmp_path):
     volle Katalog, hier sind es genau die beiden Zeilen, die der nachgebaute
     Bon nennt.
     """
-    return vorlagen.datei(tmp_path / "picknick.db", "bonlesen_produkte",
+    return vorlagen.datei(tmp_path / "zettel.db", "bonlesen_produkte",
                           _produkte)
 
 

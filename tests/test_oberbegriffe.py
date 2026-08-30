@@ -18,11 +18,11 @@ import json
 
 import pytest
 
-from picknick import orders
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import oberbegriffe, plan, vorschlaege
-from picknick.llm import wake
-from picknick.llm.client import Antwort
+from zettel import orders
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import oberbegriffe, plan, vorschlaege
+from zettel.llm import wake
+from zettel.llm.client import Antwort
 
 
 class FakeLLM:
@@ -465,7 +465,7 @@ def test_die_auffaecherung_steht_im_span(con):
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
         InMemorySpanExporter)
 
-    from picknick import obs
+    from zettel import obs
 
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
@@ -482,11 +482,11 @@ def test_die_auffaecherung_steht_im_span(con):
     assert len(zuege) == 2
     auf, wahl = (dict(s.attributes) for s in zuege)
 
-    assert auf["picknick.path"] == chatmodul.WEG_FAECHER
-    assert auf["picknick.fanout_category"] == "Aufschnitt"
-    assert auf["picknick.fanout_varieties"] == 4
-    assert auf["picknick.fanout_source"] == oberbegriffe.KATALOG
+    assert auf["zettel.path"] == chatmodul.WEG_FAECHER
+    assert auf["zettel.fanout_category"] == "Aufschnitt"
+    assert auf["zettel.fanout_varieties"] == 4
+    assert auf["zettel.fanout_source"] == oberbegriffe.KATALOG
     # Beide Hälften desselben Umwegs finden über die Kategorie zusammen.
-    assert wahl["picknick.fanout_category"] == "Aufschnitt"
-    assert wahl["picknick.varieties_chosen"] == "Salami"
-    assert wahl["picknick.products"] == 1
+    assert wahl["zettel.fanout_category"] == "Aufschnitt"
+    assert wahl["zettel.varieties_chosen"] == "Salami"
+    assert wahl["zettel.products"] == 1

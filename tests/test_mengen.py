@@ -9,7 +9,7 @@ die im Produktivweg nicht aufgerufen wird, beweist nichts.
 """
 import pytest
 
-from picknick import mengen
+from zettel import mengen
 
 
 # --------------------------------------------------------------------------
@@ -154,7 +154,7 @@ def test_ein_freitext_hat_keine_packung_und_das_ist_kein_mangel():
     Ohne Packungsgrösse gibt es so oder so keine Packungszahl — nur heisst
     „die Packungsgrösse steht nicht lesbar am Produkt" an einer Zeile ohne
     Produkt, dass dort etwas fehlt, das nie hingehörte (WB-385). Der Grund
-    wird zitiert: im Trace (`picknick.reason`) und in jedem Satz darunter.
+    wird zitiert: im Trace (`zettel.reason`) und in jedem Satz darunter.
     """
     r = mengen.rechne(3, "Stk", None, freitext=True)
     assert r.bedarf == 3 and r.packungen is None

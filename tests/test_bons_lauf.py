@@ -12,7 +12,7 @@ import threading
 
 import pytest
 
-from picknick.bons import lauf
+from zettel.bons import lauf
 
 
 def test_starte_kehrt_zurueck_waehrend_die_arbeit_laeuft():

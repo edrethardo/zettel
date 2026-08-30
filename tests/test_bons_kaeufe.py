@@ -20,10 +20,10 @@ import json
 
 import pytest
 
-from picknick import db
-from picknick.bons import kaeufe, zerlegen, zuordnung
-from picknick.llm import wake
-from picknick.llm.client import Antwort
+from zettel import db
+from zettel.bons import kaeufe, zerlegen, zuordnung
+from zettel.llm import wake
+from zettel.llm.client import Antwort
 
 from conftest import ZAHLUNGSDATEN  # noqa: F401  (Pfad via rootdir)
 
@@ -79,7 +79,7 @@ def _produkte(con):
 @pytest.fixture
 def con(vorlagen, tmp_path):
     """Die vier Produkte von oben — einmal gebaut, hier kopiert (conftest.py)."""
-    c = db.connect(vorlagen.datei(tmp_path / "picknick.db", "bon_produkte",
+    c = db.connect(vorlagen.datei(tmp_path / "zettel.db", "bon_produkte",
                                   _produkte))
     yield c
     c.close()

@@ -1,4 +1,4 @@
-# Picknick — Showcase
+# Zettel — Showcase
 
 > **A grocery app for a two-person household where a 27B open model —
 > quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
@@ -103,7 +103,7 @@ stages, and the middle one is not a model call:
    candidates. This is a `RETRIEVER` span, on purpose (see below).
 3. `plan.choose` — the model picks **from that list**. An ID that was never
    presented is **rejected, not repaired**, and counted in
-   `picknick.rejected` — visible in the trace *and* in the UI.
+   `zettel.rejected` — visible in the trace *and* in the UI.
 
 The same rule guards four different surfaces: product IDs, category names
 (a typed "Aufschnitt" fans out into the catalog's own categories, and the
@@ -136,7 +136,7 @@ The model once picked an artisanal **"ButterBoyz BIO Salzbutter" for 4.69 €**
 when asked for plain butter. Bad model? The trace says no:
 
 ```
-"Butter" — 5 candidates presented        picknick.rejected = 0
+"Butter" — 5 candidates presented        zettel.rejected = 0
    4.01  #1771  ButterBoyz BIO Butter Chili & Röstzwiebel
    4.01  #1772  ButterBoyz BIO Butter Feige & Anis
    3.96  #1757  ButterBoyz BIO Kräuterbutter
@@ -155,7 +155,7 @@ opening a JSON blob. The reading rule is documented and short:
 |---|---|
 | the right product was not among the documents | retrieval |
 | it was there, the model took another | model |
-| `picknick.rejected > 0` | model, inventing |
+| `zettel.rejected > 0` | model, inventing |
 
 Every chat turn is exactly one trace (`chat.turn` → `plan.extract`,
 `catalog.search` ×N, `plan.choose`), the turn's span ID is stored with the
@@ -256,10 +256,10 @@ A showcase that hides its edges is an ad. The measured ones:
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m pytest -q          # the full suite, no network needed
 .venv/bin/python checks/smoke.py       # the gate, network actively blocked
-.venv/bin/python -m picknick.web.app   # binds loopback + tailnet only — 0.0.0.0 is refused
+.venv/bin/python -m zettel.web.app   # binds loopback + tailnet only — 0.0.0.0 is refused
 ```
 
-The chat needs a local vLLM endpoint (`PICKNICK_LLM_ENDPOINT`); everything
+The chat needs a local vLLM endpoint (`ZETTEL_LLM_ENDPOINT`); everything
 else — catalog, cart, pick list, saved recipes — runs without it, by design.
 There is no password: the shop refuses to bind anything but loopback and a
 tailnet address, with a whitelist, before a socket exists.

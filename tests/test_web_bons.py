@@ -5,18 +5,18 @@ unter `tmp_path` und wird über `create_app(bon_dir=…)` untergeschoben. Ein Te
 der in das echte Verzeichnis schreibt, wäre nach dem dritten Lauf ein Archiv
 fremder Dateien.
 
-Die Prüfungen greifen bewusst am HTTP-Rand an und nicht an `picknick.bons`
+Die Prüfungen greifen bewusst am HTTP-Rand an und nicht an `zettel.bons`
 allein: der Weg vom Formular durch den selbstgeschriebenen Multipart-Zerleger
 ist genau das Stück, das niemand sonst abdeckt (`python-multipart` ist keine
-Abhängigkeit, siehe `picknick/web/multipart.py`).
+Abhängigkeit, siehe `zettel/web/multipart.py`).
 """
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import bons
-from picknick.web import app as webapp
+from zettel import bons
+from zettel.web import app as webapp
 
 # Kleinste gültige Rümpfe. Es geht um die ersten Bytes, nicht um Bildinhalt —
 # genau deshalb reicht ein Kopf plus Füllung, und genau deshalb ist die

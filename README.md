@@ -1,6 +1,6 @@
-# Picknick
+# Zettel
 
-> **English** — Picknick is a private grocery-ordering shop for a two-person
+> **English** — Zettel is a private grocery-ordering shop for a two-person
 > household on a [Tailscale](https://tailscale.com/) tailnet: she fills the
 > cart, he buys the groceries at a physical store and checks them off on his
 > phone. A chat box maps free text ("everything for spaghetti bolognese, plus
@@ -21,8 +21,7 @@ Bestellung an einen echten Händler geschickt.** Dazu ein Chat-Feld: freier Text
 Katalogprodukte abgebildet und als Vorschlag vorgelegt.
 
 Zweiter, gleichrangiger Zweck: Der Chat-Agent ist in Arize Phoenix vollständig
-beobachtbar, bewertbar und reproduzierbar vergleichbar. Der Entwurf steht in
-`docs/superpowers/specs/2026-08-28-picknick-design.md`.
+beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Wozu die Observability gut ist — in einem Fall
 
@@ -31,7 +30,7 @@ Auf „…dazu brauche ich noch Zahnpasta und Butter" wählte das Modell eine
 Erklärung ist ein schlechtes Modell; der Trace sagt, dass sie falsch ist:
 
 ```
-„Butter“ — 5 Kandidaten vorgelegt        picknick.rejected = 0
+„Butter“ — 5 Kandidaten vorgelegt        zettel.rejected = 0
    4,01  #1771  ButterBoyz BIO Butter Chili & Röstzwiebel
    4,01  #1772  ButterBoyz BIO Butter Feige & Anis
    3,96  #1757  ButterBoyz BIO Kräuterbutter
@@ -60,21 +59,21 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m picknick.scrapers.nachtlauf --begriff milch   # etwas Katalog
-.venv/bin/python -m picknick.web.app
+.venv/bin/python -m zettel.scrapers.nachtlauf --begriff milch   # etwas Katalog
+.venv/bin/python -m zettel.web.app
 ```
 
 Der Shop lauscht dann auf `http://127.0.0.1:8730` — und, wenn die Maschine
 im Tailnet ist, zusätzlich auf `http://<deine Tailnet-Adresse>:8730`. Die
 Adresse steht nicht im Code: sie wird beim Start von der Maschine erfragt
 (eine Adresse aus `100.64.0.0/10`, siehe `eigene_tailnet_adresse()`), und
-`PICKNICK_HOST` überschreibt die Wahl. Auf `0.0.0.0` bindet er nie — der
+`ZETTEL_HOST` überschreibt die Wahl. Auf `0.0.0.0` bindet er nie — der
 Versuch bricht mit einer Fehlermeldung ab, weil es kein Passwort gibt und das
 Tailnet der einzige Schutz ist.
 
 Für den Chat braucht es ein lokales vLLM (Vorgabe `http://localhost:8000/v1`;
-eine Box woanders im Netz trägt man in `PICKNICK_LLM_ENDPOINT` ein — in der
-Umgebung oder in einer gitignorten `picknick.env` im Projektverzeichnis).
+eine Box woanders im Netz trägt man in `ZETTEL_LLM_ENDPOINT` ein — in der
+Umgebung oder in einer gitignorten `zettel.env` im Projektverzeichnis).
 Ohne Modell läuft alles ausser dem Chat weiter, und der Rezeptweg sogar
 auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der Shop unverändert, siehe
 [`OBSERVABILITY.md`](OBSERVABILITY.md).
@@ -111,7 +110,7 @@ Zwei weitere Dinge, die man kennen muss, bevor man dem Katalog etwas anlastet:
   „Toilettenpapier" — dort ist das Umformulieren ausdrücklich die Aufgabe des
   Modells.
 * **Der Katalog ist so breit wie die Begriffsliste** in
-  `picknick/scrapers/begriffe.py` — Knuspr hat keinen Endpunkt für den ganzen
+  `zettel/scrapers/begriffe.py` — Knuspr hat keinen Endpunkt für den ganzen
   Katalog, nur die Suche. Der Vollcrawl über alle 170 Begriffe ist am
   2026-08-28 gelaufen: **36 min 57 s, 10.361 Produkte**, danach liefern noch
   **4 von 170 Begriffen** keinen Treffer (`sojasosse`, `paprikapulver`,
@@ -178,9 +177,9 @@ Einkaufen.
 Das Kommando von Hand bleibt — zum Vorwärmen und zum Nachholen:
 
 ```bash
-.venv/bin/python -m picknick.gerichte.lauf --gericht "Pho"   # ein Gericht
-.venv/bin/python -m picknick.gerichte.lauf --alle            # offene Wünsche
-.venv/bin/python -m picknick.gerichte.lauf --ohne-treffer    # Altbestand
+.venv/bin/python -m zettel.gerichte.lauf --gericht "Pho"   # ein Gericht
+.venv/bin/python -m zettel.gerichte.lauf --alle            # offene Wünsche
+.venv/bin/python -m zettel.gerichte.lauf --ohne-treffer    # Altbestand
 ```
 
 `--ohne-treffer` holt die Gerichte neu, ohne Trefferliste: zu

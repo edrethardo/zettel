@@ -1,6 +1,6 @@
 # Case Study: Observability on a Self-Hosted Grocery Agent
 
-Picknick is a grocery agent for a two-person household: a 27B open-weights
+Zettel is a grocery agent for a two-person household: a 27B open-weights
 model on a single RTX 3090 turns "everything for lasagna, and toilet paper"
 into a real shopping list, fully traced in Arize Phoenix.
 [`SHOWCASE.md`](SHOWCASE.md) is the product tour. This document tells three
@@ -22,7 +22,7 @@ explanation is a bad model. The trace says otherwise. The turn's two
 2,498 products):
 
 ```
-"Butter" — 5 candidates presented          picknick.rejected = 0
+"Butter" — 5 candidates presented          zettel.rejected = 0
    4.01  #1771  ButterBoyz BIO Butter Chili & Röstzwiebel
    4.01  #1772  ButterBoyz BIO Butter Feige & Anis
    3.96  #1757  ButterBoyz BIO Kräuterbutter
@@ -31,7 +31,7 @@ explanation is a bad model. The trace says otherwise. The turn's two
 "Zahnpasta" — 0 candidates presented
 ```
 
-`picknick.rejected = 0` means the model invented nothing: it chose from the
+`zettel.rejected = 0` means the model invented nothing: it chose from the
 list it was shown, and **no plain butter was in that list**. Among the five
 offers the choice was even defensible. The failure belongs to retrieval, not
 the model. A test on the final answer sees a wrong product; only the trace
@@ -44,7 +44,7 @@ opening a JSON blob. The reading rule is three lines:
 |---|---|
 | the right product was not among the documents | retrieval |
 | it was there, the model took another | model |
-| `picknick.rejected > 0` | model, inventing |
+| `zettel.rejected > 0` | model, inventing |
 
 The record carries its own date on purpose. `OBSERVABILITY.md` marks it
 "recorded 2026-08-28, catalog of 2,498 products, before WB-339 and WB-340" —
@@ -190,7 +190,7 @@ tap therefore leaves **no label** (a property of the ordering, pinned by
 metadata on the annotation. A `kept` with `withdrawn = 1` is a different data
 point from a first-glance `kept` — someone hesitated — yet it is deliberately
 not a third label, because a third label would corrupt a precision that has
-exactly two outcomes. Stable identifiers (`picknick-suggestion-<id>`) make
+exactly two outcomes. Stable identifiers (`zettel-suggestion-<id>`) make
 submitting twice yield the same set, not a double one.
 
 Why not LLM-as-judge? The only judge available on this hardware is the same

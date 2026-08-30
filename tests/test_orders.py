@@ -11,8 +11,8 @@ import threading
 
 import pytest
 
-from picknick import db, orders, recipes
-from picknick.orders import korb as korb_modul
+from zettel import db, orders, recipes
+from zettel.orders import korb as korb_modul
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"

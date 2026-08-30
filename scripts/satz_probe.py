@@ -49,12 +49,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import plan  # noqa: E402
-from picknick.gerichte import quelle  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import plan  # noqa: E402
+from zettel.gerichte import quelle  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
 
 #: Die Gerichte, deren Vorlage eingefroren wird — und warum jedes dasteht.
 #: Die ersten beiden sind die Fälle aus WB-380 (Rezept schief, 0 Treffer),

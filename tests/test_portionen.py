@@ -14,7 +14,7 @@ Test dastehen, damit die Rechnung nachlesbar ist.
 """
 import pytest
 
-from picknick import db, orders, recipes
+from zettel import db, orders, recipes
 
 
 def _produkt(con, name, unit_text):

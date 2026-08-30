@@ -24,8 +24,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db  # noqa: E402
-from picknick.catalog import search  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.catalog import search  # noqa: E402
 
 #: Die sechs Begriffe aus WB-339, gemessen am 28.08.2026. Bei allen lagen
 #: zwischen dem Richtigen und dem Kompositum 0,01 bis 0,17 Rang — für bm25

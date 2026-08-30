@@ -40,14 +40,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import plan  # noqa: E402
-from picknick.catalog import search  # noqa: E402
-from picknick.gerichte import chefkoch, quelle, speicher  # noqa: E402
-from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
+from zettel import db  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import plan  # noqa: E402
+from zettel.catalog import search  # noqa: E402
+from zettel.gerichte import chefkoch, quelle, speicher  # noqa: E402
+from zettel.gerichte import lauf as gerichtelauf  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
 
 
 def euro(cents) -> str:

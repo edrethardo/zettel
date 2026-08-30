@@ -95,7 +95,7 @@ gewählt wird nach gewichteter Note (die rohe Höchstnote 5,00 aus zwei Stimmen
 und die Platzhalter-Stimmen der Plus-Rezepte verlieren beide), der Abruf
 schreibt Rezept, Zutaten, Zubereitung und `siteUrl` weg, der zweite Zugriff
 kommt ohne Netz aus dem Speicher, ein Chat-Zug nimmt die Zutaten aus dem
-Rezept (`picknick.path = chefkoch`), und ein Gericht, das noch niemand geholt
+Rezept (`zettel.path = chefkoch`), und ein Gericht, das noch niemand geholt
 hat, bricht den Zug nicht — er läuft mit den geratenen Begriffen zu Ende und
 stösst einen EIGENEN PROZESS an, statt zu warten.
 
@@ -169,7 +169,7 @@ Antwort sagt, dass er daneben im Satz stand. Vor WB-370 verschwand er still.
 
 **Die Bindung** (12) — `0.0.0.0`, `::`, die LAN-Adresse, ein Hostname und eine
 leere Adresse werden abgelehnt; loopback und Tailnet erlaubt; die Vorgabe
-enthält nur Erlaubtes; `PICKNICK_HOST=127.0.0.1,0.0.0.0` kommt nicht durch;
+enthält nur Erlaubtes; `ZETTEL_HOST=127.0.0.1,0.0.0.0` kommt nicht durch;
 und eine Liste mit `0.0.0.0` öffnet **gar kein** Socket — auch nicht auf der
 erlaubten Adresse davor.
 
@@ -230,7 +230,7 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
   README geschätzten 15–25 Minuten lagen um rund die Hälfte zu niedrig — das
   Gate misst das nicht und wird es nie messen, es geht per Konstruktion nicht
   ins Netz. Wer die Dauer wissen will, startet
-  `python -m picknick.scrapers.nachtlauf` von Hand.
+  `python -m zettel.scrapers.nachtlauf` von Hand.
 * **Die Sicherungen.** Dass `VACUUM INTO` eine brauchbare Datei schreibt,
   prüfen die Tests. Dass ein Zurückspielen im Ernstfall den Shop rettet, hat
   niemand geübt. Und die Sicherungen liegen auf **derselben Platte** wie die
@@ -254,7 +254,7 @@ Diese Liste ist der Grund, warum das Gate ehrlich ist. Grün heisst hier nicht
     zwei Seiten — nichts davon ist je durch dieses Modul gelaufen.
   * **Die Zuordnung braucht die Box.** Die Tests fahren gegen einen Fake-LLM.
     Wie gut `Qwen3.8-27B-Instruct` die Abkürzungen wirklich auflöst, steht in
-    der Handprobe im Docstring von `picknick/bons/zuordnung.py`: 18 von 18
+    der Handprobe im Docstring von `zettel/bons/zuordnung.py`: 18 von 18
     Zeilen fanden ein Produkt, **14 davon das richtige**.
   * **Der Hintergrundlauf überlebt keinen Neustart.** `bons.lauf` lebt im
     Prozess. Wird der Web-Prozess mitten in einem Lauf neu gestartet, steht

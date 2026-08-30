@@ -38,11 +38,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from picknick import db, obs, orders  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import vorschlaege  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.obs import labels  # noqa: E402
+from zettel import db, obs, orders  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import vorschlaege  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.obs import labels  # noqa: E402
 
 SATZ = "alles für Spaghetti Bolognese, und dazu Zahnpasta und Butter"
 
@@ -161,8 +161,8 @@ def main() -> int:
 
     pfad = args.db
     if pfad is None:
-        pfad = str(Path(tempfile.mkdtemp(prefix="picknick-label-"))
-                   / "picknick.db")
+        pfad = str(Path(tempfile.mkdtemp(prefix="zettel-label-"))
+                   / "zettel.db")
         shutil.copy(db.DEFAULT_DB, pfad)
         print(f"Kopie der Datenbank: {pfad} (der echte Warenkorb bleibt heil)")
     con = db.connect(pfad)
@@ -240,7 +240,7 @@ def main() -> int:
           "der Suchbegriff steht als Erklärung an jeder Einzelannotation",
           f"{sorted(begriffe)}")
 
-    offen_id = f"picknick-suggestion-{gemacht['offen'][0]['id']}"
+    offen_id = f"zettel-suggestion-{gemacht['offen'][0]['id']}"
     pruef(offen_id not in {_feld(a, "identifier") for a in annos},
           "der offen gelassene Vorschlag hat KEINE Annotation", offen_id)
 

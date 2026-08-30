@@ -26,9 +26,9 @@ import httpx2
 import openai
 import pytest
 
-from picknick.llm import client as llm
-from picknick.llm import wake
-from picknick.web import app as webapp
+from zettel.llm import client as llm
+from zettel.llm import wake
+from zettel.web import app as webapp
 
 ENDPUNKT = "http://vllm-box.example:8000/v1"
 KUERZEL = "Qwen3.8-27B-Instruct"
@@ -179,7 +179,7 @@ def wecker(handler, starter=None, uhr=None, weckbefehl="/bin/false", **kw):
 def test_vorgabe_ist_generisch_lokal():
     """Die Vorgabe nennt kein privates Gerät — vLLMs Standardport auf
     derselben Maschine. Die echte Box dieses Haushalts steht in
-    `picknick.env` oder in der Umgebung, nie im Code."""
+    `zettel.env` oder in der Umgebung, nie im Code."""
     assert llm.endpunkt_aus_umgebung({}) == "http://localhost:8000/v1"
     assert llm.endpunkt_aus_umgebung({llm.ENV_ENDPUNKT: "http://anders:8000/v1"}) \
         == "http://anders:8000/v1"
@@ -204,10 +204,10 @@ def test_unbrauchbare_endpunkte(url):
         llm.pruefe_endpunkt(url)
 
 
-def test_picknick_env_liefert_endpunkt_und_schluessel(monkeypatch, tmp_path):
+def test_zettel_env_liefert_endpunkt_und_schluessel(monkeypatch, tmp_path):
     """Die gitignorte Datei trägt die privaten Werte — der Start liest sie,
     wenn die Umgebung nichts sagt."""
-    datei = tmp_path / "picknick.env"
+    datei = tmp_path / "zettel.env"
     datei.write_text(
         "# private Werte\n"
         "\n"
@@ -224,7 +224,7 @@ def test_picknick_env_liefert_endpunkt_und_schluessel(monkeypatch, tmp_path):
 
 
 def test_umgebung_schlaegt_die_env_datei(monkeypatch, tmp_path):
-    datei = tmp_path / "picknick.env"
+    datei = tmp_path / "zettel.env"
     datei.write_text(f"{llm.ENV_ENDPUNKT}=http://datei:8000/v1\n",
                      encoding="utf-8")
     monkeypatch.setattr(llm, "ENV_DATEI", datei)
@@ -235,7 +235,7 @@ def test_umgebung_schlaegt_die_env_datei(monkeypatch, tmp_path):
 def test_injizierte_umgebung_liest_keine_env_datei(monkeypatch, tmp_path):
     """Eine übergebene Umgebung ist vollständig — sonst hinge jeder Test am
     Inhalt einer privaten Datei der Maschine, auf der er zufällig läuft."""
-    datei = tmp_path / "picknick.env"
+    datei = tmp_path / "zettel.env"
     datei.write_text(f"{llm.ENV_ENDPUNKT}=http://datei:8000/v1\n",
                      encoding="utf-8")
     monkeypatch.setattr(llm, "ENV_DATEI", datei)

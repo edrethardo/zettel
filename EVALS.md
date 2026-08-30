@@ -33,7 +33,7 @@ Testrauschen gefüllt — und die Annotationen aus `OBSERVABILITY.md` gleich mit
 `--ohne-judge` lässt den LLM-Judge weg; die deterministischen Scores stehen
 dann trotzdem vollständig da.
 
-## Das Dataset `picknick-anfragen`
+## Das Dataset `zettel-anfragen`
 
 Zwölf Beispiele, vier Sorten zu je drei:
 
@@ -128,7 +128,7 @@ der versagt hat, obwohl der Richter gestottert hat.
 
 ### Was ausdrücklich NICHT gemessen wird
 
-**`picknick.weakest_rank`.** Der bm25-Rang steht am Span und ist verlockend,
+**`zettel.weakest_rank`.** Der bm25-Rang steht am Span und ist verlockend,
 aber über Abfragen hinweg nicht geeicht (siehe `OBSERVABILITY.md`). Eine
 Schwelle darauf misst den Katalog und nicht den Agenten — und sie kippte jedes
 Mal, wenn der Crawler etwas Neues einsammelt.
@@ -147,8 +147,8 @@ Experiment, sondern ein neuer Agent.
 
 Seit WB-338 gibt es eine fünfte Stellschraube, die **noch nicht gefahren
 ist**: `quelle` gegen `gedaechtnis` — dieselbe Anfrage einmal mit gefülltem
-Gerichtespeicher (`picknick.path = chefkoch`) und einmal ohne
-(`picknick.path = llm`). Der Trace trägt dafür alles Nötige (`picknick.dish`
+Gerichtespeicher (`zettel.path = chefkoch`) und einmal ohne
+(`zettel.path = llm`). Der Trace trägt dafür alles Nötige (`zettel.dish`
 steht auf beiden Wegen, siehe `OBSERVABILITY.md`), und die Handprobe
 (`scripts/gericht_probe.py`) zeigt den Unterschied schon von Hand: bei „alles
 für Pho" nannte das Modell drei Rindfleischteile, von denen keiner in eine
@@ -584,7 +584,7 @@ Produktionscode. Gemessen wird mit demselben `scripts/breite_probe.py
 wird nur, was auf der Box liegt.
 
 Jeder Lauf tract in ein **eigenes Phoenix-Projekt** (`--trace` plus
-`PICKNICK_PHOENIX_PROJECT`), damit das Alltagsprojekt `Picknick Agent` nicht
+`ZETTEL_PHOENIX_PROJECT`), damit das Alltagsprojekt `Zettel Agent` nicht
 sechzig Messgerichte zwischen den echten Einkäufen stehen hat; welches Modell
 geantwortet hat, steht innerhalb des Projekts an `llm.model_name` (WB-395).
 
@@ -596,7 +596,7 @@ die Probe „Ja" auf jede Zeile sagt (`alle_entscheiden`). Eine Referenz, die
 einen anderen Codestand misst als der Vergleichslauf, wäre keine.
 
 ```bash
-PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+ZETTEL_PHOENIX_PROJECT="Zettel Eval Qwen" \
 .venv/bin/python scripts/breite_probe.py --messen --db kopie.db \
     --json roh.json --trace
 ```
@@ -637,7 +637,7 @@ alle 127 denselben.
 
 Blockiert auf den Modellwechsel auf der Box; der ist Nutzersache und hat
 hinter dem Videodreh zu warten. Der Harness ist vorbereitet, das Kommando ist
-dasselbe mit `PICKNICK_PHOENIX_PROJECT="Picknick Eval Nemotron"`. Zu prüfen
+dasselbe mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron"`. Zu prüfen
 ist dabei ausdrücklich, ob Guided JSON mit dem Tool-Parser des Nano
 zusammenarbeitet — **tut es das nicht, ist das der Befund** und nicht der
 Anlass für einen Umweg.

@@ -11,8 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from picknick import db, miniaturen
-from picknick.web import app as webapp
+from zettel import db, miniaturen
+from zettel.web import app as webapp
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 
@@ -130,7 +130,7 @@ def test_lauf_ueber_ein_leeres_verzeichnis(tmp_path):
 
 def test_der_nachtlauf_zieht_die_miniaturen_nach(tmp_path, monkeypatch):
     """Abgeleitet wird im Crawl-Lauf, nicht im Web-Prozess."""
-    from picknick.scrapers import nachtlauf
+    from zettel.scrapers import nachtlauf
     bilder = tmp_path / "bilder"
     bilder.mkdir()
     _foto(bilder / "neu.jpg", groesse=(400, 400))

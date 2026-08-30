@@ -1,7 +1,7 @@
 # Architektur und Entwurfsentscheidungen
 
 Der vollständige Entwurf steht in
-`docs/superpowers/specs/2026-08-28-picknick-design.md`. Hier stehen die
+`docs/superpowers/specs/2026-08-28-zettel-design.md`. Hier stehen die
 Entscheidungen, die man kennen muss, um den Code zu lesen — und die, die von
 aussen wie ein Versehen aussehen und keines sind.
 
@@ -10,7 +10,7 @@ aussen wie ein Versehen aussehen und keines sind.
 Ein Prozess, eine Datei, kein Build-Schritt.
 
 ```
-picknick/
+zettel/
   db.py              Schema, Migrationen, FTS5-Index, Umlautnormalisierung
   catalog/           search.py (FTS5) · categories.py (Baum, Blättern)
   orders/            bestellung.py (Zustände) · korb.py (einlegen, abschicken)
@@ -51,7 +51,7 @@ Der Agent hat drei Stufen, und die mittlere ist kein Modellaufruf:
 Ein LLM, das Produkt-IDs frei ausgeben darf, halluziniert Produkt-IDs — und
 eine halluzinierte ID sieht in der Datenbank aus wie eine echte, bis jemand im
 Laden vor einem Regal steht. Die Zahl der verworfenen Antworten steht als
-`picknick.rejected` am Span **und** als Satz über der Vorschlagsliste: ein
+`zettel.rejected` am Span **und** als Satz über der Vorschlagsliste: ein
 Modell, das erfindet, soll man sehen können.
 
 **Guided Decoding erzwingt die Form, nicht die Wahrheit.** vLLM kann die
@@ -349,7 +349,7 @@ naheliegende Ausweg wäre `0.0.0.0`; genau der ist verboten.
 Die Tailnet-Adresse selbst steht seit WB-388 nicht mehr im Code: sie ist die
 eines privaten Geräts, und das Repo ist zur Veröffentlichung gedacht. Der
 Start erfragt sie über die Routing-Tabelle (`eigene_tailnet_adresse()`); ohne
-Tailnet bindet der Shop nur loopback, und `PICKNICK_HOST` erzwingt eine
+Tailnet bindet der Shop nur loopback, und `ZETTEL_HOST` erzwingt eine
 Adresse — die trotzdem durch die Weissliste muss.
 
 Das **Rollen-Cookie ist keine Authentifizierung.** Es ist frei wählbar, wird
@@ -439,7 +439,7 @@ Korb, die aussieht wie eine gerechnete.
 
 **Der Abruf bei Chefkoch läuft im Request — und lief es zwei Tickets lang
 nicht** (WB-338, revidiert in WB-367). Die erste Fassung trug einen Wunsch in
-`dish` ein und startete `python -m picknick.gerichte.lauf` als eigenen
+`dish` ein und startete `python -m zettel.gerichte.lauf` als eigenen
 Prozess, weil Spec 3 sagte, der Web-Prozess rufe nie eine fremde Seite auf.
 Der Preis stand hier benannt: der erste Satz zu einem neuen Gericht ging noch
 übers Modell, erst der zweite nahm das Rezept.
@@ -465,7 +465,7 @@ darf altern, und ein Ausfall von knuspr.de darf das Einkaufen nicht
 verhindern.
 
 **Vom Hintergrundlauf bleibt das Kommando, nicht der Prozessstart aus dem
-Shop.** `python -m picknick.gerichte.lauf --gericht/--alle` trägt weiterhin
+Shop.** `python -m zettel.gerichte.lauf --gericht/--alle` trägt weiterhin
 das Vorwärmen („hol die zehn Gerichte, die wir dauernd kochen"), das
 Nachholen dessen, was eine Störung liegen liess, und die Frage, ob die Quelle
 überhaupt noch antwortet. Was verschwunden ist, ist der `subprocess.Popen`

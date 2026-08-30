@@ -12,6 +12,11 @@ data/bons/
 
 # Private Betriebswerte (WB-388): die echte Adresse der vLLM-Box steht in
 # dieser Datei statt im Code. Sie darf nie Teil des Repos werden.
+zettel.env
+# Der Name von vor WB-401. Steht hier weiter, weil die Datei noch gelesen wird
+# (zettel/llm/client.py) -- und weil eine private Adresse, die durch eine
+# Umbenennung aus dem .gitignore faellt, genau einmal versehentlich eingecheckt
+# werden muss, um fuer immer in der Historie zu stehen.
 picknick.env
 
 # Arbeitsstand des Gestaltungs-Tickets (WB-400): 127 MB Vergleichsbilder,

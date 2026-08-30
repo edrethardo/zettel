@@ -28,9 +28,9 @@ import time
 
 import pytest
 
-from picknick import obs, orders
-from picknick.assistant import vorschlaege
-from picknick.obs import labels
+from zettel import obs, orders
+from zettel.assistant import vorschlaege
+from zettel.obs import labels
 
 SPAN = "a1b2c3d4e5f60718"
 SPAN_ZWEI = "00112233445566ff"
@@ -44,7 +44,7 @@ class FakePhoenix:
 
     Deckt beide Ausfälle ab, die es in echt gibt und die sich unterscheiden:
     „Port zu" (wirft sofort) und „nimmt an, antwortet nie" (`bremse_s`, der
-    teure Fall — gemessen bis 30 s, siehe `picknick.obs.labels`).
+    teure Fall — gemessen bis 30 s, siehe `zettel.obs.labels`).
     """
 
     def __init__(self, fehler: Exception | None = None, bremse_s: float = 0.0):
@@ -94,7 +94,7 @@ def tracing_an(monkeypatch):
     braucht deshalb beides: den Schalter an und einen untergeschobenen
     Client.
     """
-    monkeypatch.setenv("PICKNICK_TRACING", "1")
+    monkeypatch.setenv("ZETTEL_TRACING", "1")
 
 
 @pytest.fixture
@@ -315,7 +315,7 @@ def test_eine_meinungsaenderung_vor_dem_abschicken_zaehlt(con, tracing_an,
 
 
 def test_tracing_aus_schreibt_nichts(con):
-    """`PICKNICK_TRACING=0` (die Vorgabe der Suite): keine Spans, keine Labels.
+    """`ZETTEL_TRACING=0` (die Vorgabe der Suite): keine Spans, keine Labels.
 
     Ohne diese Bremse redete jeder Testlauf mit dem Phoenix, das auf diesem
     Rechner läuft — die autouse-Fixture würde das als Fehler melden, aber im
@@ -424,7 +424,7 @@ def test_die_identifier_kommen_aus_den_datenbank_ids(con):
     annos = labels.annotationen(con, orders.warenkorb(con))
 
     assert {a["identifier"] for a in annos} == {
-        f"picknick-turn-{msg}", f"picknick-suggestion-{vid}"}
+        f"zettel-turn-{msg}", f"zettel-suggestion-{vid}"}
 
 
 # --------------------------------------------------------------------------

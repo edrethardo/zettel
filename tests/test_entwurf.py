@@ -18,14 +18,14 @@ import pytest
 
 from fastapi.testclient import TestClient
 
-from picknick import db, orders, recipes
-from picknick.assistant import chat as chatmodul
-from picknick.assistant import entwurf as entwuerfe
-from picknick.assistant import vorschlaege
-from picknick.gerichte import lauf, quelle, speicher
-from picknick.llm import wake
-from picknick.llm.client import Antwort
-from picknick.web import app as webapp
+from zettel import db, orders, recipes
+from zettel.assistant import chat as chatmodul
+from zettel.assistant import entwurf as entwuerfe
+from zettel.assistant import vorschlaege
+from zettel.gerichte import lauf, quelle, speicher
+from zettel.llm import wake
+from zettel.llm.client import Antwort
+from zettel.web import app as webapp
 
 # --------------------------------------------------------------------------
 # Doppelgänger
@@ -128,7 +128,7 @@ def _zusatz(con):
 @pytest.fixture
 def db_pfad(vorlagen, tmp_path):
     """Der Katalog als DATEI — die Oberflächentests unten öffnen sie selbst."""
-    return vorlagen.datei(tmp_path / "picknick.db", "entwurf_katalog",
+    return vorlagen.datei(tmp_path / "zettel.db", "entwurf_katalog",
                           vorlagen.katalog, _zusatz)
 
 
@@ -650,7 +650,7 @@ def test_danach_nimmt_derselbe_satz_den_rezeptweg_ohne_modell(con):
     """**Der Ertrag des ganzen Tickets**, gegen ein Modell, das wirft.
 
     Ein gespeichertes Rezept überspringt Stufe 1 bis 3 vollständig
-    (`picknick.path = "recipe"`). Geprüft wird das mit `NieGefragt`: wird das
+    (`zettel.path = "recipe"`). Geprüft wird das mit `NieGefragt`: wird das
     Modell doch gefragt, ist der Test rot statt langsam.
     """
     _bolo_geholt(con)
@@ -829,7 +829,7 @@ def test_beim_abschicken_faellt_eine_annotation_zum_rezept_an(con):
     entsteht im selben Moment — deshalb steht sie in `obs.labels` und nicht
     daneben.
     """
-    from picknick.obs import labels
+    from zettel.obs import labels
 
     _bolo_geholt(con)
     ergebnis = _zug(con)
@@ -849,7 +849,7 @@ def test_beim_abschicken_faellt_eine_annotation_zum_rezept_an(con):
 
 def test_ein_verworfener_entwurf_steht_auch_im_trace(con):
     """Ein Rezept, das NICHT entstand, ist die interessantere Zeile."""
-    from picknick.obs import labels
+    from zettel.obs import labels
 
     _bolo_geholt(con)
     ergebnis = _zug(con)

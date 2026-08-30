@@ -32,19 +32,19 @@ trägt der Schnitt.
 
 ```bash
 wake-vllm
-# dann bestätigen (Endpunkt = dein PICKNICK_LLM_ENDPOINT, siehe picknick.env):
-curl -s "$PICKNICK_LLM_ENDPOINT/models" | head -c 200   # Modell-ID muss erscheinen
+# dann bestätigen (Endpunkt = dein ZETTEL_LLM_ENDPOINT, siehe zettel.env):
+curl -s "$ZETTEL_LLM_ENDPOINT/models" | head -c 200   # Modell-ID muss erscheinen
 ```
 
 **2. Demo-Datenbank bauen** — Kopie der echten ohne Haushaltsdaten (Katalog
 und Crawl-Historie bleiben):
 
 ```bash
-mkdir -p ~/picknick-demo/bons
+mkdir -p ~/zettel-demo/bons
 cd ~/code/picknick_klon
 .venv/bin/python - <<'EOF'
 import sqlite3, os
-ziel = os.path.expanduser("~/picknick-demo/demo.db")
+ziel = os.path.expanduser("~/zettel-demo/demo.db")
 if os.path.exists(ziel): os.remove(ziel)
 sqlite3.connect("data/picknick.db").execute("VACUUM INTO ?", (ziel,))
 d = sqlite3.connect(ziel)
@@ -60,17 +60,17 @@ EOF
 
 **3. Demo-Instanz zum Aufwärmen starten** — mit **eigenem Phoenix-Projekt**.
 Das ist neu gegenüber v1 und in v2 Pflicht: das Phoenix-Fenster ist jetzt
-durchgehend im Bild, und im Projekt `Picknick Agent` stünden echte Züge mit
+durchgehend im Bild, und im Projekt `Zettel Agent` stünden echte Züge mit
 echten Eingaben in der Liste — Haushaltsdaten in Pixeln. Ein frisches Projekt
 enthält nur, was die Kamera sehen darf. (Der Projektname per
-`PICKNICK_PHOENIX_PROJECT` ist geprüft — die Spans landen dort.)
+`ZETTEL_PHOENIX_PROJECT` ist geprüft — die Spans landen dort.)
 
 ```bash
 cd ~/code/picknick_klon
-PICKNICK_HOST=127.0.0.1 PICKNICK_PORT=8747 \
-PICKNICK_DB=~/picknick-demo/demo.db PICKNICK_BON_DIR=~/picknick-demo/bons \
-PICKNICK_PHOENIX_PROJECT="Picknick Demo Aufwaermen" \
-.venv/bin/python -m picknick.web.app
+ZETTEL_HOST=127.0.0.1 ZETTEL_PORT=8747 \
+ZETTEL_DB=~/zettel-demo/demo.db ZETTEL_BON_DIR=~/zettel-demo/bons \
+ZETTEL_PHOENIX_PROJECT="Zettel Demo Aufwaermen" \
+.venv/bin/python -m zettel.web.app
 # Terminal offen lassen; die PID zeigt `ss -tlnp | grep 8747`
 ```
 
@@ -86,7 +86,7 @@ curl -s -m 300 -X POST http://127.0.0.1:8747/chat \
 # MÜSSEN bleiben, der Gericht-Cache zeigt hinein:
 .venv/bin/python - <<'EOF'
 import sqlite3, os
-d = sqlite3.connect(os.path.expanduser("~/picknick-demo/demo.db"))
+d = sqlite3.connect(os.path.expanduser("~/zettel-demo/demo.db"))
 for t in ["chat_kandidat","chat_sorte","chat_entwurf","chat_rezept",
           "chat_suggestion","chat_message","order_item","orders"]:
     d.execute(f"DELETE FROM {t}")
@@ -108,10 +108,10 @@ Phoenix-Fenster beim Dreh **leer**, und der einzige Trace, der je erscheint,
 ist der gefilmte (der Aufwärm-Trace liegt im Wegwerf-Projekt aus Schritt 3):
 
 ```bash
-PICKNICK_HOST=127.0.0.1 PICKNICK_PORT=8747 \
-PICKNICK_DB=~/picknick-demo/demo.db PICKNICK_BON_DIR=~/picknick-demo/bons \
-PICKNICK_PHOENIX_PROJECT="Picknick Demo" \
-.venv/bin/python -m picknick.web.app
+ZETTEL_HOST=127.0.0.1 ZETTEL_PORT=8747 \
+ZETTEL_DB=~/zettel-demo/demo.db ZETTEL_BON_DIR=~/zettel-demo/bons \
+ZETTEL_PHOENIX_PROJECT="Zettel Demo" \
+.venv/bin/python -m zettel.web.app
 ```
 
 **6. GPU-Streifen.** nvtop läuft **auf der Box** (die 3090 steckt dort, nicht
@@ -143,12 +143,12 @@ im Bild; bei anderem Versatz die 5120/146 anpassen):
 
 | Fenster | Inhalt | Position im Bild | wmctrl (bei Versatz +5120+146) |
 |---|---|---|---|
-| Firefox 1 | `http://127.0.0.1:8747/chat`, dann `Ctrl+Shift+M` (Responsive-Modus), Größe **390 × 844** | links, 0/0, **520 × 1080** | `wmctrl -r "Picknick" -e 0,5120,146,520,1080` |
-| Firefox 2 (neues Fenster, `Ctrl+N`) | `http://localhost:6006` → Projekt **Picknick Demo** → Tab **Spans** | rechts oben, 520/0, **1400 × 830** | `wmctrl -r "Phoenix" -e 0,5640,146,1400,830` |
+| Firefox 1 | `http://127.0.0.1:8747/chat`, dann `Ctrl+Shift+M` (Responsive-Modus), Größe **390 × 844** | links, 0/0, **520 × 1080** | `wmctrl -r "Zettel" -e 0,5120,146,520,1080` |
+| Firefox 2 (neues Fenster, `Ctrl+N`) | `http://localhost:6006` → Projekt **Zettel Demo** → Tab **Spans** | rechts oben, 520/0, **1400 × 830** | `wmctrl -r "Phoenix" -e 0,5640,146,1400,830` |
 | Terminal aus Schritt 6 | nvtop | rechts unten, 520/830, **1400 × 250** | `wmctrl -r "RTX 3090" -e 0,5640,976,1400,250` |
 
 `wmctrl` matcht auf Titel-Teilstrings; die drei Fenster heißen „Chat —
-Picknick", „Phoenix" und „RTX 3090" und sind damit eindeutig. Die GNOME-Leiste
+Zettel", „Phoenix" und „RTX 3090" und sind damit eindeutig. Die GNOME-Leiste
 oben (~30 px) bleibt im Bild — das ist in Ordnung, es ist ein echter Desktop.
 Das Telefon-Fenster füllt so gut ein Viertel der Breite, Phoenix die
 restlichen drei.
@@ -157,12 +157,12 @@ restlichen drei.
 Zeitbereich-Wahl sitzt der **Streaming-Umschalter** (Puls-Symbol). Er steht ab
 Werk auf „an", aber die Einstellung ist **im Browser gespeichert** — wer ihn je
 ausgeschaltet hat, bekommt ein Fenster, das sich nie von selbst füllt.
-Anschalten, Projekt `Picknick Demo` öffnen, Tab **Spans**: die Liste ist leer
+Anschalten, Projekt `Zettel Demo` öffnen, Tab **Spans**: die Liste ist leer
 und wartet.
 
 **8. Aufräumen danach:** `Ctrl+C` für die Demo-Instanz (oder `kill <PID>` —
-nie `pkill -f`), `rm -r ~/picknick-demo`, nvtop-Terminal schließen. Die
-Wegwerf-Projekte `Picknick Demo*` können in Phoenix bleiben oder über die
+nie `pkill -f`), `rm -r ~/zettel-demo`, nvtop-Terminal schließen. Die
+Wegwerf-Projekte `Zettel Demo*` können in Phoenix bleiben oder über die
 Projektverwaltung gelöscht werden.
 
 ## Aufnahme
@@ -215,7 +215,7 @@ Schnitt holt sich die Momente. `T` = Sekunden ab dem Klick auf **Fragen**.
 | T+85 | **Die Geste (WB-398).** Nach oben rollen: die Korbzahl im Kopf steht auf **2**. Wieder ans Listenende, **Alles übernehmen** — alle übrigen Zeilen gehen auf `kept`. Noch einmal nach oben: die Zahl ist **gesprungen**. Zurück ans Ende, den Satz unter dem Knopf lesen, **Doch nicht alles (n)** tippen. Die gesammelten Zeilen stehen wieder mit Ja/Nein da, **Spinat und Klopapier bleiben „im Korb"**. |
 | T+110 | Oben **Korb**: einmal durchscrollen (gerechnete Mengen, Klopapier als Freitext), **Bestellung abschicken**. |
 | T+125 | **Pick-Liste**: zwei Posten abhaken, bei einem **gab's nicht**. |
-| T+140 | Ins Phoenix-Fenster: den `chat.turn`-Span anklicken → Trace-Ansicht. Die Span-Kette ruhig zeigen (chat.turn → plan.extract → catalog.search ×15 → plan.choose), einen `catalog.search`-RETRIEVER-Span aufklappen, bis die bewerteten Dokumente stehen, über `picknick.rejected = 0` verweilen. 5 s halten, Aufnahme stoppen. |
+| T+140 | Ins Phoenix-Fenster: den `chat.turn`-Span anklicken → Trace-Ansicht. Die Span-Kette ruhig zeigen (chat.turn → plan.extract → catalog.search ×15 → plan.choose), einen `catalog.search`-RETRIEVER-Span aufklappen, bis die bewerteten Dokumente stehen, über `zettel.rejected = 0` verweilen. 5 s halten, Aufnahme stoppen. |
 
 ## Der Schnitt — Shots, Voice-Over, Untertitel
 
@@ -234,7 +234,7 @@ sie bewusst voneinander ab.
 | 5 | 0:51–0:58 | Take A: Korb, Mengen, Klopapier-Zeile, **Bestellung abschicken** | `No catalog match for toilet paper — it stays on the list as free text. The cart is the order.` | `No catalog hit for toilet paper — it stays as free text instead of silently vanishing. The cart is the order.` |
 | 6 | 0:58–1:04 | Take A: Pick-Liste, abhaken, **gab's nicht** | `In the store, we check things off. Wasn't there — that's an honest answer, too.` | `In the store we check items off — and "wasn't there" is the honest third state, used right here.` |
 | 6b | 1:04–1:11 | **Take D (Aaron filmt selbst):** am Regal, Telefon in der Hand, mobile Ansicht, die zwei Zutaten abhaken — siehe „Der Supermarkt-Shot" unten | `And this is where it ends up: at the shelf, phone in hand.` | `Same list, at the shelf.` |
-| 7 | 1:11–1:19 | Take A: Trace-Ansicht, Zoom auf die Span-Kette, RETRIEVER-Dokumente, `picknick.rejected = 0` | `Every turn is one trace. The model can only pick from what the shop retrieved. Invented products are rejected — and counted.` | `Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted. rejected = 0.` |
+| 7 | 1:11–1:19 | Take A: Trace-Ansicht, Zoom auf die Span-Kette, RETRIEVER-Dokumente, `zettel.rejected = 0` | `Every turn is one trace. The model can only pick from what the shop retrieved. Invented products are rejected — and counted.` | `Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted. rejected = 0.` |
 | 8 | 1:19–1:24 | **Endcard** (Standbild) | `Open weights. One GPU. Measured on sixty-four dishes. Link below.` | *(Text steht auf der Endcard)* |
 
 Die Zeiten in der Spalte sind die geplanten; **die gültigen kommen aus
@@ -305,7 +305,7 @@ derselbe Zug noch einmal als bewerteter Dokumenten-Trace.
   ~12 s ist das **normal** (der erste Span endet erst dann — Tabelle oben).
   Bleibt es nach 16 s leer: Streaming-Umschalter prüfen (Puls-Symbol oben
   rechts; die Einstellung klebt im Browser), Tab **Spans** statt eines
-  Dashboards, richtiges Projekt (`Picknick Demo`). Zur Not lädt `F5` von Hand.
+  Dashboards, richtiges Projekt (`Zettel Demo`). Zur Not lädt `F5` von Hand.
 * **Der Traces-Tab zeigt mitten im Zug eine Zeile namens `plan.extract`** →
   kein Fehler: solange der Wurzel-Span fehlt, zeigt Phoenix den ersten
   fertigen Kind-Span als Waisen-Zeile; am Zug-Ende wird daraus die
@@ -337,7 +337,7 @@ derselbe Zug noch einmal als bewerteter Dokumenten-Trace.
   einfachste übersteuerungsfeste Weg.
 * **Wieder-Dreh** → Reset aus Schritt 4 genügt (Chat/Bestellungen leeren,
   Cache behalten). Damit das Phoenix-Fenster wieder leer beginnt, die Instanz
-  mit frischem Projektnamen neu starten (`Picknick Demo 2`, …) — oder die
+  mit frischem Projektnamen neu starten (`Zettel Demo 2`, …) — oder die
   alten Takes als ältere Zeilen unter dem neuen akzeptieren, der neueste
   steht oben.
 
@@ -354,7 +354,7 @@ der lebendige Zeiger in `menschlich.py`, die Erkenner in `finde.py` und
 `schnitt.py` mit Shot 4b und den zurückgetauschten Untertiteln. **Nicht
 erledigt:** ein warnungsfreier Trockenlauf am Stück und der Take selbst
 (er braucht ein Box-Fenster). Die `.srt` und die Schnittfassung unter
-`~/picknick-video/` sind darum weiter die von Take 4.
+`~/zettel-video/` sind darum weiter die von Take 4.
 
 ## Take A liegt vorproduziert (WB-396)
 
@@ -372,18 +372,18 @@ läuft **27 s** (gemessen: abgeschickt 20:42:57, Antwort in der Datenbank
 Spans schlagen bei **T+13…15 s** in einem Schub ins Phoenix-Fenster, die
 Portionen gehen 3 → 6 und die Mengen rechnen sich sichtbar neu (600 g → 1200 g,
 2 × → 3 ×), zwei „Ja", Korb, Bestellung, Pick-Liste, und am Ende der Trace mit
-den bewerteten RETRIEVER-Dokumenten und `picknick.rejected = 0`.
+den bewerteten RETRIEVER-Dokumenten und `zettel.rejected = 0`.
 
 **Wo es liegt** (Scratchpad der Sitzung, bewusst nicht im Repo — eine
 Videodatei gehört nicht ungefragt in ein Repo, das gerade
 veröffentlichungsfähig gemacht wurde), zusätzlich als Kopie unter
-`~/picknick-video/`:
+`~/zettel-video/`:
 
 | Datei | Was |
 |---|---|
-| `picknick_shots_1-7_roh.mkv` | die ungekürzte Aufnahme am Stück, ohne Ton |
-| `picknick_shots_1-7_schnitt.mp4` | nach Drehbuch geschnitten, mit 5 s schwarzem Vorlauf für Shot 0 |
-| `picknick_shots_1-7.srt` | Untertitel (Spalte aus der Shot-Tabelle), nicht eingebrannt |
+| `zettel_shots_1-7_roh.mkv` | die ungekürzte Aufnahme am Stück, ohne Ton |
+| `zettel_shots_1-7_schnitt.mp4` | nach Drehbuch geschnitten, mit 5 s schwarzem Vorlauf für Shot 0 |
+| `zettel_shots_1-7.srt` | Untertitel (Spalte aus der Shot-Tabelle), nicht eingebrannt |
 
 **Neu erzeugen** — drei Aufrufe, in dieser Reihenfolge:
 
@@ -524,9 +524,9 @@ http://<laptop-im-tailnet>:8747/pick        ← die Demo-Instanz, NICHT 8730
 * **Die Demo-Datenbank, nicht der echte Einkauf.** Der echte Shop auf 8730
   trägt Haushaltsposten; wer den filmt, hakt vor der Kamera echte Einkäufe
   ab — und sie sind danach abgehakt. Die Demo-Instanz läuft auf **8747** mit
-  `~/picknick-demo/demo.db` (Aufbau siehe Prep, Schritt 3/5).
+  `~/zettel-demo/demo.db` (Aufbau siehe Prep, Schritt 3/5).
 * Das Telefon muss den Laptop erreichen: über das Tailnet (die Adresse steht
-  in `PICKNICK_HOST`) oder dasselbe WLAN. **Vor dem Losgehen einmal am
+  in `ZETTEL_HOST`) oder dasselbe WLAN. **Vor dem Losgehen einmal am
   Telefon öffnen** — nicht erst im Laden.
 
 **Die Pick-Liste muss dieselben zwei Posten zeigen wie der Bildschirmteil.**
@@ -637,7 +637,7 @@ fasst nach. Ohne sie sieht jeder Klick aus wie ein `mousemove`, weil er es ist.
 
 ### Die Bühne steht in Skripten
 
-Unter `~/picknick-video/` (nicht im Repo — eine Videodatei und ein
+Unter `~/zettel-video/` (nicht im Repo — eine Videodatei und ein
 Tastatur-Roboter gehören nicht hinein):
 
 | Skript | Was |

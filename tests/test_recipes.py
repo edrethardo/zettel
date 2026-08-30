@@ -11,7 +11,7 @@ hat, muss sich weiter einlegen lassen und muss sichtbar bleiben.
 """
 import pytest
 
-from picknick import orders, recipes
+from zettel import orders, recipes
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
@@ -233,7 +233,7 @@ def test_ausgemusterte_zutat_laesst_sich_weiter_einlegen(con):
 
 def test_ausgemustertes_produkt_ist_aus_der_suche_raus_aber_nicht_aus_dem_rezept(con):
     """Beides gilt gleichzeitig — sonst wäre der Test oben eine Tautologie."""
-    from picknick.catalog import search
+    from zettel.catalog import search
     r = recipes.anlegen(con, "Milchreis",
                         zutaten=[{"product_id": _pid(con, MILCH)}])
     _ausmustern(con, MILCH)

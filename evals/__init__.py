@@ -1,4 +1,4 @@
-"""Datasets und Experiments für Picknick (Spec 8.2 und 8.3).
+"""Datasets und Experiments für Zettel (Spec 8.2 und 8.3).
 
 **Dieses Paket ist die Handarbeit, nicht das Gate.** Es gehört ausdrücklich
 nicht in `checks/smoke.py` und nicht in die Testsuite: `dataset.py` redet mit
@@ -27,7 +27,7 @@ Gefahren, die hier absichtlich gemieden werden:
 * **Erwartet wird auf Kategorieebene, nie auf Produkt-ID.** Ein Dataset, das
   „Produkt 64" verlangt, ist nach dem nächsten Crawl Schrott. Siehe
   `dataset.passt_kategorie`.
-* **`picknick.weakest_rank` ist kein Bewertungskriterium.** Der bm25-Rang ist
+* **`zettel.weakest_rank` ist kein Bewertungskriterium.** Der bm25-Rang ist
   über Abfragen hinweg nicht geeicht — ein seltenes Wort bekommt strukturell
   einen höheren Rang. Eine Schwelle darauf misst den Katalog und nicht den
   Agenten (WB-328). In diesem Paket kommt der Rang deshalb nirgends in einem

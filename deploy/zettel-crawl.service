@@ -1,0 +1,32 @@
+# Der nächtliche Katalog-Lauf (Spec 12). Gestartet wird er von
+# zettel-crawl.timer; von Hand geht `systemctl --user start zettel-crawl`.
+#
+# Ein eigener Prozess und nicht ein Thread im Shop: der Web-Prozess ruft nie
+# eine fremde Seite auf (Spec 3). Fällt der Crawl aus, wird der Katalog alt —
+# der Shop läuft weiter.
+
+[Unit]
+Description=Zettel — nächtlicher Katalog-Lauf und Sicherung
+Documentation=file://%h/code/picknick_klon/README.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/picknick_klon
+
+# Auch hier das venv und nicht python3 (siehe zettel.service).
+ExecStart=%h/code/picknick_klon/.venv/bin/python -m zettel.scrapers.nachtlauf
+
+Environment=ZETTEL_DB=%h/code/picknick_klon/data/picknick.db
+Environment=ZETTEL_IMAGE_DIR=%h/code/picknick_klon/data/images
+# Andere Begriffsliste ohne Neuausrollen: eine Datei mit einem Begriff je
+# Zeile. Ungesetzt gilt zettel/scrapers/begriffe.py.
+# Environment=ZETTEL_BEGRIFFE=%h/code/picknick_klon/data/begriffe.txt
+
+# Ein Lauf dauert geschätzt 15–25 Minuten (170 Begriffe, 1,5 s Pause). Die
+# Grenze fängt den Fall ab, dass eine Antwort hängt statt zu scheitern —
+# sonst stünde der Dienst bis zum nächsten Neustart auf „activating".
+TimeoutStartSec=2h
+
+# Kein Restart=: Type=oneshot verträgt keinen, und ein Crawl, der scheitert,
+# soll auch nicht sofort wieder loslaufen. Der nächste Versuch ist morgen
+# Nacht; was schiefging, steht in `scrape_run` und auf /status.

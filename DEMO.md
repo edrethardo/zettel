@@ -24,7 +24,7 @@ Dann die drei Dinge, die die Vorführung selbst braucht — anders als das Gate:
 wake-vllm                                   # die Box; ~90 s aus dem Schlaf
 curl -s localhost:6006/v1/projects >/dev/null && echo "Phoenix da"
 .venv/bin/python -c "
-from picknick import db
+from zettel import db
 print(db.connect('data/picknick.db').execute(
   'select count(*) n from product where active=1').fetchone()['n'], 'Produkte')"
 ```
@@ -35,7 +35,7 @@ print(db.connect('data/picknick.db').execute(
 ## 1. Starten
 
 ```bash
-.venv/bin/python -m picknick.web.app
+.venv/bin/python -m zettel.web.app
 ```
 
 **Prüfung:** drei Zeilen von uvicorn, endend mit `Application startup
@@ -46,7 +46,7 @@ complete.`, und der Prozess bleibt im Vordergrund. Der Shop lauscht auf
 Das ist der erste Punkt, den man laut sagen kann:
 
 ```bash
-PICKNICK_HOST=0.0.0.0 .venv/bin/python -m picknick.web.app
+ZETTEL_HOST=0.0.0.0 .venv/bin/python -m zettel.web.app
 ```
 
 **Prüfung:** der Prozess startet **nicht**. Er bricht mit Rückgabewert `1` ab,
@@ -263,8 +263,8 @@ Vier Dinge sind hier einen Satz wert:
   lange: der Gerichtsname kommt aus Stufe 1 (ein Modelllauf), und die
   Zutatenliste des Rezepts braucht wieder das Modell, um Suchbegriffe daraus
   zu machen. Der Abruf dazwischen ist der billigste Teil des Zugs.
-* **Der Trace sagt, woher die Zutaten kamen**: `picknick.path = chefkoch`,
-  `picknick.dish = "Pho"`, `picknick.dish_fetch = ok`. Steht dort `llm` mit
+* **Der Trace sagt, woher die Zutaten kamen**: `zettel.path = chefkoch`,
+  `zettel.dish = "Pho"`, `zettel.dish_fetch = ok`. Steht dort `llm` mit
   gesetztem `dish`, hat der Abruf nicht getragen — `dish_fetch` sagt dann
   `leer` oder `fehler`.
 * **Das Rezept ist jetzt unter *Rezepte*** — mit 17 Schritten Zubereitung,
@@ -341,7 +341,7 @@ verschlechtert den Weg also nicht, der vorher schon funktionierte.
 
 ## 4. Der Trace — die Schuldfrage
 
-`http://localhost:6006` öffnen, Projekt **`Picknick Agent`**, obersten Trace
+`http://localhost:6006` öffnen, Projekt **`Zettel Agent`**, obersten Trace
 anklicken.
 
 **Prüfung:** ein Baum aus fünf Spans, in dieser Reihenfolge und
@@ -377,8 +377,8 @@ JSON-Klumpen — weil der Span-Kind `RETRIEVER` ist und nicht `TOOL`:
 
 **Den zweiten `catalog.search`-Span anklicken** (Input `Zahnpasta`).
 
-**Prüfung:** `picknick.candidates = 0`, keine Dokumente — und **kein**
-`picknick.rank_top`. Die fehlende Zahl ist Absicht: eine 0 dort wäre eine
+**Prüfung:** `zettel.candidates = 0`, keine Dokumente — und **kein**
+`zettel.rank_top`. Die fehlende Zahl ist Absicht: eine 0 dort wäre eine
 erfundene Messung.
 
 **Zurück auf `chat.turn`, Attribute aufklappen.**
@@ -386,10 +386,10 @@ erfundene Messung.
 **Prüfung:**
 
 ```
-picknick.rejected     = 0
-picknick.weakest_term = Zahnpasta
-picknick.weakest_rank = 0.0
-picknick.terms = 2   picknick.products = 1   picknick.free_text = 1
+zettel.rejected     = 0
+zettel.weakest_term = Zahnpasta
+zettel.weakest_rank = 0.0
+zettel.terms = 2   zettel.products = 1   zettel.free_text = 1
 session.id = korb-1
 ```
 
@@ -427,9 +427,9 @@ dort steht die Liste allein, ohne den Verlauf darunter — und
 
 ```
 identifier              annotator_kind  label     score  explanation
-picknick-suggestion-41  HUMAN           kept       1,0   Zahnpasta
-picknick-suggestion-42  HUMAN           removed    0,0   Butter
-picknick-turn-22        HUMAN           —          0,5   1 von 2 entschiedenen Vorschlägen behalten.
+zettel-suggestion-41  HUMAN           kept       1,0   Zahnpasta
+zettel-suggestion-42  HUMAN           removed    0,0   Butter
+zettel-turn-22        HUMAN           —          0,5   1 von 2 entschiedenen Vorschlägen behalten.
 ```
 
 (Die Zahlen in den `identifier` sind die Datenbank-IDs des gemessenen Laufs;
@@ -443,7 +443,7 @@ Zurücklesen, ohne der Oberfläche zu glauben:
 from phoenix.client import Client
 print(Client(base_url='http://localhost:6006').spans
       .get_span_annotations_dataframe(span_ids=['<span-id>'],
-          project_identifier='Picknick Agent')
+          project_identifier='Zettel Agent')
       [['annotator_kind','identifier','result.label','result.score']])"
 ```
 
@@ -492,6 +492,6 @@ von Betrieb.
 |---|---|
 | Chatband „Modell wacht auf … noch ~90 s" | Die Box schläft. `wake-vllm` und warten; der Rest des Shops läuft weiter, der Rezeptweg auch. |
 | Chat antwortet „Das Modell hat den Satz nicht in Suchbegriffe zerlegt" | Kaputte Modellantwort. Kein Fehler des Shops — die Seite bleibt heil, die Nutzerin bekommt einen Satz. |
-| Kein Trace in Phoenix | `PICKNICK_TRACING` steht auf `0`, oder Phoenix lief beim Start des Shops nicht (der Tracer wird beim Hochfahren eingerichtet). Shop neu starten. |
+| Kein Trace in Phoenix | `ZETTEL_TRACING` steht auf `0`, oder Phoenix lief beim Start des Shops nicht (der Tracer wird beim Hochfahren eingerichtet). Shop neu starten. |
 | Katalogseite leer | Kein Crawl gelaufen. `/status` sagt es im Klartext. |
-| Prozess startet nicht, `Konnte nicht auf … binden` | `tailscaled` ist noch nicht da. `PICKNICK_HOST=127.0.0.1` für die Vorführung. |
+| Prozess startet nicht, `Konnte nicht auf … binden` | `tailscaled` ist noch nicht da. `ZETTEL_HOST=127.0.0.1` für die Vorführung. |

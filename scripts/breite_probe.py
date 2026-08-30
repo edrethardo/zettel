@@ -13,11 +13,11 @@ Einkaufsliste — und **an welchem Glied gehen die Mengen verloren?**
 Mit `--trace` gehen die Spans der Züge nach Phoenix — für einen Eval-Lauf in
 ein EIGENES Projekt, damit das Alltagsprojekt sauber bleibt (WB-393/395):
 
-    PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+    ZETTEL_PHOENIX_PROJECT="Zettel Eval Qwen" \
     .venv/bin/python scripts/breite_probe.py --messen --db kopie.db --trace
 
 Fehlt Phoenix, scheitert die Probe daran nicht: die Einrichtung wirft nie,
-und der Export läuft in einem Hintergrund-Thread (`picknick.obs.otel`).
+und der Export läuft in einem Hintergrund-Thread (`zettel.obs.otel`).
 
 `--db` ist die KOPIE, aus der die Probe ihre Arbeitskopien zieht
 (`sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"`). Sie wird gelesen und —
@@ -111,14 +111,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx  # noqa: E402
 
-from picknick import db, obs, orders, recipes  # noqa: E402
-from picknick.assistant import chat as chatmodul  # noqa: E402
-from picknick.assistant import herkunft, oberbegriffe, vorschlaege  # noqa: E402
-from picknick.gerichte import chefkoch, quelle  # noqa: E402
-from picknick.gerichte import lauf as gerichtelauf  # noqa: E402
-from picknick.llm import wake  # noqa: E402
-from picknick.llm.client import Modellzugang  # noqa: E402
-from picknick.orders import korb, pick  # noqa: E402
+from zettel import db, obs, orders, recipes  # noqa: E402
+from zettel.assistant import chat as chatmodul  # noqa: E402
+from zettel.assistant import herkunft, oberbegriffe, vorschlaege  # noqa: E402
+from zettel.gerichte import chefkoch, quelle  # noqa: E402
+from zettel.gerichte import lauf as gerichtelauf  # noqa: E402
+from zettel.llm import wake  # noqa: E402
+from zettel.llm.client import Modellzugang  # noqa: E402
+from zettel.orders import korb, pick  # noqa: E402
 
 # --------------------------------------------------------------------------
 # Die Gerichte
@@ -909,8 +909,8 @@ def main() -> int:
                    help="Phase A überspringen (misst dann den KALTEN Weg)")
     p.add_argument("--trace", action="store_true",
                    help="Spans nach Phoenix schicken. Projekt über "
-                        "PICKNICK_PHOENIX_PROJECT, Endpunkt über "
-                        "PICKNICK_PHOENIX_ENDPOINT — ein Eval-Lauf gehört in "
+                        "ZETTEL_PHOENIX_PROJECT, Endpunkt über "
+                        "ZETTEL_PHOENIX_ENDPOINT — ein Eval-Lauf gehört in "
                         "sein EIGENES Projekt (WB-393), nicht ins "
                         "Alltagsprojekt. Ohne laufendes Phoenix läuft die "
                         "Probe trotzdem durch; die Spans gehen dann verloren.")
@@ -954,13 +954,13 @@ def main() -> int:
         # `einrichten()` wirft nie: fehlt Phoenix oder das Paket, läuft die
         # Probe ohne Trace weiter — genau die Bedingung aus WB-395. Erst ab
         # hier, nicht per Vorgabe: ohne den Schalter soll ein Messlauf das
-        # Alltagsprojekt „Picknick Agent" nicht mit 60 Gerichten fluten.
+        # Alltagsprojekt „Zettel Agent" nicht mit 60 Gerichten fluten.
         if obs.einrichten() is not None:
             stand = obs.tracerstand()
             print(f"Trace: Projekt {stand['projekt']!r} auf {stand['endpunkt']}")
         else:
             print("Trace: nicht eingerichtet — die Probe läuft ohne "
-                  "(Grund steht im Log, z. B. PICKNICK_TRACING=0).")
+                  "(Grund steht im Log, z. B. ZETTEL_TRACING=0).")
 
     t0 = time.monotonic()
     zustaende: dict[str, str] = {}

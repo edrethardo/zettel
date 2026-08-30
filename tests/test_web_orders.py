@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db, orders
-from picknick.web import app as webapp
+from zettel import db, orders
+from zettel.web import app as webapp
 
 STIL = Path(webapp.STATIC_DIR) / "stil.css"
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"

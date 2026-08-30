@@ -20,8 +20,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from picknick import db
-from picknick.web import app as webapp
+from zettel import db
+from zettel.web import app as webapp
 
 MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 HAFER = "Alpro Haferdrink Original VEGAN"
@@ -260,13 +260,13 @@ def test_tailnet_erkennung_liefert_tailnet_oder_nichts():
 
 def test_umgebung_kann_die_adresse_setzen():
     assert webapp.hosts_aus_umgebung(
-        {"PICKNICK_HOST": "100.64.9.9"}) == ["100.64.9.9"]
+        {"ZETTEL_HOST": "100.64.9.9"}) == ["100.64.9.9"]
 
 
 @pytest.mark.parametrize("wert", ["0.0.0.0", "127.0.0.1,0.0.0.0", ""])
 def test_umgebung_kann_die_grenze_nicht_aushebeln(wert):
     with pytest.raises(webapp.UnsichereBindung):
-        webapp.hosts_aus_umgebung({"PICKNICK_HOST": wert})
+        webapp.hosts_aus_umgebung({"ZETTEL_HOST": wert})
 
 
 def test_sockets_bauen_lehnt_ab_bevor_etwas_lauscht(monkeypatch):

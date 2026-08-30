@@ -11,12 +11,12 @@ Käse-Lauch-Suppe, Ratatouille.
 """
 from __future__ import annotations
 
-from picknick.assistant import herkunft
+from zettel.assistant import herkunft
 
 
 def _zutat(name, amount=None, unit=None):
     """Eine Zutat, wie `chefkoch.parse_zutaten` sie liefert."""
-    from picknick.gerichte import chefkoch
+    from zettel.gerichte import chefkoch
 
     kette = chefkoch.zutat_kette(name)
     return {"raw_name": name, "name": kette[0] if kette else name,

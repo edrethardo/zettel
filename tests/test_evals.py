@@ -75,7 +75,7 @@ class FakeLLM:
         return "fake"
 
     def chat(self, nachrichten, **weitere):
-        from picknick.llm.client import Antwort
+        from zettel.llm.client import Antwort
 
         self.aufrufe.append({"nachrichten": list(nachrichten), **weitere})
         if not self.antworten:
@@ -584,7 +584,7 @@ def test_prompt_b_nennt_keine_zutat_aus_dem_dataset():
     tragen dasselbe JSON-Beispiel („Hackfleisch", „passierte Tomaten"), und
     das ist kein Vorteil von B. Verboten ist, was B ZUSÄTZLICH nennt.
     """
-    from picknick.assistant import plan
+    from zettel.assistant import plan
 
     b_text = experiment.SYSTEM_EXTRACT_B.casefold()
     a_text = plan.SYSTEM_EXTRACT.casefold()
@@ -602,7 +602,7 @@ def test_als_ausgabe_traegt_die_kategorie_mit():
     Und damit auf einen Katalogstand, den es zum Zeitpunkt der Auswertung
     vielleicht nicht mehr gibt.
     """
-    from picknick.assistant.chat import Ergebnis
+    from zettel.assistant.chat import Ergebnis
 
     ergebnis = Ergebnis(
         weg="llm", order_id=1, satz="Milch", chat_message_id=1,
