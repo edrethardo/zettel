@@ -55,6 +55,7 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 | [`EVALS.md`](EVALS.md) | Dataset, Evaluatoren, die vier Varianten und die echten Zahlen |
 | [`DEMO.md`](DEMO.md) | der Klickpfad zum Vorführen, eine Prüfung pro Klick |
 | [`GATES.md`](GATES.md) | was das Gate abdeckt — und was ausdrücklich nicht |
+| [`LEHREN.md`](LEHREN.md) | was das Projekt gekostet hat und was davon woanders gilt |
 
 ## Schnellstart
 
