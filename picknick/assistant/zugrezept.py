@@ -123,11 +123,7 @@ def zum_zug(con: sqlite3.Connection, chat_message_id: int,
     da, denn sie ist der Grund, warum jemand „nein" sagt.
     """
     rows = con.execute(
-        "SELECT r.id, r.name, r.servings, r.prep_minutes, r.cook_minutes,"
-        "       r.rest_minutes, r.difficulty, r.source, r.source_id,"
-        "       r.source_url, r.source_title, r.source_rating, r.source_votes,"
-        "       (r.instructions IS NOT NULL) AS hat_zubereitung,"
-        "       r.instructions AS _text, z.dish_id, z.portionen AS _gewaehlt,"
+        f"SELECT {_FELDER}, z.dish_id, z.portionen AS _gewaehlt,"
         "       d.query AS gericht"
         "  FROM chat_rezept z JOIN recipe r ON r.id = z.recipe_id"
         "  LEFT JOIN dish d ON d.id = z.dish_id"
@@ -135,18 +131,7 @@ def zum_zug(con: sqlite3.Connection, chat_message_id: int,
         (chat_message_id,)).fetchall()
     karten = []
     for row in rows:
-        k = dict(row)
-        text = k.pop("_text", None)
-        k["n_schritte"] = len(chefkoch.schritte(text)) if text else 0
-        k["zutaten"] = speicher.zutaten(con, int(k["id"]))
-        k["n_zutaten"] = len(k["zutaten"])
-        k["gesamt_minuten"] = _gesamtzeit(k)
-        k["zeitsatz"] = zeitsatz(k["gesamt_minuten"])
-        k["ruhesatz"] = (zeitsatz(k["rest_minutes"])
-                         if k["rest_minutes"] else None)
-        k["n_zettel"] = k["n_ohne_produkt"] = k["n_fehlt"] = None
-        k["alternativen"] = alternativen(con, k)
-        _portionen_an(k)
+        k = _karte(con, row)
         if not _hat_inhalt(k):
             # Ein selbst angelegtes Rezept hat weder Zeiten noch Bewertung,
             # Zutatenliste oder Zubereitung — nur Produkte, und die stehen
@@ -156,6 +141,64 @@ def zum_zug(con: sqlite3.Connection, chat_message_id: int,
         karten.append(k)
     _deckung(karten, vorgeschlagen)
     return karten
+
+
+#: Die Felder einer Rezeptkarte, wie sie aus `recipe` kommen. Eine Zeichenkette
+#: und zwei Abfragen, damit die Karte des Zugs und die Karte der frischen Wahl
+#: (`zur_wahl`, WB-402) dieselbe bleiben — zwei Kopien liefen auseinander, und
+#: dann zeigte die Vorschau etwas anderes als der Zug eine halbe Minute später.
+_FELDER = (
+    "r.id, r.name, r.servings, r.prep_minutes, r.cook_minutes,"
+    " r.rest_minutes, r.difficulty, r.source, r.source_id,"
+    " r.source_url, r.source_title, r.source_rating, r.source_votes,"
+    " (r.instructions IS NOT NULL) AS hat_zubereitung,"
+    " r.instructions AS _text"
+)
+
+
+def _karte(con: sqlite3.Connection, row) -> dict:
+    """Aus einer Rezeptzeile die Karte, die die Vorlage zeigt."""
+    k = dict(row)
+    text = k.pop("_text", None)
+    k["n_schritte"] = len(chefkoch.schritte(text)) if text else 0
+    k["zutaten"] = speicher.zutaten(con, int(k["id"]))
+    k["n_zutaten"] = len(k["zutaten"])
+    k["gesamt_minuten"] = _gesamtzeit(k)
+    k["zeitsatz"] = zeitsatz(k["gesamt_minuten"])
+    k["ruhesatz"] = (zeitsatz(k["rest_minutes"])
+                     if k["rest_minutes"] else None)
+    k["n_zettel"] = k["n_ohne_produkt"] = k["n_fehlt"] = None
+    k["alternativen"] = alternativen(con, k)
+    _portionen_an(k)
+    return k
+
+
+def zur_wahl(con: sqlite3.Connection, dish_id: int) -> dict | None:
+    """Die Karte des Rezepts, auf das ein Gericht GERADE zeigt (WB-402).
+
+    **Der Grund, warum es sie gibt: sie kostet kein Modell.** Wer im Chat
+    eine Alternative antippt, wartete bis zu diesem Ticket
+    vierundzwanzig Sekunden auf einen kompletten Zug — zwei Modellstufen —,
+    bevor überhaupt zu sehen war, dass seine Wahl angekommen ist. Alles, was
+    die Karte zeigt (Name, Zeiten, Zutatenliste der Quelle, Bewertung,
+    Herkunft), steht zu diesem Zeitpunkt längst in `recipe` und
+    `recipe_ingredient`; nur die Vorschlagsliste darunter braucht das Modell.
+
+    `None`, wenn das Gericht auf kein Rezept zeigt. Es ist DIESELBE Karte wie
+    die des Zugs, nur ohne dessen zwei Zahlen: die Deckung („8 davon nicht auf
+    dem Zettel") und die gewählte Portionszahl hängen an einer
+    Vorschlagsliste, die es noch nicht gibt. Sie bleiben leer statt geraten —
+    eine halbe Minute später stehen sie da.
+    """
+    row = con.execute(
+        f"SELECT {_FELDER}, d.id AS dish_id, NULL AS _gewaehlt,"
+        "       d.query AS gericht"
+        "  FROM dish d JOIN recipe r ON r.id = d.recipe_id"
+        " WHERE d.id = ?", (dish_id,)).fetchone()
+    if row is None:
+        return None
+    k = _karte(con, row)
+    return k if _hat_inhalt(k) else None
 
 
 def alternativen(con: sqlite3.Connection, karte: dict) -> list[dict]:

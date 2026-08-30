@@ -276,6 +276,50 @@ die Brücke, die Kopfzahl und einen Satz.
 nicht auf den Korb und zurück; ohne JavaScript geht dieselbe Adresse wie vorher
 auf die Chatseite.
 
+### Was kein Modell braucht, wartet nicht auf eines
+
+Der Rezeptwechsel war der einzige Handgriff dieser Oberfläche, der nicht nach
+langsam aussah, sondern nach kaputt. Der Nutzer meldete ihn selbst: „Wenn ich
+einen anderen Vorschlag aussuche lädt es ewig und dann muss ich scrollen. Das
+sollte inplace ersetzen." Nachgemessen (Firefox über geckodriver, Handybreite,
+echte Box, 224 Proben über 23 Sekunden):
+
+| | vorher | nachher |
+|---|---|---|
+| bis die Karte des neuen Rezepts im Bild ist | **nie** | **0,84 s** |
+| bis die Vorschläge stehen | 23,1 s | 23,0 s |
+| „es läuft" irgendwo im Bild | in 0 von 224 Proben | in 213 von 222 |
+| Antwortgrösse | 97.966 Bytes | 3.040 + 35.602 Bytes |
+| Bildlauf | scrollY 9964, unverändert | auf die Auskunft geholt |
+
+Der Hebel ist eine Aufteilung, keine Beschleunigung: **die Karte braucht kein
+Modell.** Name, Gesamtzeit, Ruhezeit, Zutatenliste der Quelle, Bewertung und
+Herkunft stehen in `recipe` und `recipe_ingredient`, sobald das Detail geholt
+ist — gemessen 16 bis 20 ms. Die zwei Modellstufen kostet allein die
+Vorschlagsliste darunter. Also antwortet der Tipp mit der Karte und lässt die
+Liste nachlaufen (`hx-trigger="load"`); die Zeit bis zum Ergebnis ändert sich
+dabei nicht, die Zeit bis zur Rückmeldung um zwei Grössenordnungen.
+
+Dazu drei kleinere Griffe, die alle aus WB-372 und WB-378 stammen und hier nur
+noch nachgeholt wurden:
+
+* **das Tauschziel ist der Zug und nicht der Chat.** Der Rezeptwechsel war das
+  letzte Formular des Chats, das noch `hx-target="#chat"` trug — er tauschte
+  nach 23 Sekunden den kompletten Verlauf aus.
+* **der Indikator ist das Tauschziel.** `#chat-laeuft` steht am Seitenfuss; in
+  201 Proben über 24 Sekunden war er kein einziges Mal im Bild. Die Auskunft
+  steht jetzt in dem Kasten, der gleich ersetzt wird — und darin ÜBER der
+  Karte, denn die ist eine Bildschirmhöhe lang.
+* **`show:` holt die Antwort ins Bild.** Ohne es ändert sich im sichtbaren
+  Bereich nichts; dasselbe Mittel wie bei der Katalog-Trefferliste.
+
+**Der alte Zug bleibt dabei stehen**, im Dokument wie in der Datenbank
+(`hx-swap="afterend"`). Das Band verspricht „die alten Vorschläge stehen
+unverändert im Verlauf" — ein Tausch, der sie für eine halbe Minute
+herausnähme, machte den Satz in genau der halben Minute falsch, in der jemand
+nachsehen wollte. Er macht die zweite Antwort nebenbei um seine ganze Grösse
+kleiner.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist

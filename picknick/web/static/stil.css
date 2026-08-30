@@ -1137,28 +1137,54 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 /* Die anderen Rezepte derselben Suche (WB-387). Sie stehen IN der Karte, vor
    der Zutatenliste — die Wahl kommt vor dem Lesen. Eine Zeile ist ein Knopf:
-   der ganze Streifen ist das Ziel, mit `--tap` als Untergrenze. */
+   der ganze Streifen ist das Ziel, mit `--tap` als Untergrenze.
+
+   **WB-402 hat die Rangordnung darin umgedreht.** Der Nutzer nannte die
+   Liste „schrecklich", und der Befund war konkret: sechs Einträge mit
+   derselben Kartenform, derselben Schrift und derselben Zahlenreihe, nur der
+   Titel verschieden — eine Wand. Und die vorgewählte war die SCHWÄCHSTE der
+   sechs: die fünf wählbaren waren gefüllte Kästen, sie stand durchsichtig
+   mit gestricheltem Rand daneben.
+
+   Drei Griffe, mehr nicht:
+   - die VORGEWÄHLTE trägt die Handlungsfarbe und einen Balken am Rand. Sie
+     ist der Bezugspunkt, gegen den gewählt wird, und muss auf einen Blick
+     als solcher lesbar sein.
+   - die WÄHLBAREN werden leiser: Papier statt gefülltem Kasten, feiner Rand.
+     Sie bleiben trotzdem sichtbar Knöpfe — sie sind die einzigen mit einem
+     Rand in Knopflinie und mit Druckbewegung.
+   - die ZEIT bekommt das Gewicht der Zeile. Sie ist die Zahl, nach der
+     entschieden wird (9½ Stunden gegen 35 Minuten ist „heute Abend" gegen
+     „nächstes Wochenende"); Bewertung und Zutatenzahl bleiben gedämpft.
+     Dadurch entsteht eine Spalte, die sich überfliegen lässt. */
 .andere { margin: 0 0 var(--v3); }
 .andere-kopf { margin: 0 0 var(--v2); font-size: var(--t-fein); color: var(--gedaempft); }
 .andereliste { list-style: none; margin: 0 0 var(--v2); padding: 0; }
 .andereliste > li { margin: var(--v2) 0; }
 .andereliste .wahl {
-  display: flex; flex-direction: column; gap: var(--v0); width: 100%;
+  display: flex; flex-direction: column; gap: var(--v1); width: 100%;
   min-height: var(--tap); padding: var(--v2) var(--v3); text-align: left;
-  background: var(--karte-tief); color: var(--tinte);
-  border: 1.5px solid var(--linie); border-radius: var(--radius-knopf);
+  background: var(--karte); color: var(--tinte);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  border-left-width: 3px;
   font: inherit; cursor: pointer;
 }
 .andereliste button.wahl:active { transform: scale(0.99); }
 /* Das vorgeschlagene steht mit in der Liste, damit sichtbar ist, wogegen
-   gewählt wird — aber ohne Knopf und ohne Griff: es ist schon da. */
+   gewählt wird — aber ohne Knopf und ohne Griff: es ist schon da. Der Balken
+   links ist der Kugelschreiberstrich am Zettel; er unterscheidet die Zeile
+   auch dann, wenn die Fläche im Dunkelmodus dichter beieinanderliegt. */
 .andereliste .ist .wahl {
-  background: transparent; border-style: dashed; cursor: default;
+  background: var(--akzent-hell); color: var(--akzent-tinte);
+  border-color: var(--akzent); border-left-color: var(--akzent);
+  cursor: default;
 }
 .andereliste .name { font-size: var(--t-klein); font-weight: 600; }
+.andereliste .ist .name { display: flex; flex-wrap: wrap; align-items: center;
+                          gap: var(--v2); }
 .andereliste .marke {
   font-size: var(--t-fein); font-weight: 600; padding: var(--v0) var(--v2); border-radius: 999px;
-  background: var(--akzent-hell); color: var(--akzent-tinte);
+  background: var(--akzent); color: var(--auf-akzent);
   white-space: nowrap;
 }
 /* KEIN Monospace: „35 Minuten Arbeitszeit", „4.74 aus 1420 Stimmen" sind von
@@ -1166,10 +1192,37 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    diesem Blatt die Auszeichnung für die eigene Rechnung (Bedarfsmenge,
    Preis, Zähler); sie hier zu tragen kehrte ihre Aussage um (WB-400). */
 .andereliste .zahlen {
-  display: flex; flex-wrap: wrap; gap: var(--v0) var(--v3);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--v0) var(--v3);
   font-size: var(--t-fein); color: var(--gedaempft);
 }
+/* Die Zeit ist die Zahl, nach der entschieden wird (WB-402) — sie trägt das
+   Gewicht der Zeile, der Rest bleibt Nebenangabe. Eine Stufe grösser reicht;
+   zwei machten aus der Liste wieder sechs Überschriften. */
+.andereliste .dauer { font-size: var(--t-klein); font-weight: 700;
+                      color: var(--tinte); }
+.andereliste .ist .dauer { color: var(--akzent-tinte); }
 .andere .fussnote { margin: 0; }
+
+/* Der Rezeptwechsel, während er läuft (WB-402) -----------------------------
+   Ein Tipp auf eine Alternative kostet zwei Modellstufen — gemessen 24,29 s.
+   Die KARTE kostet keine und steht sofort da; dieser Kasten ist das Stück,
+   das für die Wartezeit an die Stelle des alten Zugs tritt und danach durch
+   den neuen ersetzt wird.
+
+   Ein Band mitten im Verlauf ist gerahmt und nicht quer über die Seite: das
+   `.band` von Spec 11 spannt sich über die volle Breite, weil es dem Blatt
+   als Ganzem gilt. Hier gilt es einer Stelle darin — dieselbe Gestalt wie
+   das Zustandsband des Chats (`.chatband`), aus demselben Grund.
+
+   Der pulsende Punkt an `.laeuft` ist DAS Statuslicht dieses Blattes und
+   keine vierte Bewegung: „etwas ist unterwegs" sieht hier aus wie beim
+   aufwachenden Modell. */
+.zugwechsel { margin: 0 0 var(--rand); }
+.zugband { border: 1px solid var(--honig-linie); border-radius: var(--radius);
+           margin: 0 0 var(--rand); }
+.zugband .fussnote { display: block; margin-top: var(--v1); }
+.zugband.laeuft::before { animation: puls 1.6s ease-in-out infinite; }
+.wechsel-laeuft { margin: 0; }
 
 /* Für wie viele Portionen dieser Zug rechnet (WB-384). Dieselbe Gestalt wie
    das Feld an „Alles in den Warenkorb" (`.abschicken.portionen`) — es ist

@@ -71,7 +71,7 @@
   </p>
   {%- endif %}
 
-  {%- if r.alternativen %}
+  {%- if r.alternativen and not vorschau %}
   {# Die anderen Rezepte derselben Suche (WB-387). Chefkoch liefert zwölf in
      EINER Antwort; bis zu diesem Ticket nahm der Shop eines und warf elf weg,
      bevor sie jemand sehen konnte.
@@ -85,10 +85,35 @@
      Nicht eingeklappt: ein `<details>` spart keine Bytes (die Zeilen wären
      trotzdem übertragen) und kostet den Blick, um den es geht. Sechs Zeilen
      à drei Zahlen sind billig — gemessen mit `scripts/groesse_probe.py`. #}
+  {# **Das Tauschziel ist der ZUG und nicht der Chat** (WB-402). Bis dahin
+     stand hier `hx-target="#chat"` — der Wechsel tauschte nach 24 Sekunden
+     den kompletten Verlauf aus, die Bildlaufposition blieb stehen, und oben
+     stand weiter die abgelehnte Überschrift. Genau das hat WB-372 für Ja/Nein
+     abgeschafft (207.000 -> 2.249 Bytes je Tipp); der Rezeptwechsel war dabei
+     übersehen worden.
+
+     Die Antwort ist die Karte des gewählten Rezepts (`_zugwechsel.html`), und
+     sie kommt sofort — die Vorschläge laufen darin nach. `show:` holt sie an
+     den oberen Fensterrand: dasselbe Mittel wie bei der Trefferliste des
+     Katalogs, und aus demselben Grund — ohne es ändert sich im sichtbaren
+     Bereich nichts.
+
+     **`afterend` und nicht `outerHTML`**, obwohl der Kasten den Zug ersetzt,
+     solange man hinsieht: der alte Zug bleibt im Dokument stehen. Das Band
+     sagt „die alten Vorschläge stehen unverändert im Verlauf" — nähme dieser
+     Tausch sie für eine halbe Minute heraus, wäre der Satz in genau der
+     halben Minute falsch, in der jemand nachsehen wollte. Und die Antwort
+     danach wird um seine Grösse kleiner: gemessen 64.733 -> 34.855 Bytes.
+
+     Der Indikator ist das Tauschziel (WB-378): blass wird der Zug, aus dem
+     heraus gewechselt wird — und zwar über BEIDE Hälften, denn
+     `_zugwechsel.html` zeigt ihn ebenfalls an. `pointer-events: none` daran
+     verhindert nebenbei den zweiten Tipp, während der erste läuft. #}
   <form class="andere" method="post" action="/chat/{{ m.id }}/rezept"
         hx-post="/chat/{{ m.id }}/rezept"
-        hx-target="#chat" hx-swap="outerHTML"
-        hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+        hx-target="#zug-{{ m.id }}"
+        hx-swap="afterend show:#wechsel-{{ m.id }}:top"
+        hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <p class="andere-kopf">Nicht gemeint? {{ r.alternativen | length - 1 }}
       andere Rezepte zu „{{ r.gericht }}“ aus derselben Suche.</p>
     <ul class="andereliste">
@@ -108,7 +133,7 @@
         <span class="name">{{ a.titel }}</span>
       {%- endif %}
         <span class="zahlen">
-        {%- if a.zeitsatz %}<span>{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
+        {%- if a.zeitsatz %}<span class="dauer">{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
         {%- if a.rating %}<span>{{ "%.2f"|format(a.rating) }} aus {{ a.votes }} Stimmen</span>{% endif %}
         {%- if a.n_zutaten %}<span>{{ a.n_zutaten }} Zutaten</span>{% endif %}
         </span>
@@ -144,7 +169,7 @@
      Die Zahl steht am ZUG (`chat_rezept.portionen`) und nicht am Rezept:
      „diesmal für acht" ist eine Aussage über diesen Einkauf, genau wie beim
      Feld an „Alles in den Warenkorb" (WB-362). #}
-  {%- if r.zutaten or r.n_zettel %}
+  {%- if (r.zutaten or r.n_zettel) and not vorschau %}
   {%- if r.portionen_rezept %}
   <form class="zugportionen" method="post"
         action="/chat/{{ m.id }}/portionen"
@@ -218,8 +243,16 @@
 
   {# Der Zusammenhang mit dem Entwurf (WB-337): das hier ist nicht ein
      zweites Ding, das zufällig denselben Namen trägt. Was unten bestätigt
-     wird, landet beim Abschicken in genau diesem Rezept. #}
-  {%- if m.entwurf and m.entwurf.saved_at %}
+     wird, landet beim Abschicken in genau diesem Rezept.
+
+     In der VORSCHAU (WB-402) gibt es diesen Zug noch nicht — die Karte steht
+     da, während die Vorschläge erst gesucht werden. Dann bleibt nur der
+     Ausgang, der immer wahr ist: das Rezept selbst. Ein Satz über einen
+     Entwurf, den es in einer Sekunde geben wird, wäre eine Vorhersage. #}
+  {%- if vorschau %}
+  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">Das ganze Rezept
+    ansehen</a></p>
+  {%- elif m.entwurf and m.entwurf.saved_at %}
   <p class="fussnote">Steht in deiner Sammlung.
     <a class="ausgang" href="/rezepte/{{ r.id }}">Ansehen</a></p>
   {%- elif m.entwurf and not m.entwurf.verworfen %}
