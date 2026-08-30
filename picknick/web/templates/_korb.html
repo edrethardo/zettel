@@ -78,36 +78,48 @@
     {% endif %}
     <span class="text">
       <span class="name">{{ i.name }}</span>
+      {# Was gerechnet wurde (WB-362, Regel 6). Eine stumme 2 im Mengenfeld
+         erklärt nicht, warum zwei Packungen im Korb liegen — und die Zeile
+         steht auch dann da, wenn sich nichts ausrechnen liess: gerade dann
+         ist die Zahl daneben eine Vorgabe und keine Rechnung.
+
+         Sie steht VOR der Packungszeile und nicht darunter (WB-400): die
+         gebrauchte Menge ist die Hauptangabe (WB-381), und als dritte Zeile
+         unter „0,7 kg · 2,79 €" war sie der kleinste Text der Zeile. Auf
+         /pick steht sie seit jeher an dieser Stelle; der Korb folgt jetzt
+         derselben Reihenfolge. #}
+      {% if i.bedarf_satz %}
+      <span class="hinweis gebraucht">{{ i.bedarf_satz }}</span>
+      {% endif %}
       <span class="menge">
         {% if i.ist_freitext %}Freitext{% else %}{{ i.unit_text or "" }}
         · {{ i.price_cents | euro }}{% endif %}
       </span>
-      {# Was gerechnet wurde (WB-362, Regel 6). Eine stumme 2 im Mengenfeld
-         erklärt nicht, warum zwei Packungen im Korb liegen — und die Zeile
-         steht auch dann da, wenn sich nichts ausrechnen liess: gerade dann
-         ist die Zahl daneben eine Vorgabe und keine Rechnung. #}
-      {% if i.bedarf_satz %}
-      <span class="hinweis">{{ i.bedarf_satz }}</span>
-      {% endif %}
       {% if i.nicht_im_katalog %}
       <span class="ausgemustert">Nicht mehr im Katalog — bleibt im Korb, aber
         der Preis kann alt sein und im Laden musst du selbst schauen.</span>
       {% endif %}
     </span>
     <span class="stellen">
-      <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
-            hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
-            hx-target="#korb" hx-swap="innerHTML">
-        <button class="mini" type="submit"
-                aria-label="weniger {{ i.name }}">&minus;</button>
-      </form>
-      <span class="anzahl">{{ i.qty }}</span>
-      <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
-            hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
-            hx-target="#korb" hx-swap="innerHTML">
-        <button class="mini" type="submit"
-                aria-label="mehr {{ i.name }}">+</button>
-      </form>
+      {# −, Zahl und + sind EIN Bedienteil und bekommen deshalb eine
+         gemeinsame Hülle (WB-400). Vorher standen sie als drei einzelne
+         Kästen im selben Rhythmus wie die Ladenwahl und das löschende „×";
+         nichts band sie zusammen, und nichts trennte das Zerstörende ab. #}
+      <span class="steller">
+        <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
+              hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty - 1 }}"
+              hx-target="#korb" hx-swap="innerHTML">
+          <button class="mini" type="submit"
+                  aria-label="weniger {{ i.name }}">&minus;</button>
+        </form>
+        <span class="anzahl">{{ i.qty }}</span>
+        <form method="post" action="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
+              hx-post="/warenkorb/posten/{{ i.id }}/menge?qty={{ i.qty + 1 }}"
+              hx-target="#korb" hx-swap="innerHTML">
+          <button class="mini" type="submit"
+                  aria-label="mehr {{ i.name }}">+</button>
+        </form>
+      </span>
       {# Der Laden hängt am Posten, nicht am Produkt (Spec 4). Vorbelegt ist
          die letzte Wahl für dasselbe Produkt. #}
       <form method="post" action="/warenkorb/posten/{{ i.id }}/laden"

@@ -221,7 +221,7 @@
      wird, landet beim Abschicken in genau diesem Rezept. #}
   {%- if m.entwurf and m.entwurf.saved_at %}
   <p class="fussnote">Steht in deiner Sammlung.
-    <a href="/rezepte/{{ r.id }}">Ansehen</a></p>
+    <a class="ausgang" href="/rezepte/{{ r.id }}">Ansehen</a></p>
   {%- elif m.entwurf and not m.entwurf.verworfen %}
   <p class="fussnote">Beim Abschicken kommen die Zeilen, die du unten mit
     „Ja“ bestätigst, als Zutaten in genau dieses Rezept.</p>
@@ -230,7 +230,9 @@
      dem keine Zutat des Gerichts übrig blieb. Beides Mal ist nur EINES
      sicher — dieses Rezept steht in der Sammlung. Mehr zu behaupten hiesse,
      den Weg zu raten, den der Zug genommen hat. #}
-  <p class="fussnote"><a href="/rezepte/{{ r.id }}">Das ganze Rezept
+  {# `.ausgang`: das hier führt aus der Karte heraus und ist deshalb ein
+     Tap-Ziel wie jedes andere (WB-400) — es mass 176 × 17 px. #}
+  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">Das ganze Rezept
     ansehen</a></p>
   {%- endif %}
 </section>
