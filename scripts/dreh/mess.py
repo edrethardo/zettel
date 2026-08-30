@@ -8,10 +8,19 @@ Sechs Fragen je Seite und Modus, gegen dieselbe Instanz wie `shot.py`:
   sich hier und ist trotzdem in Ordnung — WCAG 2.5.8 nimmt ihn aus.)
 * gibt es ein Eingabefeld unter 16 px?  (Ein Kaestchen meldet sich hier und
   ist trotzdem in Ordnung: es nimmt keinen Text auf.)
-* steht Text unter 4,5:1 gegen seinen Grund?
+* steht Text unter 4,5:1 gegen seinen Grund?  Seit Runde 4 rechnet die
+  Probe die Deckkraft der Vorfahren mit: `.zug.ersetzt { opacity: 0.85 }`
+  drückte 82 Texte unter die Schwelle, und die alte Formel sah davon
+  nichts, weil sie nur `color` gegen `background-color` hielt.
 * wie viele VERSCHIEDENE Abstaende hat das Bild einer Zeile zu ihrem Text?
   Mehr als einer heisst: die linke Spalte franst aus.
 * steht am linken Rand der Kopfleiste ein angeschnittenes Wort?
+
+Und EINE Frage an die Buehne selbst (Runde 4): /chat muss einen ERSETZTEN
+Zug zeigen. Bis dahin besuchte der Stand nur Seiten ohne einen, und die
+schlechteste Flaeche der Anwendung — die Quittung aus WB-403 — war in
+keiner Messung zu sehen. Fehlt sie, meldet der Stand das laut, statt
+vakuumgruen zu sein; `stage.py` baut sie auf, notfalls ohne Modell.
 
 Voraussetzung: geckodriver auf 4455 und die Vorfuehr-Instanz auf 8748,
 Aufbau wie in `shot.py` beschrieben.
@@ -58,8 +67,24 @@ function grund(el){
   }
   return "rgb(255,255,255)";
 }
+/* Die Deckkraft ALLER Vorfahren (Runde 4): `opacity` am Kasten wirkt auf
+   jeden Text darin, steht aber an keinem der Texte selbst. Die Schrift wird
+   dafuer rechnerisch in den Grund gemischt — dieselbe Mischung, die der
+   Bildschirm zeigt. */
+function deckkraft(el){
+  var o = 1, e = el;
+  while (e) { o *= parseFloat(getComputedStyle(e).opacity || 1); e = e.parentElement; }
+  return o;
+}
+function mischen(vg, bg, o){
+  var a = vg.match(/[\d.]+/g).map(Number), b = bg.match(/[\d.]+/g).map(Number);
+  return "rgb(" + [0,1,2].map(function(i){return Math.round(a[i]*o + b[i]*(1-o));}).join(",") + ")";
+}
 function kontrast(el){
-  var a = lum(getComputedStyle(el).color), b = lum(grund(el));
+  var g = grund(el), o = deckkraft(el);
+  var vg = getComputedStyle(el).color;
+  if (o < 1) vg = mischen(vg, g, o);
+  var a = lum(vg), b = lum(g);
   var hi = Math.max(a,b), lo = Math.min(a,b);
   return (hi+0.05)/(lo+0.05);
 }
@@ -89,6 +114,7 @@ document.querySelectorAll('.zeile').forEach(function(z){
   var rb = b.getBoundingClientRect(), rt = t.getBoundingClientRect();
   out.zeilen.push([Math.round(rb.top - rt.top), (t.textContent||'').trim().slice(0,22)]);
 });
+out.ersetzt = document.querySelectorAll('.zug.ersetzt').length;
 var nav = document.querySelector('.kopf nav');
 if (nav) {
   out.nav = {links: Math.round(nav.scrollLeft), max: Math.round(nav.scrollWidth - nav.clientWidth)};
@@ -134,6 +160,13 @@ if __name__ == "__main__":
                 if d.get("nav", {}).get("kanten"):
                     for k in d["nav"]["kanten"]:
                         zeilen.append(f"  nav: {k}")
+                # Die Quittung MUSS im Bild sein (Runde 4): ohne einen
+                # ersetzten Zug misst der Stand an /chat nur die halbe
+                # Seite und meldet gruen, was er nie gesehen hat.
+                if p == "/chat" and not d.get("ersetzt"):
+                    zeilen.append("  FEHLT: kein ersetzter Zug auf /chat"
+                                  " — Buehne mit stage.py aufbauen, sonst"
+                                  " ist die Quittung wieder unsichtbar")
                 print(kopf)
                 for z in zeilen:
                     print(z)

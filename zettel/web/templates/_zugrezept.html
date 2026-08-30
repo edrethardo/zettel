@@ -140,7 +140,14 @@
         <span class="name">{{ a.titel }}</span>
       {%- endif %}
         <span class="zahlen">
-        {%- if a.zeitsatz %}<span class="dauer">{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
+        {#- Zwei Zeiten, EINE Skala (WB-400 Runde 4): das Gewicht der Zeile
+            (WB-402) trägt nur die GESAMTZEIT. Eine Arbeitszeit ist eine
+            andere, kleinere Grösse — „25 Minuten Arbeitszeit" neben „1½
+            Stunden" gleich fett liess die Vorgewählte 2–3× langsamer
+            aussehen, als sie ist. Sie steht deshalb wie Bewertung und
+            Zutatenzahl: gedämpft. Der Vorbehalt, WAS die Suche hergibt,
+            bleibt wörtlich in der Fussnote darunter (WB-387). -#}
+        {%- if a.zeitsatz %}<span class="dauer{% if a.arbeitszeit %} arbeitszeit{% endif %}">{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
         {%- if a.rating %}<span>{{ "%.2f"|format(a.rating) }} aus {{ a.votes }} Stimmen</span>{% endif %}
         {%- if a.n_zutaten %}<span>{{ a.n_zutaten }} Zutaten</span>{% endif %}
         </span>

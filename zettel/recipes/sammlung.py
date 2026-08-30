@@ -339,6 +339,12 @@ def rezept(con: sqlite3.Connection, recipe_id: int) -> dict:
     """
     from zettel.gerichte import chefkoch, speicher
 
+    # Aus dem Assistenten und nicht nachgebaut (WB-400 Runde 4): die Karte im
+    # Chat sagt „1½ Stunden", und die Rezeptseite hinter demselben Link muss
+    # dieselbe Zahl aus derselben Rechnung sagen — zwei Summen liefen
+    # auseinander, sobald eine der beiden eine Teilzeit anders behandelt.
+    from zettel.assistant.zugrezept import gesamtzeit, zeitsatz
+
     kopf = dict(_muss_geben(con, recipe_id))
     kopf["zutaten"] = zutaten(con, recipe_id)
     kopf["n_zutaten"] = len(kopf["zutaten"])
@@ -346,6 +352,7 @@ def rezept(con: sqlite3.Connection, recipe_id: int) -> dict:
                                  if z["nicht_im_katalog"])
     kopf["zubereitung"] = chefkoch.schritte(kopf.get("instructions"))
     kopf["rezeptzutaten"] = speicher.zutaten(con, recipe_id)
+    kopf["zeitsatz"] = zeitsatz(gesamtzeit(kopf))
     return kopf
 
 

@@ -308,7 +308,11 @@ button, .knopf { overflow-wrap: normal; }
   content: ""; position: absolute; left: var(--rand); top: 17px;
   width: 10px; height: 10px; border-radius: 50%; background: var(--honig);
 }
-.band .fussnote { color: inherit; opacity: 0.85; }
+/* Ohne Deckkraft (WB-400 Runde 4): `opacity: 0.85` drückte die Erklärzeile
+   jedes Bandes unter 4,5:1 — am Chatband auf 4,43, in der Quittung
+   multipliziert mit dem Kasten auf 2,75. Leiser ist die Fussnote ohnehin:
+   sie ist eine Stufe kleiner als der Bandtext. */
+.band .fussnote { color: inherit; }
 
 /* Suche ------------------------------------------------------------------ */
 .suche { display: flex; gap: var(--v2); margin: var(--rand) 0 var(--v4); }
@@ -1171,14 +1175,21 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    Handlungsfarbe, und die grösste statische Zahl der Karte trug sie —
    buchstabengleich mit dem Link „Original auf Chefkoch" zwei Zeilen
    darunter, der wirklich irgendwohin führt. */
-.zugrezept .gesamtzeit {
+/* Nicht mehr an `.zugrezept` gebunden (WB-400 Runde 4): dieselbe Leitzahl
+   steht jetzt auch im Kopfblatt der Rezeptseite — derselbe Link, dieselbe
+   Zahl, dieselbe Gestalt. */
+.gesamtzeit {
   margin: 0 0 var(--v1); font-size: var(--t-zahl); font-weight: 700; line-height: 1.2;
   color: var(--tinte); font-family: var(--mono);
   letter-spacing: -0.02em;
 }
+/* Im Kopfblatt der Rezeptseite ist sie ein Flex-Kind der Pillenreihe: volle
+   Breite, damit die Teilzeiten-Pillen UNTER ihr beginnen — Leitzahl oben,
+   Beiwerk darunter, wie auf der Karte. */
+.rezeptherkunft .gesamtzeit { flex: 1 0 100%; margin: 0; }
 /* Die Ruhezeit gehört zur Zahl und nicht daneben: sie ist die Erklärung
    dafür, dass aus 90 Minuten neuneinhalb Stunden werden. */
-.zugrezept .gesamtzeit .ruhe {
+.gesamtzeit .ruhe {
   display: block; font-size: var(--t-fein); font-weight: 500; color: var(--gedaempft);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   letter-spacing: 0;
@@ -1269,6 +1280,16 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .andereliste .dauer { font-size: var(--t-klein); font-weight: 700;
                       color: var(--tinte); }
 .andereliste .ist .dauer { color: var(--akzent-tinte); }
+/* Aber nur die GESAMTZEIT (WB-400 Runde 4). Die Spalte mischt zwei Grössen:
+   die Gesamtzeit eines geholten Rezepts und die Arbeitszeit aus der
+   Suchantwort (WB-387 — Pho Bo: 90 Minuten Arbeit, 9½ Stunden gesamt).
+   Beide gleich betont sah aus wie EINE Skala, und die Vorgewählte wirkte
+   2–3× langsamer als jede Alternative. Eine Arbeitszeit steht deshalb wie
+   Bewertung und Zutatenzahl — betont ist, was sich vergleichen lässt. */
+.andereliste .dauer.arbeitszeit,
+.andereliste .ist .dauer.arbeitszeit {
+  font-size: var(--t-fein); font-weight: 400; color: var(--gedaempft);
+}
 .andere .fussnote { margin: 0; }
 
 /* Der Rezeptwechsel, während er läuft (WB-402) -----------------------------
@@ -1314,9 +1335,13 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 /* Was von einem ERSETZTEN Zug übrig bleibt (WB-403): die Zeilen, zu denen
    „Ja" oder „Nein" gesagt wurde. Sie sind kein Vorschlag mehr, sondern eine
    Quittung — darum kein Kartenrand und keine Überschrift, nur das Band und
-   die Zeilen. Eingerückt und leiser, damit der Blick am neuen Zug darunter
-   hängen bleibt und nicht an der Quittung darüber. */
-.zug.ersetzt { opacity: 0.85; }
+   die Zeilen. Leiser wird dabei NUR das Band (unten): eine `opacity` auf dem
+   ganzen Kasten drückte 82 Texte unter 4,5:1 — die Produktnamen, also den
+   Inhalt der Quittung, auf 3,45:1, den Satz, der sie erklärt, auf 2,75:1
+   (WB-400 Runde 4, gemessen mit `scripts/dreh/mess.py`). Das war Runde-1-
+   Punkt 10 auf neuer Fläche: gedimmt wird das Beiwerk, nie die Aussage.
+   Ruhig bleibt die Quittung trotzdem — ihre Zeilen tragen Marken statt
+   Ja/Nein, und das Band davor ist tief statt honiggelb. */
 .zug.ersetzt .zugband { background: var(--karte-tief); color: var(--gedaempft);
                         border-color: var(--linie); }
 .zug.ersetzt .zugband::before { background: var(--gedaempft); }

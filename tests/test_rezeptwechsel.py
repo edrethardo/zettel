@@ -411,15 +411,30 @@ def test_die_zeit_hebt_sich_von_den_anderen_zahlen_ab(datei, tmp_path):
     Sechs Zeilen mit derselben Schrift und derselben Zahlenreihe waren eine
     Wand. Die Zeit steht jetzt in Tinte und fett, Bewertung und Zutatenzahl
     bleiben gedämpft — eine Spalte, die sich überfliegen lässt.
+
+    **Aber nur die Gesamtzeit** (WB-400 Runde 4): eine Arbeitszeit aus der
+    Suchantwort ist eine andere, kleinere Grösse (WB-387 — Pho Bo: 90
+    Minuten Arbeit, 9½ Stunden gesamt). Beide gleich betont sah aus wie
+    EINE Skala, und die Vorgewählte wirkte 2–3× langsamer als jede
+    Alternative. Die Arbeitszeit trägt darum die Klasse `arbeitszeit` und
+    steht gedämpft wie Bewertung und Zutatenzahl.
     """
     stil = STIL.read_text(encoding="utf-8")
     assert ".andereliste .dauer" in stil
     block = stil.split(".andereliste .dauer", 1)[1].split("}", 1)[0]
     assert "var(--tinte)" in block, block
+    # Und die Arbeitszeit wird ausdrücklich zurückgenommen.
+    assert ".andereliste .dauer.arbeitszeit" in stil
+    leise = stil.split(".andereliste .dauer.arbeitszeit", 1)[1].split("}", 1)[0]
+    assert "var(--gedaempft)" in leise, leise
 
     _pho_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
     client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
     karte = _karte(client.get("/chat").text)
+    # Die Gesamtzeit trägt das Gewicht der Zeile — ohne Zusatzklasse …
     assert '<span class="dauer">9½ Stunden</span>' in karte
-    assert '<span class="dauer">45 Minuten Arbeitszeit</span>' in karte
+    # … die Arbeitszeit nicht: gleiches Wort, andere Klasse, andere Stufe.
+    assert '<span class="dauer arbeitszeit">45 Minuten Arbeitszeit</span>' \
+        in karte
+    assert '<span class="dauer">45 Minuten Arbeitszeit</span>' not in karte
