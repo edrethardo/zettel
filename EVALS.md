@@ -336,6 +336,15 @@ Chefkoch-Weg. Es gibt keinen unerklärten Verlust.
 > wurde nicht**, das kostet einen vollen Lauf gegen Netz und Modell. Was
 > geprüft ist: der Weg vom Rezept bis auf die Einkaufsliste trägt die Menge
 > jetzt (`checks/smoke.py`, Abschnitt Portionen; `tests/test_portionen.py`).
+>
+> **Zweiter Nachtrag, 2026-08-30 (WB-393): jetzt ist neu gemessen.** Der
+> Referenzlauf weiter unten ist der volle Lauf, den der erste Nachtrag noch
+> schuldig blieb. Glied 4 steht dort auf **null**: 481 Vorschlagszeilen mit
+> Menge → 481 Korbposten → 481 Listenzeilen, darunter 85 Freitextzeilen, die
+> ihre Menge vorher genau hier verloren hätten. Der Anteil der
+> Einkaufslistenzeilen mit Menge steigt damit von 71 % auf **92 %**. Die
+> 115 Zeilen in der Tabelle oben sind kein offener Befund mehr, sondern die
+> Messung des Zustands vor WB-385 (Lauf 08:36, Reparatur 09:00).
 
 **Glied 3 ist grösser als gedacht und trifft etwas anderes als vermutet.**
 Von den Mengen, die es auf die Liste schaffen, sind nur 157 von 485 gegen die
@@ -565,6 +574,74 @@ mitreissen.
 * **Ein Lauf je Stand.** Wie in WB-380: 64 Gerichte fangen einen Ausreisser
   auf, ein einzelnes Gericht nicht.
 
+## Ein zweites Modell durch denselben Harness (WB-393)
+
+Die Frage war nicht „wird ein Finetune besser", sondern eine billigere:
+**was kostet es, ein anderes Modell zu beurteilen, wenn der Harness schon
+steht?** Antwort bis hierher: einen Nachmittag und keine Zeile
+Produktionscode. Gemessen wird mit demselben `scripts/breite_probe.py
+--messen`, denselben 64 Gerichten, derselben DB-Kopie-Disziplin — getauscht
+wird nur, was auf der Box liegt.
+
+Jeder Lauf tract in ein **eigenes Phoenix-Projekt** (`--trace` plus
+`PICKNICK_PHOENIX_PROJECT`), damit das Alltagsprojekt `Picknick Agent` nicht
+sechzig Messgerichte zwischen den echten Einkäufen stehen hat; welches Modell
+geantwortet hat, steht innerhalb des Projekts an `llm.model_name` (WB-395).
+
+### Lauf 1 — `Qwen3.8-27B-Instruct`, 2026-08-30
+
+Die Referenz, frisch gefahren statt aus dem 29.08. zitiert: seither hat
+WB-397 `assistant/vorschlaege.py` angefasst, und das ist der Weg, über den
+die Probe „Ja" auf jede Zeile sagt (`alle_entscheiden`). Eine Referenz, die
+einen anderen Codestand misst als der Vergleichslauf, wäre keine.
+
+```bash
+PICKNICK_PHOENIX_PROJECT="Picknick Eval Qwen" \
+.venv/bin/python scripts/breite_probe.py --messen --db kopie.db \
+    --json roh.json --trace
+```
+
+```
+64 Gerichte, 64 gelaufen, 0 mit Fehler, 7,0 min (Phase B, sechs parallel)
+Wege                    58× chefkoch, 3× llm, 3× recipe
+Katalogtreffer          448 von 541 Begriffen (83 %), Freitext 93 (17 %)
+Quote je Gericht         Median 89 %, Mittel 84 %, Spanne 0–100 %
+Gerichte bei 0 %         1 (Schrumpelfrikandel, der Fantasiename)
+Rezeptentwurf           58 von 64 Zügen (91 %), 511 Zutaten
+Zusatzartikel im Korb   8 von 8 (7 wörtlich, 1 zu „Toilettenpapier“ übersetzt)
+Zeilen im Laden         524, davon 481 mit Menge (92 %)
+Dauer je Gericht        Median 39 s, 5 s bis 71 s
+```
+
+**Der Stand von WB-386 ist reproduziert**, mit einem anderen Codestand und an
+einem anderen Tag: 83 % gegen 83 %, Median 89 % gegen 89 %, ein Gericht bei
+null gegen eines. Die Katalogquote hängt also nicht am Tagesrauschen der Box.
+Neu ist allein die Mengenzahl — 92 % statt 71 % —, und das ist keine
+Verbesserung des Modells, sondern die erste Breitenmessung von WB-385 (siehe
+den Nachtrag oben).
+
+**Der erste Anlauf ist gescheitert, und das steht hier, weil ein
+verschwundener Lauf schlechter ist als ein gescheiterter.** 64 von 64
+Gerichten fielen in denselben Fehler — `ChatNichtVerfuegbar: Die Box
+antwortet, bedient aber noch nicht (ReadTimeout)` —, alle innerhalb von 36 s
+beim Start von Phase B. `/v1/models` war unmittelbar davor und danach in
+0,7 s da, ein Kontrolllauf über sechs Gerichte mit derselben Parallelität lief
+sauber durch. Es war ein Aussetzer der Box und kein Befund über sie; er
+kostete drei Minuten Chefkoch-Vorlauf und keine Zahl. In Phoenix stehen die
+64 Fehler-Spans weiter im selben Projekt — **ohne** `llm.model_name`, genau
+wie OBSERVABILITY.md es zusichert: ein Zug ohne Antwort bekommt keinen
+geratenen Modellnamen. Von den 1.356 Spans des Projekts tragen 127 einen, und
+alle 127 denselben.
+
+### Lauf 2 — Nemotron-Nano: offen
+
+Blockiert auf den Modellwechsel auf der Box; der ist Nutzersache und hat
+hinter dem Videodreh zu warten. Der Harness ist vorbereitet, das Kommando ist
+dasselbe mit `PICKNICK_PHOENIX_PROJECT="Picknick Eval Nemotron"`. Zu prüfen
+ist dabei ausdrücklich, ob Guided JSON mit dem Tool-Parser des Nano
+zusammenarbeitet — **tut es das nicht, ist das der Befund** und nicht der
+Anlass für einen Umweg.
+
 ## Was hier schwächer ist, als es aussieht
 
 Diese Liste gehört zum Ergebnis. Wer die Tabelle oben zitiert, muss sie
@@ -603,6 +680,11 @@ mitzitieren.
   kleineren Katalog (2.498 Produkte) gemessen** — sie sind gültig für den
   Vergleich der Varianten untereinander, aber nicht mit einem Lauf auf dem
   vollen Katalog vergleichbar. Wer neu misst, misst alle Varianten neu.
+* **Ein Lauf je Modell ist kein Konfidenzintervall.** Der Qwen-Referenzlauf
+  vom 30.08. trifft den vom 29.08. auf den Prozentpunkt genau, und das ist
+  ein Hinweis auf Stabilität — aber zwei Läufe sind zwei Läufe. Ein
+  Modellvergleich, der auf drei Prozentpunkten steht, steht auf nichts;
+  einer, der auf zwanzig steht, trägt.
 * **Die vier Läufe der Dataset-Version 3** (07:34–07:37) stehen noch in
   Phoenix und zeigen fast dieselben Zahlen (Präzision 0,830 / 0,943 / 0,850 /
   0,830). Sie sind nicht gelöscht, weil ein verschwundener Lauf schlechter ist

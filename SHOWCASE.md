@@ -187,17 +187,18 @@ No run failed. Median 34 s per dish.
 
 ![Per-dish catalog hit rate before and after the one-line fix](docs/images/eval-vorher-nachher.svg)
 
-The remaining bullets are from the first breadth run — the one whose
-quantity chain was audited link by link in [`EVALS.md`](EVALS.md):
+The quantity chain was audited link by link in [`EVALS.md`](EVALS.md):
 
-* **Not one suggestion line was lost**: 558 rows → 558 cart items → 558
-  shopping-list lines. 71 % carried a quantity to the end.
-* The lost quantities split cleanly into four measured links: the recipe
-  itself has none ("salt, to taste" — 16 %), the word mapping misses the
-  ingredient (22 %), the unit is not computable against the pack ("2 onions"
-  vs. a 1 kg net, 95× — the quantity still shows, only the pack count stays
-  at 1), and one real bug (115 lines, fixed since, guarded by tests — the
-  numbers above are from the measured run and were not re-measured).
+* **Not one suggestion line was lost**: 481 rows → 481 cart items → 481
+  shopping-list lines, and **92 % of all 524 list lines carry a quantity into
+  the store** (re-measured 2026-08-30 over the same 64 dishes).
+* The missing quantities split cleanly into measured links: the recipe itself
+  has none ("salt, to taste" — 16 %), the word mapping misses the ingredient
+  (22 %), and the unit is not computable against the pack ("2 onions" vs. a
+  1 kg net, 95× — the quantity still shows, only the pack count stays at 1).
+  A fourth link used to lose 115 lines outright (free-text items dropped their
+  quantity when added to the cart); it was fixed, guarded by tests, and the
+  re-run confirms it in the breadth: 71 % → 92 %.
 * The extra article ("…and toilet paper") arrived in the cart **8 of 8**
   times, once translated by the model.
 
