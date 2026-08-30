@@ -1,5 +1,7 @@
 # Zettel — Showcase
 
+*Zettel* (ˈtsɛtl̩) is German for the slip of paper you take to the shop.
+
 > **A grocery app for a two-person household where a 27B open model —
 > quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
 > and toilet paper" into a real shopping list: fully traced in Arize Phoenix,

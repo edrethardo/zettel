@@ -1,6 +1,7 @@
 # Zettel
 
-> **English** — Zettel is a private grocery-ordering shop for a two-person
+> **English** — Zettel (German for the slip of paper you take to the shop) is
+> a private grocery-ordering shop for a two-person
 > household on a [Tailscale](https://tailscale.com/) tailnet: she fills the
 > cart, he buys the groceries at a physical store and checks them off on his
 > phone. A chat box maps free text ("everything for spaghetti bolognese, plus

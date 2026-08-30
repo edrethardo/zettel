@@ -84,7 +84,6 @@ Hintergrund-Thread. **Die Bestellung geht durch, egal was Phoenix macht.**
 from __future__ import annotations
 
 import logging
-import os
 import threading
 
 from zettel import umgebung

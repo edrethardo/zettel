@@ -35,6 +35,14 @@ dann trotzdem vollständig da.
 
 ## Das Dataset `zettel-anfragen`
 
+> Hiess bis zum 30.08.2026 `picknick-anfragen` (WB-401, siehe README). In
+> Phoenix ist der Name der Schlüssel: `python -m evals.dataset` legt unter dem
+> neuen Namen ein **neues** Dataset an, das alte bleibt daneben stehen — samt
+> aller Experimente, die darauf gelaufen sind. Die Zahlen weiter unten in
+> diesem Dokument sind auf `picknick-anfragen` gemessen worden; dort sind sie
+> nachzuschlagen. Die zwölf Beispiele sind dieselben, das Dataset wird aus
+> `evals/dataset.py` erzeugt und nicht von Hand gepflegt.
+
 Zwölf Beispiele, vier Sorten zu je drei:
 
 | Sorte | Beispiel | Ermessen? |

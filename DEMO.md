@@ -495,3 +495,4 @@ von Betrieb.
 | Kein Trace in Phoenix | `ZETTEL_TRACING` steht auf `0`, oder Phoenix lief beim Start des Shops nicht (der Tracer wird beim Hochfahren eingerichtet). Shop neu starten. |
 | Katalogseite leer | Kein Crawl gelaufen. `/status` sagt es im Klartext. |
 | Prozess startet nicht, `Konnte nicht auf … binden` | `tailscaled` ist noch nicht da. `ZETTEL_HOST=127.0.0.1` für die Vorführung. |
+| Chat sagt „nicht erreichbar", obwohl die Box bedient | Seit dem 30.08.2026 heissen die Variablen `ZETTEL_*` statt `PICKNICK_*` (WB-401). Die alten Namen werden bis zum 01.03.2027 weiter gelesen und melden sich beim Start mit einer Warnung im Log — steht dort keine, ist die Adresse gar nicht gesetzt und der Shop redet gegen `localhost:8000`. |

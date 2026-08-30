@@ -119,7 +119,6 @@ def main(argv=None) -> int:
                    help="Sekunden zwischen zwei Anfragen")
     args = p.parse_args(argv)
 
-    import os
     db_path = args.db or umgebung.wert("ZETTEL_DB") or db.DEFAULT_DB
     image_dir = (args.image_dir or umgebung.wert("ZETTEL_IMAGE_DIR")
                  or "data/images")

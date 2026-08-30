@@ -131,6 +131,47 @@ def test_abraeumen_fasst_fremde_dateien_nicht_an(db_datei, tmp_path):
     assert len(betrieb.staende(ziel_dir)) == 1
 
 
+def test_staende_von_vor_der_umbenennung_bleiben_sichtbar(db_datei, tmp_path):
+    """Ein Stand mit dem alten Präfix ist ein Stand (WB-401).
+
+    Ein Muster, das nur `zettel-` kennt, sähe die Sicherungen von vor der
+    Umbenennung nicht: sie wären in `staende()` unsichtbar — also genau dann
+    nicht da, wenn jemand nach einer Sicherung sucht — und würden nie mehr
+    abgeräumt.
+    """
+    ziel_dir = tmp_path / "stände"
+    ziel_dir.mkdir()
+    alt = ziel_dir / "picknick-2026-08-28T03-30-00.db"
+    alt.write_bytes(b"alter Stand")
+    neu, _ = betrieb.sichern(db_datei, ziel_dir,
+                             stempel="2026-08-30T03-30-00")
+    assert betrieb.staende(ziel_dir) == [alt, neu]
+
+
+def test_neue_staende_tragen_den_neuen_namen(db_datei, tmp_path):
+    stand, _ = betrieb.sichern(db_datei, tmp_path / "stände",
+                               stempel="2026-08-30T03-30-00")
+    assert stand.name == "zettel-2026-08-30T03-30-00.db"
+
+
+def test_sortiert_wird_nach_zeitstempel_und_nicht_nach_namen(db_datei, tmp_path):
+    """Seit WB-401 stehen zwei Präfixe im selben Verzeichnis.
+
+    Über den ganzen Dateinamen sortiert stünde jeder `picknick-`-Stand vor
+    jedem `zettel-`-Stand, egal wie jung er ist — und `abraeumen()` löschte
+    dann den falschen. Hier ist der alte Stand der JÜNGERE.
+    """
+    ziel_dir = tmp_path / "stände"
+    ziel_dir.mkdir()
+    jung = ziel_dir / "picknick-2026-08-29T03-30-00.db"
+    jung.write_bytes(b"jung, aber alter Name")
+    alt, _ = betrieb.sichern(db_datei, ziel_dir,
+                             stempel="2026-08-01T03-30-00")
+    assert betrieb.staende(ziel_dir) == [alt, jung]
+    assert betrieb.abraeumen(ziel_dir, behalten=1) == [alt]
+    assert jung.exists()
+
+
 def test_zwei_sicherungen_in_derselben_sekunde(db_datei, tmp_path):
     """`VACUUM INTO` überschreibt nicht — der zweite Stand bekommt einen Namen."""
     ziel_dir = tmp_path / "stände"
@@ -647,9 +688,15 @@ def test_keine_privaten_angaben_im_repo():
     assert funde == []
 
 
-def test_zettel_env_ist_gitignort():
-    """`zettel.env` trägt die private Adresse der vLLM-Box. Sie darf unter
-    keinen Umständen Teil des Repos werden (WB-388)."""
-    ergebnis = subprocess.run(["git", "check-ignore", "-q", "zettel.env"],
-                              cwd=WURZEL)
+@pytest.mark.parametrize("name", ["zettel.env", "picknick.env"])
+def test_env_datei_ist_gitignort(name):
+    """Die Datei trägt die private Adresse der vLLM-Box. Sie darf unter
+    keinen Umständen Teil des Repos werden (WB-388).
+
+    Beide Namen: `picknick.env` wird seit WB-401 noch gelesen, und eine
+    private Adresse, die durch eine Umbenennung aus dem `.gitignore` fällt,
+    muss genau einmal versehentlich eingecheckt werden, um für immer in der
+    Historie zu stehen.
+    """
+    ergebnis = subprocess.run(["git", "check-ignore", "-q", name], cwd=WURZEL)
     assert ergebnis.returncode == 0

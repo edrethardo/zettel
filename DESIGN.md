@@ -5,6 +5,12 @@ Der vollständige Entwurf steht in
 Entscheidungen, die man kennen muss, um den Code zu lesen — und die, die von
 aussen wie ein Versehen aussehen und keines sind.
 
+> Das Projekt hiess bis zum 30.08.2026 „Picknick" (WB-401, Begründung im
+> README unter „Der alte Name: Picknick"). Die Namen in diesem Dokument sind
+> mitgezogen; wer in Git-Historie, Phoenix-Projekten oder älteren Notizen
+> unterwegs ist, findet dort weiter `picknick/`, `PICKNICK_*` und
+> `Picknick Agent`.
+
 ## Die Form
 
 Ein Prozess, eine Datei, kein Build-Schritt.

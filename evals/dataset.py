@@ -96,6 +96,12 @@ if _WURZEL not in sys.path:
 #: Der Name in Phoenix. Steht an genau einer Stelle, weil `experiment.py` ihn
 #: zum Nachladen braucht und zwei Schreibweisen ein stiller zweiter Datensatz
 #: wären.
+#:
+#: Hiess bis zum 30.08.2026 `picknick-anfragen` (WB-401). In Phoenix ist der
+#: Name der Schlüssel: der erste Lauf unter dem neuen Namen legt ein NEUES
+#: Dataset an, das alte bleibt samt seiner Experimente daneben stehen. Ein
+#: Rückfall auf den alten Namen wäre hier falsch — er würde zwei Datasets
+#: verschmelzen, die getrennt gemessen wurden (siehe EVALS.md).
 NAME = "zettel-anfragen"
 
 BESCHREIBUNG = (
