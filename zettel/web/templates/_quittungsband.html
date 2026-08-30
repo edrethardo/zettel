@@ -1,0 +1,28 @@
+{# Das Band über der Quittung eines ersetzten Zugs (WB-403) — ein eigenes
+   Stück, weil es an ZWEI Stellen entstehen muss: beim Rendern des Verlaufs
+   (`_zug.html`) und out-of-band nach einem Tipp IN der Quittung
+   (`_entscheidung.html`). Zwei Kopien desselben Satzes liefen auseinander —
+   derselbe Grund, aus dem die Rezeptkarte nur einmal existiert (`_FELDER`).
+
+   **Der Halbsatz über die unberührten Zeilen hängt am Zustand** (WB-400
+   Runde 4). „Seine unberührten Zeilen sind weg" stimmt nur, solange in der
+   Quittung nichts offen ist: ein „rückgängig" — genau wofür die Quittung da
+   ist — öffnet die Zeile darunter wieder, mit lebendem Ja/Nein, und dann
+   stünde der Satz unmittelbar über seinem Gegenbeispiel. Von den beiden
+   Auswegen (Zeile eingefroren als entschieden zeigen, oder den Halbsatz
+   lassen) fällt der Halbsatz: die Rücknahme ist der ZWECK der Quittung
+   (WB-361 — eine Entscheidung ist ein Tipp und kein Urteil), und eine
+   eingefrorene Marke zeigte einen Zustand, den die Datenbank nicht mehr hat.
+   Entscheidet die Nutzerin die Zeile erneut, kommt der Halbsatz zurück —
+   das Band sagt in jedem Zustand nur, was gerade wahr ist.
+
+   `oob` setzt die Antwort auf einen Einzeltipp (`_entscheidung.html`):
+   getauscht wird dort nur die Zeile, das Band stünde sonst bis zum Neuladen
+   mit dem alten Halbsatz über einer offenen Zeile. #}
+{%- set offen_drin = m.vorschlaege | selectattr("offen") | list %}
+<p class="band zugband" id="quittungsband-{{ m.id }}" role="status"
+   {%- if oob %} hx-swap-oob="true"{% endif %}>Vom vorigen Rezept bleibt,
+  was du entschieden hattest — und was schon einmal im Korb lag.
+  <span class="fussnote">Der Vorschlag selbst ist ersetzt{% if not offen_drin %},
+    seine unberührten Zeilen sind weg{% endif %}. Was du bestätigt hast,
+    liegt im Korb.</span></p>

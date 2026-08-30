@@ -16,4 +16,9 @@
 {% include "_vorschlag.html" %}
 <div id="sammel-{{ m.id }}" hx-swap-oob="true">{% include "_sammel.html" %}</div>
 <div id="entwurf-{{ m.id }}" hx-swap-oob="true">{% include "_entwurf.html" %}</div>
+{# Ein Tipp IN der Quittung (rückgängig, erneutes Ja/Nein) ändert, ob dort
+   etwas offen ist — und daran hängt der Halbsatz des Bandes darüber
+   (WB-400 Runde 4). Nur bei einem ersetzten Zug: an einem lebenden gibt es
+   das Band nicht, und ein OOB ohne Ziel wäre tote Last auf jedem Tipp. #}
+{% if m.ueberholt %}{% with oob = true %}{% include "_quittungsband.html" %}{% endwith %}{% endif %}
 {% include "_nachtrag.html" %}

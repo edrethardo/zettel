@@ -250,6 +250,67 @@ def test_eine_zurueckgenommene_zeile_bleibt_auch_stehen(datei, tmp_path):
         "eine zurückgenommene Ablehnung ist wieder offen und bleibt nicht"
 
 
+def test_das_band_wird_nach_dem_ersten_tipp_nicht_falsch(datei, tmp_path):
+    """WB-400 Runde 4, Punkt 2: kein Satz, der über seinem Gegenbeispiel steht.
+
+    „Seine unberührten Zeilen sind weg" stimmt nur, solange in der Quittung
+    nichts offen ist. Ein „rückgängig" — genau wofür die Quittung da ist —
+    öffnet die Zeile darunter wieder, mit lebendem Ja/Nein, und das übersteht
+    das Neuladen (`eingelegt_at` hält sie sichtbar). Der Halbsatz fällt dann
+    weg — die Rücknahme ist der Zweck der Quittung, eine eingefrorene Marke
+    zeigte einen Zustand, den die Datenbank nicht mehr hat — und kommt mit
+    der nächsten Entscheidung zurück.
+    """
+    client = _ein_zug(datei, tmp_path, wechsel=1)
+    mid = _zug_id(datei)
+    ja = _zeilen(datei, mid)[0][0]
+    client.post(f"/chat/vorschlag/{ja}/entscheiden?decision=kept",
+                headers=HTMX)
+    _wechsel(client, mid, PHO_GA)
+
+    # Frisch gewechselt ist alles in der Quittung entschieden — der Satz
+    # steht ganz.
+    seite = _eine_zeile(client.get("/chat").text)
+    assert "seine unberührten Zeilen sind weg" in seite
+
+    # Die Rücknahme IN der Quittung tauscht nur die Zeile; das Band drüber
+    # muss deshalb out-of-band mitkommen — ohne den Halbsatz, denn unter ihm
+    # steht jetzt eine offene Zeile mit lebendem Ja/Nein.
+    antwort = client.post(
+        f"/chat/vorschlag/{ja}/entscheiden?decision=offen", headers=HTMX)
+    assert f'id="quittungsband-{mid}"' in antwort.text
+    assert "hx-swap-oob" in antwort.text
+    flach = _eine_zeile(antwort.text)
+    assert "Der Vorschlag selbst ist ersetzt." in flach
+    assert "unberührten Zeilen" not in flach
+
+    # Das Neuladen sagt dasselbe — die offene Zeile steht ja noch da.
+    seite = _eine_zeile(client.get("/chat").text)
+    assert "Vom vorigen Rezept bleibt" in seite
+    assert "unberührten Zeilen" not in seite
+
+    # Wieder entschieden: nichts mehr offen, der Halbsatz kommt zurück.
+    client.post(f"/chat/vorschlag/{ja}/entscheiden?decision=kept",
+                headers=HTMX)
+    seite = _eine_zeile(client.get("/chat").text)
+    assert "seine unberührten Zeilen sind weg" in seite
+
+
+def test_an_einem_lebenden_zug_reist_kein_band_mit(datei, tmp_path):
+    """Die Kehrseite des OOB-Nachtrags: er kostet nur, wo es ihn gibt.
+
+    Ein Tipp an einem gewöhnlichen Zug hat kein Quittungsband über sich —
+    die Antwort darf keins mitschicken, sonst zahlt jede der 150 Zeilen
+    einer Liste für einen Kasten, den es nicht gibt (WB-372).
+    """
+    client = _ein_zug(datei, tmp_path)
+    mid = _zug_id(datei)
+    ja = _zeilen(datei, mid)[0][0]
+    antwort = client.post(
+        f"/chat/vorschlag/{ja}/entscheiden?decision=kept", headers=HTMX)
+    assert "quittungsband" not in antwort.text
+
+
 def test_die_karte_des_alten_rezepts_ist_weg_der_rest_bleibt(datei, tmp_path):
     """Der Rest ist eine Quittung und kein Vorschlag.
 

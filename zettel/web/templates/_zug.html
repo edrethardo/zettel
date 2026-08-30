@@ -28,11 +28,11 @@
    ist keine Frage mehr, sondern ein Verweis. #}
 <div class="zug{% if m.ueberholt %} ersetzt{% endif %}" id="zug-{{ m.id }}">
   {% if m.ueberholt %}
-    <p class="band zugband" role="status">Vom vorigen Rezept bleibt, was du
-      entschieden hattest — und was schon einmal im Korb lag.
-      <span class="fussnote">Der Vorschlag selbst ist ersetzt, seine
-        unberührten Zeilen sind weg. Was du bestätigt hast, liegt im
-        Korb.</span></p>
+    {# Das Band steht als eigenes Stück, weil es nach einem Tipp in der
+       Quittung out-of-band nachgeführt wird — sein Halbsatz über die
+       unberührten Zeilen hängt am Zustand (WB-400 Runde 4, Begründung im
+       Band selbst). #}
+    {% include "_quittungsband.html" %}
     <ul class="vorschlaege">
       {% for v in m.vorschlaege %}
       {% include "_vorschlag.html" %}

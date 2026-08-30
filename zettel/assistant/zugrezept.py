@@ -163,7 +163,7 @@ def _karte(con: sqlite3.Connection, row) -> dict:
     k["n_schritte"] = len(chefkoch.schritte(text)) if text else 0
     k["zutaten"] = speicher.zutaten(con, int(k["id"]))
     k["n_zutaten"] = len(k["zutaten"])
-    k["gesamt_minuten"] = _gesamtzeit(k)
+    k["gesamt_minuten"] = gesamtzeit(k)
     k["zeitsatz"] = zeitsatz(k["gesamt_minuten"])
     k["ruhesatz"] = (zeitsatz(k["rest_minutes"])
                      if k["rest_minutes"] else None)
@@ -236,7 +236,7 @@ def alternativen(con: sqlite3.Connection, karte: dict) -> list[dict]:
     gewaehlt = str(karte.get("source_id") or "")
     fertig = []
     for t in liste:
-        gesamt = _gesamtzeit({"prep_minutes": t["r_prep"],
+        gesamt = gesamtzeit({"prep_minutes": t["r_prep"],
                               "cook_minutes": t["r_cook"],
                               "rest_minutes": t["r_rest"]})
         fertig.append({
@@ -453,8 +453,12 @@ def _hat_inhalt(k: dict) -> bool:
                 or k["n_schritte"] or k["source_url"])
 
 
-def _gesamtzeit(k: dict) -> int | None:
+def gesamtzeit(k: dict) -> int | None:
     """Vorbereitung + Kochen + Ruhen. `None`, wenn keine Zeit dasteht.
+
+    Öffentlich seit WB-400 Runde 4: die Rezeptseite zeigt dieselbe Leitzahl
+    wie die Karte im Chat, und eine zweite Summe an anderer Stelle wäre der
+    Anfang einer zweiten Zeitrechnung.
 
     Eine fehlende Angabe ist nicht null Minuten: ein selbst angelegtes Rezept
     hat gar keine Zeiten, und „0 Minuten" wäre eine Behauptung, die niemand

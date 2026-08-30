@@ -914,6 +914,38 @@ def test_die_rezeptseite_zeigt_zubereitung_und_herkunft(con, tmp_path):
     assert "Noch kein Produkt verknüpft" in seite
 
 
+def test_die_rezeptseite_traegt_die_leitzahl_der_karte(con, tmp_path):
+    """WB-400 Runde 4, Punkt 4: derselbe Link, dieselbe Zahl, ein Wortlaut.
+
+    Die Karte im Chat sagt „9½ Stunden" als Leitzahl; die Rezeptseite hinter
+    demselben Link sagte nur „90 Min. Zubereitung / 480 Min. Kochzeit" —
+    drei Pillen im Gewicht von „Schwierigkeit 2 von 3", addieren musste der
+    Leser. Jetzt steht dieselbe Zahl aus derselben Rechnung
+    (`zugrezept.zeitsatz`) über den Pillen, und der Quelllink trägt den
+    Wortlaut der Karte statt eines zweiten Textes.
+    """
+    from fastapi.testclient import TestClient
+
+    from zettel.web import app as webapp
+
+    datei = tmp_path / "zettel.db"
+    c = db.connect(datei)
+    db.migrate(c)
+    lauf.hole_eines(c, echtes_chefkoch(), "Pho", pause_s=0,
+                    schreib=lambda _: None)
+    recipe_id = speicher.gericht(c, "Pho")["rezept"]["id"]
+    c.close()
+
+    client = TestClient(webapp.create_app(db_path=datei, image_dir=tmp_path))
+    seite = client.get(f"/rezepte/{recipe_id}").text
+    # Die Leitzahl — VOR den Teilzeiten, nicht statt ihrer.
+    assert '<span class="gesamtzeit">9½ Stunden</span>' in seite
+    assert "90 Min. Zubereitung" in seite and "480 Min. Kochzeit" in seite
+    assert seite.index("9½ Stunden") < seite.index("Min. Zubereitung")
+    # Der Quelllink im Wortlaut der Karte (`_zugrezept.html`).
+    assert "Original auf Chefkoch" in seite
+
+
 # --------------------------------------------------------------------------
 # Stufe 1 erkennt das Gericht
 

@@ -8,9 +8,16 @@
    Zutatenliste — wer abends um sieben Pho anfängt, sollte das vorher wissen.
    Ein selbst angelegtes Rezept hat davon nichts, dann fällt der ganze Block
    weg statt leer dazustehen. #}
-{% if rezept.source_url or rezept.prep_minutes or rezept.cook_minutes or rezept.difficulty %}
+{% if rezept.source_url or rezept.zeitsatz or rezept.prep_minutes or rezept.cook_minutes or rezept.difficulty %}
 <p class="rezeptherkunft">
-  {% if rezept.prep_minutes %}<span class="zeit">{{ rezept.prep_minutes }} Min. Zubereitung</span>{% endif %}
+  {#- Die LEITZAHL zuerst (WB-400 Runde 4) — dieselbe Zahl, dieselbe Rechnung
+     wie auf der Karte im Chat (`zugrezept.zeitsatz`). Die Karte sagt „1½
+     Stunden" in der grossen Kassenschrift; die Seite hinter demselben Link
+     zeigte drei gleichgewichtige Pillen und liess den Leser selbst addieren.
+     Die Teilzeiten bleiben als Pillen darunter stehen: am Herd zählt, WELCHE
+     Stunde Ruhezeit ist. #}
+  {% if rezept.zeitsatz %}<span class="gesamtzeit">{{ rezept.zeitsatz }}</span>{% endif %}
+  {%- if rezept.prep_minutes %}<span class="zeit">{{ rezept.prep_minutes }} Min. Zubereitung</span>{% endif %}
   {%- if rezept.cook_minutes %}<span class="zeit">{{ rezept.cook_minutes }} Min. Kochzeit</span>{% endif %}
   {%- if rezept.rest_minutes %}<span class="zeit">{{ rezept.rest_minutes }} Min. Ruhezeit</span>{% endif %}
   {%- if rezept.difficulty %}<span class="zeit">Schwierigkeit {{ rezept.difficulty }} von 3</span>{% endif %}
@@ -18,8 +25,12 @@
   {%- if rezept.source_url %}
   {# Die Herkunft SICHTBAR und nicht bloss gespeichert: das ist fremde Arbeit.
      Wer das Rezept wirklich kocht, will die Originalseite mit ihren Bildern
-     und Kommentaren aufmachen können. #}
-  <a class="quelle" href="{{ rezept.source_url }}" target="_blank" rel="noopener noreferrer">{{ rezept.source_title or rezept.name }} auf {{ rezept.source or "der Quellseite" }}</a>
+     und Kommentaren aufmachen können.
+     Im WORTLAUT der Karte (WB-400 Runde 4): derselbe Link trug zwei Texte —
+     im Chat „Original auf Chefkoch", hier den Quelltitel, der bei einem
+     umbenannten Rezept über zwei Zeilen lief und wie ein zweites Rezept
+     aussah. #}
+  <a class="quelle" href="{{ rezept.source_url }}" target="_blank" rel="noopener noreferrer">Original auf {{ rezept.source | capitalize if rezept.source else "der Quellseite" }}</a>
   {%- endif %}
 </p>
 {% endif %}
