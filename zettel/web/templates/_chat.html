@@ -21,13 +21,54 @@
   {# Keine Überschrift mehr: die Seite selbst heisst „Chat" (WB-382). Zweimal
      dasselbe Wort untereinander wäre eine Zwischenüberschrift ohne Ebene
      darunter. #}
-  {# Die Meldung steht ZWEIMAL, und das ist Absicht (WB-378). Hier oben, weil
-     der Chat hier anfängt — und gleich noch einmal über dem Eingabefeld, das
-     im Verlauf einer echten Sitzung siebentausend Zeilen weiter unten steht.
-     Wer unten „Fragen" tippt, sieht diese hier nie. #}
-  <div id="chat-fehler">
-    {% with leise = true %}{% include "_chatfehler.html" %}{% endwith %}
+  {# **Das Eingabefeld steht OBEN und bleibt oben** (WB-416).
+
+     Der Nutzer: „Der Chat soll außerdem immer ganz oben sein. Runter zu
+     scrollen für den Chat ist unergonomisch." Nachgemessen am laufenden Shop
+     (Firefox über geckodriver, 390 × 844):
+
+         Seitenhöhe                      5.364 px
+         Eingabefeld lag bei             y = 5.280
+         zu scrollen, bis es im Bild ist 4.602 px = 6,1 Bildschirmhöhen
+         Züge im Verlauf                 2
+
+     Zwei Züge, und der Weg zum Feld war sechs Bildschirme lang. Ein Chat
+     gehört unten, solange der Verlauf kurz ist; hier ist ein einzelner Zug
+     eine Bildschirmhöhe (Rezeptkarte, Zutatenliste, Vorschläge), und die
+     Grenze aus WB-372 zeigt trotzdem drei davon.
+
+     **Der Kopf klebt**, und in ihm steht alles, womit man handelt: die
+     Korbbrücke (sie kam aus `chat.html` hierher — zwei klebende Streifen auf
+     `top: 0` hätten einander verdeckt) und das Feld. Der Verlauf läuft
+     darunter durch.
+
+     **Die Meldung steht damit nur noch EINMAL.** Sie stand zweimal, weil
+     zwischen Chatkopf und Eingabefeld der ganze Verlauf lag (WB-378) — dieser
+     Grund ist mit diesem Ticket weg, und zwei gleiche Sätze übereinander
+     wären genau die Dopplung, die WB-400 an der Quittung gerügt hat. #}
+  <div class="chatkopf">
+    <div id="korbbruecke">{% include "_korbbruecke.html" %}</div>
+
+    <div id="chat-fehler">{% include "_chatfehler.html" %}</div>
+
+    <form class="chatform" method="post" action="/chat"
+          hx-post="/chat" hx-target="#chat"
+          hx-swap="outerHTML show:#chat-neuestes:bottom"
+          hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
+      <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
+             aria-label="Was brauchst du?" placeholder="Was brauchst du?">
+      <button type="submit">Fragen</button>
+    </form>
+    {# Ein 27B-Modell schreibt Sekunden lang. Ohne sichtbares Warten tippt man
+       ein zweites Mal. #}
+    <p id="chat-laeuft" class="htmx-indicator fussnote">Das Modell überlegt …</p>
   </div>
+
+  {# Der Wartezähler (WB-414) steht UNTER dem Kopf und klebt nicht: er ist mit
+     Band, Begründung und zwei Knöpfen eine halbe Bildschirmhöhe hoch, und ein
+     Kopf, der die halbe Seite einnimmt, ist kein Kopf mehr. Er steht als
+     Erstes im Verlauf, also da, wo der Blick nach dem Tipp ohnehin hinfällt. #}
+  {% if warten_satz %}{% include "_chatwarten.html" %}{% endif %}
 
   {% if verlauf_geleert %}
   {# Was gelöscht wurde, und was ausdrücklich nicht (WB-372). Der zweite Satz
@@ -126,25 +167,10 @@
   </form>
   {% endif %}
 
-  {# Hier steht die Meldung ein zweites Mal — an dem Knopf, der sie ausgelöst
-     hat. Eine eigene `id`, weil zwei Elemente mit derselben nicht getauscht
-     werden können; gefüllt wird sie aus demselben `chat_fehler`, und
-     `_nachtrag.html` trägt beide out-of-band nach. #}
-  <div id="chat-fehler-unten">{% include "_chatfehler.html" %}</div>
-
-  {# Der Wartezähler (WB-414) — zwischen der Meldung und dem Feld, also da,
-     wo der Blick nach dem Tipp auf „Fragen" ohnehin hängt. Er steht nur da,
-     wenn ein Satz auf das Modell wartet. #}
-  {% if warten_satz %}{% include "_chatwarten.html" %}{% endif %}
-
-  <form class="chatform" method="post" action="/chat"
-        hx-post="/chat" hx-target="#chat" hx-swap="outerHTML"
-        hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
-    <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
-           aria-label="Was brauchst du?" placeholder="Was brauchst du?">
-    <button type="submit">Fragen</button>
-  </form>
-  {# Ein 27B-Modell schreibt Sekunden lang. Ohne sichtbares Warten tippt man
-     ein zweites Mal. #}
-  <p id="chat-laeuft" class="htmx-indicator fussnote">Das Modell überlegt …</p>
+  {# Der Anker für `show:` (WB-416). Das Eingabefeld steht oben, die frische
+     Antwort unten — ohne ihn bliebe der Blick nach dem Abschicken am Kopf
+     kleben, und die Antwort stünde ungesehen darunter. Ein leeres Element,
+     weil der jüngste Zug seine eigene `id` schon trägt (`zug-N`) und eine
+     zweite nicht bekommen kann. #}
+  <span id="chat-neuestes" aria-hidden="true"></span>
 </section>

@@ -1528,7 +1528,10 @@ def create_app(db_path: str | Path | None = None,
         """
         if ist_htmx(request):
             antwort.headers["HX-Retarget"] = "#chat"
-            antwort.headers["HX-Reswap"] = "outerHTML"
+            # `show:` wie am Eingabefeld (WB-416): das Feld steht oben, die
+            # frische Antwort unten. Ohne das bliebe der Blick am Kopf.
+            antwort.headers["HX-Reswap"] = \
+                "outerHTML show:#chat-neuestes:bottom"
         return antwort
 
     @app.post("/chat/{mid}/sorten")

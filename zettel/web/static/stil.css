@@ -1408,6 +1408,35 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
    Der Zähler ist eine Zahl, die sich jede Sekunde ändert: `tabular-nums`,
    damit die Zeile dabei nicht zappelt. */
+/* **Der Chatkopf klebt oben** (WB-416). Gemessen vor dem Ticket: das
+   Eingabefeld lag bei y = 5.280 auf einer 5.364 px hohen Seite — 6,1
+   Bildschirmhöhen scrollen, bei zwei Zügen im Verlauf.
+
+   In ihm steht alles, womit man handelt: die Korbbrücke (was angekommen ist)
+   und das Feld (was man fragen will). Sie sind zusammengezogen, weil zwei
+   klebende Streifen auf `top: 0` einander verdeckt hätten — die Brücke stand
+   bis WB-416 als eigenes `position: sticky` in `chat.html`.
+
+   `z-index: 6` über allem anderen dieser Seite: das Band eines laufenden
+   Rezeptwechsels klebt mit 4, die Brücke klebte mit 3. Der Kopf ist der
+   einzige Streifen, der IMMER dasteht — was unter ihm durchläuft, gehört
+   unter ihn.
+
+   Ein eigener Untergrund und eine Linie: ohne beides scheint der Verlauf
+   durch, und ein klebender Kopf ohne Kante sieht aus wie ein Fehler im
+   Bildlauf. */
+.chatkopf {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--grund); padding: var(--v2) 0 var(--v3);
+  border-bottom: 1px solid var(--linie); margin: 0 0 var(--rand);
+}
+/* Im Kopf klebt nichts mehr für sich — er klebt als Ganzes. */
+.chatkopf .korbbruecke { position: static; }
+.chatkopf .chatform { margin-top: var(--v2); }
+.chatkopf #chat-laeuft { margin: var(--v2) 0 0; }
+/* Ein leerer Fehlerplatz soll keinen Abstand aufreissen. */
+.chatkopf #chat-fehler:empty { display: none; }
+
 #chat-warten { margin: 0 0 var(--rand); }
 .warten-zaehler {
   display: block; font-size: var(--t-klein); color: var(--gedaempft);
