@@ -3,10 +3,13 @@
    Sie ersetzt den Kasten aus `_zugwechsel.html` — also genau die Stelle, an
    der vorher der ALTE Zug stand — durch drei Stücke:
 
-       1. der Rest      was am alten Zug entschieden wurde, falls etwas
+       1. das Band      „Das Rezept ist jetzt …"
+       2. der Zug       die neue Antwort mit Karte, Vorschlägen und Ja/Nein
+       3. der Rest      was am alten Zug entschieden wurde, falls etwas
                         entschieden wurde — sonst gar nichts
-       2. das Band      „Das Rezept ist jetzt …"
-       3. der Zug       die neue Antwort mit Karte, Vorschlägen und Ja/Nein
+
+   **Die Reihenfolge ist seit WB-417 gedreht**: der Verlauf zeigt den jüngsten
+   Zug oben, und innerhalb dieses Stücks gilt dasselbe.
 
    **Der alte Zug ist ersetzt und nicht angehängt** (WB-403). WB-402 setzte
    den Wartekasten mit `afterend` hinter ihn: der alte blieb stehen, der neue
@@ -16,12 +19,12 @@
    zeigt von einer Kette nur ihr letztes Glied — im Dokument wie nach dem
    Neuladen.
 
-   **Der Rest steht VOR dem Band**, weil er älter ist: dieselbe Reihenfolge,
-   die `verlauf()` liefert (`ORDER BY coalesce(ersetzt, id), id`). Und er
-   steht überhaupt da, weil eine Entscheidung der Nutzerin gehört und nicht
-   dem Vorschlag: ein „Ja" liegt im Korb, ein „Nein" trägt ein Eval-Label
-   (Spec 8.1). Was am alten Zug OFFEN war, kommt nicht wieder — es meinte das
-   Rezept, das gerade abgewählt wurde, und zählt nach Spec 8.1 nirgends.
+   **Der Rest steht überhaupt da**, weil eine Entscheidung der Nutzerin
+   gehört und nicht dem Vorschlag: ein „Ja" liegt im Korb, ein „Nein" trägt
+   ein Eval-Label (Spec 8.1). Was am alten Zug OFFEN war, kommt nicht wieder
+   — es meinte das Rezept, das gerade abgewählt wurde, und zählt nach
+   Spec 8.1 nirgends. Er steht seit WB-417 UNTER dem neuen Zug: er ist älter,
+   und älter heisst auf dieser Seite weiter unten.
 
    **Die neue FRAGE ist nicht dabei, und das ist kein Versehen.** Sie ist Wort
    für Wort derselbe Satz wie die alte (`_wechsel_vollziehen` schickt ihn noch
@@ -35,10 +38,18 @@
    wird, worauf der Nutzer ohnehin sieht —, aber die Fehlerantwort daneben
    braucht ein Sprungziel, und die beiden Hüllen sollen gleich gebaut
    bleiben. #}
-{% if rest %}{% with m = rest %}{% include "_zug.html" %}{% endwith %}{% endif %}
+{# **Neu zuerst, dann der Rest** (WB-417). Bis dahin stand der Rest oben,
+   „weil er älter ist" — dieselbe Reihenfolge, die `verlauf()` liefert. Seit
+   der Verlauf den jüngsten Zug oben zeigt, ist das genau verkehrt: dann
+   stünde das Älteste dieses Stücks über dem Jüngsten, während die Seite
+   ringsherum andersherum läuft.
+
+   Das Band steht ÜBER dem neuen Zug, weil es ihn ankündigt — es ist keine
+   Zeile des Verlaufs, sondern die Auskunft über den Wechsel. #}
 <p class="band zugband" id="gewechselt-{{ mid }}" role="status">Das Rezept ist
   jetzt „{{ gewechselt }}“ — dieser Zug ist neu.
   <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im Korb;
     offene Vorschläge zum alten Rezept sind weg.</span></p>
 {% for m in neue %}{% include "_zug.html" %}{% endfor %}
+{% if rest %}{% with m = rest %}{% include "_zug.html" %}{% endwith %}{% endif %}
 {% include "_nachtrag.html" %}
