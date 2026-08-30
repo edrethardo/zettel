@@ -209,6 +209,13 @@ h2 { font-size: var(--t-h2); margin: var(--v5) 0 var(--v2); }
   outline: 3px solid var(--akzent); outline-offset: 2px; border-radius: 8px;
 }
 input::placeholder { color: var(--gedaempft); opacity: 1; }
+/* Ein Platzhalter, der mitten im Wort endet, liest sich wie ein Absturz —
+   auf 390 px stand im Korb „Etwas, das der Katalog nicht" und hörte an der
+   Feldkante auf (WB-400 Runde 3). Dasselbe Übel wie der Wortfetzen in der
+   Kopfleiste, dieselbe Antwort: lieber sichtbar gekürzt als hart
+   abgeschnitten. Gilt auch für einen zu langen WERT — der Schnitt fällt
+   dann auf drei Punkte statt auf einen halben Buchstaben. */
+input { text-overflow: ellipsis; }
 button:disabled { opacity: 0.5; cursor: default; }
 /* In Knöpfen bricht kein Wort in der Mitte: „Frage\nn" ist kein Knopf mehr.
    Das seitenweite `overflow-wrap: anywhere` ist das Sicherheitsnetz für
@@ -249,11 +256,27 @@ button, .knopf { overflow-wrap: normal; }
      Erste, was man von der Seite sieht. 14 px sind schmaler als das
      10-px-Polster eines Ziels plus die Lücke, treffen also im Ruhezustand
      kaum einen Buchstaben und sagen beim Scrollen „hier geht es weiter".
-     Dazu Rastpunkte: gescrollt wird auf ganze Ziele, nicht mitten hinein. */
+
+     Die Maske allein reichte nicht (Runde 3, nachgemessen auf allen 13
+     Seiten in beiden Modi): auf 8 von 12 Seiten blieben LINKS zwischen 10
+     und 58 px eines Ziels stehen — „pte", „en", und auf /bestellungen 58 px
+     von „Korb 7" samt der blauen Pille, direkt neben dem Schriftzug. 14 px
+     Verlauf lösen keinen zweisilbigen Rest auf; sie machen ihn blass.
+     Deshalb rastet die Leiste jetzt hart auf den ANFANG eines Ziels
+     (`mandatory` + `start`) und der Aufschlag setzt sie beim Laden genau
+     dorthin. Links steht damit immer ein ganzes Wort; angeschnitten wird
+     nur rechts — dort, wo „hier geht es weiter" hingehört. */
   mask-image: linear-gradient(90deg, transparent 0, #000 14px,
                               #000 calc(100% - 14px), transparent 100%);
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
 }
+/* Ein Abstandhalter am Ende der Leiste. Er ist ein FLEX-ELEMENT und deshalb
+   in `scrollWidth` enthalten — das letzte Ziel selbst war es nicht: „wer bin
+   ich?" ragte 13 px über den scrollbaren Bereich hinaus und blieb auch am
+   Anschlag angeschnitten (Firefox rechnet den Überhang des letzten
+   Flex-Kindes nicht mit). Zugleich bekommt das letzte Ziel damit denselben
+   Rand wie das erste (WB-400 Runde 3). */
+.kopf nav::after { content: ""; flex: 0 0 var(--v3); }
 .kopf nav::-webkit-scrollbar { height: 3px; }
 .kopf nav::-webkit-scrollbar-thumb {
   background: var(--linie); border-radius: 999px;
@@ -264,7 +287,7 @@ button, .knopf { overflow-wrap: normal; }
   padding: 0 var(--v3); border-radius: var(--radius-knopf);
   color: var(--gedaempft); text-decoration: none;
   font-size: var(--t-klein); font-weight: 500; white-space: nowrap;
-  scroll-snap-align: end;
+  scroll-snap-align: start;
 }
 .kopf nav a:active { background: var(--karte-tief); }
 /* Wo man gerade ist. Nicht nur Farbe: /bestellungen und /pick sind zwei sehr
@@ -486,8 +509,17 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   padding: var(--v3) var(--v1); border-bottom: 1px solid var(--linie);
 }
 .korb > .zeile:last-child { border-bottom: none; }
-.zeile > .bild { grid-area: bild; }
-.zeile > .text { grid-area: text; }
+/* Foto und Name fangen auf DERSELBEN Höhe an (WB-400 Runde 3). `align-items:
+   center` liess das 56-px-Foto in der Mitte eines Textblocks schwimmen, der
+   zwischen einer und sechs Zeilen hoch ist — je länger der Satz „14 Stk
+   gebraucht — 14 Stk lässt sich nicht gegen die Packung rechnen…", desto
+   tiefer rutschte das Bild. Gemessen im Chat NEUN verschiedene Abstände
+   zwischen Bildkante und Textkante auf einer Seite (16 bis 70 px), im Korb
+   vier (−5 bis 36), auf der Rezeptseite vier (−5 bis 69): eine ausgefranste
+   linke Spalte, und bei der langen Kochsauce begann das Foto erst neben der
+   vierten Zeile des Namens. Oben bündig ist EIN Abstand statt neun. */
+.zeile > .bild { grid-area: bild; align-self: start; }
+.zeile > .text { grid-area: text; align-self: start; }
 .zeile > .stellen { grid-area: stellen; }
 .zeile > .alternativen, .zeile > .korrektur { grid-area: voll; }
 .zeile .bild { width: 56px; height: 56px; flex: 0 0 56px; }
@@ -567,7 +599,14 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
           background: var(--ok-hell); color: var(--ok-text);
           border: 1px solid var(--ok-linie); font-weight: 600;
           animation: auftauchen 0.35s ease; }
-.stand { color: var(--gedaempft); font-weight: 600; }
+/* Der Stand einer Seite ist eine AUSSAGE und keine Fussnote (WB-400 Runde 3).
+   „Trefferquote 88 % (7 von 8 entschiedenen)" und „Noch 3 zu holen. 1 gab's
+   nicht." sind die Zahlen, wegen derer man die Seite aufmacht — und sie
+   standen in derselben gedämpften Farbe wie der Absatz darunter, der sie
+   erklärt. Drinnen in der Karte („7 behalten") trug dieselbe Sorte Zahl
+   längst Tinte. Das Gewicht trennt sie weiter vom Fliesstext; die Farbe
+   trennt sie jetzt von ihrer eigenen Erläuterung. */
+.stand { color: var(--tinte); font-weight: 600; }
 
 /* Bestellübersicht: dieselbe Karten-Liste wie der Korb. */
 .bestellungen, .rezepte {
@@ -576,6 +615,16 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
 .bestellungen .zweig, .rezepte .zweig { padding: var(--v3) var(--v1); align-items: flex-start; }
+/* Kein Kassenzettel für einen Halbsatz (WB-400 Runde 3) — dieselbe Ausnahme
+   wie `.lauf .menge` auf /status, aus demselben Grund und bisher nur dort
+   gezogen. In `.menge` steht auf diesen beiden Seiten kein Zahlenfeld,
+   sondern eine verkettete Auskunft: „16 Zutaten · 16 verknüpft · für 3
+   Portionen · mit Zubereitung · von chefkoch" und, auf /bestellungen, fünf
+   Zeilen Produktnamen. Die Regel oben im Blatt sagt es selbst — Monospace
+   bekommt eine Zahl, die als Zahl dasteht, nicht ein Satz, in dem eine
+   vorkommt; drei Zeilen Kassenschrift sind eine Wand und keine
+   Auszeichnung. */
+.rezeptzeile .menge, .bestellung .menge { font-family: inherit; }
 .bestellungen > li:last-child .zweig,
 .rezepte > li:last-child .zweig { border-bottom: none; }
 .bestellung.erledigt .name { color: var(--gedaempft); }
@@ -687,6 +736,25 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
    weil es dieselbe Sache ist. */
 .rezeptzeile .zweig { align-items: flex-start; }
+
+/* EINE Kante für beide Bedienstrecken der Rezeptzutat (WB-400 Runde 3).
+   Diese Zeile ist die einzige im Shop mit ZWEI Strecken untereinander: das
+   Mengenfeld samt Einheit („2 | Große | für 3 Portionen") steht im
+   Textblock und damit an der Textkante, der Packungssteller mit „×" stand
+   als volle Rasterzeile rechtsbündig. Zwei Strecken, zwei Fluchten, 130 px
+   auseinander — und an einer Freitextzutat, die kein Mengenfeld hat, hing
+   der Steller allein im rechten Drittel mit einem leeren Viertel Blatt
+   daneben. Beide stehen jetzt an derselben Kante wie der Name; die
+   Bildspalte bleibt frei, weil dort das Foto steht. */
+#rezept .zeile > .stellen {
+  grid-area: 2 / 2 / 3 / 3;
+  justify-content: flex-start; margin-left: 0;
+  /* Auf einer Kante, aber nicht im selben Atemzug: „wie viel brauche ich"
+     und „wie viele Packungen" sind zwei Fragen, und untereinander mit dem
+     Zeilenabstand des Rasters (4 px) lasen sie sich wie ein Block aus vier
+     gleichen Kästen. */
+  margin-top: var(--v1);
+}
 
 /* Eine Zutat, die es im Katalog nicht mehr gibt (`active = 0`, Spec 5.3):
    MARKIERT, nicht ausgeblendet — Textmarker, nicht Rotstift: kein Fehler,

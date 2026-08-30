@@ -56,17 +56,55 @@
   </header>
   {# Die Leiste scrollt quer: auf 375 px liegen „Bons" und „Status" ausserhalb
      des Bildes. Steht man auf einem davon, wäre die Markierung unsichtbar —
-     also wird sie hereingeholt. `block: 'nearest'` sorgt dafür, dass dabei
-     NUR seitwärts gescrollt wird und die Seite nicht springt.
+     also wird sie hereingeholt.
+
+     Bis WB-400 Runde 3 tat das ein `scrollIntoView({inline: 'center'})`, und
+     genau die Mitte war der Fehler: sie liess auf beiden Seiten einen Rest
+     stehen. Gemessen auf 12 Seiten in beiden Modi standen auf acht davon
+     links zwischen 10 und 58 px eines Ziels — „pte" auf /bestellungen (dort
+     58 px, also „b 7" samt der blauen Korbpille), „en" auf /pick, „Re" auf
+     /chat. Das Erste, was man von der Seite liest, war ein Wortfetzen.
+
+     Jetzt wird der ANFANG des aktiven Ziels an den linken Rand gelegt: links
+     steht ein ganzes Wort, angeschnitten wird nur rechts, wo die Maske sitzt
+     und „hier geht es weiter" hingehört. Steht das Ziel so weit hinten, dass
+     die Leiste nicht mehr genug Weg hat („Status", „wer bin ich?"), wird auf
+     die früheste Kante gerastet, bei der es noch GANZ im Bild steht — lieber
+     ein Ziel weniger nach links geholt als ein halbes am Rand, aber
+     sichtbar zu sein schlägt bündig zu sein. Ohne JavaScript bleibt die
+     Leiste bei 0 stehen; die Markierung ist dann seitwärts erreichbar wie
+     jedes andere Ziel auch.
+
+     Auch beim Drehen: die Rechnung hängt an der Breite, und ein Telefon,
+     das quer gelegt wird, hat eine andere. Deshalb hat die Funktion einen
+     Namen und wird zweimal gerufen — und der Messstand
+     (`scripts/dreh/shot.py`) ruft dieselbe, nachdem er das Dokument auf
+     390 px gezwungen hat: Firefox lässt kein Fenster unter 500 CSS-px zu,
+     und ohne diesen zweiten Ruf zeigten die Bilder eine Leiste, die für
+     eine Breite gerastet ist, die kein Telefon hat.
+
      Nur Blockkommentare: ein doppelter Schrägstrich ist im ausgelieferten
      HTML der Anfang einer fremden Adresse (WB-323 sieht darauf nach). #}
   <script>
-    (function () {
-      var da = document.querySelector('.kopf nav a[aria-current]');
-      if (da && da.scrollIntoView) {
-        da.scrollIntoView({ inline: 'center', block: 'nearest' });
+    window.leisteRasten = function () {
+      var nav = document.querySelector('.kopf nav');
+      var da = nav && nav.querySelector('a[aria-current]');
+      if (!nav || !da) { return; }
+      var weg = nav.scrollWidth - nav.clientWidth;
+      var ziel = da.offsetLeft - nav.offsetLeft;
+      if (ziel > weg) {
+        var passt = weg;
+        Array.prototype.forEach.call(nav.querySelectorAll('a'), function (a) {
+          var x = a.offsetLeft - nav.offsetLeft;
+          if (x <= weg && x < passt
+              && ziel - x + da.offsetWidth <= nav.clientWidth) { passt = x; }
+        });
+        ziel = passt;
       }
-    })();
+      nav.scrollLeft = ziel;
+    };
+    window.leisteRasten();
+    window.addEventListener('resize', window.leisteRasten);
   </script>
 
   {% if hinweis %}
