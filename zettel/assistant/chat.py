@@ -1434,7 +1434,9 @@ class Chat:
             ged.benutzt(con, bekannt)
             return aus_speicher, None
         try:
-            with obs.stufe("plan.choose") as span:
+            # `mehrfach`: Stufe 3 läuft seit WB-412 in mehreren
+            # gleichzeitigen Anfragen, und sie alle sind `plan.choose`.
+            with obs.stufe("plan.choose", mehrfach=True) as span:
                 obs.setze(span, {"zettel.aus_gedaechtnis": len(bekannt),
                                  "zettel.gefragt": len(offen)})
                 frisch = plan.choose(self.zugang, text, offen,

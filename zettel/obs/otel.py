@@ -510,15 +510,26 @@ _STUFE: contextvars.ContextVar = contextvars.ContextVar(
 
 
 @contextmanager
-def stufe(name: str):
+def stufe(name: str, mehrfach: bool = False):
     """Benennt den nächsten Span, den der OpenAI-Instrumentor öffnet.
 
     Genau den nächsten: die Marke wird beim ersten Span verbraucht. Sonst
     hiessen auch Spans, die ein zweiter Aufruf im selben Block erzeugt,
     `plan.extract` — und der Baum aus Spec 7.1 hätte zwei gleichnamige Äste,
     die nichts unterscheidet.
+
+    **`mehrfach=True` hebt genau das auf** (WB-412), und zwar für den einen
+    Fall, in dem mehrere gleichnamige Äste die Wahrheit sind: Stufe 3 wird
+    seit dem Ticket in mehrere GLEICHZEITIGE Anfragen zerlegt (gemessen
+    16,7 s -> 9,4 s). Dann laufen vier Modellaufrufe, und sie alle sind
+    `plan.choose`. Ohne diese Zeile hiesse der erste so und die anderen drei
+    `ChatCompletion` — je nachdem, welcher Thread zuerst dran war.
+
+    Die Marke ist ein gemeinsamer Kasten: `contextvars.copy_context()` kopiert
+    die Bindung, nicht das Wörterbuch dahinter. Genau deshalb reicht es, das
+    Verbrauchen zu unterlassen.
     """
-    kasten = {"name": name}
+    kasten = {"name": name, "mehrfach": bool(mehrfach)}
     marke = _STUFE.set(kasten)
     try:
         yield
@@ -537,7 +548,8 @@ class StufenBenenner(SpanProcessor):
         kasten = _STUFE.get()
         if kasten and kasten.get("name"):
             span.update_name(kasten["name"])
-            kasten["name"] = None
+            if not kasten.get("mehrfach"):
+                kasten["name"] = None
 
     def on_end(self, span) -> None:
         pass

@@ -31,6 +31,9 @@ ist die Zusicherung.
 """
 from __future__ import annotations
 
+import concurrent.futures as cf
+import contextvars
+
 import json
 import re
 from dataclasses import dataclass, field
@@ -839,10 +842,31 @@ def kandidat_kurz(p: dict) -> dict:
             "preis_cent": p.get("price_cents")}
 
 
+#: In so viele gleichzeitige Anfragen wird Stufe 3 zerlegt (WB-412).
+#:
+#: **Gemessen an einem echten Rezept** (Pho Bo, 17 Begriffe mit Kandidaten,
+#: echte Box, echter Katalog, 2026-08-30):
+#:
+#:     1 Spur    16,7 s   11 gewählt
+#:     2 Spuren  11,1 s   11 gewählt   1,51×
+#:     4 Spuren   9,4 s   11 gewählt   1,78×
+#:     6 Spuren   8,7 s   12 gewählt   1,92×
+#:
+#: Vier, weil danach kaum noch etwas kommt: von vier auf sechs sind es 0,7 s.
+#: Die Box bedient vier Anfragen nebeneinander mit 74,8 tok/s gegen 24,9
+#: einzeln — mehr Spuren teilen dieselbe Bandbreite auf mehr Prompts auf, und
+#: jeder Prompt trägt den Systemteil noch einmal.
+SPUREN = 4
+
+#: Darunter wird nicht zerlegt. Vier Anfragen mit je zwei Begriffen zahlen
+#: viermal den Systemprompt für eine Antwort, die ohnehin kurz ist.
+SPUREN_AB = 8
+
+
 def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
            system: str = SYSTEM_CHOOSE, temperatur: float = TEMPERATUR,
            max_tokens: int = MAX_TOKENS, denken: bool = DENKEN,
-           gericht: str | None = None) -> Auswahl:
+           gericht: str | None = None, spuren: int = SPUREN) -> Auswahl:
     """Wählt je Begriff höchstens ein vorgelegtes Produkt.
 
     `aufgaben` ist `[{"begriff", "menge", "kandidaten": [Produkt, …]}, …]` —
@@ -863,6 +887,63 @@ def choose(zugang, satz: str, aufgaben: list[dict], *, guided: bool = True,
         # eine Einladung zum Erfinden — und würde Zeit kosten für nichts.
         return Auswahl()
 
+    if spuren > 1 and len(mit_kandidaten) >= SPUREN_AB:
+        return _choose_gleichzeitig(
+            zugang, satz, mit_kandidaten, spuren, guided=guided,
+            system=system, temperatur=temperatur, max_tokens=max_tokens,
+            denken=denken, gericht=gericht)
+    return _choose_einmal(zugang, satz, mit_kandidaten, guided=guided,
+                          system=system, temperatur=temperatur,
+                          max_tokens=max_tokens, denken=denken,
+                          gericht=gericht)
+
+
+def _choose_gleichzeitig(zugang, satz, mit_kandidaten, spuren, **rest) -> Auswahl:
+    """Stufe 3 in mehreren Anfragen nebeneinander (WB-412).
+
+    **Jede Spur bekommt NUR ihre eigenen Kandidaten**, und damit wird die
+    Zusicherung aus `choose()` sogar schärfer: eine Antwort kann kein Produkt
+    aus einer anderen Spur nennen. Sie wäre dort ohnehin verworfen worden —
+    hier kommt sie gar nicht erst in Frage.
+
+    Reihum verteilt (`[i::spuren]`) und nicht in Blöcken: die Begriffe stehen
+    in der Reihenfolge der Zutatenliste, und ein Block wäre „alles für die
+    Sauce" — vier Spuren mit sehr verschieden langen Kandidatenlisten. Wer
+    reihum verteilt, gibt jeder Spur einen Querschnitt.
+
+    `copy_context()` je Spur, damit der Span-Kontext mitreist: sonst hingen
+    die Modellaufrufe nicht unter `chat.turn` und hiessen `ChatCompletion`
+    statt `plan.choose` (siehe `obs.stufe(..., mehrfach=True)`).
+
+    **Die Reihenfolge der Antwort bleibt die der Aufgaben.** Sie ist die
+    Reihenfolge der Vorschlagsliste, und sie soll nicht davon abhängen,
+    welche Spur zuerst fertig war.
+    """
+    teile = [t for t in ([a for a in mit_kandidaten[i::spuren]]
+                         for i in range(spuren)) if t]
+    if len(teile) < 2:
+        return _choose_einmal(zugang, satz, mit_kandidaten, **rest)
+    with cf.ThreadPoolExecutor(max_workers=len(teile)) as pool:
+        laeufe = [pool.submit(contextvars.copy_context().run,
+                              _choose_einmal, zugang, satz, teil, **rest)
+                  for teil in teile]
+        ergebnisse = [f.result() for f in laeufe]
+    reihenfolge = {a["begriff"]: i for i, a in enumerate(mit_kandidaten)}
+    gewaehlt = sorted((w for e in ergebnisse for w in e.gewaehlt),
+                      key=lambda w: reihenfolge.get(w["begriff"], 0))
+    return Auswahl(
+        gewaehlt=gewaehlt,
+        verworfen=[v for e in ergebnisse for v in e.verworfen],
+        roh="\n".join(e.roh for e in ergebnisse if e.roh))
+
+
+def _choose_einmal(zugang, satz: str, mit_kandidaten: list[dict], *,
+                   guided: bool = True, system: str = SYSTEM_CHOOSE,
+                   temperatur: float = TEMPERATUR,
+                   max_tokens: int = MAX_TOKENS, denken: bool = DENKEN,
+                   gericht: str | None = None) -> Auswahl:
+    """Eine Anfrage an Stufe 3 — der Rumpf, den `choose()` einmal oder
+    mehrfach ausführt."""
     erlaubt: dict[int, dict] = {}
     for aufgabe in mit_kandidaten:
         for p in aufgabe["kandidaten"]:

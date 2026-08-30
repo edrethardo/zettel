@@ -1402,6 +1402,21 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 }
 .sorten-weiter { margin: 0 0 var(--rand); }
 
+/* Der Weg zurück aus dem Gedächtnis (WB-411). Er steht unter den Vorschlägen
+   und über den Sammelknöpfen, also da, wo man ankommt, wenn die Liste nicht
+   überzeugt hat.
+
+   Gedämpft und klein: „Neu suchen" ist die seltene Handlung, „Alles
+   übernehmen" die häufige — sie dürfen nicht gleich laut sein. Die Fussnote
+   nimmt eine eigene Zeile (`flex-basis: 100%`), damit der Knopf auf 390 px
+   nicht mit ihr um den Platz streitet; dasselbe Mittel wie an der
+   Portionszahl darüber. */
+.neusuche {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v3);
+  margin: 0 0 var(--v3);
+}
+.neusuche .fussnote { flex-basis: 100%; margin: 0; }
+
 .chatform { display: flex; gap: var(--v2); margin-top: var(--rand); }
 .chatform input {
   flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
