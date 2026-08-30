@@ -1,0 +1,36 @@
+{# Der Rezeptwechsel, zweite Hälfte: die Vorschläge stehen (WB-402).
+
+   Sie ersetzt den Kasten aus `_zugwechsel.html` — also genau die Stelle, an
+   der er stand — durch das, was auch aus `/chat` käme:
+
+       1. das Band          „Das Rezept ist jetzt …"  (oder der Grund,
+                            warum es nicht geklappt hat)
+       2. die neuen Zeilen  der Satz und die Antwort darauf, mit Karte,
+                            Vorschlägen und Ja/Nein
+
+   **Der alte Zug steht nicht darin, weil er nie weg war.** `hx-swap` der
+   Alternativenliste ist `afterend`: der Wartekasten wird HINTER den Zug
+   gesetzt, nicht an seine Stelle. Das spart hier seine ganze Grösse
+   (gemessen 64.733 -> 34.855 Bytes) und hält die Zusage des Bandes ein —
+   die alten Vorschläge stehen unverändert im Verlauf, auch während gesucht
+   wird.
+
+   **Punkt 2 sind ZWEI Zeilen und nicht eine.** `chat.turn` schreibt Frage und
+   Antwort (`_schreiben`); die Frage wegzulassen ergäbe eine Vorschlagsliste
+   ohne den Satz, aus dem sie entstanden ist — genau die Angabe, an der später
+   abzulesen ist, warum etwas vorgeschlagen wurde (siehe `verlauf_ab`).
+
+   Das Band trägt die `id`, auf die das `show:` des Tauschs zielt: der Blick
+   landet auf der Auskunft, und darunter steht die Karte, auf die der Nutzer
+   eben eine halbe Minute geschaut hat. Es steht auch im Fehlerfall da und
+   trägt dann den Grund — sonst zielte `show:` ins Leere und die Begründung
+   stünde nur in den beiden Fehlerhüllen, eine am Seitenkopf und eine am
+   Eingabefeld, mit dem ganzen Verlauf dazwischen (WB-378). #}
+<p class="band zugband" id="gewechselt-{{ mid }}" role="status">
+  {%- if gewechselt %}Das Rezept ist jetzt „{{ gewechselt }}“ — der Zug darunter ist neu.
+  <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im Korb;
+    die alten Vorschläge stehen unverändert im Verlauf.</span>
+  {%- else %}{{ chat_fehler }}{% endif %}</p>
+{% for m in neue %}{% include "_zug.html" %}{% endfor %}
+{% include "_nachtrag.html" %}
+{% if chat_zustand %}{% include "_chatzustand.html" %}{% endif %}

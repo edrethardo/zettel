@@ -1,0 +1,83 @@
+{# Der Rezeptwechsel, erste Hälfte: die Karte steht SOFORT da (WB-402).
+
+   Bis zu diesem Ticket war ein Tipp auf eine Alternative der teuerste
+   Handgriff der Oberfläche — und der einzige, der nicht aussah wie langsam,
+   sondern wie kaputt. Gemessen am eigenen Messstand (2026-08-30, echte Box,
+   echter Katalog, Firefox in Handybreite, 224 Proben über 23,2 s):
+
+       Dauer                        23,14 s für EINEN Request
+       Antwortgrösse                97.966 Bytes — der ganze Verlauf
+       Karte des neuen Rezepts      in KEINER Probe im Bild
+       „es läuft“ irgendwo im Bild  in KEINER Probe
+       scrollY                      9964 -> 9964, unverändert
+
+   Alles andere auf dieser Seite liegt unter 0,25 s.
+
+   **Die Zweiteilung ist der ganze Punkt.** Was die Karte zeigt — Name,
+   Gesamtzeit, Ruhezeit, Zutatenliste der Quelle, Bewertung, Herkunft — steht
+   in `recipe` und `recipe_ingredient` und braucht KEIN Modell; nur die
+   Vorschlagsliste darunter kostet die zwei Modellstufen (`plan.extract`,
+   `plan.choose`). Also wechselt die Karte jetzt, und die Vorschläge laufen
+   nach. Der Nutzer sieht in derselben Sekunde, dass seine Wahl angekommen
+   ist.
+
+   **Dieser Kasten steht HINTER dem alten Zug** (`hx-swap="afterend"`, siehe
+   `_zugrezept.html`) und wird von `show:` an den oberen Fensterrand geholt.
+   Er sieht damit aus wie ein Ersatz, ist aber keiner: der alte Zug bleibt im
+   Dokument, weil das Band verspricht, dass er dort bleibt. Die zweite Hälfte
+   (`_zugwechsel_fertig.html`) ersetzt genau diesen Kasten durch das Band und
+   die beiden neuen Chatzeilen — danach steht im Dokument dasselbe wie in der
+   Datenbank.
+
+   Ohne JavaScript gibt es dieses Bruchstück gar nicht: dann läuft der ganze
+   Wechsel in einem Request und die Vollseite kommt zurück (siehe
+   `chat_rezept`). #}
+{# Die Attribute hängen am KASTEN und nicht an einem Formular darin, damit
+   `hx-target="this"` genügt. Zwei Kästen mit derselben `id` kann es geben —
+   wenn ein Wechsel mit einer Meldung endete und jemand es gleich noch einmal
+   versucht. `afterend` setzt den neuen davor, und `querySelector` nimmt den
+   ersten: der neue gewinnt, der alte steht nur noch da.
+
+   `hx-trigger="load"` und nicht ein Knopf: die Wahl ist getroffen, hier
+   wartet nur noch jemand. Ein Knopf wäre eine zweite Frage auf eine schon
+   beantwortete.
+
+   Der Indikator zeigt auf den ALTEN Zug — er ist blass und untippbar,
+   solange sein Nachfolger entsteht. Das ist WB-378 über beide Hälften
+   hinweg und nebenbei die Sperre gegen den zweiten Tipp. #}
+<div class="zugwechsel" id="wechsel-{{ mid }}"
+     hx-post="/chat/{{ mid }}/rezept/vorschlaege?rezept={{ rezept | urlencode }}"
+     hx-trigger="load"
+     hx-target="this"
+     hx-swap="outerHTML show:#gewechselt-{{ mid }}:top"
+     hx-indicator="#zug-{{ mid }}">
+  {# **Das Band steht ÜBER der Karte, und das ist gemessen.** Zuerst stand es
+     darunter — dann war es in 1 von 224 Proben im Bild, denn die Karte ist
+     eine Bildschirmhöhe lang und `show:` setzt den KASTEN an den oberen
+     Rand. Der Indikator ist das Tauschziel, aber er muss auch darin zu sehen
+     sein.
+
+     Ein Band statt zweier: „das ist jetzt dein Rezept" und „die Vorschläge
+     laufen noch" sind zwei Hälften derselben Auskunft. Der pulsende Punkt
+     ist das Statuslicht dieses Blattes und keine vierte Bewegung — „etwas
+     ist unterwegs" sieht hier aus wie beim aufwachenden Modell. #}
+  <p class="band zugband laeuft" role="status">Das Rezept ist jetzt „{{ gewechselt }}“ — die Vorschläge dazu werden gesucht …
+    <span class="fussnote">Zutaten aus dem Rezept, Katalogsuche, Auswahl —
+      das ist der Teil, der wirklich dauert. Was du vorher bestätigt hast, liegt weiter im Korb;
+      die alten Vorschläge stehen unverändert im Verlauf.</span>
+    {# Der Ausweg, falls die Antwort nie ankommt (abgebrochene Verbindung,
+       geschlossenes Telefon). Ohne ihn stünde „wird gesucht" für immer da,
+       und das wäre die Sorte Anzeige, die man nicht mehr glaubt. #}
+    <span class="fussnote">Bleibt es stehen?
+      <a href="/chat">Chat neu laden</a> — der Zug läuft trotzdem zu
+      Ende.</span></p>
+
+  {%- if r %}
+  {# `vorschau`: dieselbe Karte wie am Zug, nur ohne die beiden Formulare, die
+     einen Zug BRAUCHEN (die Portionszahl steht in `chat_rezept`, die
+     Alternativenliste postet an `/chat/<mid>/rezept`). Und ohne die zwei
+     Zahlen, die an einer Vorschlagsliste hängen — „8 davon nicht auf dem
+     Zettel" ist erst in einer halben Minute wahr, und geraten wird nichts. #}
+  {% with vorschau = true %}{% include "_zugrezept.html" %}{% endwith %}
+  {%- endif %}
+</div>

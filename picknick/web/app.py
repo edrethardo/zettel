@@ -1442,54 +1442,199 @@ def create_app(db_path: str | Path | None = None,
         Korb (WB-361, WB-384) — der neue Zug legt eine neue Vorschlagsliste
         an und nimmt nichts zurück. Die Oberfläche sagt es vor dem Tipp, und
         das Band danach sagt es noch einmal.
+
+        **Seit WB-402 antwortet dieser Eingang in ZWEI Schritten**, und das
+        ist die ganze Kur des Tickets:
+
+            1. hier          Detail holen (~20 ms), `dish` umhängen,
+                             die KARTE zurückgeben — sofort
+            2. `/rezept/vorschlaege`   der Zug mit den zwei Modellstufen,
+                             gemessen 24,29 s
+
+        Der Grund steht in `zugrezept.zur_wahl`: alles, was die Karte zeigt,
+        liegt in der Datenbank, und nur die Vorschlagsliste kostet das
+        Modell. Vorher lief beides in einem Request, und fünfundzwanzig
+        Sekunden lang war nicht zu sehen, dass die Wahl angekommen ist —
+        danach wurde die ganze Seite getauscht und die Bildlaufposition war
+        weg. Ohne JavaScript bleibt es bei EINEM Request und der Vollseite.
         """
         werte = await eingaben(request)
         gewuenscht = (werte.get("rezept") or "").strip()
         c = con()
         try:
-            karte, treffer = _andere_wahl(c, mid, gewuenscht)
-            if treffer is None:
-                # Der Zug ist weg, die Trefferliste erneuert, oder die ID kam
-                # nicht aus dieser Liste. Gewählt werden kann nur, was
-                # angeboten wurde — dieselbe Regel wie bei den Produkt-IDs in
-                # `plan.choose` und bei den Sorten in WB-368.
-                return _chat_antwort(
-                    request, c, fehler="Dieses Rezept steht zu dem Zug nicht "
-                                       "(mehr) zur Wahl.")
-            if str(karte.get("source_id") or "") == treffer["rezept_id"]:
-                # Schon das vorgeschlagene. Ein ganzer Zug (20 bis 35 s am
-                # Modell) für ein Ergebnis, das bereits dasteht, wäre die
-                # teuerste Art, nichts zu tun.
-                return _chat_antwort(
-                    request, c, fehler=f"„{treffer['titel']}“ ist bereits das "
-                                       "vorgeschlagene Rezept.")
-            zustand = app.state.chat.quelle.waehlen(c, karte["gericht"],
-                                                    treffer)
-            if zustand != gerichte.OK:
-                return _chat_antwort(
-                    request, c, fehler=f"„{treffer['titel']}“ liess sich "
-                                       "nicht holen — Chefkoch war gerade "
-                                       "nicht zu erreichen. Das bisherige "
-                                       "Rezept steht unverändert da.")
-            # Derselbe SATZ wie beim ersten Mal, damit derselbe Zug
-            # herauskommt: „alles für Lasagne, und Klopapier" hängt das
-            # Klopapier auch diesmal an. Fehlt er (ein Verlauf, den jemand
-            # zwischendurch geleert hat), tut es der Gerichtsname.
-            satz = _satz_zum_zug(c, mid) or karte["gericht"]
-            try:
-                app.state.chat.turn(c, satz, gewechselt=treffer["titel"])
-            except chatmodul.ChatNichtVerfuegbar as e:
-                # Das Rezept ist gewechselt, der Zug nicht gelaufen. Beides
-                # sagen — sonst sieht es aus, als sei nichts passiert.
-                return _chat_antwort(
-                    request, c, zustand=e.zustand,
-                    fehler=f"„{treffer['titel']}“ ist jetzt das Rezept zu "
-                           f"„{karte['gericht']}“. {_nicht_verfuegbar(e)}")
-            except chatmodul.ChatFehler as e:
-                return _chat_antwort(request, c, fehler=str(e))
-            return _chat_antwort(request, c, gewechselt=treffer["titel"])
+            karte, treffer = _wahl_vollziehen(request, c, mid, gewuenscht)
+            if karte is None:
+                return treffer          # eine fertige Fehlerantwort
+            if not ist_htmx(request):
+                # Ohne JavaScript gibt es nichts nachzuladen: der ganze
+                # Wechsel läuft in DIESEM Request, und zurück geht die
+                # Vollseite. Langsam, aber vollständig — und es bleibt bei
+                # einer Zusicherung, nicht bei zweien.
+                return _wechsel_vollziehen(request, c, mid, karte, treffer)
+            # Die Karte, die schon dasteht (WB-402). `dish.recipe_id` zeigt
+            # nach `waehlen` bereits auf das gewählte Rezept — Name, Zeiten,
+            # Zutatenliste, Bewertung stehen in der Datenbank und kosten kein
+            # Modell. Die Vorschläge holt das Bruchstück selbst nach.
+            return vorlagen.TemplateResponse(
+                request, "_zugwechsel.html",
+                {"mid": mid, "rezept": treffer["rezept_id"],
+                 "gewechselt": treffer["titel"],
+                 "r": zugrezepte.zur_wahl(c, int(karte["dish_id"]))})
         finally:
             c.close()
+
+    @app.post("/chat/{mid}/rezept/vorschlaege")
+    async def chat_rezept_vorschlaege(request: Request, mid: int):
+        """Die zweite Hälfte des Wechsels: der Zug selbst (WB-402).
+
+        **Das ist der Teil, der wirklich dauert** — `plan.zutatenbegriffe`,
+        die Katalogsuchen, `plan.choose`. Gemessen am laufenden Shop waren es
+        24,29 s, und bis zu diesem Ticket war das die Zeit, die verging, BEVOR
+        überhaupt zu sehen war, dass die Wahl angekommen ist. Jetzt steht die
+        Karte da, während hier gesucht wird.
+
+        Angestossen wird das aus `_zugwechsel.html` per `hx-trigger="load"`.
+        Ein eigener Eingang und kein Umweg: die Adresse trägt dieselbe
+        Rezept-ID wie der Tipp davor und prüft sie noch einmal gegen
+        `dish_treffer` — was nicht angeboten wurde, wird auch hier nicht
+        gewählt. `waehlen` läuft dabei zum zweiten Mal und kostet nichts: das
+        Rezept ist schon geholt, es bleibt eine Zeile in `dish` (WB-387).
+        """
+        werte = await eingaben(request)
+        gewuenscht = (werte.get("rezept") or "").strip()
+        c = con()
+        try:
+            karte, treffer = _wahl_vollziehen(request, c, mid, gewuenscht)
+            if karte is None:
+                return treffer          # eine fertige Fehlerantwort
+            return _wechsel_vollziehen(request, c, mid, karte, treffer)
+        finally:
+            c.close()
+
+    def _wahl_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
+                         gewuenscht: str):
+        """Prüft die gewählte Rezept-ID und lässt das Gericht darauf zeigen.
+
+        Gibt `(karte, treffer)` zurück — oder `(None, antwort)` mit einer
+        fertigen Fehlerantwort; `karte is None` unterscheidet die beiden
+        Fälle. Die Antwort hat die Grösse des Wartekastens (WB-402): das
+        Tauschziel ist `#zug-N` mit `afterend`, und ein ganzer Zug als Antwort
+        stünde danach zweimal im Dokument.
+        """
+        karte, treffer = _andere_wahl(c, mid, gewuenscht)
+        if treffer is None:
+            # Der Zug ist weg, die Trefferliste erneuert, oder die ID kam
+            # nicht aus dieser Liste. Gewählt werden kann nur, was
+            # angeboten wurde — dieselbe Regel wie bei den Produkt-IDs in
+            # `plan.choose` und bei den Sorten in WB-368.
+            return None, _wechsel_fehler(
+                request, c, mid, "Dieses Rezept steht zu dem Zug nicht "
+                                 "(mehr) zur Wahl.")
+        if str(karte.get("source_id") or "") == treffer["rezept_id"]:
+            # Schon das vorgeschlagene. Ein ganzer Zug (20 bis 35 s am
+            # Modell) für ein Ergebnis, das bereits dasteht, wäre die
+            # teuerste Art, nichts zu tun.
+            return None, _wechsel_fehler(
+                request, c, mid,
+                f"„{treffer['titel']}“ ist bereits das vorgeschlagene "
+                "Rezept.")
+        zustand = app.state.chat.quelle.waehlen(c, karte["gericht"], treffer)
+        if zustand != gerichte.OK:
+            return None, _wechsel_fehler(
+                request, c, mid,
+                f"„{treffer['titel']}“ liess sich nicht holen — Chefkoch war "
+                "gerade nicht zu erreichen. Das bisherige Rezept steht "
+                "unverändert da.")
+        return karte, treffer
+
+    def _wechsel_fehler(request: Request, c: sqlite3.Connection, mid: int,
+                        fehler: str):
+        """Eine Meldung dort, wo die neue Karte gestanden hätte (WB-402).
+
+        Ohne HTMX geht die Vollseite zurück — dann gibt es kein Bruchstück,
+        in das etwas getauscht werden könnte, und die Meldung steht am Chat.
+        """
+        if not ist_htmx(request):
+            return _chat_antwort(request, c, fehler=fehler)
+        return vorlagen.TemplateResponse(
+            request, "_zugwechsel_fehler.html",
+            {"mid": mid, "chat_fehler": fehler, **_korb_zahlen(c)})
+
+    def _wechsel_vollziehen(request: Request, c: sqlite3.Connection, mid: int,
+                            karte: dict, treffer: dict):
+        """Der Zug zum gewählten Rezept — die zwei Modellstufen.
+
+        Der Tipp führt in den NORMALEN Ablauf und nicht in einen zweiten
+        daneben (dieselbe Regel wie bei den Sorten in WB-368): derselbe Satz
+        läuft noch einmal durch `chat.turn`, und heraus kommt ein ganz
+        gewöhnlicher Zug.
+        """
+        # Derselbe SATZ wie beim ersten Mal, damit derselbe Zug
+        # herauskommt: „alles für Lasagne, und Klopapier" hängt das
+        # Klopapier auch diesmal an. Fehlt er (ein Verlauf, den jemand
+        # zwischendurch geleert hat), tut es der Gerichtsname.
+        satz = _satz_zum_zug(c, mid) or karte["gericht"]
+        try:
+            app.state.chat.turn(c, satz, gewechselt=treffer["titel"])
+        except chatmodul.ChatNichtVerfuegbar as e:
+            # Das Rezept ist gewechselt, der Zug nicht gelaufen. Beides
+            # sagen — sonst sieht es aus, als sei nichts passiert.
+            return _wechsel_antwort(
+                request, c, mid, zustand=e.zustand,
+                fehler=f"„{treffer['titel']}“ ist jetzt das Rezept zu "
+                       f"„{karte['gericht']}“. {_nicht_verfuegbar(e)}")
+        except chatmodul.ChatFehler as e:
+            return _wechsel_antwort(request, c, mid, fehler=str(e))
+        return _wechsel_antwort(request, c, mid, gewechselt=treffer["titel"])
+
+    def _wechsel_antwort(request: Request, c: sqlite3.Connection, mid: int,
+                         fehler: str | None = None, zustand=None,
+                         gewechselt: str | None = None):
+        """Das Band und die neuen Zeilen — an der Stelle des Wartekastens.
+
+        Ohne HTMX geht die Vollseite zurück; dort steht das Band oben am Chat
+        und der neue Zug unten, wie vor diesem Ticket.
+
+        **Der alte Zug ist nicht dabei, weil er nie weg war.** Der Wartekasten
+        stand HINTER ihm (`afterend`), nicht an seiner Stelle — das spart hier
+        seine ganze Grösse und hält die Zusage des Bandes ein. Das Band trägt
+        die `id`, auf die das `show:` des Tauschs zielt: der Blick landet auf
+        der Auskunft, und darunter steht die Karte, auf die der Nutzer eben
+        eine halbe Minute geschaut hat.
+        """
+        if not ist_htmx(request):
+            return _chat_antwort(request, c, fehler=fehler, zustand=zustand,
+                                 gewechselt=gewechselt)
+        neue = [z for z in (vorschlagsliste.zug(c, i)
+                            for i in _seit(c, mid)) if z is not None]
+        for z in neue:
+            _zug_fuellen(c, z)
+        return vorlagen.TemplateResponse(
+            request, "_zugwechsel_fertig.html",
+            # `chat_zustand` trägt das Band mit dem Weckzustand. Es hängt am
+            # Seitenkopf und nicht am Zug, kommt also out-of-band mit —
+            # dieselbe Zeile wie in `_chat_antwort.html`.
+            {"mid": mid, "neue": neue, "gewechselt": gewechselt,
+             "aufklappen": None, "gerade": None, "chat_fehler": fehler,
+             "chat_zustand": zustand, "oob": True, **_korb_zahlen(c)})
+
+    def _seit(c: sqlite3.Connection, nach: int) -> list[int]:
+        """Die Chatzeilen, die seit `nach` dazugekommen sind — beide Rollen.
+
+        `chat.turn` schreibt FRAGE UND ANTWORT (`_schreiben`). Nur die
+        Antwortzeile zu rendern ergäbe eine Vorschlagsliste ohne den Satz, aus
+        dem sie entstanden ist — dieselbe Überlegung wie bei der
+        Verlaufsgrenze in `vorschlaege.verlauf_ab`, die deshalb immer auf
+        einer Zeile der Nutzerin liegt.
+
+        Über die id und nicht über den Zeitstempel: zwei Zeilen können
+        dieselbe Sekunde tragen (siehe `_satz_zum_zug`). Leer, wenn keine
+        dazugekommen ist — dann ist der Zug nicht gelaufen.
+        """
+        return [r["id"] for r in c.execute(
+            "SELECT id FROM chat_message WHERE id > ?"
+            "   AND order_id = (SELECT order_id FROM chat_message WHERE id = ?)"
+            " ORDER BY id", (nach, nach))]
 
     @app.post("/chat/{mid}/portionen")
     async def chat_portionen(request: Request, mid: int):

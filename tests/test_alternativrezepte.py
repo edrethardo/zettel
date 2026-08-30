@@ -232,7 +232,12 @@ def _shop(pfad, tmp_path, *, waehler=None, antworten=None):
                                                 waehler=waehler))
     app = webapp.create_app(db_path=pfad, image_dir=tmp_path / "bilder",
                             chat=agent)
-    return TestClient(app), http, waehler
+    client = TestClient(app)
+    # Das Fake-Modell hängt am Client, damit ein Test ZÄHLEN kann, wie oft es
+    # gefragt wurde — daran hängt die Zusage aus WB-402, dass die Rezeptkarte
+    # ohne Modell auskommt.
+    client.llm = llm
+    return client, http, waehler
 
 
 def _zug_id(pfad) -> int:
@@ -242,6 +247,21 @@ def _zug_id(pfad) -> int:
                            " ORDER BY id DESC LIMIT 1").fetchone()["id"]
     finally:
         con.close()
+
+
+def _wechsel(client, mid: int, rezept: str):
+    """Beide Hälften des Wechsels (WB-402) — Karte, dann Vorschläge.
+
+    Der Tipp beantwortet seit WB-402 nur noch die Karte; den Zug holt das
+    Bruchstück per `hx-trigger="load"` nach. Wer den ganzen Wechsel meint,
+    meint beide Requests — und genau die macht dieser Helfer, damit ein Test
+    nicht versehentlich die halbe Strecke misst.
+    """
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": rezept},
+                        headers=HTMX)
+    zweite = client.post(f"/chat/{mid}/rezept/vorschlaege",
+                         data={"rezept": rezept}, headers=HTMX)
+    return erste, zweite
 
 
 def _eine_zeile(text: str) -> str:
@@ -393,9 +413,8 @@ def test_die_wahl_fuehrt_in_den_normalen_ablauf(datei, tmp_path):
                 headers=HTMX)
     mid = _zug_id(datei)
 
-    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
-                          headers=HTMX)
-    assert antwort.status_code == 200
+    erste, zweite = _wechsel(client, mid, PHO_GA)
+    assert erste.status_code == 200 and zweite.status_code == 200
     assert waehler.gewaehlt == [PHO_GA]
 
     # Das Gericht zeigt jetzt auf das gewählte Rezept.
@@ -436,10 +455,12 @@ def test_die_wahl_loest_keinen_zweiten_suchabruf_aus(datei, tmp_path):
     _pho_geholt(datei)
     client, http, _ = _shop(datei, tmp_path)
     client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
-    client.post(f"/chat/{_zug_id(datei)}/rezept", data={"rezept": PHO_GA},
-                headers=HTMX)
+    _wechsel(client, _zug_id(datei), PHO_GA)
 
     assert http.suchen == [], "die Wahl hat noch einmal gesucht"
+    # EIN Detail über BEIDE Hälften (WB-402): der zweite Schritt ruft
+    # `waehlen` noch einmal auf, findet das Rezept aber schon in der
+    # Sammlung und fasst das Netz nicht an.
     assert len(http.geholt) == 1
     assert http.geholt[0].endswith(f"/recipes/{PHO_GA}")
 
@@ -450,10 +471,8 @@ def test_zurueckwechseln_kostet_gar_keine_anfrage(datei, tmp_path):
     client, http, waehler = _shop(datei, tmp_path,
                                   antworten=_antworten(datei, 3))
     client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
-    client.post(f"/chat/{_zug_id(datei)}/rezept", data={"rezept": PHO_GA},
-                headers=HTMX)
-    client.post(f"/chat/{_zug_id(datei)}/rezept", data={"rezept": PHO_BO},
-                headers=HTMX)
+    _wechsel(client, _zug_id(datei), PHO_GA)
+    _wechsel(client, _zug_id(datei), PHO_BO)
 
     assert _rezept_des_gerichts(datei) == PHO_BO
     # Nur die eine Anfrage für Pho Ga; der Rückweg fasst das Netz nicht an.

@@ -1,0 +1,19 @@
+{# Ein Rezeptwechsel, der gar nicht erst losgelaufen ist (WB-402).
+
+   Drei Gründe, und alle drei stehen in `_wahl_vollziehen`: die ID wurde nicht
+   angeboten, es ist ohnehin schon das vorgeschlagene Rezept, oder Chefkoch
+   war beim Holen des Details nicht zu erreichen.
+
+   **Dieselbe Hülle wie der Wartekasten**, und das ist kein Zufall: das
+   Tauschziel der Alternativenliste ist `afterend` mit
+   `show:#wechsel-N:top` — die Meldung landet dort, wo sonst die neue Karte
+   stünde, und wird ins Bild geholt. Eine Antwort in Zuggrösse wäre hier
+   falsch: `afterend` würde den Zug ein zweites Mal ins Dokument setzen.
+
+   Kein `hx-trigger` daran: hier läuft nichts nach. Der Kasten bleibt stehen,
+   bis jemand neu wählt — dann setzt `afterend` den neuen davor, und
+   `querySelector` nimmt den ersten. #}
+<div class="zugwechsel" id="wechsel-{{ mid }}">
+  <p class="band zugband" role="status">{{ chat_fehler }}</p>
+</div>
+{% include "_nachtrag.html" %}
