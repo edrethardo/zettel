@@ -570,6 +570,105 @@ von 22,2 s lief**:
 Ein kompletter Wechsel in 50 ms, neben einem laufenden Modellaufruf. Vorher
 waren es 26,7 s, und die Seite daneben stand.
 
+### Die Suche war nie langsam — die Zählung war es
+
+„Speichere außerdem Suchergebnisse dass sie Instant kommen können." Bevor
+etwas zwischengespeichert wurde, stand die Frage, warum es überhaupt dauert:
+
+    /katalog?q=bio joghurt natur   1,85 s
+      search.count()               1.871 ms   -> 43
+      search.search()                  1,3 ms -> dieselben 43
+      die reine FTS-Abfrage              0 ms
+
+Beide Abfragen haben dieselbe Bedingung. Der Unterschied stand im Plan:
+
+    count   SEARCH p USING INDEX ix_product_active (active=?)
+            SCAN f VIRTUAL TABLE INDEX 0:=M7
+    search  SCAN f VIRTUAL TABLE INDEX 0:M7
+            SEARCH p USING INTEGER PRIMARY KEY (rowid=?)
+
+`count` lief über alle zehntausend aktiven Produkte und stellte je Zeile eine
+FTS-Anfrage; `search` liest aus der FTS heraus, weil `ORDER BY bm25` den
+Planer dazu zwingt. `CROSS JOIN` ist in SQLite kein anderer Join, sondern die
+Anweisung, die Reihenfolge nicht zu vertauschen — **1.871 ms -> 0,3 ms**
+(WB-410).
+
+**Ein Zwischenspeicher hätte das verdeckt.** Er hätte die zweite Suche schnell
+gemacht und die erste bei 1,85 s gelassen, und niemand hätte je wieder
+hingesehen. Die Katalogsuche braucht heute keinen: sie liegt zwischen 13 und
+58 ms.
+
+### Was der Shop einmal gewählt hat, wählt er nicht noch einmal
+
+Gespeichert gehört etwas anderes — das, was wirklich kostet (WB-411):
+
+    plan.extract      Median 11,53 s
+    plan.choose       Median 14,71 s
+    catalog.search    Median  0,00 s   (264 Suchen zusammen 0,5 s)
+
+Die Suche im eigenen Katalog ist gratis. Teuer ist die **Wahl**, und sie ist
+je Begriff eine eigene kleine Frage: „welches dieser zwanzig Produkte ist
+‚Tomatenmark'". Der Shop stellte sie immer wieder.
+
+Wie oft, ist gemessen. Über sieben Lasagne-Rezepte kannte jedes 36 bis 62 %
+seiner Begriffsketten schon aus den anderen — „Zwiebel" sechsmal,
+„Tomatenmark", „Butter", „Milch" je fünfmal; über den ganzen Rezeptbestand
+wiederholen sich 51 % der Zutatennamen.
+
+`begriff_wahl` merkt die Kette und das gewählte Produkt. Der Schlüssel ist die
+KETTE und nicht ihr erstes Wort: „Möhren" und „Karotten" führen zu
+verschiedenen Produkten (WB-340). Die **Kandidatenliste** wird nicht gemerkt —
+sie kostet nichts und wird jedes Mal neu gesucht; eine Erinnerung gilt nur,
+solange ihr Produkt heute wieder vorgelegt wird. Damit bekommt die Zusicherung
+aus `plan.choose` keine Hintertür.
+
+Dazu die beiden Hälften, die der Nutzer verlangt hat: **gemeldet** wird es in
+der Antwort („2 von 2 Zeilen kamen aus dem Gedächtnis"), damit der Satz im
+Verlauf steht und das Neuladen übersteht — und **„Neu suchen"** an jedem Zug
+mit Vorschlägen fragt noch einmal, ohne Gedächtnis, und überschreibt es.
+Gelesen wird dann nicht, geschrieben schon: sonst hiesse „neu suchen" nur
+„diesmal anders", und beim nächsten Satz stünde die verworfene Wahl wieder da.
+
+**Ehrlich zur Reichweite.** Drei nicht verwandte Gerichte nacheinander —
+Käse-Lauch-Suppe, Kartoffelgratin, Zwiebelsuppe — teilten **keine einzige**
+Begriffskette (0 von 18). Das Gedächtnis zahlt sich innerhalb einer
+Rezeptfamilie aus, nicht darüber hinaus.
+
+### Stufe 3 fragt in vier Spuren gleichzeitig
+
+Für ein wirklich neues Gericht blieben die zwanzig Sekunden. Stufe 3 besteht
+aus lauter unabhängigen Fragen, und die Box bedient vier Anfragen nebeneinander
+mit 74,8 tok/s gegen 24,9 einzeln. Gemessen an Pho Bo (17 Begriffe mit
+Kandidaten, echte Box, echter Katalog):
+
+| Spuren | Zeit | gewählt | |
+|---|---|---|---|
+| 1 | 16,7 s | 11 | |
+| 2 | 11,1 s | 11 | 1,51× |
+| **4** | **9,4 s** | **11** | **1,78×** |
+| 6 | 8,7 s | 12 | 1,92× |
+
+Vier, weil danach kaum noch etwas kommt — von vier auf sechs sind es 0,7 s,
+und jede weitere Spur zahlt den Systemprompt noch einmal.
+
+**Jede Spur bekommt nur ihre eigenen Kandidaten**, und damit wird die
+Zusicherung schärfer statt weicher: eine Antwort kann kein Produkt aus einer
+anderen Spur nennen. Verteilt wird reihum und nicht in Blöcken, damit jede
+Spur einen Querschnitt bekommt; die Reihenfolge der Antwort bleibt die der
+Aufgaben, denn sie ist die Reihenfolge der Vorschlagsliste.
+
+Im Trace heissen jetzt vier Spans `plan.choose` statt eines — das ist die
+Wahrheit über vier Modellaufrufe. `obs.stufe(..., mehrfach=True)` sorgt
+dafür, dass sie alle so heissen und nicht nur der schnellste.
+
+Ein ganzer Zug zu einem **neuen** Gericht, gemessen an der echten Box:
+
+| | |
+|---|---|
+| eine Spur, leeres Gedächtnis | 29,1 s |
+| vier Spuren, leeres Gedächtnis | **16,6 s** |
+| dasselbe Gericht noch einmal | **< 0,1 s** |
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist
