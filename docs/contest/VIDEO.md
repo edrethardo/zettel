@@ -651,3 +651,91 @@ Tastatur-Roboter gehören nicht hinein):
 Aufgeräumt wird über `buehne.pids`, **nie über `pkill -f`**: auf `:1` liegt
 Aarons angemeldete Sitzung, und der echte Shop auf 8730 läuft im selben
 Prozessbaum-Muster.
+
+
+## Nachdreh 30.08. — was Umbenennung und Redesign an der Aufnahme kaputt gemacht haben
+
+Der Dreh sollte wiederholt werden, weil die Seite deutlich besser geworden
+ist. Die Aufnahme-Automatik (`~/picknick-video/`) war dafür **doppelt tot**,
+und beide Male auf eine Art, die aussah wie ein kaputter Bilderkenner.
+
+**1. Die Umbenennung (WB-401).** `buehne.sh` startete `picknick.web.app` mit
+`PICKNICK_*`, `pruefstand.py` importierte `from picknick import db`. Die
+Bühne kam gar nicht erst hoch.
+
+**2. Das Redesign (WB-400) und der Dunkelmodus (WB-418).** Die Aufnahme sucht
+ihre Ziele über Farbe und Form. Beide Tickets haben die Farbwelt verschoben:
+
+    Akzent      grün  (62,125,51)  -> blau (36,86,184) -> hellblau (130,170,245)
+    Linie       beige (229,220,201) -> grau (217,223,231) -> dunkel (49,61,74)
+
+Mit den alten Werten fand sie **nichts**: keine Zutatenlinie, kein
+Portionsfeld, keine Sammelknöpfe, keinen Bestellknopf. Drei Trockenläufe, drei
+Warnungen, eine Ursache.
+
+**Die Lehre, und sie ist die einzige, die nicht verfällt:** die Farben stehen
+nicht mehr im Skript. `finde.ton("akzent")` liest sie aus `stil.css`. Wer die
+Farbwelt ändert, ändert sie an einer Stelle, und die Aufnahme zieht mit.
+
+### Vier Griffe, die der Umbau verschoben hat
+
+* **Der „Fragen"-Knopf steht oben** (WB-416), gemessen bei y ≈ 368 statt am
+  Seitenende. Das alte Suchfenster `y=(400, 1000)` griff daran vorbei.
+* **Die Korbzahl klebt im Kopf.** Die zwei Fahrten hinauf und zurück, die
+  WB-398 brauchte, um sie beim Springen zu zeigen, sind rund zwölf Sekunden
+  Video für eine Zahl, die jetzt ohnehin dasteht. Sie sind raus.
+* **Das Rad dreht dort, wo der Zeiger steht.** Nach einem Klick in die Leiste
+  steht er in der Leiste, und dann scrollt nichts — die Schleife hielt das
+  für „am Ende" und der Bestellknopf stand achthundert Pixel tiefer.
+* **Feste Klickpunkte in der Leiste sind vorbei.** `m.klick(305, 111)` traf
+  „Korb", bis das Abzeichen zweistellig wurde; danach traf derselbe Punkt
+  „Rezepte". Und `korb_posten()` meldete trotzdem 19 Posten — aus der
+  Datenbank. **Die Marke log.** Jetzt prüft `titel()` den Fenstertitel; das
+  ist die einzige ehrliche Auskunft darüber, wo man ist.
+
+### Und eine neue Falle beim Zurücksetzen
+
+`recipe_zuordnung` und `begriff_wahl` (WB-408/411) gehören in den Reset.
+Stehen sie da, läuft der Kamera-Zug in unter 0,1 s durch — ohne
+`plan.extract`, ohne `plan.choose`, ohne einen einzigen Span. Das Video
+zeigte dann eine leere Phoenix-Liste und eine GPU, die nicht ausschlägt:
+genau die Falle, die WB-396 schon einmal mit `recipe_item` gestellt hat, nur
+eine Ebene tiefer.
+
+### Die Hand vor der Kamera
+
+„Lass die Mauszeigerbewegung und das Tippen realistisch wirken."
+
+* **Das Übersteuern geht jetzt in Bewegungsrichtung.** Eine Hand schiesst über
+  das Ziel hinaus; sie landet nicht in einem zufälligen Winkel daneben. Der
+  alte Zufallswinkel sah aus wie ein Zielfehler, der Überschuss längs der
+  Bahn sieht aus wie ein Arm, der bremst.
+* **Auf langen Wegen ein Zögern auf halber Strecke** (35 %, ab 320 px). Eine
+  Bahn, die in einem Zug durchzieht, ist das deutlichste Zeichen dafür, dass
+  niemand sie fährt.
+* **Vertipper mit Rücktaste** (3,5 % je Zeichen, Nachbartaste auf derselben
+  Belegung). Alles andere am Tippen kann eine Maschine auch: schwankende
+  Abstände, Pausen an Wortgrenzen. Was sie nicht tut, ist danebengreifen und
+  es merken. Nur ASCII-Buchstaben werden vertippt — ein „ü", das auf dem
+  verschachtelten Schirm nicht ankommt, wäre kein Vertipper, sondern ein
+  verschlucktes Zeichen (Take 3).
+* **Der Rhythmus ist schubweise**: der erste Anschlag nach dem Klick ins Feld
+  dauert am längsten, im Wort läuft es schneller, Grossbuchstaben und Umlaute
+  kosten extra.
+
+Nachgemessen: mit **absichtlich 50 % Vertippern** getippt, kam in der
+Datenbank `alles für Lasagne, und Klopapier` an — Zeichen für Zeichen
+identisch. Die Korrektur verändert den Text nicht.
+
+### Stand
+
+Der Trockenlauf über den Prüfstand geht durch: Satz getippt, Antwort da,
+Portionen 4 → 6, zwei Zeilen einzeln bestätigt, „Alles übernehmen" 2 → 19,
+„Doch nicht alles" zurück auf 17 offen mit genau den zwei bestätigten,
+Bestellung abgeschickt, ein Posten abgehakt, einer als „gab's nicht"
+markiert. Offen ist ein kosmetischer Punkt: der Weg von der Bestellliste in
+die Pick-Liste fällt noch auf die Adresszeile zurück, statt die Bestellkarte
+zu treffen.
+
+**Der Kamera-Take mit Modell und Phoenix steht noch aus** — die Box war den
+ganzen Abend am Laden.
