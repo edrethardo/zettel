@@ -11,6 +11,21 @@ andere heisst „an", auch nichts. `ZETTEL_PHOENIX_PROJECT` benennt das
 Projekt um, `ZETTEL_PHOENIX_ENDPOINT` das Ziel — gebraucht wird das von
 Eval-Läufen, die nicht ins Alltagsprojekt gehören (siehe unten, WB-393).
 
+> **Die Traces von vor dem 30.08.2026 liegen woanders — unter `Picknick
+> Agent`.** Bis dahin hiess dieses Projekt „Picknick" (WB-401, siehe README).
+> Der Projektname ist in Phoenix der Schlüssel des Projekts und kein Etikett:
+> ein umbenanntes Projekt ist ein neues Projekt, und die alten Spans wandern
+> **nicht** mit. Wer die Butter-Züge aus diesem Dokument nachschlagen will,
+> die Trace-Lücke aus WB-377 oder irgendeine Messung, die hier mit einem Datum
+> vor dem 30.08.2026 steht, findet sie in Phoenix unter `Picknick Agent`.
+> Beide Projekte stehen nebeneinander in der Projektliste; gelöscht wurde
+> nichts. Dasselbe gilt für das Eval-Dataset (`picknick-anfragen`, heute
+> `zettel-anfragen`) und für die Experimente, die darauf liefen — auch die
+> bleiben unter dem alten Namen stehen. Und für die Span-Attribute: sie
+> heissen heute `zettel.*`, in den alten Traces stehen sie als `picknick.*`.
+> Eine Auswertung über beide Zeiträume muss also beide Namen kennen. Das ist
+> der Preis der Umbenennung, und er wird hier genannt statt verschwiegen.
+
 ## Der Fall, um den es geht
 
 Beim Bauen des Agenten kam dieser Satz durch:
