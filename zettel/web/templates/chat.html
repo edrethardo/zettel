@@ -15,11 +15,10 @@
 <div id="chat-zustand" hx-get="/chat/zustand" hx-trigger="load"
      hx-swap="outerHTML"></div>
 
-{# Die Brücke in den Korb (WB-382). Sie steht ÜBER dem Verlauf und klebt beim
-   Scrollen oben: ein „Ja" mitten in einer Liste von 150 Zeilen muss sichtbar
-   ankommen, ohne dass die Seite gewechselt wird. Der Kopfzähler allein reicht
-   dafür nicht — er ist eine Ziffer in einer quer scrollenden Leiste. #}
-<div id="korbbruecke">{% include "_korbbruecke.html" %}</div>
+{# Die Brücke in den Korb (WB-382) steht seit WB-416 IM klebenden Chatkopf
+   (`_chat.html`) und nicht mehr hier. Zwei klebende Streifen auf `top: 0`
+   hätten einander verdeckt, und was man beides immer sehen will — was
+   angekommen ist und wo man tippt —, gehört ohnehin zusammen. #}
 
 {% include "_chat.html" %}
 

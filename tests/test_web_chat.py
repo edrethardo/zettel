@@ -1345,19 +1345,24 @@ def test_jeder_indikator_gibt_es_auch_auf_der_seite(db_datei, tmp_path):
 def test_die_schlafende_box_meldet_sich_am_eingabefeld(db_datei, tmp_path):
     """`ChatNichtVerfuegbar` setzte nur `zustand` — am Formular kam nichts an.
 
-    Das Band mit dem Grund steht ÜBER dem ganzen Verlauf. Wer unten „Fragen"
-    tippt, während die Box schläft, sah vorher: nichts.
+    Das Band mit dem Grund steht ÜBER dem Verlauf. Wer „Fragen" tippt,
+    während die Box schläft, sah vorher: nichts.
+
+    **Eine Hülle, nicht mehr zwei** (WB-416): seit das Feld oben steht,
+    stünden beide nebeneinander, und derselbe Satz zweimal untereinander ist
+    keine doppelte Auskunft.
     """
     client, _ = _client(db_datei, tmp_path,
                         box=Box(wake.NICHT_ERREICHBAR, grund="Box antwortet nicht."))
     antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX).text
 
-    unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
-    assert "Das Modell antwortet gerade nicht" in unten
-    # Und sie steht wirklich am Formular, nicht wieder oben.
-    assert antwort.index('id="chat-fehler-unten"') < antwort.index('class="chatform"')
-    assert antwort.index('id="chat-fehler"') < antwort.index('id="chat-fehler-unten"')
+    platz = antwort.split('id="chat-fehler"', 1)[1].split("</div>", 1)[0]
+    assert "Das Modell antwortet gerade nicht" in platz
+    # Und sie steht am Formular, im klebenden Kopf.
+    assert antwort.index('id="chat-fehler"') < antwort.index('class="chatform"')
+    assert antwort.index('class="chatkopf"') < antwort.index('id="chat-fehler"')
+    assert antwort.count('id="chat-fehler"') == 1, "Die Meldung steht zweimal."
     # Der technische Grund bleibt am Band — er gehört nicht an den Knopf.
     assert "Box antwortet nicht." in antwort
 
@@ -1373,25 +1378,29 @@ def test_die_wachende_box_sagt_am_feld_dass_es_von_selbst_geht(db_datei,
                         box=Box(wake.WACHT_AUF, grund="Weckruf läuft."))
     antwort = client.post("/chat", data={"satz": "Landmilch"},
                           headers=HTMX).text
-    unten = antwort.split('id="chat-fehler-unten"', 1)[1].split("</div>", 1)[0]
-    assert "Modell wacht auf" in unten
-    assert "läuft von selbst" in unten
-    assert "noch einmal" not in unten, unten
+    platz = antwort.split('id="chat-fehler"', 1)[1].split("</div>", 1)[0]
+    assert "Modell wacht auf" in platz
+    assert "läuft von selbst" in platz
+    assert "noch einmal" not in platz, platz
     assert 'value="Landmilch"' in antwort
 
 
-def test_ein_misslungener_tipp_traegt_die_meldung_an_beide_stellen_nach(
-        db_datei, tmp_path):
-    """Die Teilantwort tauscht nur eine Zeile — beide Hüllen müssen mit."""
+def test_ein_misslungener_tipp_traegt_die_meldung_nach(db_datei, tmp_path):
+    """Die Teilantwort tauscht nur eine Zeile — die Hülle muss mit.
+
+    Ohne den Nachtrag bliebe die Begründung eines misslungenen Tipps aus, und
+    der Knopf sähe kaputt aus (WB-372). Seit WB-416 ist es EINE Hülle: sie
+    steht im klebenden Kopf, direkt am Eingabefeld.
+    """
     ids = _langer_verlauf(db_datei, zuege=1, je_zug=2)
     client, _ = _client(db_datei, tmp_path)
 
     antwort = _entscheiden(client, ids[0][0], "quatsch").text
 
     assert 'id="chat-fehler" hx-swap-oob="true"' in antwort
-    assert 'id="chat-fehler-unten" hx-swap-oob="true"' in antwort
-    unten = antwort.split('id="chat-fehler-unten"', 1)[1]
-    assert 'class="fehler"' in unten
+    assert 'id="chat-fehler-unten"' not in antwort
+    platz = antwort.split('id="chat-fehler"', 1)[1]
+    assert 'class="fehler"' in platz
 
 
 def test_der_zustandsstreifen_fragt_auch_im_fehlerfall_weiter_nach(db_datei,

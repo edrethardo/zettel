@@ -769,6 +769,47 @@ bearbeitet, schriebe die hochgerechnete Zahl als Rezeptmenge fest. Das Feld
 „Diesmal für wie viele Portionen?" gehört dort zum Korb-Knopf und nicht zur
 Anzeige.
 
+### Das Eingabefeld steht oben und bleibt oben
+
+„Der Chat soll außerdem immer ganz oben sein. Runter zu scrollen für den Chat
+ist unergonomisch." (WB-416.) Nachgemessen am laufenden Shop, Firefox über
+geckodriver:
+
+| | vorher | nachher |
+|---|---|---|
+| Eingabefeld liegt bei | y = **5.280** | y = **256** |
+| zu scrollen, bis es im Bild ist | 4.602 px = **6,1 Bildschirmhöhen** | **0** |
+| Züge im Verlauf dabei | 2 | 2 |
+
+Zwei Züge, und der Weg zum Feld war sechs Bildschirme lang. Ein Chat gehört
+unten, solange der Verlauf kurz ist — hier ist ein einzelner Zug eine
+Bildschirmhöhe (Rezeptkarte, Zutatenliste, Vorschläge), und die Grenze aus
+WB-372 zeigt trotzdem drei davon.
+
+**Der Kopf klebt, und in ihm steht alles, womit man handelt:** die Korbbrücke
+(was angekommen ist) und das Feld (was man fragen will). Die Brücke ist dafür
+aus `chat.html` in den Kopf gezogen — zwei klebende Streifen auf `top: 0`
+hätten einander verdeckt, und was man beides immer sehen will, gehört
+ohnehin zusammen. Gemessen:
+
+    scrollY     0   Kopf bei 205 px   Feld bei 256 px
+    scrollY  1500   Kopf bei   0 px   Feld bei  51 px
+    scrollY  3000   Kopf bei   0 px   Feld bei  51 px
+    scrollY  4631   Kopf bei   0 px   Feld bei  51 px
+
+    Kopfhöhe 108 px von 758 px Fenster — 14 %
+
+**Die frische Antwort wird ins Bild geholt** (`show:#chat-neuestes:bottom`).
+Das Feld steht oben, der neue Zug unten; ohne den Anker bliebe der Blick nach
+dem Abschicken am Kopf kleben und die Antwort stünde ungesehen darunter. Der
+Anker ist ein leeres Element am Ende des Verlaufs, weil der jüngste Zug seine
+`id` schon trägt (`zug-N`) und keine zweite bekommen kann.
+
+**Und die Meldung steht nur noch einmal.** Sie stand zweimal, weil zwischen
+Chatkopf und Eingabefeld der ganze Verlauf lag (WB-378). Seit das Feld oben
+steht, stünden beide nebeneinander — und zwei gleiche Sätze übereinander sind
+genau die Dopplung, die WB-400 an der Quittung gerügt hat.
+
 ### Ein Modell für Korb, Bestellung und Pick-Liste
 
 Der Warenkorb **ist** die Bestellung im Zustand `draft`; die abgeschickte ist

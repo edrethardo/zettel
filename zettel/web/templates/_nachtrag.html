@@ -9,11 +9,12 @@
    * **die Korbbrücke** — ein „Ja" legt ein (Spec 6), und die Brücke ist die
      Stelle, an der man das auf dieser Seite sieht;
    * **die Zahl im Kopf** — sonst füllt sich der Korb unsichtbar;
-   * **die Fehlerzeile, beide Male** — sonst bleibt die Begründung eines
-     misslungenen Tipps aus, und der Knopf sieht kaputt aus. Zwei Hüllen, weil
-     zwischen Chatkopf und Eingabefeld der ganze Verlauf liegt (WB-378); wer
-     nur die obere nachträgt, schreibt die Meldung dorthin, wo gerade niemand
-     hinsieht.
+   * **die Fehlerzeile** — sonst bleibt die Begründung eines misslungenen
+     Tipps aus, und der Knopf sieht kaputt aus. **Eine Hülle, nicht mehr
+     zwei** (WB-416): sie stand zweimal, weil zwischen Chatkopf und
+     Eingabefeld der ganze Verlauf lag (WB-378). Seit das Feld oben steht,
+     stehen beide nebeneinander, und zwei gleiche Sätze übereinander sind
+     keine doppelte Auskunft.
 
    **Der Korb selbst stand hier bis WB-382** — als ganze Liste, bei jedem
    „Ja". Er steht jetzt auf seiner eigenen Seite, und damit ist der grösste
@@ -22,7 +23,4 @@
    umschreibt. Was von ihm bleibt, ist die Zahl. #}
 <div id="korbbruecke" hx-swap-oob="true">{% include "_korbbruecke.html" %}</div>
 <span id="korb-anzahl" class="korbzahl" hx-swap-oob="true">{{ korb_anzahl or 0 }}</span>
-<div id="chat-fehler" hx-swap-oob="true">
-  {% with leise = true %}{% include "_chatfehler.html" %}{% endwith %}
-</div>
-<div id="chat-fehler-unten" hx-swap-oob="true">{% include "_chatfehler.html" %}</div>
+<div id="chat-fehler" hx-swap-oob="true">{% include "_chatfehler.html" %}</div>
