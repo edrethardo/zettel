@@ -52,7 +52,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from zettel import db                                       # noqa: E402
+from zettel import db, obs                                  # noqa: E402
 from zettel.assistant import plan                           # noqa: E402
 from zettel.gerichte import speicher                        # noqa: E402
 from zettel.llm.client import Modellzugang                  # noqa: E402
@@ -67,32 +67,58 @@ def _kette(eintrag: dict) -> str:
         if worte else ""
 
 
-def _lauf(zugang, rezept: dict, zutaten: list[dict], spuren: int) -> dict:
-    """Ein Durchgang durch Stufe 1 — ganz oder in Spuren."""
+def _lauf(zugang, rezept: dict, zutaten: list[dict], spuren: int,
+          variante: str = "") -> dict:
+    """Ein Durchgang durch Stufe 1 — ganz oder in Spuren.
+
+    **Der Lauf trägt einen CHAIN-Span**, wenn `--trace` gesetzt ist. Ohne ihn
+    hingen die Modellaufrufe elternlos in Phoenix, und die eine Frage, um die
+    es hier geht — „was hat die Spur mit den drei Zutaten geantwortet" —
+    liesse sich nicht mehr stellen: die Antwort steht am LLM-Span, aber
+    welcher zu welcher Variante gehört, stünde nirgends.
+
+    `stufe(..., mehrfach=True)` aus demselben Grund wie in WB-412: bei
+    mehreren Spuren sind es mehrere `plan.extract`, und ohne das Kennzeichen
+    hiesse nur der schnellste so.
+    """
     teile = ([zutaten] if spuren == 1
              else [t for t in (zutaten[i::spuren] for i in range(spuren)) if t])
     t0 = time.perf_counter()
-    if len(teile) == 1:
-        begriffe = plan.zutatenbegriffe(zugang, teile[0],
-                                        gericht=rezept["name"],
-                                        servings=rezept["servings"])
-    else:
-        with cf.ThreadPoolExecutor(max_workers=len(teile)) as pool:
-            laeufe = [pool.submit(contextvars.copy_context().run,
-                                  plan.zutatenbegriffe, zugang, teil,
-                                  gericht=rezept["name"],
-                                  servings=rezept["servings"])
-                      for teil in teile]
-            begriffe = [b for f in laeufe for b in f.result()]
-    dauer = time.perf_counter() - t0
+    with obs.chain("stufe1.probe", eingabe=rezept["name"]) as span:
+        obs.setze(span, {"zettel.variante": variante or f"spuren{spuren}",
+                         "zettel.spuren": len(teile),
+                         "zettel.zutaten": len(zutaten),
+                         "zettel.recipe_id": int(rezept["id"])})
+        with obs.stufe("plan.extract", mehrfach=True):
+            if len(teile) == 1:
+                begriffe = plan.zutatenbegriffe(zugang, teile[0],
+                                                gericht=rezept["name"],
+                                                servings=rezept["servings"])
+            else:
+                with cf.ThreadPoolExecutor(max_workers=len(teile)) as pool:
+                    laeufe = [pool.submit(contextvars.copy_context().run,
+                                          plan.zutatenbegriffe, zugang, teil,
+                                          gericht=rezept["name"],
+                                          servings=rezept["servings"])
+                              for teil in teile]
+                    begriffe = [b for f in laeufe for b in f.result()]
+        dauer = time.perf_counter() - t0
 
-    namen = [_kette(b) for b in begriffe if _kette(b)]
-    herkunft = {b.get("zutat") for b in begriffe if b.get("zutat")}
-    return {"n_ketten": len(begriffe),
-            "namen": namen,
-            "doppelt": len(namen) - len(set(namen)),
-            "abdeckung": len(herkunft) / len(zutaten) if zutaten else 0.0,
-            "sekunden": dauer}
+        namen = [_kette(b) for b in begriffe if _kette(b)]
+        herkunft = {b.get("zutat") for b in begriffe if b.get("zutat")}
+        erg = {"n_ketten": len(begriffe),
+               "namen": namen,
+               "doppelt": len(namen) - len(set(namen)),
+               "abdeckung": len(herkunft) / len(zutaten) if zutaten else 0.0,
+               "sekunden": dauer}
+        # Das ERGEBNIS an den Span und nicht nur die Zeit. Ein Span, der
+        # nichts als eine Dauer trägt, beantwortet keine Frage, die man nicht
+        # auch der Tabelle stellen könnte — die Ketten dagegen stehen sonst
+        # nirgends, und sie sind der Grund für das Urteil.
+        obs.setze_ausgabe(span, {"ketten": namen,
+                                 "abdeckung": round(erg["abdeckung"], 3),
+                                 "doppelt": erg["doppelt"]})
+        return erg
 
 
 def _deckung(a: list[str], b: list[str]) -> float:
@@ -114,7 +140,24 @@ def main() -> int:
                    help="Läufe je Variante — mindestens 2, sonst gibt es "
                         "kein Rauschband")
     p.add_argument("--json", default=None, help="Messzeilen hierhin")
+    p.add_argument("--trace", action="store_true",
+                   help="die Läufe nach Phoenix schicken")
+    p.add_argument("--projekt", default="Zettel Spur-Probe",
+                   help="Phoenix-Projekt (Vorgabe: %(default)s)")
     a = p.parse_args()
+
+    if a.trace:
+        # Erst ab hier und nicht per Vorgabe — dieselbe Regel wie in
+        # `breite_probe.py`: ein Messlauf mit 90 Modellaufrufen soll das
+        # Alltagsprojekt „Zettel Agent" nicht fluten. Und ein EIGENES
+        # Projekt, damit die Läufe der Probe nicht neben den Zügen der
+        # Nutzerin stehen; sie beantworten eine andere Frage.
+        if obs.einrichten(projekt=a.projekt) is not None:
+            stand = obs.tracerstand()
+            print(f"Trace: Projekt {stand['projekt']!r} auf "
+                  f"{stand['endpunkt']}")
+        else:
+            print("Trace: nicht eingerichtet — die Probe läuft ohne.")
 
     con = db.connect(a.db)
     rezepte = con.execute(
@@ -141,7 +184,8 @@ def main() -> int:
         for name, spuren in VARIANTEN:
             for lauf in range(a.wdh):
                 try:
-                    erg = _lauf(zugang, dict(r), zutaten, spuren)
+                    erg = _lauf(zugang, dict(r), zutaten, spuren,
+                                variante=name)
                 except Exception as e:                    # noqa: BLE001
                     print(f"   {name:8} Lauf {lauf + 1}: "
                           f"{type(e).__name__}: {e}", flush=True)
