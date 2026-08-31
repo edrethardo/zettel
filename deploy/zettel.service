@@ -27,12 +27,21 @@ Environment=ZETTEL_IMAGE_DIR=%h/code/picknick_klon/data/images
 # Wer hier überschreibt, kommt an `pruefe_host()` trotzdem nicht vorbei —
 # 0.0.0.0 wird abgelehnt und der Prozess startet nicht (Spec 10).
 
-# Beim Hochfahren steht tailscaled unter Umständen noch nicht. Erzwingt
-# ZETTEL_HOST dann eine Tailnet-Adresse, scheitert das Binden und hier wird
-# schlicht neu versucht — eine Ordnungsbeziehung auf einen System-Dienst kann
-# ein User-Manager nicht auflösen. Mit der erkannten Vorgabe startet der Shop
-# stattdessen nur auf loopback; solange die User-Dienste erst mit der
-# Anmeldung starten (Linger=no), tritt der Fall nicht auf.
+# Beim Hochfahren steht tailscaled unter Umständen noch nicht, und der Shop
+# sucht seine Bindeadressen nur EINMAL: dann lauscht er allein auf loopback,
+# der Dienst ist grün und das Telefon erreicht nichts — ein Fehler, der wie
+# Betrieb aussieht. Eine Ordnungsbeziehung auf einen System-Dienst kann ein
+# User-Manager nicht auflösen, also wird gewartet. Das Skript scheitert nie:
+# ohne Tailscale startet der Shop nach der Frist auf loopback, denn vom
+# Rechner selbst erreichbar ist mehr als gar nicht.
+#
+# Ohne `loginctl enable-linger` starten die User-Dienste ohnehin erst mit der
+# Anmeldung, und dann ist tailscaled längst oben — die Wartezeit ist in dem
+# Fall eine Schleife, die einmal durchläuft.
+ExecStartPre=%h/code/picknick_klon/deploy/warte-auf-tailnet.sh
+
+# `on-failure` und nicht `always`: ein von Hand gestoppter Shop soll gestoppt
+# bleiben. Ein Absturz kommt zurück, ein `systemctl --user stop` nicht.
 Restart=on-failure
 RestartSec=10s
 
