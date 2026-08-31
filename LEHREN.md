@@ -156,18 +156,35 @@ und der muss das Gedächtnis erneuern, nicht bloss umgehen.
 
 ---
 
-## 10. „Port offen" ist nicht „lädt"
+## 10. Stille lässt sich nicht deuten — nur aussitzen
 
-Die Modellbox meldete stundenlang „port is open but not serving yet — vLLM is
-loading". Ich habe das drei Mal wiederholt, statt es zu prüfen. Der Nutzer, der
-am Rechner sass, hatte das bessere Argument: **er hörte den Lüfter.**
+**Tag eins.** Die Modellbox meldete stundenlang „port is open but not serving
+yet — vLLM is loading". Ich habe das drei Mal wiederholt, statt es zu prüfen.
+Der Nutzer, der am Rechner sass, hatte das bessere Argument: **er hörte den
+Lüfter.** Der wahre Zustand: die Engine war tot, und der socket-aktivierte
+Proxy nahm weiter Verbindungen an. Ein Dienst, der seit Stunden „lädt", lädt
+nicht.
 
-Der wahre Zustand: die Engine war tot, und der socket-aktivierte Proxy nahm
-weiter Verbindungen an. Ein Dienst, der seit Stunden „lädt", lädt nicht.
+Die Lehre daraus schien klar — die Auskunft eines Werkzeugs ist eine Messung,
+seine Beschriftung eine Vermutung — und ich baute mir eine eigene Sonde: TCP
+verbinden, `GET` schicken, ein paar Sekunden auf ein Byte warten.
 
-**Was daraus folgt:** die Auskunft eines Werkzeugs ist eine Messung, ihre
-Beschriftung eine Vermutung. „Port nimmt an, aber nach 25 s kein Byte" ist die
-Messung; „lädt" war meine Erfindung.
+**Tag zwei.** Dieselbe Sonde, dieselbe Ausgabe: „Verbindung steht, kein Byte."
+Ich war einen Satz davon entfernt, einer Nachbarsitzung zu widersprechen, die
+gerade „serviert wieder" gemeldet hatte. Es war der **kalte** Proxy: er
+beantwortet den TCP-Handshake sofort und schickt danach bis zu 150 s nichts,
+weil er die Engine erst startet. Eine Minute später kam `/v1/models` in 11 ms.
+
+**Dieselbe Stille, zwei Ursachen.** Und die Dauer trennt sie nicht: 25 s
+Schweigen waren tot, 12 s Schweigen waren kalt — beim nächsten Mal kann es
+umgekehrt liegen. Was sie trennt, ist einzig, **ob am Ende eine Antwort
+kommt**, und das erfährt nur, wer wartet. Genau dafür gibt es `wake-vllm`.
+
+**Was daraus folgt:** meine handgeschnitzte Sonde war nicht schärfer als das
+Werkzeug — sie lag nur in die andere Richtung daneben. Was beide Tage
+verbindet, ist nicht die Werkzeugwahl, sondern dass ich die Stille GEDEUTET
+habe, statt sie auszusitzen. Ein Zustand, den man in der halben Wartezeit
+nicht unterscheiden kann, ist in der halben Wartezeit nicht bekannt.
 
 ## 11. Was die Kamera zeigt, muss die Datenbank belegen — und umgekehrt
 
