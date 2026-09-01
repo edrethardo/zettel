@@ -537,6 +537,24 @@ def inhalt(con: sqlite3.Connection) -> list[dict]:
     return posten(con, korb) if korb is not None else []
 
 
+def summe(posten: list[dict]) -> dict:
+    """Menge × Preis über die Korbzeilen; Zeilen ohne Preis werden GEZÄHLT.
+
+    Eine reine Funktion über das, was `inhalt()` liefert — keine zweite
+    Abfrage, die von der Zeilenliste abweichen könnte. Freitext hat keinen
+    Preis, ein ausgemustertes Produkt einen alten: die Summe ist deshalb
+    „etwa", und die Vorlage sagt das dazu (UI-Review 2026-09-01, Fund 7).
+    """
+    cents = 0
+    ohne = 0
+    for p in posten:
+        if p.get("price_cents") is None:
+            ohne += 1
+        else:
+            cents += int(p["qty"]) * int(p["price_cents"])
+    return {"cents": cents, "ohne_preis": ohne}
+
+
 def abschicken(con: sqlite3.Connection, note: str | None = None) -> dict:
     """`draft -> offen`, mit `submitted_at`. Gibt die Bestellung zurück.
 

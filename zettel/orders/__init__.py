@@ -21,7 +21,7 @@ from zettel.orders.pick import (  # noqa: F401
     setze_stand)
 from zettel.orders.korb import (  # noqa: F401
     LADEN_VORGABE, abschicken, einlegen, entfernen, gebinde, genau_eines,
-    inhalt, korb_anzahl, laden_setzen, menge_setzen, rechnung,
+    inhalt, korb_anzahl, laden_setzen, menge_setzen, rechnung, summe,
     vorbelegter_laden, warenkorb, warenkorb_id, wieder_einlegen)
 
 __all__ = [
@@ -31,6 +31,6 @@ __all__ = [
     "entfernen", "gebinde", "genau_eines", "inhalt", "jetzt", "korb_anzahl",
     "laden_setzen", "markiere_katalogstand", "menge_setzen", "nach_laden",
     "naechste", "offene", "posten", "rechnung",
-    "setze_stand", "vorbelegter_laden", "warenkorb", "warenkorb_id",
+    "setze_stand", "summe", "vorbelegter_laden", "warenkorb", "warenkorb_id",
     "wechsle", "wieder_einlegen",
 ]
