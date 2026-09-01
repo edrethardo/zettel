@@ -33,6 +33,20 @@ VOLLSEITEN = ["/katalog", "/chat", "/warenkorb", "/rezepte", "/bestellungen",
               "/pick", "/bons", "/status", "/rolle"]
 
 
+def _block(stil: str, selektor: str) -> str:
+    """Die Deklarationen GENAU EINES Blocks. Ein Selektor, der zweimal im
+    Blatt steht, gewinnt die Kaskade mit dem späteren Block — und ein Test,
+    der nur den ersten liest, bliebe grün (so ist es bei `.pickzeile .stellen
+    .mini` am 2026-09-01 fast passiert). Der Treffer muss am Zeilenanfang
+    stehen, sonst zählt `.a .b {` auch in `.x .a .b {` mit."""
+    treffer = list(re.finditer("^" + re.escape(selektor) + r" \{", stil, re.M))
+    assert len(treffer) == 1, (
+        f"{selektor} steht {len(treffer)}× am Zeilenanfang im Blatt,"
+        " erwartet genau einmal")
+    rest = stil[treffer[0].end():]
+    return rest[:rest.index("}")]
+
+
 @pytest.fixture
 def bild_dir(tmp_path):
     d = tmp_path / "bilder"
@@ -204,10 +218,10 @@ def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
     ausgeblendet. Ob sie auf 375 px sichtbar ist, entscheidet ein Gerät —
     hier steht nur, dass sie nicht mehr weggeschaltet wird."""
     stil = STIL.read_text(encoding="utf-8")
-    nav = stil.split(".kopf nav {", 1)[1].split("}", 1)[0]
+    nav = _block(stil, ".kopf nav")
     assert "scrollbar-width: none" not in nav
     assert "scrollbar-width: thin" in nav
-    balken = stil.split(".kopf nav::-webkit-scrollbar {", 1)[1].split("}", 1)[0]
+    balken = _block(stil, ".kopf nav::-webkit-scrollbar")
     assert "display: none" not in balken
 
 
@@ -222,9 +236,9 @@ def test_die_leiste_rastet_auf_den_anfang_eines_ziels():
     entscheidet ein Gerät; hier steht, dass die beiden Stellschrauben, die
     ihn erzeugt haben, in die andere Richtung stehen."""
     stil = STIL.read_text(encoding="utf-8")
-    nav = stil.split(".kopf nav {", 1)[1].split("}", 1)[0]
+    nav = _block(stil, ".kopf nav")
     assert "scroll-snap-type: x mandatory" in nav
-    ziel = stil.split(".kopf nav a {", 1)[1].split("}", 1)[0]
+    ziel = _block(stil, ".kopf nav a")
     assert "scroll-snap-align: start" in ziel
     assert "scroll-snap-align: end" not in ziel
 
@@ -245,8 +259,8 @@ def test_das_foto_faengt_auf_derselben_hoehe_an_wie_der_name():
     verschiedene Abstände auf EINER Seite (WB-400 Runde 3). Bild und Text
     beginnen oben — ein Abstand statt neun."""
     stil = STIL.read_text(encoding="utf-8")
-    bild = stil.split(".zeile > .bild {", 1)[1].split("}", 1)[0]
-    text = stil.split(".zeile > .text {", 1)[1].split("}", 1)[0]
+    bild = _block(stil, ".zeile > .bild")
+    text = _block(stil, ".zeile > .text")
     assert "align-self: start" in bild
     assert "align-self: start" in text
 
@@ -386,7 +400,7 @@ def test_der_griff_an_der_rezeptzutat_ist_kein_flex_container():
     Breite — „Lavend / elblüte / n". Ein Block lässt beide als EINEN Satz
     fliessen; die 44 px (WB-379) bleiben."""
     stil = STIL.read_text(encoding="utf-8")
-    block = stil.split(".rezeptzutaten a.name {", 1)[1].split("}", 1)[0]
+    block = _block(stil, ".rezeptzutaten a.name")
     assert "display: flex" not in block
     assert "display: block" in block
     assert "min-height: var(--tap)" in block
@@ -398,7 +412,7 @@ def test_die_mengenspalte_der_rezeptzutat_ist_weder_starr_noch_mono():
     globale `.menge`-Regel setzt Kassenschrift — das blosse Fehlen der
     Deklaration reicht deshalb nicht, es braucht die Gegenregel."""
     stil = STIL.read_text(encoding="utf-8")
-    block = stil.split(".rezeptzutaten .menge {", 1)[1].split("}", 1)[0]
+    block = _block(stil, ".rezeptzutaten .menge")
     assert "8ch" not in block
     assert "var(--mono)" not in block
     assert "tabular-nums" in block
@@ -447,7 +461,7 @@ def test_summe_und_bestellknopf_kleben_am_unteren_rand():
     das Gerät — hier steht, dass die Kasse überhaupt klebt und einen
     eigenen Grund hat, damit die Liste nicht durch sie hindurchscheint."""
     stil = STIL.read_text(encoding="utf-8")
-    block = stil.split(".kasse {", 1)[1].split("}", 1)[0]
+    block = _block(stil, ".kasse")
     assert "position: sticky" in block
     assert "bottom: 0" in block
     assert "background: var(--grund)" in block
@@ -473,12 +487,12 @@ def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
     darf dafür zwei Zeilen hoch sein — sonst bricht „Champignons" mitten im
     Wort, weil ihm 100 px bleiben."""
     stil = STIL.read_text(encoding="utf-8")
-    form = stil.split(".pickzeile > form {", 1)[1].split("}", 1)[0]
+    form = _block(stil, ".pickzeile > form")
     assert "100%" not in form
     assert "flex: 1 1 0" in form
-    stellen = stil.split(".pickzeile .stellen {", 1)[1].split("}", 1)[0]
+    stellen = _block(stil, ".pickzeile .stellen")
     assert "flex: 0 0 auto" in stellen
-    knopf = stil.split(".pickzeile .stellen .mini {", 1)[1].split("}", 1)[0]
+    knopf = _block(stil, ".pickzeile .stellen .mini")
     assert "white-space: normal" in knopf
     # Ein Selektor, ein Block — sonst gewinnt der spätere Block die Kaskade,
     # und der Test sieht nur den ersten.
