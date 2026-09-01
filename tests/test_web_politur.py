@@ -436,3 +436,26 @@ def test_ohne_knopf_gibt_es_auch_keine_rueckmeldung(client, con):
                     headers=HTMX)
     assert r.status_code == 200
     assert "hx-swap-oob" not in r.text
+
+
+# --------------------------------------------------------------------------
+# 7. Der Bestellknopf klebt am unteren Rand
+
+def test_summe_und_bestellknopf_kleben_am_unteren_rand():
+    """Der Knopf stand nach 2 500 px Scrollweg (UI-Review 2026-09-01,
+    Fund 8). Ob er auf einem Telefon wirklich im Bild bleibt, entscheidet
+    das Gerät — hier steht, dass die Kasse überhaupt klebt und einen
+    eigenen Grund hat, damit die Liste nicht durch sie hindurchscheint."""
+    stil = STIL.read_text(encoding="utf-8")
+    block = stil.split(".kasse {", 1)[1].split("}", 1)[0]
+    assert "position: sticky" in block
+    assert "bottom: 0" in block
+    assert "background: var(--grund)" in block
+
+
+def test_die_kasse_umschliesst_summe_und_knopf(client, con):
+    client.post(f"/katalog/einlegen?product_id={_pid(con)}", headers=HTMX)
+    text = client.get("/warenkorb").text
+    kasse = text.split('<div class="kasse">', 1)[1].split("</div>", 1)[0]
+    assert 'class="summe"' in kasse
+    assert "Bestellung abschicken" in kasse
