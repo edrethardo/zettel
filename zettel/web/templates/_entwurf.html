@@ -41,7 +41,17 @@
     <button class="mini" type="submit">Doch ein Rezept daraus</button>
   </form>
   {% else %}
-  <h3>Rezeptentwurf</h3>
+  {# Eingeklappt (UI-Review 2026-09-01, Fund 2): über diesem Block stehen
+     die Ja/Nein-Karten, und der Entwurf wiederholte dieselben Produkte
+     mit eigenen Knöpfen in gleicher Grösse — zwei Bediensysteme. Der
+     Entwurf ist der Nebenpfad. Die Zusammenfassung nennt den Stand; wer
+     Mengen ändern oder eine Zeile herausnehmen will, klappt auf. Nach
+     jedem Ja/Nein tauscht HTMX den Zug und der Entwurf ist wieder zu —
+     gewollt, denn das Ja oben ist der Hauptweg. #}
+  <details>
+    <summary>Rezeptentwurf „{{ m.entwurf.name }}“ —
+      {{ m.entwurf.n_drin }} von {{ m.entwurf.zeilen | length }}
+      {{ "Zutat" if m.entwurf.zeilen | length == 1 else "Zutaten" }} im Rezept</summary>
   {# Der Name ist überschreibbar, und das ist keine Kosmetik: der Rezeptweg
      sucht ihn beim nächsten Mal wörtlich im Satz. #}
   <form class="entwurf-name" method="post"
@@ -130,6 +140,7 @@
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <button class="mini zurueck" type="submit">Kein Rezept daraus</button>
   </form>
+  </details>
   {% endif %}
 </section>
 {% endif %}
