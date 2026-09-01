@@ -644,12 +644,22 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 .pickzeile form { display: flex; align-items: center; margin: 0; }
 /* Eine Zeile, nicht zwei (UI-Review 2026-09-01, Fund 11): mit `1 1 100%`
    fiel „gab's nicht" unter den Text, und jede Zeile war 140 px hoch. Das
-   Formular nimmt den Rest, der Knopf seine Breite; unter 180 px Textbreite
-   bricht die Zeile — dann ist der Name so lang, dass er ohnehin zwei
-   Zeilen braucht. */
+   Formular nimmt den Rest, der Knopf seine Breite. `min-width: 180px` ist
+   der Boden, unter dem die Zeile lieber umbricht, als den Knopf zu
+   quetschen — auf jedem Telefon liegt sie darüber, der Umbruch ist die
+   Notbremse. Von den 180 px sind ~120 Haken, Foto und Abstände; was der
+   Name bekommt, entscheidet allein die Breite des Geräts, nicht seine
+   Länge. */
 .pickzeile > form { flex: 1 1 0; min-width: 180px; }
-.pickzeile .stellen { flex: 0 0 auto; margin-left: auto;
+.pickzeile .stellen { flex: 0 0 auto;
                       padding: 0 var(--v1); }
+/* „gab's nicht" darf zwei Zeilen hoch sein: bei `nowrap` ist der Knopf
+   ~118 px breit, der Textspalte bleiben dann ~100 px, und „Champignons"
+   bricht mitten im Wort — das ist der Fall, den WB-373 mit der zweiten
+   Zeile vermieden hatte. Zwei Wörter untereinander kosten ~40 px Breite
+   weniger, und die gehen an den Namen. `--tap` bleibt die Mindesthöhe. */
+.pickzeile .stellen .mini { white-space: normal; max-width: 5.2em;
+                            line-height: 1.15; padding: var(--v1) var(--v2); }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
   flex: 1 1 auto; min-width: 0; min-height: 64px;
@@ -706,7 +716,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 /* „Gab's nicht" (WB-373): Rotstift wie das „Nein" am Chat-Vorschlag, denn es
    ist dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
    Zeichen: vor dem Regal wird nicht geraten, was ein Symbol bedeutet. */
-.pickzeile .stellen .mini { font-size: var(--t-klein); white-space: nowrap; }
+.pickzeile .stellen .mini { font-size: var(--t-klein); }
 /* Nur die Kontur, keine Füllung (WB-400). Der Knopf steht an JEDER offenen
    Zeile — als gefüllte rote Pille las sich die halbe Liste, als wäre sie
    schon gescheitert, und auf einer abgehakten Zeile war er das Lauteste im
