@@ -109,6 +109,53 @@ def test_fehlender_preis_ist_none_nicht_null():
     assert zeilen[0]["price_cents"] is None
 
 
+@pytest.mark.parametrize("text, unit, erwartet", [
+    ("0,25 g", "g", "250 g"),        # Byodo Tagliatelle 250 g
+    ("0,225 ml", "ml", "225 ml"),    # Develey Sauce
+    ("0,27 g", "g", "270 g"),        # Piccolinis 9×30 g
+    ("0,5 g", "g", "500 g"),
+    ("0,75 l", "l", "0,75 l"),       # richtig — Liter bleiben Liter
+    ("0,7 kg", "kg", "0,7 kg"),      # richtig
+    ("250 g", "g", "250 g"),         # schon in Ordnung
+    ("1 l", "l", "1 l"),
+    ("2 x 0,25 g", "g", "2 x 0,25 g"),  # Multipack: nicht angefasst, nie gesehen
+    (None, "g", None),
+    ("", "g", ""),
+])
+def test_eine_kilozahl_mit_grammeinheit_wird_zu_gramm(text, unit, erwartet):
+    """UI-Review 2026-09-01, Fund 5. Knuspr liefert „0,25 g" für 250 g: die
+    Zahl ist in kg, die Einheit blieb klein. 167 aktive Produkte in der Demo-
+    Datenbank; `price_cents / price_per_unit_cents` (239/956 = 0,25) beweist
+    die Kilo-Lesart. Eine Menge unter 1 in g oder ml gibt es im Lebensmittel-
+    handel nicht — deshalb ist „< 1 und kleine Einheit" das Merkmal."""
+    assert knuspr.normalisiere_einheit(text, unit) == erwartet
+
+
+def test_parse_products_normalisiert_die_einheit():
+    roh = _roh(7, "Tagliatelle")
+    roh["textualAmount"] = "0,25 g"
+    roh["unit"] = "g"
+    zeile = knuspr.parse_products(_seite([roh], 1))[0]
+    assert zeile["unit_text"] == "250 g"
+
+
+def test_repariere_einheiten_bringt_bestehende_zeilen_in_ordnung(con):
+    http = FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Nudeln")], 2)])
+    knuspr.crawl(con, http, ["milch"], pause_s=0)
+    con.execute("UPDATE product SET unit_text = '0,25 g', unit = 'g'"
+                " WHERE name = 'Nudeln'")
+    con.commit()
+
+    n = knuspr.repariere_einheiten(con)
+
+    assert n == 1
+    assert con.execute("SELECT unit_text FROM product WHERE name = 'Nudeln'"
+                       ).fetchone()["unit_text"] == "250 g"
+    assert con.execute("SELECT unit_text FROM product WHERE name = 'Milch'"
+                       ).fetchone()["unit_text"] == "1 l"
+    assert knuspr.repariere_einheiten(con) == 0     # idempotent
+
+
 # --------------------------------------------------------------------------
 # Lauf
 
