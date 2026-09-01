@@ -461,8 +461,22 @@ def test_eine_kaputte_fertig_id_laesst_die_uebersicht_stehen(client):
 
     Eine unbekannte ID gibt schon jetzt still keine Quittung; eine kaputte
     soll sich genauso verhalten und nicht die Seite mitnehmen.
+
+    Mit einer Bestellung in der Liste, denn ohne sie prüft der Test nichts:
+    der Vergleich, an dem `int(fertig)` hängt, wird über einer leeren Liste
+    nie ausgewertet.
     """
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"},
+                headers=HTMX)
+    client.post("/warenkorb/abschicken", follow_redirects=False)
+
     r = client.get("/bestellungen?fertig=abc")
+    assert r.status_code == 200
+    assert 'class="fertig"' not in r.text
+
+    # `"²".isdigit()` ist True, `int("²")` wirft — eine Ziffer im Sinne von
+    # Unicode ist noch lange keine Zahl im Sinne von `int`.
+    r = client.get("/bestellungen?fertig=²")
     assert r.status_code == 200
     assert 'class="fertig"' not in r.text
 

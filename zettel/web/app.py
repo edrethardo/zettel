@@ -2371,8 +2371,11 @@ def create_app(db_path: str | Path | None = None,
             # die ganze Übersicht ist unerreichbar. Eine unbekannte ID gibt
             # schon jetzt still keine Quittung — eine kaputte soll sich
             # genauso verhalten und nicht die Seite mitnehmen.
+            # `isascii()` davor, weil `"²".isdigit()` True ist und
+            # `int("²")` trotzdem wirft — eine Ziffer im Sinne von Unicode
+            # ist noch keine Zahl im Sinne von `int`.
             gerade = None
-            if fertig is not None and fertig.isdigit():
+            if fertig is not None and fertig.isascii() and fertig.isdigit():
                 gerade = next((b for b in liste if b["id"] == int(fertig)), None)
             # Nur für eine Bestellung, die wirklich gerade weg ist: die URL
             # überlebt Reload, Zurück und das Weiterreichen im Haushalts-Chat.
