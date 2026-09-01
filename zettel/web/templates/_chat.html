@@ -51,7 +51,7 @@
 
     <div id="chat-fehler">{% include "_chatfehler.html" %}</div>
 
-    <form class="chatform" method="post" action="/chat"
+    <form class="chatform" id="chatform" method="post" action="/chat"
           {# `show:window:top` (WB-417): der jüngste Zug steht jetzt ganz
              oben, direkt unter diesem Kopf. Wer beim Abschicken tief im
              Verlauf stand, soll ihn sehen und nicht die Stelle, an der er
@@ -112,9 +112,20 @@
   {% for m in verlauf %}
     {% include "_zug.html" %}
   {% else %}
-  <p class="fussnote">Schreib, was du brauchst — „alles für Spaghetti
-    Bolognese, und Klopapier". Vorgeschlagen wird nur; in den Korb kommt
-    nichts, was du nicht bestätigst.</p>
+  {# Der erste Blick (UI-Review 2026-09-01, Fund 1): kein Erklärabsatz,
+     sondern drei Sätze, die man antippen kann. Jeder Chip ist ein
+     Absender des Chat-Formulars — `form="chatform"` und `name="satz"` —,
+     also funktioniert er ohne Skript genauso wie „Fragen" mit Vorgabe. Die
+     Zusage „in den Korb kommt nichts ohne dein Ja" steht danach an jeder
+     Karte, wo sie gebraucht wird, nicht davor. #}
+  <div class="beispiele">
+    <p>Sag, was du brauchst — zum Beispiel:</p>
+    {% for satz in ["Alles für Spaghetti Bolognese, und Klopapier",
+                    "Lasagne für 6 Personen",
+                    "Milch, Butter, Eier"] %}
+    <button type="submit" form="chatform" name="satz" class="beispiel" value="{{ satz }}">{{ satz }}</button>
+    {% endfor %}
+  </div>
   {% endfor %}
 
   {% if aeltere %}

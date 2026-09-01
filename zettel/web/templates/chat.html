@@ -2,12 +2,6 @@
 {% block titel %}Chat — Zettel{% endblock %}
 {% block inhalt %}
 <h1>Chat</h1>
-{# Ein Chat für beide (Spec 4 und 9). Derselbe Satz wie über dem Korb, denn es
-   ist dieselbe Sache: der Verlauf hängt am `draft`, und den haben beide
-   gemeinsam. Wer das nicht liest, sucht später „seinen" Chat. #}
-<p class="fussnote">Ein gemeinsamer Chat — er hängt am Korb und wandert beim
-  Abschicken mit der Bestellung mit.</p>
-
 {# Der Zustand der Box wird nachgeladen: das Rendern dieser Seite fragt die
    vLLM-Box nicht an — sonst wartete jeder Blick in den Chat am
    health-Timeout. Er steht NUR hier, weil nur hier jemand das Modell
