@@ -1,6 +1,6 @@
 # Adversarial UI-Review — Handybild, erster Eindruck für Fremde
 
-**Datum:** 2026-09-01 · **Stand:** Commit `60b168d` · **Bilder:** [`bilder/`](bilder/) — 12 Seiten
+**Datum:** 2026-09-01 · **Stand:** Commit `60b168d` · **Bilder:** [`bilder/`](bilder/) — 12 Seiten (davor; der Satz danach heisst `nach_*`, siehe Nachtrag)
 headless bei 390 × 844 (Falzlinie rot) und 12 Standbilder des Demo-Pfads aus dem Rohband
 des Handy-Clips (`take_ein_sprung.mkv`).
 **Reviewer:** drei Agenten, die nur den Bilderordner kannten — Juror (10 s), Design-Lead,
@@ -43,6 +43,34 @@ Reviewer den Fund unabhängig genannt haben.
 | 14 | **Sechs Knopfstile für gleichwertige Aktionen.** „Fragen" gefüllt, „Suchen"/„Dazu" umrandet (beide schicken ein Feld ab), Ja grün / Nein rot, ok dunkel + raus als Link, orange Warnknöpfe, „Zum Chat" weiß / „Zum Katalog" grau. | 1 | `seite_01/02/06`, `chat_04/05` | gewachsen; keine Primär/Sekundär-Regel | M |
 | 15 | **Rhythmus kippt.** Sechs Seiten sind unter dem Falz leer, die anderen Endlos-Scroller ohne Zwischenüberschriften; der einzige gelbe Kasten („60 von 10066") sieht aus wie eine Warnung. | 1 | `seite_08` leer ab 480, `seite_03` 12+ Karten | — | S–M |
 | 16 | Kleinkram: Korbzahl-Badge 12 × 11 px mit 6-px-Ziffer (`.korbzahl` bei 0); Einheiten „el"/„paket" in Kleinbuchstaben; Arbeitszustand nur „Das Modell überlegt …" in 13 px Grau; das klebende Eingabefeld verdeckt die erste Zeile darunter; „Züge ohne Trace" ohne Leerzustand. | 1–2 | `seite_01` y 17–27, `chat_03`, `chat_06`, `seite_10` y 490–580 | — | S |
+
+## Nachtrag 2026-09-01 — Welle 1 umgesetzt
+
+Plan: [`../../plans/2026-09-01-ui-review-verbesserungen.md`](../../plans/2026-09-01-ui-review-verbesserungen.md).
+Stand nach Welle 1: Commit `305af45`, 1323 Tests grün. Der Bildersatz danach liegt als
+[`bilder/nach_*.png`](bilder/) — 18 Seiten, dieselbe Strecke (390 px, Shop auf `127.0.0.1:8748`
+gegen eine Kopie der Demo-Datenbank). Nur eine Farbfassung: die Seite ist seit `4e6d21f` dunkel
+ohne Media-Query, Hell- und Dunkelbild waren pixelgleich.
+
+| # | Stand | Commits | Beleg danach |
+|---|---|---|---|
+| 1 | **erledigt** — drei Beispiele zum Antippen statt drei Absätzen; der Chip schlägt das leere Feld | `0ea0ccb`, `b1198d7` | `nach_01` |
+| 2 | **erledigt** — der Rezeptentwurf ist ein `<details>`, zu bis man ihn will (70 px zu, offen auf Wunsch); die Ja/Nein-Karten sind der einzige Hauptweg | `3c1c3c3` | `nach_03` (zu), `nach_04` (auf) |
+| 3 | **teilweise** — „Rang 6.0" weg von der Vorschlagskarte (`4b81fec`); Status und „wer bin ich?" in einer Fusszeile, die Leiste zählt sieben Ziele (`50afea3`, `7704809`, `376e8cc`); der OCR-Hinweis auf Bons sagt zuerst, was geht (`33205d6`). **Offen:** die Hostnamen auf `/status` (Welle 2) und `_bonstand.html:94`, das beim Bon-Abgleich weiter „Rang" ausgibt — dieselbe Zahl, andere Seite. **Korrektur:** „Browse… No file selected" war die Browsersprache des Review-Firefox, nicht die App; der Knopf ist seit WB-400 gestylt (`stil.css`, `input[type=file]`) — das Bild zeigte das Wort, nicht die Gestalt. | s. o. | `nach_15`, `nach_16`, `nach_17` |
+| 4 | **erledigt** — der Griff in der Zutatentabelle ist ein Block, die Menge erbt die Schrift; kein Wortbruch mehr in „Lavendelblüten", „Champignons" | `2ac6759`, `d4abcc4` | `nach_08` |
+| 5 | **erledigt** — Datenfehler im Knuspr-Scraper: eine Kilozahl mit Grammeinheit („0,25 g" für 250 g) wird zu Gramm. **Korrektur:** es waren **167** aktive Produkte, nicht 107; die Regel lautet „Zahl < 1 und Einheit g/ml". Beide Datenbanken repariert (Sicherungen `data/sicherungen/picknick-2026-09-01-vor-einheiten.db` und `demo.db.vor-einheiten` neben der Demo-DB). **Rest:** 12 Zeilen je DB tragen denselben Fehler mit Zahl ≥ 1 — 5× „1 g" (Kaffeebohnen 1 kg), 2× „1 ml" (Saft 1 L), 3× „1,5 ml" (Reiniger 1,5 L), 2× „2,4 g" (Hundefutter 6 × 400 g). Die Regel darf nicht einfach erweitert werden: 27 echte Gramm-Zeilen (Safran, Hefe …) stehen im selben Bereich. `repariere_einheiten` hat keinen Aufrufer ausserhalb der Tests — die Reparatur lief von Hand. | `bc8fd96`, `5429e17` | `nach_05`, `nach_06` |
+| 6 | **teilweise** — sieben Ziele statt acht (Aufgabe 3); die Leiste scrollt weiter. Rest: Welle 2 | `50afea3` | alle `nach_*` y 0–51 |
+| 7 | **erledigt** — Summe vor dem Bestellknopf („Zusammen etwa 39,70 €", mit Begründung für „etwa"); Bestellkarte zeigt vier Zeilen und „und 11 weitere"; nach dem Abschicken eine Quittung mit Posten, Summe und dem Weg zur Pick-Liste | `8573970`, `9e70595`, `81d9c49`, `427d92d` | `nach_10`, `nach_11`, `nach_12` |
+| 8 | **teilweise** — Summe und Bestellknopf kleben am unteren Rand des Korbs. Rechen-Entschuldigungen und „Egal wo": Welle 2 | `a21aea7` | `nach_10` |
+| 9 | **teilweise** — die Chat-Prosa ist weg (Aufgabe 6). Rest: Welle 2, mit dem Nutzer | `0ea0ccb` | `nach_01` |
+| 10 | offen — Welle 2 (Demo-Daten) | — | `nach_07` |
+| 11 | **erledigt** — „gab's nicht" steht neben dem Text, der Knopf darf zwei Zeilen hoch sein (78 × 46 px); Zeilen 111–172 px statt ~140 px mit Knopf darunter, kein Wortbruch | `f22e2c7`, `2f75e2f`, `305af45` | `nach_13`, `nach_14` |
+| 12 | **verworfen** — Gegenprobe: „raus", „zurück", „rückgängig", „Kein Rezept daraus" sind `button.mini.zurueck` mit 44 px Mindesthöhe; nur der *Text* ist 13 px und unterstrichen. WB-361 hat den Rahmen absichtlich entfernt, damit „rückgängig" nicht wie eine dritte Wahl neben Ja/Nein aussieht. Wahrnehmungsbefund, kein Bedienfehler | — | — |
+| 13 | **teilweise** — Mengenspalte der Zutatentabelle (Aufgabe 1). 12 weitere `var(--mono)`-Stellen: Welle 2 | `d4abcc4` | `nach_08` |
+| 14–16 | offen — Welle 2 | — | — |
+
+**Zu beachten vor dem nächsten Take:** `dreh_handy.py` klickt auf Koordinaten; Aufgabe 3, 6 und 8
+verschieben Elemente (Fusszeile, Chips, klebende Kasse). Trockenlauf vor dem Video.
 
 ## Was funktioniert (von allen dreien unabhängig genannt)
 
