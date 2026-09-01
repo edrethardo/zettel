@@ -117,7 +117,20 @@
      Absender des Chat-Formulars — `form="chatform"` und `name="satz"` —,
      also funktioniert er ohne Skript genauso wie „Fragen" mit Vorgabe. Die
      Zusage „in den Korb kommt nichts ohne dein Ja" steht danach an jeder
-     Karte, wo sie gebraucht wird, nicht davor. #}
+     Karte, wo sie gebraucht wird, nicht davor.
+
+     **Mit Skript hängt der Chip an einer Feinheit der Auswertung**, und die
+     ist am 2026-09-01 im Browser nachgemessen (htmx 1.9.12): htmx sammelt
+     beim Klick das leere Textfeld UND den Chip ein, der Rumpf trägt `satz`
+     also ZWEIMAL — erst leer, dann den Satz:
+     `satz=&satz=Milch%2C+Butter%2C+Eier`.
+     Dass der Satz ankommt, liegt allein daran, dass `formular()` in `app.py`
+     die Paare der Reihe nach in ein Wörterbuch faltet und bei doppelten
+     Namen den LETZTEN Wert behält — dieselbe Regel, die `mehrfach()` dort
+     beschreibt. Ein Umbau auf `FormData.get()` (das den ERSTEN nimmt) machte
+     aus jedem Chip stillschweigend einen leeren Satz; deshalb hält
+     `test_ein_chip_gewinnt_gegen_das_leere_textfeld` genau diesen Rumpf
+     fest. #}
   <div class="beispiele">
     <p>Sag, was du brauchst — zum Beispiel:</p>
     {% for satz in ["Alles für Spaghetti Bolognese, und Klopapier",
