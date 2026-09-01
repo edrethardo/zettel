@@ -1188,7 +1188,7 @@ git commit -m "Die Pick-Zeile ist eine Zeile — gab's nicht steht neben dem Tex
 
 ### Abschluss Welle 1
 
-> Erledigt am 2026-09-01, Stand `731b264`. Welle 1 hat 21 Commits (`2ac6759`..`305af45`); Abweichungen vom Plan stehen im Nachtrag von `docs/superpowers/review/2026-09-01/REVIEW.md` — vor allem Aufgabe 10: der Knopf „gab's nicht" darf zwei Zeilen hoch sein, sonst brach „Champignons" mitten im Wort.
+> Erledigt am 2026-09-01, Stand `731b264`. Welle 1 hat 20 Commits (`2ac6759`..`305af45`); Abweichungen vom Plan stehen im Nachtrag von `docs/superpowers/review/2026-09-01/REVIEW.md` — vor allem Aufgabe 10: der Knopf „gab's nicht" darf zwei Zeilen hoch sein, sonst brach „Champignons" mitten im Wort.
 
 - [x] **Alles laufen lassen:** `.venv/bin/python -m pytest -q` — erwartet: grün, keine Warnung über neue Vorlagenfehler.
 - [x] **Bildersatz neu aufnehmen** — dieselbe Strecke wie im Review (`docs/superpowers/review/2026-09-01/bilder/`, 390 px, Shop auf `127.0.0.1:8748` gegen eine *Kopie* der Demo-Datenbank — Anleitung in `docs/superpowers/specs/2026-09-01-ui-review-design.md`, Abschnitt Bildersatz) und in `docs/superpowers/review/2026-09-01/REVIEW.md` unter der Rangliste eine Zeile je geschlossenem Fund: „erledigt am …, Commit …". Nicht zu vergessen: das Demo-Skript `~/picknick-video/dreh_handy.py` klickt auf Koordinaten — Aufgabe 3, 6, 8 verschieben Elemente. Vor dem nächsten Take einen Trockenlauf.
