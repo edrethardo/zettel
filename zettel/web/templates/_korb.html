@@ -156,14 +156,19 @@
 </form>
 
 {% if posten %}
-{# Die Zahl vor dem Knopf (UI-Review 2026-09-01, Fund 7). „Etwa", weil
-   Freitext keinen Preis hat und ein Katalogpreis alt sein kann — beides
-   steht dabei, statt eine glatte Summe vorzutäuschen. #}
-<p class="summe">Zusammen etwa <strong>{{ summe.cents | euro }}</strong>
-  {%- if summe.ohne_preis %} · {{ summe.ohne_preis }} Posten ohne Preis{% endif %}</p>
-<form class="abschicken" method="post" action="/warenkorb/abschicken">
-  <button class="gross" type="submit">Bestellung abschicken</button>
-</form>
+{# Die Kasse klebt am unteren Rand (UI-Review 2026-09-01, Fund 8): der Knopf
+   stand nach 2 500 px. Sie ist nur dann „unten", wenn der Korb länger als
+   der Bildschirm ist — bei drei Zeilen steht sie einfach unter ihnen. #}
+<div class="kasse">
+  {# Die Zahl vor dem Knopf (UI-Review 2026-09-01, Fund 7). „Etwa", weil
+     Freitext keinen Preis hat und ein Katalogpreis alt sein kann — beides
+     steht dabei, statt eine glatte Summe vorzutäuschen. #}
+  <p class="summe">Zusammen etwa <strong>{{ summe.cents | euro }}</strong>
+    {%- if summe.ohne_preis %} · {{ summe.ohne_preis }} Posten ohne Preis{% endif %}</p>
+  <form class="abschicken" method="post" action="/warenkorb/abschicken">
+    <button class="gross" type="submit">Bestellung abschicken</button>
+  </form>
+</div>
 {% endif %}
 
 {# Die Zahl oben im Kopf (WB-372). Sie fehlte an jeder Korb-Aktion dieser

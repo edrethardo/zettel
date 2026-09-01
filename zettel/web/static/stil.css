@@ -575,6 +575,14 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
          font-size: var(--t-text); color: var(--gedaempft);
          font-variant-numeric: tabular-nums; }
 .summe strong { color: var(--tinte); font-size: 1.2em; }
+.kasse {
+  position: sticky; bottom: 0; z-index: 2;
+  margin: var(--v4) calc(-1 * var(--rand)) 0; padding: var(--v2) var(--rand)
+    calc(var(--v3) + env(safe-area-inset-bottom));
+  background: var(--grund); border-top: 1px solid var(--linie);
+}
+.kasse .summe { margin-top: 0; }
+.kasse .abschicken { margin-top: var(--v2); }
 .abschicken .gross {
   width: 100%; min-height: 54px; font-size: var(--t-text); font-weight: 700;
   border: none; background: var(--akzent); color: var(--auf-akzent);
