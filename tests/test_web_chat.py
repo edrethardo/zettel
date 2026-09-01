@@ -120,6 +120,25 @@ def test_der_chat_steht_in_der_navigation(db_datei, tmp_path):
     assert 'href="/chat"' in nav
 
 
+def test_die_vorschlagskarte_verschweigt_den_rang(db_datei, tmp_path):
+    """„Käse · Rang 6.0" stand am Vorschlag (UI-Review 2026-09-01, Fund 3).
+    Der Rang ist eine Retriever-Zahl für den Trace und bleibt dort; auf der
+    Karte liest ein Fremder ihn als Note, die er nicht vergeben hat."""
+    client, _ = _client(db_datei, tmp_path)
+    con = db.connect(db_datei)
+    try:
+        korb = orders.warenkorb(con)
+        mid = vorschlagsliste.nachricht(con, korb, vorschlagsliste.ROLLE_AGENT,
+                                        "Antwort")
+        vorschlagsliste.vorschlag(con, mid, product_id=_pid(db_datei, MILCH),
+                                  search_term="Käse", rang=6.0)
+    finally:
+        con.close()
+    seite = client.get("/chat").text
+    assert "Käse" in seite
+    assert "Rang" not in _chatteil(seite)
+
+
 def test_der_chat_fragt_die_box_nicht(db_datei, tmp_path):
     """Der Zustand wird nachgeladen — sonst wartet jeder Blick am Timeout."""
     client, box = _client(db_datei, tmp_path)
@@ -183,7 +202,6 @@ def test_chat_zug_legt_vorschlaege_vor_und_nichts_in_den_korb(db_datei, tmp_path
 
     assert MILCH in stueck
     assert "Landmilch" in stueck          # der Suchbegriff steht an der Zeile
-    assert "Rang" in stueck
     assert _inhalt(db_datei) == []        # nichts landet ungefragt im Korb
 
 

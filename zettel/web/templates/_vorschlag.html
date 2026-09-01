@@ -53,9 +53,11 @@
         {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
       {% endif %}
     </span>
+    {# Ohne den Rang (UI-Review 2026-09-01, Fund 3): „Käse · Rang 6.0" las
+       ein Fremder als Note. Die Zahl gehört dem Retriever-Span im Trace
+       (OBSERVABILITY.md) und steht dort weiterhin. #}
     <span class="woher">
       {{ v.search_term or "—" }}
-      {%- if v.rang is not none %} · Rang {{ "%.1f" | format(v.rang) }}{% endif %}
       {%- if v.ist_korrektur %} · statt „{{ v.statt_name }}“{% endif %}
     </span>
     {% if v.fallback_term %}
