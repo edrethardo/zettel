@@ -73,6 +73,8 @@ ohne Media-Query, Hell- und Dunkelbild waren pixelgleich.
 
 *Zu Fund 5: die Regel läuft bei jedem Knuspr-Crawl (`parse_products` → `normalisiere_einheit`, der Upsert überschreibt `unit_text`), aber ungeprüft — ein echter Artikel unter einem Gramm (Safran) würde von ihr um den Faktor 1000 verschrieben. Nur `repariere_einheiten` für den Altbestand ist einmalig, und das hat keinen Aufrufer. Die Gegenprobe läge in derselben Nutzlast: Preis geteilt durch Grundpreis ergibt die Menge in der Grundeinheit und belegt die Kilo-Lesart Zeile für Zeile, statt sie aus der Zahl zu raten. Offen, Entscheidung Welle 2.*
 
+*Zwei weitere Punkte für Welle 2, beide aus dem Abschluss-Review: Der Entwurf (`_entwurf.html`) klappt nach JEDEM Zug wieder zu, nicht nur nach Ja/Nein — Name, Menge, raus/wieder rein tauschen denselben `#zug-<id>` aus; drei Mengen heisst dreimal aufklappen. Alternative: mit `open` neu rendern, wenn der Tausch von innen kam. Und seit der Anker nach dem Abschicken weg ist (`f76b566`), gibt es keinen Sprung mehr zur gerade abgeschickten Karte — „Pick-Liste“ in der Quittung könnte ein Link auf `/pick` werden.*
+
 **Zu beachten vor dem nächsten Take:** `dreh_handy.py` klickt auf Koordinaten; Aufgabe 3, 6 und 8
 verschieben Elemente (Fusszeile, Chips, klebende Kasse). Trockenlauf vor dem Video.
 
