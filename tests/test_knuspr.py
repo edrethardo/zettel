@@ -114,6 +114,10 @@ def test_fehlender_preis_ist_none_nicht_null():
     ("0,225 ml", "ml", "225 ml"),    # Develey Sauce
     ("0,27 g", "g", "270 g"),        # Piccolinis 9×30 g
     ("0,5 g", "g", "500 g"),
+    ("0,05 g", "g", "50 g"),
+    ("0,034 g", "g", "34 g"),
+    ("0,2505 g", "g", "0,2505 g"),   # mehr als drei Stellen: bleibt stehen
+    ("0,25 g", "kg", "0,25 g"),   # Einheit der Zeile widerspricht dem Text: Finger weg
     ("0,75 l", "l", "0,75 l"),       # richtig — Liter bleiben Liter
     ("0,7 kg", "kg", "0,7 kg"),      # richtig
     ("250 g", "g", "250 g"),         # schon in Ordnung
@@ -125,9 +129,12 @@ def test_fehlender_preis_ist_none_nicht_null():
 def test_eine_kilozahl_mit_grammeinheit_wird_zu_gramm(text, unit, erwartet):
     """UI-Review 2026-09-01, Fund 5. Knuspr liefert „0,25 g" für 250 g: die
     Zahl ist in kg, die Einheit blieb klein. 167 aktive Produkte in der Demo-
-    Datenbank; `price_cents / price_per_unit_cents` (239/956 = 0,25) beweist
-    die Kilo-Lesart. Eine Menge unter 1 in g oder ml gibt es im Lebensmittel-
-    handel nicht — deshalb ist „< 1 und kleine Einheit" das Merkmal."""
+    Datenbank. Beleg sind die Produktnamen („… 250g", „9×30 g") und dass es
+    Bruchteile eines Gramms im Lebensmittelhandel nicht gibt — deshalb ist
+    „< 1 und kleine Einheit" das Merkmal. `price_cents /
+    price_per_unit_cents` (239/956 = 0,25) ist dazu nur Plausibilität, kein
+    Beweis: der Quotient zeigt, dass die Zahl in der Einheit des Grundpreis-
+    Nenners steht, nicht welche das ist."""
     assert knuspr.normalisiere_einheit(text, unit) == erwartet
 
 
