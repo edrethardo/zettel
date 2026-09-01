@@ -134,6 +134,21 @@ def test_der_warenkorb_nennt_die_summe_vor_dem_bestellknopf(client, con):
     assert text.index('class="summe"') < text.index("Bestellung abschicken")
 
 
+def test_der_korb_ohne_preise_zeigt_keine_glatte_null(client):
+    """Ein Korb nur aus Freitext sagt „ohne Preis", nicht „etwa 0,00 €".
+
+    Wortlaut wie auf der Quittung danach. Den Strich zieht nicht `euro()` —
+    `euro(0)` ist „0,00 €" —, sondern die Weiche auf `summe.cents`.
+    """
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"},
+                headers=HTMX)
+    r = client.get("/warenkorb")
+    assert r.status_code == 200
+    summe = r.text.split('class="summe"', 1)[1].split("</p>", 1)[0]
+    assert "0,00 €" not in summe
+    assert "1 Posten ohne Preis" in summe
+
+
 def test_leerer_warenkorb_sagt_es_und_bietet_kein_abschicken(client):
     text = client.get("/warenkorb").text
     assert "Der Warenkorb ist leer." in text
@@ -422,7 +437,9 @@ def test_die_quittung_verschweigt_nicht_was_keinen_preis_hat(client, con):
     """Was der Korb vor dem Knopf sagt, sagt die Quittung danach auch.
 
     Eine Bestellung nur aus Freitext hätte sonst „zusammen etwa 0,00 €"
-    gemeldet — genau die glatte Null, gegen die `euro()` seinen Strich setzt.
+    gemeldet — die glatte Null hält die Weiche auf `quittung.summe.cents`
+    heraus, nicht `euro()`: der Strich dort gilt None, `euro(0)` ist
+    „0,00 €".
     """
     client.post("/warenkorb/einlegen", data={"free_text": "Blumen"}, headers=HTMX)
     r = client.post("/warenkorb/abschicken", follow_redirects=False)

@@ -8,8 +8,10 @@
 {% if quittung %}
 {# Wortlaut wie im Korb vor dem Knopf (UI-Review 2026-09-01, Fund 7):
    Preisloses wird gezählt, nicht geschätzt. Sonst läse sich eine Bestellung
-   nur aus Freitext als „zusammen etwa 0,00 €" — genau die glatte Null,
-   gegen die der `euro`-Filter seinen Strich setzt. #}
+   nur aus Freitext als „zusammen etwa 0,00 €" — genau die glatte Null, die
+   die Weiche auf `quittung.summe.cents` hier heraushält. Nicht der
+   `euro`-Filter: der zieht seinen Strich nur für None, `euro(0)` ist
+   „0,00 €". #}
 <p class="fertig" role="status">
   {%- if quittung.summe.cents %}
   Abgeschickt: {{ quittung.n }} Posten,
