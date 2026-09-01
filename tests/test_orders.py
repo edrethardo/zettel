@@ -641,6 +641,7 @@ def test_die_summe_rechnet_menge_mal_preis_und_zaehlt_preislose_mit():
     gezählt, nicht geschätzt."""
     posten = [{"qty": 2, "price_cents": 119},
               {"qty": 1, "price_cents": 250},
+              {"price_cents": 99},                 # ohne Menge heisst einmal
               {"qty": 3, "price_cents": None}]
-    assert korb_modul.summe(posten) == {"cents": 488, "ohne_preis": 1}
+    assert korb_modul.summe(posten) == {"cents": 587, "ohne_preis": 1}
     assert korb_modul.summe([]) == {"cents": 0, "ohne_preis": 0}

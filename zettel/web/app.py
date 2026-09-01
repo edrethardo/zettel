@@ -2360,18 +2360,28 @@ def create_app(db_path: str | Path | None = None,
     # Bestellungen und Pick-Ansicht (Spec 9)
 
     @app.get("/bestellungen")
-    def bestelluebersicht(request: Request, fertig: int | None = None):
+    def bestelluebersicht(request: Request, fertig: str | None = None):
         c = con()
         try:
             liste = orders.bestellungen(c)
             for b in liste:
                 b["posten"] = orders.posten(c, b["id"])
+            # `fertig` kommt als Text und wird hier selbst gewandelt: als
+            # `int` deklariert, beantwortet FastAPI „?fertig=abc" mit 422 und
+            # die ganze Übersicht ist unerreichbar. Eine unbekannte ID gibt
+            # schon jetzt still keine Quittung — eine kaputte soll sich
+            # genauso verhalten und nicht die Seite mitnehmen.
+            gerade = None
+            if fertig is not None and fertig.isdigit():
+                gerade = next((b for b in liste if b["id"] == int(fertig)), None)
+            # Nur für eine Bestellung, die wirklich gerade weg ist: die URL
+            # überlebt Reload, Zurück und das Weiterreichen im Haushalts-Chat.
+            # „Steht jetzt auf der Pick-Liste" über einen gestern erledigten
+            # Einkauf wäre eine grüne Lüge.
             quittung = None
-            if fertig is not None:
-                gerade = next((b for b in liste if b["id"] == fertig), None)
-                if gerade is not None:
-                    quittung = {"n": len(gerade["posten"]),
-                                "summe": orders.summe(gerade["posten"])}
+            if gerade is not None and gerade["state"] == "offen":
+                quittung = {"n": len(gerade["posten"]),
+                            "summe": orders.summe(gerade["posten"])}
             return vorlagen.TemplateResponse(request, "bestellungen.html", {
                 **_rahmen(request, c), "bestellungen": liste,
                 "quittung": quittung})
