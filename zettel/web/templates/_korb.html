@@ -162,9 +162,19 @@
 <div class="kasse">
   {# Die Zahl vor dem Knopf (UI-Review 2026-09-01, Fund 7). „Etwa", weil
      Freitext keinen Preis hat und ein Katalogpreis alt sein kann — beides
-     steht dabei, statt eine glatte Summe vorzutäuschen. #}
+     steht dabei, statt eine glatte Summe vorzutäuschen.
+
+     Die Weiche auf `summe.cents` hält die glatte Null heraus: ein Korb nur
+     aus Freitext hat 0 Cent, und „zusammen etwa 0,00 €" wäre keine
+     Schätzung, sondern eine falsche Zahl. Nicht `euro()` zieht diesen
+     Strich — `euro(0)` ist „0,00 €", der Strich gilt nur für None. Gleiche
+     Weiche, gleicher Wortlaut wie auf der Quittung (`bestellungen.html`). #}
+  {%- if summe.cents %}
   <p class="summe">Zusammen etwa <strong>{{ summe.cents | euro }}</strong>
     {%- if summe.ohne_preis %} · {{ summe.ohne_preis }} Posten ohne Preis{% endif %}</p>
+  {%- else %}
+  <p class="summe">{{ summe.ohne_preis }} Posten ohne Preis</p>
+  {%- endif %}
   <form class="abschicken" method="post" action="/warenkorb/abschicken">
     <button class="gross" type="submit">Bestellung abschicken</button>
   </form>
