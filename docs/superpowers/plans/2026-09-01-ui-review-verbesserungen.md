@@ -44,7 +44,7 @@
 - Modify: `zettel/web/static/stil.css:861-870`
 - Test: `tests/test_web_politur.py` (hinter `test_das_tap_ziel_der_rezeptzutat_haelt_die_44_px_des_blattes`)
 
-- [ ] **Schritt 1: Die beiden Tests schreiben**
+- [x] **Schritt 1: Die beiden Tests schreiben**
 
 ```python
 def test_der_griff_an_der_rezeptzutat_ist_kein_flex_container():
@@ -69,12 +69,12 @@ def test_die_mengenspalte_der_rezeptzutat_ist_weder_starr_noch_mono():
     assert "tabular-nums" in block
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py -k "rezeptzutat" -v`
 Expected: die beiden neuen FAIL (`display: flex` steht drin; `8ch` steht drin), der alte Tap-Test PASS.
 
-- [ ] **Schritt 3: Stilblatt ändern**
+- [x] **Schritt 3: Stilblatt ändern**
 
 In `zettel/web/static/stil.css` den Block von `.rezeptzutaten .menge {` bis zum Ende von `.rezeptzutaten a.name { … }` ersetzen durch:
 
@@ -102,16 +102,16 @@ In `zettel/web/static/stil.css` den Block von `.rezeptzutaten .menge {` bis zum 
 }
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py tests/test_web_stil.py -q`
 Expected: alle PASS.
 
-- [ ] **Schritt 5: Auf dem Bild prüfen** (kein Test kann das)
+- [x] **Schritt 5: Auf dem Bild prüfen** (kein Test kann das)
 
 Shop lokal starten und `/rezepte/<id>` eines Chefkoch-Rezepts mit langen Zutatennamen bei 390 px ansehen — die Aufnahme aus dem Review war `docs/superpowers/review/2026-09-01/bilder/seite_05_rezept.png`, y 1290–1660. Erwartet: Name und Hinweis in einer Zeile fliessend, Menge höchstens zweizeilig.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/web/static/stil.css tests/test_web_politur.py
@@ -128,7 +128,7 @@ git commit -m "Die Zutatentabelle bricht keine Wörter mehr — der Griff ist ei
 - Modify: `zettel/web/templates/_vorschlag.html:56-60`
 - Test: `tests/test_web_chat.py`
 
-- [ ] **Schritt 1: Test schreiben** (hinter `test_der_chat_steht_in_der_navigation`)
+- [x] **Schritt 1: Test schreiben** (hinter `test_der_chat_steht_in_der_navigation`)
 
 ```python
 def test_die_vorschlagskarte_verschweigt_den_rang(db_datei, tmp_path):
@@ -150,12 +150,12 @@ def test_die_vorschlagskarte_verschweigt_den_rang(db_datei, tmp_path):
     assert "Rang" not in _chatteil(seite)
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_chat.py -k verschweigt_den_rang -v`
 Expected: FAIL — `"Rang" in …` („· Rang 6.0" steht im Chatteil).
 
-- [ ] **Schritt 3: Zeile entfernen**
+- [x] **Schritt 3: Zeile entfernen**
 
 In `zettel/web/templates/_vorschlag.html` den Block
 
@@ -179,12 +179,12 @@ ersetzen durch
     </span>
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_chat.py tests/test_entwurf.py -q`
 Expected: alle PASS. (Fällt ein anderer Test, weil er „Rang" auf der Karte erwartete, wird DER Test geändert — die Karte ist jetzt die Vorgabe.)
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/templates/_vorschlag.html tests/test_web_chat.py
@@ -204,7 +204,7 @@ Der bestehende Test `test_jede_vollseite_markiert_sich_selbst_in_der_navigation`
 - Modify: `zettel/web/static/stil.css` (hinter dem Block `.kopf nav a.aktiv`)
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Test schreiben** (hinter `test_die_markierung_ist_nicht_nur_ansage_sondern_auch_sichtbar`)
+- [x] **Schritt 1: Test schreiben** (hinter `test_die_markierung_ist_nicht_nur_ansage_sondern_auch_sichtbar`)
 
 ```python
 def test_diagnose_und_einstellung_stehen_nicht_in_der_hauptleiste(client):
@@ -227,12 +227,12 @@ def test_die_fusszeile_markiert_ihre_seite_wie_die_leiste(client):
     assert '<a href="/status" class="aktiv" aria-current="page"' in fuss
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py -k "hauptleiste or fusszeile" -v`
 Expected: beide FAIL (`/status` steht in der Leiste; keine `<footer class="fuss"`).
 
-- [ ] **Schritt 3: Vorlage ändern**
+- [x] **Schritt 3: Vorlage ändern**
 
 In `zettel/web/templates/basis.html` die beiden Zeilen
 
@@ -257,7 +257,7 @@ aus `<nav>` entfernen, und `<main>{% block inhalt %}{% endblock %}</main>` erset
   </footer>
 ```
 
-- [ ] **Schritt 4: Stilblatt ergänzen** — hinter dem Block `.kopf nav a.aktiv { … }` in `zettel/web/static/stil.css`:
+- [x] **Schritt 4: Stilblatt ergänzen** — hinter dem Block `.kopf nav a.aktiv { … }` in `zettel/web/static/stil.css`:
 
 ```css
 /* Die Fusszeile (UI-Review 2026-09-01, Fund 3): Diagnose und Einstellung,
@@ -277,12 +277,12 @@ aus `<nav>` entfernen, und `<main>{% block inhalt %}{% endblock %}</main>` erset
 
 Prüfen, dass `--v6` im `:root`-Block existiert (`grep -n -- "--v6" zettel/web/static/stil.css`); sonst `var(--v5)` nehmen.
 
-- [ ] **Schritt 5: Grün sehen**
+- [x] **Schritt 5: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py tests/test_web_chat.py tests/test_betrieb.py -q`
 Expected: alle PASS — insbesondere `test_jede_vollseite_markiert_sich_selbst_in_der_navigation[/status]` und `[/rolle]`.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/web/templates/basis.html zettel/web/static/stil.css tests/test_web_politur.py
@@ -301,7 +301,7 @@ Was bleibt, ist unser Text: der Absatz über `tesseract-ocr` und „Systemänder
 - Modify: `zettel/bons/lesen.py:93-97` (`OCR_FEHLT_TEXT`)
 - Test: `tests/test_bons_lesen.py`
 
-- [ ] **Schritt 1: Test schreiben** — in `tests/test_bons_lesen.py` hinter dem Test, der `bons.OCR_FEHLT_TEXT == lesen.OCR_FEHLT_TEXT` prüft:
+- [x] **Schritt 1: Test schreiben** — in `tests/test_bons_lesen.py` hinter dem Test, der `bons.OCR_FEHLT_TEXT == lesen.OCR_FEHLT_TEXT` prüft:
 
 ```python
 def test_der_ocr_hinweis_faengt_mit_dem_an_was_geht():
@@ -314,12 +314,12 @@ def test_der_ocr_hinweis_faengt_mit_dem_an_was_geht():
     assert "Systemänderung" not in text
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_bons_lesen.py -k ocr_hinweis -v`
 Expected: FAIL (`text.startswith("Foto-Bons")` ist falsch).
 
-- [ ] **Schritt 3: Text ändern** — `zettel/bons/lesen.py`, `OCR_FEHLT_TEXT` ersetzen durch:
+- [x] **Schritt 3: Text ändern** — `zettel/bons/lesen.py`, `OCR_FEHLT_TEXT` ersetzen durch:
 
 ```python
 # Erst, was geht, dann, was fehlt (UI-Review 2026-09-01, Fund 3): der Absatz
@@ -333,12 +333,12 @@ OCR_FEHLT_TEXT = (
     "Betreiber, nicht dieser Prozess.)")
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_bons_lesen.py tests/test_web_bons.py tests/test_web_bonlesen.py -q`
 Expected: alle PASS.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/bons/lesen.py tests/test_bons_lesen.py
@@ -359,7 +359,7 @@ git commit -m "Bons: der OCR-Hinweis sagt zuerst, was geht, und dann, was fehlt"
 - Modify: `zettel/scrapers/knuspr.py:95-124` (`parse_products`), neu `normalisiere_einheit`, `repariere_einheiten`
 - Test: `tests/test_knuspr.py`
 
-- [ ] **Schritt 1: Tests schreiben** (hinter `test_fehlender_preis_ist_none_nicht_null`)
+- [x] **Schritt 1: Tests schreiben** (hinter `test_fehlender_preis_ist_none_nicht_null`)
 
 ```python
 @pytest.mark.parametrize("text, unit, erwartet", [
@@ -409,12 +409,12 @@ def test_repariere_einheiten_bringt_bestehende_zeilen_in_ordnung(con):
     assert knuspr.repariere_einheiten(con) == 0     # idempotent
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_knuspr.py -k "einheit" -v`
 Expected: FAIL mit `AttributeError: module 'zettel.scrapers.knuspr' has no attribute 'normalisiere_einheit'`.
 
-- [ ] **Schritt 3: Implementieren**
+- [x] **Schritt 3: Implementieren**
 
 In `zettel/scrapers/knuspr.py` oberhalb von `parse_products` einfügen (`import re` oben ergänzen, falls nicht da):
 
@@ -472,12 +472,12 @@ In `parse_products` die Zeile `"unit_text": p.get("textualAmount"),` ersetzen du
                                               p.get("unit")),
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_knuspr.py tests/test_mengen.py tests/test_catalog.py -q`
 Expected: alle PASS.
 
-- [ ] **Schritt 5: Bestehende Datenbanken reparieren** — je Datei ein Aufruf, Zahl notieren:
+- [x] **Schritt 5: Bestehende Datenbanken reparieren** — je Datei ein Aufruf, Zahl notieren:
 
 ```bash
 cd <Repo>
@@ -497,7 +497,7 @@ done
 
 Expected: `data/picknick.db -> ~167 Zeilen` (die Zahl kann abweichen, wenn der Katalog inzwischen neu gecrawlt wurde), `demo.db -> 167 Zeilen`. Die Demo-Datenbank ist das, was im Video zu sehen ist — genau deshalb wird sie hier repariert. Vorher eine Kopie: `cp ~/picknick-demo/demo.db ~/picknick-demo/demo.db.vor-einheiten`.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/scrapers/knuspr.py tests/test_knuspr.py
@@ -518,7 +518,7 @@ git commit -m "Knuspr: eine Kilozahl mit Grammeinheit wird zu Gramm — 167 Prod
 - Modify: `zettel/web/static/stil.css` (hinter den `.chatform`-Regeln)
 - Test: `tests/test_web_chat.py`
 
-- [ ] **Schritt 1: Tests schreiben** (hinter `test_der_chat_hat_einen_eigenen_ort`)
+- [x] **Schritt 1: Tests schreiben** (hinter `test_der_chat_hat_einen_eigenen_ort`)
 
 ```python
 BEISPIELE = ["Alles für Spaghetti Bolognese, und Klopapier",
@@ -558,12 +558,12 @@ def test_mit_verlauf_gibt_es_keine_beispiele(db_datei, tmp_path):
     assert 'class="beispiel"' not in client.get("/chat").text
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_chat.py -k "beispiel" -v`
 Expected: der erste FAIL (kein `class="beispiel"`), der zweite FAIL ist erlaubt oder PASS (je nachdem, ob `_extract`/`_choose` den Satz durchreichen — er prüft vor allem, dass die Chips nach dem Zug weg sind), der dritte PASS (heute gibt es nie Chips).
 
-- [ ] **Schritt 3: Vorlagen ändern**
+- [x] **Schritt 3: Vorlagen ändern**
 
 `zettel/web/templates/chat.html`: die Zeile
 
@@ -617,7 +617,7 @@ ersetzen durch
     });
 ```
 
-- [ ] **Schritt 4: Stilblatt ergänzen** — hinter den `.chatform`-Regeln (`grep -n "\.chatform" zettel/web/static/stil.css`):
+- [x] **Schritt 4: Stilblatt ergänzen** — hinter den `.chatform`-Regeln (`grep -n "\.chatform" zettel/web/static/stil.css`):
 
 ```css
 /* Die drei Beispiele des leeren Chats (UI-Review 2026-09-01, Fund 1).
@@ -636,14 +636,14 @@ ersetzen durch
 .beispiel:active { transform: scale(0.98); }
 ```
 
-- [ ] **Schritt 5: Grün sehen, dann im Browser**
+- [x] **Schritt 5: Grün sehen, dann im Browser**
 
 Run: `.venv/bin/python -m pytest tests/test_web_chat.py tests/test_entwurf.py -q`
 Expected: alle PASS.
 
 Dann im Browser (Shop lokal, `/chat` mit leerem Verlauf): ein Chip antippen → der Satz erscheint als Nutzerzug, „Das Modell überlegt …" darunter. Wenn der Nutzerzug leer ankommt, das Fallback-Skript aus Schritt 3 einbauen.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/web/templates/chat.html zettel/web/templates/_chat.html zettel/web/static/stil.css tests/test_web_chat.py
@@ -665,7 +665,7 @@ Drei Stücke, drei Commits, eine Aufgabe — sie teilen die Frage „was kostet 
 - Modify: `zettel/web/static/stil.css`
 - Test: `tests/test_orders.py`, `tests/test_web_orders.py`
 
-- [ ] **Schritt 1: Tests schreiben**
+- [x] **Schritt 1: Tests schreiben**
 
 `tests/test_orders.py`, ans Ende:
 
@@ -697,12 +697,12 @@ def test_der_warenkorb_nennt_die_summe_vor_dem_bestellknopf(client, con):
     assert text.index('class="summe"') < text.index("Bestellung abschicken")
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_orders.py tests/test_web_orders.py -k summe -v`
 Expected: `AttributeError: … has no attribute 'summe'`; der Web-Test FAIL (kein `class="summe"`).
 
-- [ ] **Schritt 3: Implementieren**
+- [x] **Schritt 3: Implementieren**
 
 `zettel/orders/korb.py`, hinter `inhalt()`:
 
@@ -758,12 +758,12 @@ def summe(posten: list[dict]) -> dict:
 .summe strong { color: var(--tinte); font-size: 1.2em; }
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_orders.py tests/test_web_orders.py tests/test_web_chat.py -q`
 Expected: alle PASS.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/orders/korb.py zettel/orders/__init__.py zettel/web/app.py zettel/web/templates/_korb.html zettel/web/static/stil.css tests/test_orders.py tests/test_web_orders.py
@@ -777,7 +777,7 @@ git commit -m "Der Korb nennt die Summe vor dem Bestellknopf — etwa, und sagt 
 - Modify: `zettel/web/static/stil.css`
 - Test: `tests/test_web_orders.py`
 
-- [ ] **Schritt 1: Test schreiben**
+- [x] **Schritt 1: Test schreiben**
 
 ```python
 def test_die_bestellkarte_zeigt_die_ersten_posten_als_zeilen(client, con):
@@ -794,12 +794,12 @@ def test_die_bestellkarte_zeigt_die_ersten_posten_als_zeilen(client, con):
     assert ", ".join(namen) not in text
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_orders.py -k bestellkarte -v`
 Expected: FAIL (kein `<ul class="posten"`).
 
-- [ ] **Schritt 3: Vorlage ändern** — in `bestellungen.html` die Zeile
+- [x] **Schritt 3: Vorlage ändern** — in `bestellungen.html` die Zeile
 
 ```jinja
         <span class="menge">{{ b.posten | map(attribute='name') | join(', ') }}</span>
@@ -830,7 +830,7 @@ ersetzen durch
 .bestellung.erledigt .posten { color: var(--gedaempft); }
 ```
 
-- [ ] **Schritt 4: Grün sehen, Commit**
+- [x] **Schritt 4: Grün sehen, Commit**
 
 Run: `.venv/bin/python -m pytest tests/test_web_orders.py tests/test_web_politur.py -q`
 Expected: alle PASS.
@@ -847,7 +847,7 @@ git commit -m "Die Bestellkarte zeigt vier Zeilen und zählt den Rest, statt fü
 - Modify: `zettel/web/templates/bestellungen.html` (hinter dem `fehler`-Block)
 - Test: `tests/test_web_orders.py`
 
-- [ ] **Schritt 1: Test schreiben**
+- [x] **Schritt 1: Test schreiben**
 
 ```python
 def test_nach_dem_abschicken_steht_eine_quittung(client, con):
@@ -868,12 +868,12 @@ def test_nach_dem_abschicken_steht_eine_quittung(client, con):
     assert 'class="fertig"' not in client.get("/bestellungen").text
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_orders.py -k quittung -v`
 Expected: FAIL — `location` ist `/bestellungen#b<id>`.
 
-- [ ] **Schritt 3: Implementieren**
+- [x] **Schritt 3: Implementieren**
 
 `zettel/web/app.py`, in `warenkorb_abschicken`: `ziel = f"/bestellungen#b{bestellung['id']}"` wird
 
@@ -918,12 +918,12 @@ Expected: FAIL — `location` ist `/bestellungen#b<id>`.
 {% endif %}
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_orders.py tests/test_web_politur.py tests/test_web_chat.py -q`
 Expected: alle PASS. `test_eine_unterseite_markiert_ihren_bereich_mit` folgt der Weiterleitung nicht und bleibt grün.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/app.py zettel/web/templates/bestellungen.html tests/test_web_orders.py
@@ -943,7 +943,7 @@ Die Rechen-Entschuldigungen („2 Stk lässt sich nicht gegen die Packung rechne
 - Modify: `zettel/web/static/stil.css`
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Test schreiben**
+- [x] **Schritt 1: Test schreiben**
 
 ```python
 def test_summe_und_bestellknopf_kleben_am_unteren_rand():
@@ -966,12 +966,12 @@ def test_die_kasse_umschliesst_summe_und_knopf(client, con):
     assert "Bestellung abschicken" in kasse
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py -k kasse -v`
 Expected: beide FAIL.
 
-- [ ] **Schritt 3: Vorlage und Stil ändern**
+- [x] **Schritt 3: Vorlage und Stil ändern**
 
 `_korb.html`: Der Block aus 7a wird
 
@@ -1005,12 +1005,12 @@ Expected: beide FAIL.
 
 Der negative Seitenrand hebt den Innenabstand von `main` auf (`stil.css:160`: `padding: var(--rand) var(--rand) var(--v6)`), damit die Kasse bis an die Bildkante reicht.
 
-- [ ] **Schritt 4: Grün sehen; auf dem Bild prüfen**
+- [x] **Schritt 4: Grün sehen; auf dem Bild prüfen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py tests/test_web_orders.py -q`
 Expected: alle PASS. Dann im Browser bei 390 px mit 15 Posten: Kasse bleibt unten im Bild, Freitext-Feld darüber ist erreichbar, das Formular „Dazu" wird nicht verdeckt.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/templates/_korb.html zettel/web/static/stil.css tests/test_web_politur.py
@@ -1030,7 +1030,7 @@ git commit -m "Summe und Bestellknopf kleben am unteren Rand des Korbs"
 - Modify: `zettel/web/static/stil.css` (`.entwurf h3`)
 - Test: `tests/test_entwurf.py`
 
-- [ ] **Schritt 1: Test schreiben** (hinter `test_der_entwurf_steht_im_warenkorb_und_nennt_das_klopapier_nicht`)
+- [x] **Schritt 1: Test schreiben** (hinter `test_der_entwurf_steht_im_warenkorb_und_nennt_das_klopapier_nicht`)
 
 ```python
 def test_der_offene_entwurf_ist_eingeklappt_und_nennt_seinen_stand(
@@ -1054,12 +1054,12 @@ def test_der_offene_entwurf_ist_eingeklappt_und_nennt_seinen_stand(
     assert "0 von" in summary and "im Rezept" in summary
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_entwurf.py -k eingeklappt -v`
 Expected: FAIL (`<details` fehlt).
 
-- [ ] **Schritt 3: Vorlage ändern** — in `_entwurf.html` den `{% else %}`-Zweig von `<h3>Rezeptentwurf</h3>` bis vor `</section>`:
+- [x] **Schritt 3: Vorlage ändern** — in `_entwurf.html` den `{% else %}`-Zweig von `<h3>Rezeptentwurf</h3>` bis vor `</section>`:
 
 ```jinja
   {% else %}
@@ -1107,12 +1107,12 @@ Expected: FAIL (`<details` fehlt).
 .entwurf details[open] summary { color: var(--tinte); margin-bottom: var(--v2); }
 ```
 
-- [ ] **Schritt 4: Grün sehen**
+- [x] **Schritt 4: Grün sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_entwurf.py tests/test_web_chat.py tests/test_zugersetzung.py -q`
 Expected: alle PASS. Tests, die `"Rezeptentwurf" in stueck` prüfen, bleiben grün (das Wort steht in der `<summary>`).
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/templates/_entwurf.html zettel/web/static/stil.css tests/test_entwurf.py
@@ -1129,7 +1129,7 @@ git commit -m "Der Rezeptentwurf ist eingeklappt — die Ja/Nein-Karten sind der
 - Modify: `zettel/web/static/stil.css:617-619`
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Test schreiben**
+- [x] **Schritt 1: Test schreiben**
 
 ```python
 def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
@@ -1146,12 +1146,12 @@ def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
     assert "flex: 0 0 auto" in stellen
 ```
 
-- [ ] **Schritt 2: Rot sehen**
+- [x] **Schritt 2: Rot sehen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py -k gabs_nicht -v`
 Expected: FAIL.
 
-- [ ] **Schritt 3: Stil ändern** — die Zeilen
+- [x] **Schritt 3: Stil ändern** — die Zeilen
 
 ```css
 .pickzeile > form { flex: 1 1 100%; min-width: 0; }
@@ -1172,12 +1172,12 @@ werden
                       padding: 0 var(--v1); }
 ```
 
-- [ ] **Schritt 4: Grün sehen; auf dem Bild prüfen**
+- [x] **Schritt 4: Grün sehen; auf dem Bild prüfen**
 
 Run: `.venv/bin/python -m pytest tests/test_web_politur.py -q`
 Expected: PASS. Im Browser `/pick/<id>` bei 390 px: Haken, Bild, Text, Knopf in einer Zeile; abgehakte Zeilen durchgestrichen; „gab's nicht"-Zeilen beerenfarben — wie vorher, nur kürzer. Wenn Namen wie „Alnatura BIO Passata fein passiert" den Knopf regelmässig in die zweite Zeile drücken, `min-width` auf 160px senken.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/static/stil.css tests/test_web_politur.py
@@ -1188,9 +1188,11 @@ git commit -m "Die Pick-Zeile ist eine Zeile — gab's nicht steht neben dem Tex
 
 ### Abschluss Welle 1
 
-- [ ] **Alles laufen lassen:** `.venv/bin/python -m pytest -q` — erwartet: grün, keine Warnung über neue Vorlagenfehler.
-- [ ] **Bildersatz neu aufnehmen** — dieselbe Strecke wie im Review (`docs/superpowers/review/2026-09-01/bilder/`, 390 px, Shop auf `127.0.0.1:8748` gegen eine *Kopie* der Demo-Datenbank — Anleitung in `docs/superpowers/specs/2026-09-01-ui-review-design.md`, Abschnitt Bildersatz) und in `docs/superpowers/review/2026-09-01/REVIEW.md` unter der Rangliste eine Zeile je geschlossenem Fund: „erledigt am …, Commit …". Nicht zu vergessen: das Demo-Skript `~/picknick-video/dreh_handy.py` klickt auf Koordinaten — Aufgabe 3, 6, 8 verschieben Elemente. Vor dem nächsten Take einen Trockenlauf.
-- [ ] **REVIEW.md ergänzen** — Fund 5: „167, nicht 107; Regel „< 1 und g/ml"; Fund 3: „Browse… No file selected" war die Browsersprache des Review-Firefox; der Knopf selbst ist seit WB-400 gestylt (`stil.css:1505`) — das Bild zeigte das Wort, nicht die Gestalt.
+> Erledigt am 2026-09-01, Stand `731b264`. Welle 1 hat 21 Commits (`2ac6759`..`305af45`); Abweichungen vom Plan stehen im Nachtrag von `docs/superpowers/review/2026-09-01/REVIEW.md` — vor allem Aufgabe 10: der Knopf „gab's nicht" darf zwei Zeilen hoch sein, sonst brach „Champignons" mitten im Wort.
+
+- [x] **Alles laufen lassen:** `.venv/bin/python -m pytest -q` — erwartet: grün, keine Warnung über neue Vorlagenfehler.
+- [x] **Bildersatz neu aufnehmen** — dieselbe Strecke wie im Review (`docs/superpowers/review/2026-09-01/bilder/`, 390 px, Shop auf `127.0.0.1:8748` gegen eine *Kopie* der Demo-Datenbank — Anleitung in `docs/superpowers/specs/2026-09-01-ui-review-design.md`, Abschnitt Bildersatz) und in `docs/superpowers/review/2026-09-01/REVIEW.md` unter der Rangliste eine Zeile je geschlossenem Fund: „erledigt am …, Commit …". Nicht zu vergessen: das Demo-Skript `~/picknick-video/dreh_handy.py` klickt auf Koordinaten — Aufgabe 3, 6, 8 verschieben Elemente. Vor dem nächsten Take einen Trockenlauf.
+- [x] **REVIEW.md ergänzen** — Fund 5: „167, nicht 107; Regel „< 1 und g/ml"; Fund 3: „Browse… No file selected" war die Browsersprache des Review-Firefox; der Knopf selbst ist seit WB-400 gestylt (`stil.css:1505`) — das Bild zeigte das Wort, nicht die Gestalt.
 
 ---
 
