@@ -7,7 +7,13 @@
   <meta charset="utf-8">
   {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
      jede Angabe zu Tap-Zielen unten wäre wirkungslos. #}
-  {# `viewport-fit=cover`: ohne das bleibt `env(safe-area-inset-bottom)` in .fuss auf iOS immer 0, und die Rechnung dort ist nur Dekoration. #}
+  {# `viewport-fit=cover`: ohne das bleibt `env(safe-area-inset-bottom)` in
+     `.fuss` auf iOS immer 0, und die Rechnung dort ist nur Dekoration.
+
+     Der Preis dafür: die Seite reicht damit bis unter die Kerbe. Quer
+     gehalten kann Inhalt links und rechts unter ihr verschwinden — nur
+     `safe-area-inset-bottom` wird im Blatt eingerechnet, die seitlichen
+     Einzüge nicht. #}
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   {# Beide Farbmodi sind gemeint (WB-360): das sagt dem Browser, dass er
      Formulare und Bildlaufleisten gleich mit umfärben darf, und färbt die
