@@ -141,6 +141,29 @@ def test_ein_beispiel_schickt_den_satz_wirklich_ab(db_datei, tmp_path):
     assert "beispiel" not in _chatteil(r.text)    # nach dem ersten Zug weg
 
 
+def test_ein_chip_gewinnt_gegen_das_leere_textfeld(db_datei, tmp_path):
+    """Im Browser gemessen (htmx 1.9.12): der Klick auf einen Chip schickt
+    das leere Textfeld UND den Chip, `satz` steht zweimal im Rumpf. Dass
+    der Satz ankommt, hängt daran, dass `formular()` — wie `eingaben()`,
+    aus dem es hervorging — bei doppelten Namen den letzten Wert behält;
+    hier festgenagelt, damit ein Umbau der Formular-Auswertung die Chips
+    nicht leise zu leeren Sätzen macht."""
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Milch", 1)),
+                        _choose(("Milch", milch, 1)))
+    # Zwei gleichnamige Felder in DIESER Reihenfolge — httpx kodiert die
+    # Liste als `satz=&satz=Milch%2C+Butter%2C+Eier`, also genau den Rumpf,
+    # der am 2026-09-01 am laufenden Shop mitgelesen wurde.
+    r = client.post("/chat", data={"satz": ["", BEISPIELE[2]]}, headers=HTMX)
+    assert r.status_code == 200
+    assert BEISPIELE[2] in r.text
+    # Und er steht da, WEIL ein Zug daraus wurde — nicht, weil die Chips noch
+    # dastehen: „Milch, Butter, Eier" ist ja selbst einer von ihnen. Ohne
+    # diese Zeile ginge der Test auch durch, wenn nur das leere Feld ankäme
+    # (gegengeprüft 2026-09-01, beide Rümpfe direkt nebeneinander).
+    assert 'class="beispiel"' not in r.text
+
+
 def test_mit_verlauf_gibt_es_keine_beispiele(db_datei, tmp_path):
     client, _ = _client(db_datei, tmp_path)
     _langer_verlauf(db_datei, zuege=1, je_zug=1)
