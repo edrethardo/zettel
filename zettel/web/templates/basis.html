@@ -7,7 +7,8 @@
   <meta charset="utf-8">
   {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
      jede Angabe zu Tap-Zielen unten wäre wirkungslos. #}
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# `viewport-fit=cover`: ohne das bleibt `env(safe-area-inset-bottom)` in .fuss auf iOS immer 0, und die Rechnung dort ist nur Dekoration. #}
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   {# Beide Farbmodi sind gemeint (WB-360): das sagt dem Browser, dass er
      Formulare und Bildlaufleisten gleich mit umfärben darf, und färbt die
      Adressleiste des Telefons passend zum Kopf der Seite. #}
@@ -27,9 +28,9 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  {# Wo bin ich? Neun Ziele in einer quer scrollenden Leiste sahen alle gleich
-     aus — und /bestellungen und /pick sind zwei sehr ähnliche Listen. Die
-     Klasse ist der Teil, den man sieht, `aria-current="page"` der, den ein
+  {# Wo bin ich? Sieben Ziele in einer quer scrollenden Leiste sahen alle
+     gleich aus — und /bestellungen und /pick sind zwei sehr ähnliche Listen.
+     Die Klasse ist der Teil, den man sieht, `aria-current="page"` der, den ein
      Vorleseprogramm ansagt; beides zusammen, weil Farbe allein für beides
      nicht reicht.
 
@@ -57,9 +58,9 @@
       <a href="/bons"{{ wo('/bons') }}>Bons</a>
     </nav>
   </header>
-  {# Die Leiste scrollt quer: auf 375 px liegen „Bons" und „Status" ausserhalb
-     des Bildes. Steht man auf einem davon, wäre die Markierung unsichtbar —
-     also wird sie hereingeholt.
+  {# Die Leiste scrollt quer: auf 375 px liegt „Bons" ausserhalb des Bildes.
+     Steht man dort, wäre die Markierung unsichtbar — also wird sie
+     hereingeholt.
 
      Bis WB-400 Runde 3 tat das ein `scrollIntoView({inline: 'center'})`, und
      genau die Mitte war der Fehler: sie liess auf beiden Seiten einen Rest
@@ -71,7 +72,7 @@
      Jetzt wird der ANFANG des aktiven Ziels an den linken Rand gelegt: links
      steht ein ganzes Wort, angeschnitten wird nur rechts, wo die Maske sitzt
      und „hier geht es weiter" hingehört. Steht das Ziel so weit hinten, dass
-     die Leiste nicht mehr genug Weg hat („Status", „wer bin ich?"), wird auf
+     die Leiste nicht mehr genug Weg hat („Bons"), wird auf
      die früheste Kante gerastet, bei der es noch GANZ im Bild steht — lieber
      ein Ziel weniger nach links geholt als ein halbes am Rand, aber
      sichtbar zu sein schlägt bündig zu sein. Ohne JavaScript bleibt die
