@@ -912,6 +912,27 @@ def test_der_entwurf_steht_im_warenkorb_und_nennt_das_klopapier_nicht(
     assert "Rinderhackfleisch" in entwurfsteil
 
 
+def test_der_offene_entwurf_ist_eingeklappt_und_nennt_seinen_stand(
+        con, db_pfad, tmp_path):
+    """UI-Review 2026-09-01, Fund 2: Ja/Nein-Karten UND darunter der volle
+    Entwurf für dieselben Produkte — zwei Bediensysteme mit einem Gewicht.
+    Der Entwurf ist der Nebenpfad; zugeklappt sagt er nur, wie er steht."""
+    _bolo_geholt(con)
+    client = _web(db_pfad, tmp_path, _web_zug(con))
+    stueck = client.post(
+        "/chat",
+        data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
+        headers={"HX-Request": "true"}).text
+
+    entwurf = stueck.split('class="entwurf"', 1)[1].split("</section>", 1)[0]
+    assert "<details" in entwurf
+    assert " open" not in entwurf.split("<details", 1)[1].split(">", 1)[0]
+    summary = entwurf.split("<summary", 1)[1].split("</summary>", 1)[0]
+    assert "Rezeptentwurf" in summary
+    assert "Spaghetti Bolognese" in summary
+    assert "0 von" in summary and "im Rezept" in summary
+
+
 def test_der_weg_mit_dem_daumen_von_der_frage_bis_zum_rezept(
         con, db_pfad, tmp_path):
     """Der ganze Ablauf des Tickets über HTTP, ohne einen einzigen Modulaufruf.

@@ -1133,6 +1133,10 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   border-radius: var(--radius);
 }
 .entwurf h3 { margin: 0 0 var(--v2); font-size: var(--t-feld); letter-spacing: -0.01em; }
+.entwurf summary { min-height: var(--tap); display: flex; align-items: center;
+                   font-size: var(--t-feld); font-weight: 600; cursor: pointer;
+                   color: var(--gedaempft); }
+.entwurf details[open] summary { color: var(--tinte); margin-bottom: var(--v2); }
 .entwurf-name { display: flex; gap: var(--v2); margin-bottom: var(--v2); }
 .entwurf-name input {
   flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
