@@ -6,8 +6,18 @@
 <p class="fehler" role="status">{{ fehler }}</p>
 {% endif %}
 {% if quittung %}
-<p class="fertig" role="status">Abgeschickt: {{ quittung.n }} {{ "Posten" }},
-  zusammen etwa {{ quittung.summe.cents | euro }}.
+{# Wortlaut wie im Korb vor dem Knopf (UI-Review 2026-09-01, Fund 7):
+   Preisloses wird gezählt, nicht geschätzt. Sonst läse sich eine Bestellung
+   nur aus Freitext als „zusammen etwa 0,00 €" — genau die glatte Null,
+   gegen die der `euro`-Filter seinen Strich setzt. #}
+<p class="fertig" role="status">
+  {%- if quittung.summe.cents %}
+  Abgeschickt: {{ quittung.n }} Posten,
+  zusammen etwa {{ quittung.summe.cents | euro }}
+  {%- if quittung.summe.ohne_preis %} · {{ quittung.summe.ohne_preis }} Posten ohne Preis{% endif %}.
+  {%- else %}
+  Abgeschickt: {{ quittung.n }} Posten ohne Preis.
+  {%- endif %}
   Die Bestellung steht jetzt auf der Pick-Liste.</p>
 {% endif %}
 {% if not bestellungen %}
@@ -49,7 +59,11 @@
           {% endfor %}
         </ul>
         {% if b.posten | length > 4 %}
-        <span class="menge">und {{ b.posten | length - 4 }} weitere</span>
+        {# Ein Rest ist einer: „und 1 weiterer". Dieselbe Sorgfalt wie bei
+           „liegt/liegen" in `mengen.py` — die Zahl steht daneben, also fällt
+           die falsche Endung sofort auf. #}
+        <span class="menge">und {{ b.posten | length - 4 }}
+          {{- " weiterer" if b.posten | length == 5 else " weitere" }}</span>
         {% endif %}
       </span>
     </a>

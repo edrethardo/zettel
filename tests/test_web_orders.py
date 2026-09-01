@@ -376,6 +376,22 @@ def test_die_bestellkarte_zeigt_die_ersten_posten_als_zeilen(client, con):
     assert ", ".join(namen) not in text
 
 
+def test_der_rest_auf_der_karte_wird_gebeugt_wie_er_gezaehlt_wird(client, con):
+    """„und 1 weitere" ist kein Deutsch — ein Rest ist einer.
+
+    Dieselbe Sorgfalt wie bei „liegt/liegen" in `mengen.py`: die Zahl steht
+    daneben, also fällt die falsche Endung sofort auf.
+    """
+    namen = [r["name"] for r in con.execute(
+        "SELECT name FROM product ORDER BY id LIMIT 5")]
+    for n in namen:
+        client.post(f"/katalog/einlegen?product_id={_pid(con, n)}", headers=HTMX)
+    client.post("/warenkorb/abschicken", follow_redirects=False)
+    text = client.get("/bestellungen").text
+    assert "und 1 weiterer" in text
+    assert "und 1 weitere<" not in text
+
+
 def test_nach_dem_abschicken_steht_eine_quittung(client, con):
     pid = _pid(con, MILCH)
     client.post(f"/katalog/einlegen?product_id={pid}", headers=HTMX)
@@ -392,6 +408,63 @@ def test_nach_dem_abschicken_steht_eine_quittung(client, con):
     assert "Pick-Liste" in quittung
     # Ohne den Parameter — etwa beim zweiten Aufruf — keine Quittung.
     assert 'class="fertig"' not in client.get("/bestellungen").text
+
+
+def _quittung(client, ziel):
+    """Der Quittungsabsatz unter `ziel` — oder None, wenn keiner dasteht."""
+    text = client.get(ziel).text
+    if 'class="fertig"' not in text:
+        return None
+    return text.split('class="fertig"', 1)[1].split("</p>", 1)[0]
+
+
+def test_die_quittung_verschweigt_nicht_was_keinen_preis_hat(client, con):
+    """Was der Korb vor dem Knopf sagt, sagt die Quittung danach auch.
+
+    Eine Bestellung nur aus Freitext hätte sonst „zusammen etwa 0,00 €"
+    gemeldet — genau die glatte Null, gegen die `euro()` seinen Strich setzt.
+    """
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"}, headers=HTMX)
+    r = client.post("/warenkorb/abschicken", follow_redirects=False)
+    nur_freitext = _quittung(client, r.headers["location"])
+    assert "0,00 €" not in nur_freitext
+    assert "1 Posten ohne Preis" in nur_freitext
+
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"}, headers=HTMX)
+    r = client.post("/warenkorb/abschicken", follow_redirects=False)
+    gemischt = _quittung(client, r.headers["location"])
+    assert "1,19 €" in gemischt
+    assert "1 Posten ohne Preis" in gemischt
+
+
+def test_eine_erledigte_bestellung_bekommt_keine_quittung_mehr(client, con):
+    """Die URL überlebt Reload, Zurück und das Weiterreichen im Chat.
+
+    „Steht jetzt auf der Pick-Liste" über einen gestern erledigten Einkauf
+    wäre eine grüne Lüge.
+    """
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"}, headers=HTMX)
+    item = orders.inhalt(con)[0]["id"]
+    ziel = client.post("/warenkorb/abschicken",
+                       follow_redirects=False).headers["location"]
+    assert _quittung(client, ziel) is not None
+
+    b = orders.bestellungen(con, "offen")[0]["id"]
+    client.post(f"/pick/{b}/posten/{item}?stand=gepickt", headers=HTMX)
+    assert orders.bestellung(con, b)["state"] == "erledigt"
+    assert _quittung(client, ziel) is None
+
+
+def test_eine_kaputte_fertig_id_laesst_die_uebersicht_stehen(client):
+    """`?fertig=abc` gab 422 — die ganze Übersicht war damit unerreichbar.
+
+    Eine unbekannte ID gibt schon jetzt still keine Quittung; eine kaputte
+    soll sich genauso verhalten und nicht die Seite mitnehmen.
+    """
+    r = client.get("/bestellungen?fertig=abc")
+    assert r.status_code == 200
+    assert 'class="fertig"' not in r.text
 
 
 # --------------------------------------------------------------------------

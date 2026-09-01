@@ -551,7 +551,10 @@ def summe(posten: list[dict]) -> dict:
         if p.get("price_cents") is None:
             ohne += 1
         else:
-            cents += int(p["qty"]) * int(p["price_cents"])
+            # `qty` wie `price_cents` nachsichtig gelesen: die Funktion
+            # bekommt Korbzeilen, aber auch von Hand gebaute Posten — eine
+            # fehlende Menge ist eine, kein Absturz.
+            cents += int(p.get("qty", 1)) * int(p["price_cents"])
     return {"cents": cents, "ohne_preis": ohne}
 
 
