@@ -13,6 +13,7 @@ läuft als eigener Prozess mit eigenem Timer, nie im Request-Pfad des Shops
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -94,6 +95,52 @@ def _kategorien(cats) -> tuple[str | None, str | None, str | None]:
     return ebenen.get(1), ebenen.get(2), ebenen.get(3)
 
 
+#: „0,25 g" — eine Zahl unter 1 mit der KLEINEN Einheit. Knuspr liefert
+#: `textualAmount` bei 167 aktiven Produkten so (UI-Review 2026-09-01,
+#: Fund 5); gemeint ist die Zahl in kg bzw. l, mitskaliert wurde die Einheit
+#: nicht (`price_cents / price_per_unit_cents` = 239/956 = 0,25 → pro kg).
+#: Unter 1 g oder 1 ml verkauft der Lebensmittelhandel nichts, deshalb ist
+#: das Muster eindeutig. Kilo und Liter („0,75 l") sind richtig und bleiben.
+_KLEINE_EINHEIT_UNTER_EINS = re.compile(r"^0[.,](\d+)\s*(g|ml)$")
+
+
+def normalisiere_einheit(text, unit):
+    """`„0,25 g"` -> `„250 g"`. Alles andere unverändert — auch `None`."""
+    if not text:
+        return text
+    treffer = _KLEINE_EINHEIT_UNTER_EINS.match(str(text).strip())
+    if not treffer or unit not in ("g", "ml"):
+        return text
+    nachkomma, einheit = treffer.groups()
+    # „0,25" -> 250, „0,225" -> 225, „0,5" -> 500: die Nachkommastellen auf
+    # drei auffüllen und als ganze Zahl lesen. Mehr als drei Stellen gäbe
+    # Bruchteile von Gramm — die gibt es nicht, also bleibt so ein Text stehen.
+    if len(nachkomma) > 3:
+        return text
+    return f"{int(nachkomma.ljust(3, '0'))} {einheit}"
+
+
+def repariere_einheiten(con) -> int:
+    """Bestehende Zeilen nachziehen. Gibt die Zahl der geänderten zurück.
+
+    Der nächste Crawl täte es auch (`ON CONFLICT … unit_text = excluded`),
+    aber der ist nicht sicher vor dem nächsten Blick auf die Seite.
+    Idempotent: eine normalisierte Zeile trifft das Muster nicht mehr.
+    """
+    zeilen = con.execute(
+        "SELECT id, unit_text, unit FROM product"
+        " WHERE unit IN ('g', 'ml') AND unit_text LIKE '0,%'").fetchall()
+    n = 0
+    for z in zeilen:
+        neu = normalisiere_einheit(z["unit_text"], z["unit"])
+        if neu != z["unit_text"]:
+            con.execute("UPDATE product SET unit_text = ? WHERE id = ?",
+                        (neu, z["id"]))
+            n += 1
+    con.commit()
+    return n
+
+
 def parse_products(payload: dict) -> list[dict]:
     """Antwort -> Liste von Zeilen für `product`. Reine Funktion, kein Netz."""
     daten = (payload or {}).get("data") or {}
@@ -115,7 +162,8 @@ def parse_products(payload: dict) -> list[dict]:
             "brand": p.get("brand"),
             "price_cents": _cents(p.get("price")),
             "price_per_unit_cents": _cents(p.get("pricePerUnit")),
-            "unit_text": p.get("textualAmount"),
+            "unit_text": normalisiere_einheit(p.get("textualAmount"),
+                                              p.get("unit")),
             "unit": p.get("unit"),
             "image_path": p.get("imgPath"),   # wird beim Crawl lokalisiert
             "category_l1": l1,
