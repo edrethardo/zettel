@@ -14,7 +14,7 @@
 
 * Der Review nennt Funde mit Nummer (Fund 1–16). Jede Aufgabe sagt, welchen Fund sie ganz oder teilweise schliesst.
 * Commit-Betreff im Stil des Projekts: ein deutscher Satz, kein Präfix (`git log` zeigt die Form).
-* Alle Pfade relativ zu `/home/user/code/picknick_klon`. Tests laufen mit `.venv/bin/python -m pytest`.
+* Alle Pfade relativ zu `<Repo>`. Tests laufen mit `.venv/bin/python -m pytest`.
 * Die Kommentare im Code sind Teil der Arbeit: dieses Projekt schreibt an jede Stelle, **warum** sie so ist (siehe die Nachbarn in denselben Dateien). Die Kommentare in den Codeblöcken unten sind so gemeint und werden übernommen.
 * Reihenfolge: Aufgabe 1–4 sind reine S-Aufgaben und lassen sich in beliebiger Folge machen. Aufgabe 5 (Einheiten) ist die einzige mit Daten-Reparatur. Aufgabe 6–9 verändern, was im Video zu sehen ist — sie kommen vor dem nächsten Take.
 
@@ -480,7 +480,7 @@ Expected: alle PASS.
 - [ ] **Schritt 5: Bestehende Datenbanken reparieren** — je Datei ein Aufruf, Zahl notieren:
 
 ```bash
-cd /home/user/code/picknick_klon
+cd <Repo>
 for DB in data/picknick.db "$HOME/picknick-demo/demo.db"; do
   ZETTEL_DB="$DB" .venv/bin/python - <<'EOF'
 import os
