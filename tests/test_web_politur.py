@@ -373,12 +373,15 @@ def test_der_griff_an_der_rezeptzutat_ist_kein_flex_container():
 
 def test_die_mengenspalte_der_rezeptzutat_ist_weder_starr_noch_mono():
     """„1 gr. Dose/n" stand dreizeilig in 8ch Monospace. Eine Kochangabe ist
-    keine Maschinenausgabe; für fluchtende Ziffern reicht `tabular-nums`."""
+    keine Maschinenausgabe; für fluchtende Ziffern reicht `tabular-nums`. Die
+    globale `.menge`-Regel setzt Kassenschrift — das blosse Fehlen der
+    Deklaration reicht deshalb nicht, es braucht die Gegenregel."""
     stil = STIL.read_text(encoding="utf-8")
     block = stil.split(".rezeptzutaten .menge {", 1)[1].split("}", 1)[0]
     assert "8ch" not in block
     assert "var(--mono)" not in block
     assert "tabular-nums" in block
+    assert "font-family: inherit" in block
 
 
 def test_die_rezept_trefferliste_hat_einen_platz_fuer_die_rueckmeldung(client, con):

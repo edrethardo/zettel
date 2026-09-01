@@ -25,15 +25,18 @@
 
      Also: Preise und Packungsgrössen (`.preis`, `.zeile .menge`), die
      Packungs- und Korbzahlen (`.anzahl`, `.korbzahl`), die Bedarfsmenge auf
-     der Einkaufsliste (`.pickzeile .menge`, `.gebinde`), die mit dem
-     Portionsfeld hochgerechneten Rezeptmengen (`.rezeptzutaten .menge`) und
-     die Gesamtzeit der Rezeptkarte.
+     der Einkaufsliste (`.pickzeile .menge`, `.gebinde`) und die Gesamtzeit
+     der Rezeptkarte.
      Also NICHT: was von Chefkoch abgeschrieben ist und nur weitergereicht
      wird (`.andereliste .zahlen` — „35 Minuten Arbeitszeit", „4.74 aus 1420
      Stimmen"), und NICHT ein ganzer Satz, auch wenn Zahlen darin vorkommen
      (`.hinweis.gebraucht` — „1000 ml gebraucht — 2 × Mutti Passierte
      Tomaten 0,7 kg."). Eine Kassenschrift über drei Zeilen Fliesstext ist
-     eine Wand und keine Auszeichnung.
+     eine Wand und keine Auszeichnung. Und NICHT die mit dem Portionsfeld
+     hochgerechneten Rezeptmengen (`.rezeptzutaten .menge`): die Angabe ist
+     halb Text — „1 gr. Dose/n", „etwas", „0,5 TL" —, und das Hochrechnen
+     macht aus „Dose/n" keine Maschinenzahl. Seit dem UI-Review 2026-09-01
+     (Fund 4/13) tragen sie die Schrift des Blattes, mit `tabular-nums`.
    - FORMEN: Karten sind Blätter (12 px, feiner Rand, flacher Schatten),
      Knöpfe sind gezeichnete Kästen (10 px), Abzeichen bleiben Pillen,
      der Plus-Knopf bleibt ein Punkt. Vier Formen, jede mit einem Grund.
@@ -854,17 +857,21 @@ main > .rezeptherkunft {
 
 .rezeptzutaten { list-style: none; margin: 0 0 var(--rand); padding: 0; }
 .rezeptzutaten li {
-  display: flex; gap: var(--v3); padding: var(--v2) var(--v1); line-height: 1.4;
-  border-bottom: 1px solid var(--linie);
+  display: flex; align-items: center; gap: var(--v3); padding: var(--v2) var(--v1);
+  line-height: 1.4; border-bottom: 1px solid var(--linie);
 }
 .rezeptzutaten li:last-child { border-bottom: none; }
-/* Die Mengenspalte ist so breit wie ihre längste Angabe, aber nie mehr als
-   ein Drittel: „1 gr. Dose/n" stand dreizeilig in 8ch Monospace (UI-Review
-   2026-09-01, Fund 4). Keine Monospace — die Zahl ist eine Kochangabe und
-   keine Maschinenausgabe; `tabular-nums` genügt, damit Ziffern fluchten. */
+/* Jede `<li>` ist ihr eigener Flex-Container, also bemisst sich jede Zeile
+   für sich — die linke Kante des Namens ist deshalb nicht flächenbündig,
+   sondern flattert mit der längsten Zahl der jeweiligen Zeile. Das wurde in
+   Kauf genommen, weil die Alternative die dreizeilige 8ch-Monospace-Spalte
+   war (UI-Review 2026-09-01, Fund 4). Keine Monospace — die Zahl ist eine
+   Kochangabe und keine Maschinenausgabe; `tabular-nums` genügt, damit
+   Ziffern fluchten. `font-family: inherit` überschreibt die globale
+   `.menge`-Regel (Kassenschrift), die sonst per Kaskade gewinnen würde. */
 .rezeptzutaten .menge { flex: 0 0 auto; min-width: 5ch; max-width: 33%;
                         text-align: right; color: var(--gedaempft);
-                        font-size: var(--t-klein);
+                        font-size: var(--t-klein); font-family: inherit;
                         font-variant-numeric: tabular-nums; }
 /* Der Griff „Zutat im Katalog suchen" ist ein Tap-Ziel wie jedes andere und
    hatte ~24 px — die Höhe der Textzeile. In diesem Blatt sind es 44 (WB-379).
@@ -875,7 +882,7 @@ main > .rezeptherkunft {
    die Breite, und „Lavendelblüten" brach in drei Zeilen. Der Innenabstand
    zentriert die Textzeile in den 44 px, wie `align-items` es vorher tat. */
 .rezeptzutaten a.name {
-  flex: 1 1 auto; min-width: 0; display: block; box-sizing: border-box;
+  flex: 1 1 auto; min-width: 0; display: block;
   min-height: var(--tap); padding: calc((var(--tap) - 1.4em) / 2) 0;
   color: var(--akzent-tinte); text-decoration: none;
 }
@@ -1179,6 +1186,8 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    Und leise: eine Leseliste in lauter fetter Schrift war eine Wand. */
 .zugrezept .rezeptzutaten .name { flex: 1 1 auto; color: var(--tinte);
                                   font-weight: 400; }
+/* Erbt zusätzlich `min-width: 5ch; max-width: 33%` von der Basisregel
+   (`.rezeptzutaten .menge`) — an der Kartenbreite hier folgenlos. */
 .zugrezept .rezeptzutaten .menge { flex: 0 0 7ch; }
 .zugrezept .fussnote { margin: 0; }
 /* Die Ausgänge der Karte sind Tap-Ziele und keine Fussnoten (WB-400): „Das
