@@ -1477,6 +1477,21 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 }
 .chatform button:active { transform: scale(0.96); }
 
+/* Die drei Beispiele des leeren Chats (UI-Review 2026-09-01, Fund 1).
+   Chips, keine Knöpfe: umrandet, in Akzenttinte, untereinander — auf
+   390 px liegen drei Sätze nicht nebeneinander. */
+.beispiele { margin: var(--v4) 0; }
+.beispiele p { margin: 0 0 var(--v3); color: var(--gedaempft); font-size: var(--t-klein); }
+.beispiel {
+  display: block; width: 100%; min-height: var(--tap); margin-bottom: var(--v2);
+  padding: var(--v2) var(--v4); text-align: left;
+  font-size: var(--t-feld); font-weight: 500; font-family: inherit;
+  color: var(--akzent-tinte); background: var(--karte);
+  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  cursor: pointer;
+}
+.beispiel:active { transform: scale(0.98); }
+
 /* Ein 27B-Modell antwortet in Sekunden. Ohne sichtbares Warten drückt man
    ein zweites Mal — htmx blendet dieses Stück für die Anfrage ein. */
 .htmx-indicator { display: none; }

@@ -110,6 +110,43 @@ def test_der_chat_hat_einen_eigenen_ort(db_datei, tmp_path):
     assert '<section class="chat"' not in korb
 
 
+BEISPIELE = ["Alles für Spaghetti Bolognese, und Klopapier",
+             "Lasagne für 6 Personen",
+             "Milch, Butter, Eier"]
+
+
+def test_der_leere_chat_zeigt_drei_beispiele_statt_einer_anleitung(db_datei, tmp_path):
+    """UI-Review 2026-09-01, Fund 1: über dem Falz stand Erklärprosa, und
+    ein Fremder wusste nach zehn Sekunden nicht, was die App kann. Drei
+    Sätze zum Antippen zeigen es. Jeder Chip ist ein Absender des
+    Chat-Formulars — ohne Skript ein zweiter „Fragen"-Knopf mit Vorgabe."""
+    client, _ = _client(db_datei, tmp_path)
+    seite = client.get("/chat").text
+    chat = _chatteil(seite)
+    for satz in BEISPIELE:
+        assert (f'<button type="submit" form="chatform" name="satz" '
+                f'class="beispiel" value="{satz}">') in chat
+    assert 'id="chatform"' in chat
+    assert "Vorgeschlagen wird nur" not in chat
+    assert "Ein gemeinsamer Chat" not in seite
+
+
+def test_ein_beispiel_schickt_den_satz_wirklich_ab(db_datei, tmp_path):
+    milch = _pid(db_datei, MILCH)
+    client, _ = _client(db_datei, tmp_path, _extract(("Milch", 1)),
+                        _choose(("Milch", milch, 1)))
+    r = client.post("/chat", data={"satz": BEISPIELE[2]}, headers=HTMX)
+    assert r.status_code == 200
+    assert BEISPIELE[2] in r.text
+    assert "beispiel" not in _chatteil(r.text)    # nach dem ersten Zug weg
+
+
+def test_mit_verlauf_gibt_es_keine_beispiele(db_datei, tmp_path):
+    client, _ = _client(db_datei, tmp_path)
+    _langer_verlauf(db_datei, zuege=1, je_zug=1)
+    assert 'class="beispiel"' not in client.get("/chat").text
+
+
 def test_der_chat_steht_in_der_navigation(db_datei, tmp_path):
     """Ein eigener Ort, den man nur über einen Link im Text erreicht, ist
     keiner. Geprüft wird an einer BELIEBIGEN Vollseite — die Leiste steht im
