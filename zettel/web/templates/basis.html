@@ -55,8 +55,6 @@
       <a href="/bestellungen"{{ wo('/bestellungen') }}>Bestellungen</a>
       <a href="/pick"{{ wo('/pick') }}>Pick-Liste</a>
       <a href="/bons"{{ wo('/bons') }}>Bons</a>
-      <a href="/status"{{ wo('/status') }}>Status</a>
-      <a href="/rolle"{{ wo('/rolle') }}>{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
     </nav>
   </header>
   {# Die Leiste scrollt quer: auf 375 px liegen „Bons" und „Status" ausserhalb
@@ -118,5 +116,15 @@
   {% endif %}
 
   <main>{% block inhalt %}{% endblock %}</main>
+
+  {# Diagnose und Einstellung stehen NICHT in der Hauptleiste (UI-Review
+     2026-09-01, Fund 3 und 6): neun Ziele passten in keine 390 px, und ein
+     Fremder las „Status" — Ports, Hostnamen, Trace-Adressen — als Teil der
+     App. Hier unten sind beide erreichbar und tragen dieselbe Markierung wie
+     die Leiste; nur den ersten Blick bekommen sie nicht mehr. #}
+  <footer class="fuss">
+    <a href="/status"{{ wo('/status') }}>Status</a>
+    <a href="/rolle"{{ wo('/rolle') }}>{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
+  </footer>
 </body>
 </html>

@@ -266,6 +266,20 @@ button, .knopf { overflow-wrap: normal; }
   background: var(--akzent-hell); color: var(--akzent-tinte); font-weight: 700;
 }
 
+/* Die Fusszeile (UI-Review 2026-09-01, Fund 3): Diagnose und Einstellung,
+   aus der Hauptleiste herausgenommen. Dieselbe Höhe wie ein Leistenziel,
+   damit der Daumen sie trifft; gedämpft, damit das Auge sie nicht sucht. */
+.fuss {
+  display: flex; gap: var(--v4); justify-content: center;
+  margin: var(--v6) 0 0; padding: var(--v3) var(--v3) calc(var(--v3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--linie); font-size: var(--t-klein);
+}
+.fuss a {
+  display: inline-flex; align-items: center; min-height: var(--tap);
+  padding: 0 var(--v3); color: var(--gedaempft); text-decoration: none;
+}
+.fuss a.aktiv { color: var(--tinte); font-weight: 600; }
+
 /* Hinweisband (Spec 11): der Textmarker quer über die Seite. -------------- */
 .band {
   margin: 0; padding: var(--v3) var(--rand) var(--v3) var(--einzug); position: relative;

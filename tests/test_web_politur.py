@@ -178,6 +178,26 @@ def test_die_markierung_ist_nicht_nur_ansage_sondern_auch_sichtbar():
     assert "background" in block and "color" in block
 
 
+def test_diagnose_und_einstellung_stehen_nicht_in_der_hauptleiste(client):
+    """Neun Ziele passen in keine 390 px (UI-Review 2026-09-01, Fund 6), und
+    zwei davon sind keine Bereiche: „Status" ist Diagnose, „wer bin ich?"
+    eine Einstellung. Beide stehen in einer Fusszeile — erreichbar, mit
+    Markierung, aber nicht im ersten Blick."""
+    text = client.get("/katalog").text
+    leiste = text.split('<nav id="hauptnavigation"', 1)[1].split("</nav>", 1)[0]
+    assert 'href="/status"' not in leiste
+    assert 'href="/rolle"' not in leiste
+    fuss = text.split('<footer class="fuss"', 1)[1].split("</footer>", 1)[0]
+    assert 'href="/status"' in fuss
+    assert 'href="/rolle"' in fuss
+
+
+def test_die_fusszeile_markiert_ihre_seite_wie_die_leiste(client):
+    text = client.get("/status").text
+    fuss = text.split('<footer class="fuss"', 1)[1].split("</footer>", 1)[0]
+    assert '<a href="/status" class="aktiv" aria-current="page"' in fuss
+
+
 def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
     """Neun Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
     ausgeblendet. Ob sie auf 375 px sichtbar ist, entscheidet ein Gerät —
