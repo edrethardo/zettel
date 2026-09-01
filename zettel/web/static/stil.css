@@ -618,6 +618,9 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 .bestellungen > li:last-child .zweig,
 .rezepte > li:last-child .zweig { border-bottom: none; }
 .bestellung.erledigt .name { color: var(--gedaempft); }
+.bestellung .posten { list-style: none; margin: var(--v1) 0 0; padding: 0;
+                      font-size: var(--t-klein); line-height: 1.45; color: var(--tinte); }
+.bestellung.erledigt .posten { color: var(--gedaempft); }
 
 /* Pick-Ansicht: ein anderer Ort. Kein Kartenschmuck, grosse Zeilen, klebende
    Laden-Überschriften — im Laden zählt Kontrast und ein Daumen, der trifft. */

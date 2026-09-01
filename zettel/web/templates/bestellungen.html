@@ -34,7 +34,18 @@
           {% if b.state == 'offen' %}abgeschickt {{ b.submitted_at | zeit }}
           {% else %}fertig {{ b.done_at | zeit }}{% endif %}
         </span>
-        <span class="menge">{{ b.posten | map(attribute='name') | join(', ') }}</span>
+        {# Vier Zeilen statt fünfzehn Namen mit Kommas in 13 px (UI-Review
+           2026-09-01, Fund 7): die Karte ist ein Blick, die Pick-Liste
+           dahinter ist die ganze Bestellung. Menge vorn, weil „2× Milch"
+           die Zeile ist, die man wiedererkennt. #}
+        <ul class="posten">
+          {% for p in b.posten[:4] %}
+          <li>{% if p.qty > 1 %}{{ p.qty }}× {% endif %}{{ p.name }}</li>
+          {% endfor %}
+        </ul>
+        {% if b.posten | length > 4 %}
+        <span class="menge">und {{ b.posten | length - 4 }} weitere</span>
+        {% endif %}
       </span>
     </a>
     {% if b.state == 'erledigt' %}
