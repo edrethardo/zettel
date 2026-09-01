@@ -351,7 +351,26 @@ def test_abschicken_per_htmx_schickt_den_browser_weiter(client, con):
     r = client.post("/warenkorb/abschicken", headers=HTMX)
     # Ein 303 würde HTMX die ganze Seite in den Korb hineintauschen.
     assert r.status_code == 204
-    assert r.headers["HX-Redirect"].startswith("/bestellungen")
+    ziel = r.headers["HX-Redirect"]
+    assert ziel.startswith("/bestellungen")
+    # Nicht nur irgendwohin: ohne `?fertig=` steht dort keine Quittung, und
+    # der HTMX-Weg wäre stumm, wo der 303-Weg quittiert.
+    assert "?fertig=" in ziel
+
+
+def test_das_ziel_nach_dem_abschicken_traegt_keinen_anker(client, con):
+    """`#b<id>` scrollte die Karte an den oberen Rand — über die Quittung.
+
+    Die Quittung steht ÜBER der Liste; auf einer Seite, die scrollt, sprang
+    der Anker genau an ihr vorbei. Ohne ihn steht sie oben, wo sie hingehört.
+    """
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    r = client.post("/warenkorb/abschicken", follow_redirects=False)
+    assert "#" not in r.headers["location"]
+
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    r = client.post("/warenkorb/abschicken", headers=HTMX)
+    assert "#" not in r.headers["HX-Redirect"]
 
 
 # --------------------------------------------------------------------------
