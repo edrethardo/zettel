@@ -1092,7 +1092,13 @@ def create_app(db_path: str | Path | None = None,
             # nach dem Abschicken sah die Seite aus wie vorher plus eine
             # Karte, und ein Fremder wusste nicht, ob etwas passiert war.
             # Ein Query-Parameter und keine Sitzung — der Shop hat keine.
-            ziel = f"/bestellungen?fertig={bestellung['id']}#b{bestellung['id']}"
+            #
+            # Kein `#b<id>` dahinter: der Browser zieht das Ziel eines Ankers
+            # an den OBEREN Rand, die Quittung steht aber über der Liste —
+            # auf einer Seite, die scrollt, sprang der Anker also über genau
+            # die Meldung hinweg, für die er gedacht war. Die Quittung nennt
+            # die Bestellung ohnehin beim Namen; die ID bleibt in der URL.
+            ziel = f"/bestellungen?fertig={bestellung['id']}"
             if ist_htmx(request):
                 # Ein 303 würde HTMX die neue Seite in den Korb hineintauschen;
                 # HX-Redirect lässt den Browser richtig navigieren.
