@@ -459,3 +459,17 @@ def test_die_kasse_umschliesst_summe_und_knopf(client, con):
     kasse = text.split('<div class="kasse">', 1)[1].split("</div>", 1)[0]
     assert 'class="summe"' in kasse
     assert "Bestellung abschicken" in kasse
+
+
+def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
+    """Fünfzehn Knöpfe je in eigener Zeile mit 40 px Luft darüber (UI-Review
+    2026-09-01, Fund 11). Das Formular mit dem Haken nimmt den Rest, der
+    Knopf so viel, wie er braucht — beide in EINER Zeile. Ob ein langer
+    Name dann umbricht, statt den Knopf zu verdrängen, entscheidet das
+    Gerät; hier steht, dass der Umbruch nicht mehr erzwungen ist."""
+    stil = STIL.read_text(encoding="utf-8")
+    form = stil.split(".pickzeile > form {", 1)[1].split("}", 1)[0]
+    assert "100%" not in form
+    assert "flex: 1 1 0" in form
+    stellen = stil.split(".pickzeile .stellen {", 1)[1].split("}", 1)[0]
+    assert "flex: 0 0 auto" in stellen

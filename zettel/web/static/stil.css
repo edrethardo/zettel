@@ -639,16 +639,17 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   background: var(--grund); border-bottom: 2px solid var(--tinte);
 }
 .pickliste { list-style: none; margin: 0; padding: 0; }
-/* Die Zeile trägt zwei Entscheidungen — den Haken und „gab's nicht" (WB-373).
-   Der Haken bekommt die GANZE Breite, der Knopf rückt darunter nach rechts:
-   was im Regal gesucht werden soll, muss lesbar sein, und „Champignons"
-   mittendrin zu brechen war der Preis der alten Aufteilung. */
 .pickzeile { display: flex; align-items: center; flex-wrap: wrap;
              border-bottom: 1px solid var(--linie); }
 .pickzeile form { display: flex; align-items: center; margin: 0; }
-.pickzeile > form { flex: 1 1 100%; min-width: 0; }
-.pickzeile .stellen { flex: 1 1 auto; margin-left: auto;
-                      padding: 0 var(--v1) var(--v3); }
+/* Eine Zeile, nicht zwei (UI-Review 2026-09-01, Fund 11): mit `1 1 100%`
+   fiel „gab's nicht" unter den Text, und jede Zeile war 140 px hoch. Das
+   Formular nimmt den Rest, der Knopf seine Breite; unter 180 px Textbreite
+   bricht die Zeile — dann ist der Name so lang, dass er ohnehin zwei
+   Zeilen braucht. */
+.pickzeile > form { flex: 1 1 0; min-width: 180px; }
+.pickzeile .stellen { flex: 0 0 auto; margin-left: auto;
+                      padding: 0 var(--v1); }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
   flex: 1 1 auto; min-width: 0; min-height: 64px;
