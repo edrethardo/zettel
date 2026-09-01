@@ -5,6 +5,11 @@
 {% if fehler %}
 <p class="fehler" role="status">{{ fehler }}</p>
 {% endif %}
+{% if quittung %}
+<p class="fertig" role="status">Abgeschickt: {{ quittung.n }} {{ "Posten" }},
+  zusammen etwa {{ quittung.summe.cents | euro }}.
+  Die Bestellung steht jetzt auf der Pick-Liste.</p>
+{% endif %}
 {% if not bestellungen %}
   <p class="leer">Noch nichts abgeschickt.</p>
   <p><a class="knopf" href="/warenkorb">Zum Warenkorb</a></p>

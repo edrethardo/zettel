@@ -376,6 +376,24 @@ def test_die_bestellkarte_zeigt_die_ersten_posten_als_zeilen(client, con):
     assert ", ".join(namen) not in text
 
 
+def test_nach_dem_abschicken_steht_eine_quittung(client, con):
+    pid = _pid(con, MILCH)
+    client.post(f"/katalog/einlegen?product_id={pid}", headers=HTMX)
+    client.post(f"/katalog/einlegen?product_id={pid}", headers=HTMX)
+    r = client.post("/warenkorb/abschicken", follow_redirects=False)
+    assert r.status_code == 303
+    ziel = r.headers["location"]
+    assert ziel.startswith("/bestellungen?fertig=")
+    text = client.get(ziel).text
+    quittung = text.split('class="fertig"', 1)[1].split("</p>", 1)[0]
+    assert "Abgeschickt" in quittung
+    assert "1 Posten" in quittung
+    assert "2,38 €" in quittung
+    assert "Pick-Liste" in quittung
+    # Ohne den Parameter — etwa beim zweiten Aufruf — keine Quittung.
+    assert 'class="fertig"' not in client.get("/bestellungen").text
+
+
 # --------------------------------------------------------------------------
 # Pick-Ansicht (Spec 9)
 
