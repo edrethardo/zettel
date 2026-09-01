@@ -1088,7 +1088,11 @@ def create_app(db_path: str | Path | None = None,
                 bestellung = orders.abschicken(c, note=werte.get("note"))
             except orders.LeererWarenkorb as e:
                 return _korb_antwort(request, c, str(e))
-            ziel = f"/bestellungen#b{bestellung['id']}"
+            # `?fertig=` trägt die Quittung (UI-Review 2026-09-01, Fund 7):
+            # nach dem Abschicken sah die Seite aus wie vorher plus eine
+            # Karte, und ein Fremder wusste nicht, ob etwas passiert war.
+            # Ein Query-Parameter und keine Sitzung — der Shop hat keine.
+            ziel = f"/bestellungen?fertig={bestellung['id']}#b{bestellung['id']}"
             if ist_htmx(request):
                 # Ein 303 würde HTMX die neue Seite in den Korb hineintauschen;
                 # HX-Redirect lässt den Browser richtig navigieren.
@@ -2356,14 +2360,21 @@ def create_app(db_path: str | Path | None = None,
     # Bestellungen und Pick-Ansicht (Spec 9)
 
     @app.get("/bestellungen")
-    def bestelluebersicht(request: Request):
+    def bestelluebersicht(request: Request, fertig: int | None = None):
         c = con()
         try:
             liste = orders.bestellungen(c)
             for b in liste:
                 b["posten"] = orders.posten(c, b["id"])
+            quittung = None
+            if fertig is not None:
+                gerade = next((b for b in liste if b["id"] == fertig), None)
+                if gerade is not None:
+                    quittung = {"n": len(gerade["posten"]),
+                                "summe": orders.summe(gerade["posten"])}
             return vorlagen.TemplateResponse(request, "bestellungen.html", {
-                **_rahmen(request, c), "bestellungen": liste})
+                **_rahmen(request, c), "bestellungen": liste,
+                "quittung": quittung})
         finally:
             c.close()
 
