@@ -362,6 +362,20 @@ def test_leere_uebersicht_sagt_es(client):
     assert "Noch nichts abgeschickt." in client.get("/bestellungen").text
 
 
+def test_die_bestellkarte_zeigt_die_ersten_posten_als_zeilen(client, con):
+    namen = [r["name"] for r in con.execute(
+        "SELECT name FROM product ORDER BY id LIMIT 6")]
+    for n in namen:
+        client.post(f"/katalog/einlegen?product_id={_pid(con, n)}", headers=HTMX)
+    client.post("/warenkorb/abschicken", follow_redirects=False)
+    text = client.get("/bestellungen").text
+    karte = text.split('<ul class="posten"', 1)[1].split("</ul>", 1)[0]
+    zeilen = re.findall(r"<li>(.*?)</li>", karte, re.S)
+    assert len(zeilen) == 4
+    assert "und 2 weitere" in text
+    assert ", ".join(namen) not in text
+
+
 # --------------------------------------------------------------------------
 # Pick-Ansicht (Spec 9)
 
