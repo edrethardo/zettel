@@ -71,7 +71,7 @@ ohne Media-Query, Hell- und Dunkelbild waren pixelgleich.
 
 *Zu `nach_10`: die klebende Kasse steht im Ganzseitenbild an der Stelle des ursprünglichen Fensterrands (y ≈ 1300–1500) und lässt an ihrer statischen Position eine Lücke — `position: sticky` und Ganzseitenaufnahme vertragen sich nicht; der Knopf ist da, siehe `test_die_kasse_umschliesst_summe_und_knopf`.*
 
-*Zu Fund 5: die Regel greift nur einmal — beim nächsten Knuspr-Crawl kommen dieselben Zeilen ungeprüft wieder herein, und ein echter Artikel unter einem Gramm (Safran, Sättigungsbeilage in Portionsbeuteln) würde von ihr um den Faktor 1000 verschrieben. Die Gegenprobe läge in derselben Nutzlast: Preis geteilt durch Grundpreis ergibt die Menge in der Grundeinheit und belegt die Kilo-Lesart Zeile für Zeile, statt sie aus der Zahl zu raten. Offen, Entscheidung Welle 2.*
+*Zu Fund 5: die Regel läuft bei jedem Knuspr-Crawl (`parse_products` → `normalisiere_einheit`, der Upsert überschreibt `unit_text`), aber ungeprüft — ein echter Artikel unter einem Gramm (Safran) würde von ihr um den Faktor 1000 verschrieben. Nur `repariere_einheiten` für den Altbestand ist einmalig, und das hat keinen Aufrufer. Die Gegenprobe läge in derselben Nutzlast: Preis geteilt durch Grundpreis ergibt die Menge in der Grundeinheit und belegt die Kilo-Lesart Zeile für Zeile, statt sie aus der Zahl zu raten. Offen, Entscheidung Welle 2.*
 
 **Zu beachten vor dem nächsten Take:** `dreh_handy.py` klickt auf Koordinaten; Aufgabe 3, 6 und 8
 verschieben Elemente (Fusszeile, Chips, klebende Kasse). Trockenlauf vor dem Video.

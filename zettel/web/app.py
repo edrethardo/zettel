@@ -1096,8 +1096,9 @@ def create_app(db_path: str | Path | None = None,
             # Kein `#b<id>` dahinter: der Browser zieht das Ziel eines Ankers
             # an den OBEREN Rand, die Quittung steht aber über der Liste —
             # auf einer Seite, die scrollt, sprang der Anker also über genau
-            # die Meldung hinweg, für die er gedacht war. Die Quittung nennt
-            # die Bestellung ohnehin beim Namen; die ID bleibt in der URL.
+            # die Meldung hinweg, für die er gedacht war. Die ID bleibt in
+            # der URL; einen Sprung zur Karte gibt es damit nicht mehr —
+            # die Quittung zählt Posten und Summe, sie nennt keine Nummer.
             ziel = f"/bestellungen?fertig={bestellung['id']}"
             if ist_htmx(request):
                 # Ein 303 würde HTMX die neue Seite in den Korb hineintauschen;
