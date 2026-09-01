@@ -90,11 +90,15 @@ def ocr_da() -> bool:
     return werkzeug_da(TESSERACT)
 
 
+# Erst, was geht, dann, was fehlt (UI-Review 2026-09-01, Fund 3): der Absatz
+# begann mit „fehlt OCR" und „Systemänderung", und ein Fremder las die
+# Bon-Seite als Fehlerseite. Der Paketname bleibt — er ist die Anweisung
+# für den, der die Maschine betreibt, und die Tests verlangen ihn.
 OCR_FEHLT_TEXT = (
-    "Dafür fehlt OCR auf dieser Maschine. Ein Bild-Bon lässt sich erst lesen, "
-    "wenn `tesseract-ocr` und `tesseract-ocr-deu` installiert sind — das ist "
-    "eine Systemänderung und gehört nicht in diesen Prozess. Ein eBon als PDF "
-    "aus der Rewe- oder Lidl-App braucht sie nicht.")
+    "Foto-Bons kann diese Maschine noch nicht lesen — ein eBon als PDF aus "
+    "der Rewe- oder Lidl-App geht immer. (Fürs Lesen von Fotos fehlen die "
+    "Pakete `tesseract-ocr` und `tesseract-ocr-deu`; das installiert der "
+    "Betreiber, nicht dieser Prozess.)")
 
 
 def text_aus_datei(pfad) -> str:
