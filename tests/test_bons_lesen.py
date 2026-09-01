@@ -233,3 +233,13 @@ def test_ocr_da_fragt_nur_den_pfad_ab(monkeypatch):
 def test_ocr_fehlt_text_ist_die_eine_meldung():
     """Seite und Ausnahme sagen denselben Satz — sonst laufen sie auseinander."""
     assert bons.OCR_FEHLT_TEXT == lesen.OCR_FEHLT_TEXT
+
+
+def test_der_ocr_hinweis_faengt_mit_dem_an_was_geht():
+    """UI-Review 2026-09-01, Fund 3: der Absatz begann mit „fehlt OCR" und
+    „Systemänderung". Ein Nutzer will zuerst wissen, was er tun kann — der
+    PDF-eBon —, das Paket steht danach für den, der die Maschine betreibt."""
+    text = lesen.OCR_FEHLT_TEXT
+    assert text.startswith("Foto-Bons")
+    assert text.index("eBon") < text.index("tesseract-ocr")
+    assert "Systemänderung" not in text
