@@ -359,6 +359,28 @@ def test_das_tap_ziel_der_rezeptzutat_haelt_die_44_px_des_blattes():
     assert "min-height: var(--tap)" in block
 
 
+def test_der_griff_an_der_rezeptzutat_ist_kein_flex_container():
+    """UI-Review 2026-09-01, Fund 4: als `display: flex` wurde der Hinweis
+    („, aus der Mühle") zum Geschwister des Namens, beide teilten sich die
+    Breite — „Lavend / elblüte / n". Ein Block lässt beide als EINEN Satz
+    fliessen; die 44 px (WB-379) bleiben."""
+    stil = STIL.read_text(encoding="utf-8")
+    block = stil.split(".rezeptzutaten a.name {", 1)[1].split("}", 1)[0]
+    assert "display: flex" not in block
+    assert "display: block" in block
+    assert "min-height: var(--tap)" in block
+
+
+def test_die_mengenspalte_der_rezeptzutat_ist_weder_starr_noch_mono():
+    """„1 gr. Dose/n" stand dreizeilig in 8ch Monospace. Eine Kochangabe ist
+    keine Maschinenausgabe; für fluchtende Ziffern reicht `tabular-nums`."""
+    stil = STIL.read_text(encoding="utf-8")
+    block = stil.split(".rezeptzutaten .menge {", 1)[1].split("}", 1)[0]
+    assert "8ch" not in block
+    assert "var(--mono)" not in block
+    assert "tabular-nums" in block
+
+
 def test_die_rezept_trefferliste_hat_einen_platz_fuer_die_rueckmeldung(client, con):
     rid = _rezept_mit_zutat(client, con)
     text = client.get(f"/rezepte/{rid}", params={"q": "milch"}).text

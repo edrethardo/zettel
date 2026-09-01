@@ -858,14 +858,25 @@ main > .rezeptherkunft {
   border-bottom: 1px solid var(--linie);
 }
 .rezeptzutaten li:last-child { border-bottom: none; }
-.rezeptzutaten .menge { flex: 0 0 8ch; text-align: right;
-                        color: var(--gedaempft);
-                        font-family: var(--mono); font-size: var(--t-klein); }
+/* Die Mengenspalte ist so breit wie ihre längste Angabe, aber nie mehr als
+   ein Drittel: „1 gr. Dose/n" stand dreizeilig in 8ch Monospace (UI-Review
+   2026-09-01, Fund 4). Keine Monospace — die Zahl ist eine Kochangabe und
+   keine Maschinenausgabe; `tabular-nums` genügt, damit Ziffern fluchten. */
+.rezeptzutaten .menge { flex: 0 0 auto; min-width: 5ch; max-width: 33%;
+                        text-align: right; color: var(--gedaempft);
+                        font-size: var(--t-klein);
+                        font-variant-numeric: tabular-nums; }
 /* Der Griff „Zutat im Katalog suchen" ist ein Tap-Ziel wie jedes andere und
    hatte ~24 px — die Höhe der Textzeile. In diesem Blatt sind es 44 (WB-379).
-   Volle Restbreite, damit auch neben einem kurzen Namen getroffen wird. */
+   Volle Restbreite, damit auch neben einem kurzen Namen getroffen wird.
+
+   Als BLOCK und nicht als Flex-Container (Fund 4): als Flex wurde der
+   Hinweis („, aus der Mühle") zum Geschwister des Namens, beide teilten sich
+   die Breite, und „Lavendelblüten" brach in drei Zeilen. Der Innenabstand
+   zentriert die Textzeile in den 44 px, wie `align-items` es vorher tat. */
 .rezeptzutaten a.name {
-  flex: 1 1 auto; display: flex; align-items: center; min-height: var(--tap);
+  flex: 1 1 auto; min-width: 0; display: block; box-sizing: border-box;
+  min-height: var(--tap); padding: calc((var(--tap) - 1.4em) / 2) 0;
   color: var(--akzent-tinte); text-decoration: none;
 }
 .rezeptzutaten .hinweis { color: var(--gedaempft); }
