@@ -98,10 +98,17 @@ def _kategorien(cats) -> tuple[str | None, str | None, str | None]:
 #: „0,25 g" — eine Zahl unter 1 mit der KLEINEN Einheit. Knuspr liefert
 #: `textualAmount` bei 167 aktiven Produkten so (UI-Review 2026-09-01,
 #: Fund 5); gemeint ist die Zahl in kg bzw. l, mitskaliert wurde die Einheit
-#: nicht (`price_cents / price_per_unit_cents` = 239/956 = 0,25 → pro kg).
-#: Unter 1 g oder 1 ml verkauft der Lebensmittelhandel nichts, deshalb ist
-#: das Muster eindeutig. Kilo und Liter („0,75 l") sind richtig und bleiben.
-_KLEINE_EINHEIT_UNTER_EINS = re.compile(r"^0[.,](\d+)\s*(g|ml)$")
+#: nicht. Belegt ist das durch die Produktnamen selbst („Byodo Tagliatelle
+#: … 250g", „Piccolinis 9×30 g") und dadurch, dass der Lebensmittelhandel
+#: nichts unter 1 g oder 1 ml verkauft — Bruchteile eines Gramms gibt es
+#: nicht. `price_cents / price_per_unit_cents` (239/956 = 0,25) passt zur
+#: Kilo-Lesart, beweist sie aber nicht: der Quotient sagt nur, dass die Zahl
+#: in derselben Einheit steht wie der Nenner des Grundpreises, nicht welche
+#: das ist. Kilo und Liter („0,75 l") sind richtig und bleiben.
+#: Knuspr schreibt durchweg das Komma, nie den Punkt — deshalb kennt das
+#: Muster nur das Komma, und `repariere_einheiten` fragt mit `LIKE '0,%'`
+#: genau dasselbe in SQL ab.
+_KLEINE_EINHEIT_UNTER_EINS = re.compile(r"^0,(\d+)\s*(g|ml)$")
 
 
 def normalisiere_einheit(text, unit):
