@@ -45,9 +45,17 @@
      die Ja/Nein-Karten, und der Entwurf wiederholte dieselben Produkte
      mit eigenen Knöpfen in gleicher Grösse — zwei Bediensysteme. Der
      Entwurf ist der Nebenpfad. Die Zusammenfassung nennt den Stand; wer
-     Mengen ändern oder eine Zeile herausnehmen will, klappt auf. Nach
-     jedem Ja/Nein tauscht HTMX den Zug und der Entwurf ist wieder zu —
-     gewollt, denn das Ja oben ist der Hauptweg. #}
+     Mengen ändern oder eine Zeile herausnehmen will, klappt auf.
+
+     Zu ist er danach aber nicht nur nach einem Ja/Nein oben: JEDE Aktion
+     im Entwurf — Name merken, Menge ok, „raus"/„wieder rein" — zielt mit
+     `hx-swap="outerHTML"` auf `#zug-{{ m.id }}`, rendert den ganzen Zug
+     neu und liefert dieses `<details>` ohne `open` zurück. Wer drei Mengen
+     hintereinander ändert, klappt also dreimal auf. Für den Moment
+     akzeptiert: das Ja oben ist der Hauptweg, und der Entwurf ist der
+     seltene Nebenpfad. Die Alternative wäre, beim Rendern zu wissen, ob
+     der Tausch aus dem Entwurf kam, und das `<details>` dann mit `open`
+     zurückzugeben — eine Produktentscheidung, keine Aufräumarbeit. #}
   <details>
     <summary>Rezeptentwurf „{{ m.entwurf.name }}“ —
       {{ m.entwurf.n_drin }} von {{ m.entwurf.zeilen | length }}
