@@ -210,7 +210,7 @@ button, .knopf { overflow-wrap: normal; }
   box-shadow: 0 1px 1px rgba(29, 39, 51, 0.25);
   margin-top: calc(var(--v2) * -1);
 }
-/* Neun Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
+/* Sieben Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
    statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
 
    Die Bildlaufleiste ist dünn statt weg: ein 3-px-Strich, der die Leiste

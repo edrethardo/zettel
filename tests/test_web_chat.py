@@ -300,7 +300,7 @@ def test_beide_wege_zwischen_chat_und_korb_gehen_ohne_die_leiste(db_datei,
                                                                  tmp_path):
     """Ein Weg, den es nur in der Navigationsleiste gibt, ist keiner.
 
-    Sie scrollt quer, hat neun Ziele und sieht auf jeder Seite gleich aus;
+    Sie scrollt quer, hat sieben Ziele und sieht auf jeder Seite gleich aus;
     Chat und Korb sind aber das Paar, zwischen dem am häufigsten gewechselt
     wird. Geprüft wird deshalb, was IM BLATT steht — die Leiste wird für
     diesen Test herausgeschnitten.

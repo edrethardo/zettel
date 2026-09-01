@@ -190,6 +190,7 @@ def test_diagnose_und_einstellung_stehen_nicht_in_der_hauptleiste(client):
     fuss = text.split('<footer class="fuss"', 1)[1].split("</footer>", 1)[0]
     assert 'href="/status"' in fuss
     assert 'href="/rolle"' in fuss
+    assert text.index("</main>") < text.index('<footer class="fuss"')
 
 
 def test_die_fusszeile_markiert_ihre_seite_wie_die_leiste(client):
@@ -199,7 +200,7 @@ def test_die_fusszeile_markiert_ihre_seite_wie_die_leiste(client):
 
 
 def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
-    """Neun Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
+    """Sieben Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
     ausgeblendet. Ob sie auf 375 px sichtbar ist, entscheidet ein Gerät —
     hier steht nur, dass sie nicht mehr weggeschaltet wird."""
     stil = STIL.read_text(encoding="utf-8")
@@ -230,7 +231,7 @@ def test_die_leiste_rastet_auf_den_anfang_eines_ziels():
 
 def test_das_letzte_ziel_der_leiste_ist_erreichbar():
     """Firefox rechnet den Überhang des letzten Flex-Kindes nicht in
-    `scrollWidth`: „wer bin ich?" blieb auch am Anschlag angeschnitten. Der
+    `scrollWidth`: „Bons" blieb auch am Anschlag angeschnitten. Der
     Abstandhalter am Ende der Leiste IST ein Flex-Kind und zählt mit."""
     stil = STIL.read_text(encoding="utf-8")
     assert ".kopf nav::after" in stil
