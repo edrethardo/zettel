@@ -170,6 +170,21 @@ def endpunkt_aus_umgebung(umgebung=None) -> str:
     return pruefe_endpunkt(wert or DEFAULT_ENDPUNKT)
 
 
+def schluessel_aus_umgebung(umgebung=None) -> str:
+    """Der Schlüssel: `ZETTEL_LLM_API_KEY`, sonst `zettel.env`, sonst Vorgabe.
+
+    Getrennt von `Modellzugang`, weil ihn auch `wake.health` braucht: ein
+    Endpunkt mit Schlüssel antwortet ohne ihn mit 401, und 401 liest sich als
+    „lädt noch" — also für immer (gemessen 2026-09-01 gegen den syv-Stack).
+    """
+    echt = _ist_prozessumgebung(umgebung)
+    umgebung = os.environ if umgebung is None else umgebung
+    wert = umg.wert(ENV_SCHLUESSEL, umgebung)
+    if not wert and echt:
+        wert = _aus_env_datei(ENV_SCHLUESSEL)
+    return wert or DEFAULT_SCHLUESSEL
+
+
 @dataclass(frozen=True)
 class Antwort:
     """Eine Modellantwort, Denken und Ergebnis getrennt.
@@ -204,14 +219,10 @@ class Modellzugang:
                  schluessel: str | None = None,
                  client=None, umgebung=None,
                  timeout_s: float = TIMEOUT_ANTWORT_S):
-        echt = _ist_prozessumgebung(umgebung)
         umgebung = os.environ if umgebung is None else umgebung
         self.endpunkt = (pruefe_endpunkt(endpunkt) if endpunkt is not None
                          else endpunkt_aus_umgebung(umgebung))
-        schluessel = schluessel or umg.wert(ENV_SCHLUESSEL, umgebung)
-        if not schluessel and echt:
-            schluessel = _aus_env_datei(ENV_SCHLUESSEL)
-        self.schluessel = schluessel or DEFAULT_SCHLUESSEL
+        self.schluessel = schluessel or schluessel_aus_umgebung(umgebung)
         self.timeout_s = timeout_s
         # Injizierbar, damit Tests einen HTTP-Doppelgänger unterschieben
         # können, ohne die Box zu wecken.

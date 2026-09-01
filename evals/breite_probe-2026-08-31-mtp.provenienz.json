@@ -1,0 +1,10 @@
+{
+  "modell": "Qwen3.8-27B-Instruct",
+  "max_model_len": 49152,
+  "created": 1788188461,
+  "created_lesbar": "2026-08-31T17:01:01",
+  "max_num_seqs_laut_box": 8,
+  "parallel": 2,
+  "spuren": 4,
+  "commit": "f8a43bc7396cf6ae0d8512a3f5e4d467a23e529f"
+}

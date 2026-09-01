@@ -788,3 +788,165 @@ Beutel · 250 g · 2,99 €" samt `via`, Kategorie, Preis und `vorraetig: false`
 * Die Aufnahme ist 2,5 s kürzer als der Durchlauf; abgeschnitten ist nur die
   Schlusspause nach der letzten Marke. Wer nachträgt, setzt `DAUER` in
   `aufnahme.sh` auf 300.
+
+## Der Take vom 01.09. — der Echtzeit-Take
+
+Aufgenommen, weil der Shop seit dem Umstieg auf den syv-Stack (Docker,
+requantisierte Embeddings, DFlash2) **in Echtzeit antwortet**. Der Take vom
+31.08. zeigt dieselbe Anwendung mit 19,9 s Wartezeit; das ist nicht mehr die
+Wahrheit über dieses System.
+
+**Rohaufnahme:** `~/picknick-video/take_a_2026-09-01.mkv` (275 s, 1920x1080,
+30 fps, 14,4 MB), Marken in `zeitmarken_2026-09-01.txt`.
+**Schnitt:** `zettel_demo_2026-09-01.mp4` (84,5 s) und `.srt`.
+Der Durchlauf hat **keine einzige Warnung** erzeugt — die Bedingung dafuer,
+dass die Untertitel benutzt werden duerfen.
+
+| Kennzahl | 31.08. | 01.09. |
+|---|---|---|
+| Antwort auf den Satz | 19,9 s | **8,8 s** |
+| `chat.turn` in Phoenix | 24,9 s | **9,07 s** |
+| ganzer Durchlauf | 277,5 s | 270,5 s |
+
+Die Durchlaufzeit faellt kaum, und das ist kein Widerspruch: der Grossteil
+sind Klicks, Rollwege und Lesepausen mit festem Takt. Gefallen ist der Teil,
+in dem gewartet wird.
+
+| Marke | s | was im Bild steht |
+|---|---|---|
+| ABGESCHICKT | 13,9 | der Satz ist weg, die 3090 springt an |
+| Antwort da | 22,8 | **8,8 s** Modelllauf, zwei Stufen |
+| Portionen umgestellt | 46,6 | 4 -> 6, Bedarf Spinat **1200 g** |
+| Ja beim Spinat / Klopapier | 62,3 / 116,2 | zwei Zeilen einzeln, eine davon Freitext |
+| Alles uebernehmen | 145,4 | offen 0, **Korb 2 -> 15** |
+| Doch nicht alles | 157,4 | offen 13, kept 2 |
+| Bestellung abgeschickt | 189,5 | 15 Posten |
+| abgehakt / gab's nicht | 211,8 / 217,7 | `missing_at` gesetzt |
+| chat.turn geoeffnet | 228,9 | 11 Span-Namen sichtbar |
+| catalog.search geoeffnet | 238,9 | Retriever-Dokumente mit Score |
+
+### Drei Fehlschlaege davor, jeder mit benanntem Grund
+
+**1. Ein perfekter Durchlauf ohne Band.** `buehne.sh` startete Xephyr mit
+`-resizeable`; damit folgt die Schirmgroesse dem Fenster, und der
+Fenstermanager auf `:1` stutzte es auf 1850x1016 — 1920x1080 passt mit Rahmen
+nicht auf einen 1920x1080-Schirm. ffmpeg brach in der ersten Sekunde ab
+(`Capture area ... outside the screen size`), `dreh.py` lief 259 s fehlerfrei
+durch und meldete am Ende „kein Schritt hat gewarnt". **Der Pruefstand des
+Durchlaufs sagt nichts ueber die Aufnahme.** Behoben: `-resizeable` ist raus,
+der Schirm bleibt 1920x1080, und dass das Fenster ihn nur ausschnittweise
+zeigt, ist der Aufnahme egal — gegriffen wird der Schirm, nicht das Fenster.
+
+**2. Freitextzeile nicht gefunden** (`take_a_0908_freitext-verfehlt.mkv`).
+Nach `ans_ende()` steht unter der Vorschlagsliste der Rezeptentwurf, und der
+ist mit sechs Portionen lang; zehn Radklicks rueckwaerts messen ihn nicht
+durch. Folge waren ZWEI Warnungen aus EINER Ursache: die Klopapierzeile blieb
+unbestaetigt, also stand danach nur eine Zeile auf `kept` statt zwei. Behoben:
+dreissig Klicks, Rad ausdruecklich ueber der App-Spalte (WB-419).
+
+**3. Ein Schnitt, der den Hoehepunkt uebersprang.** Shot 2 bestand aus zwei
+Stuecken mit einem Sprung von `ab + 3,2` auf `ab + 11,9` — sinnvoll, solange
+ein Zug 29 s dauerte. Bei 9 s liegt `ab + 11,9` HINTER der Antwort: der
+Sprung uebersprang genau den Moment, den der Shot zeigen soll. Jetzt laeuft
+die Wartezeit ungeschnitten durch, bis Shot 3 sie an der Antwort uebernimmt,
+und der Untertitel sagt es: „The whole wait, uncut: 9 s."
+
+**Die Lehre aus 3 gilt ueber das Video hinaus:** Ein Schnitt, der eine
+Wartezeit kaschiert, ist an eine Dauer gebunden. Wird das System schneller,
+kaschiert derselbe Schnitt nicht mehr — er verdeckt dann das Ergebnis.
+
+## Der Hochkant-Clip fuers Telefon (`handy.py`)
+
+Fuer LinkedIn: 15 s, 1080x1920, ohne Ton, nur die App. Kein eigener Dreh —
+der Clip ist ein Ausschnitt aus demselben Band. Die App laeuft waehrend des
+Takes ohnehin in Handybreite, ueber ihr sitzt ein gemalter Geraeterahmen.
+
+    MAUS=0 bash aufnahme.sh 310     # Take OHNE Zeiger (siehe unten)
+    python3 handy.py                # misst, malt, setzt zusammen
+
+**Zwei Dinge, die dieser Clip anders macht als die lange Fassung.**
+
+**1. Kein Mauszeiger.** `aufnahme.sh` kennt jetzt `MAUS=0` und gibt das an
+`-draw_mouse` weiter. Ein Pfeil im Bild verraet die Aufnahme sofort — auf
+einem Telefon gibt es keinen. Wegretuschieren geht nicht ehrlich: die Position
+des Zeigers ist nur an den Klickmomenten bekannt, dazwischen waere jeder
+uebermalte Fleck geraten. Die lange Fassung BEHAELT den Zeiger; dort ist es
+ein Bildschirm, und die Zeigerbewegung ist das, was den Ablauf menschlich
+aussehen laesst.
+
+**2. Die Gesten werden gemessen, nicht gesetzt.** Die erste Fassung malte
+einen Fleck fuer 0,45 s und einen Punkt, der mit konstanten 760 px/s nach oben
+glitt. Beides sah falsch aus, aus demselben Grund: die Geste und das Bild
+darunter wussten nichts voneinander. Die Seite rollt in SCHUEBEN (ein
+Radklick, eine kurze Animation, Stillstand), der gemalte Finger glitt
+gleichmaessig darueber hinweg.
+
+`handy.py` bestimmt deshalb fuer jedes Bildpaar den senkrechten Versatz des
+Inhalts (bester Ueberlappungsversatz auf einem verkleinerten Graubild).
+Daraus kommt beides:
+
+* **Wischer** — jeder zusammenhaengende Schub ist EINE Geste. Der Finger setzt
+  drei Bilder vorher auf, bewegt sich um GENAU den gemessenen Versatz und hebt
+  danach ab. Mehrere Schuebe werden zu mehreren kurzen Flicks; so rollt man auf
+  einem Telefon wirklich. Der Schweif kommt aus der tatsaechlich gelaufenen
+  Bahn und ist damit so lang, wie der Finger schnell war — ein Schweif fester
+  Laenge sieht bei jedem Tempo gleich aus, und daran erkennt man eine gemalte
+  Geste sofort.
+* **Tipps** — der Moment ist NICHT die Zeitmarke. Die wird erst nach der
+  Lesepause geschrieben und lag gemessen bis zu 0,73 s daneben. Gesucht wird
+  der groesste Bildsprung im Fenster um die Marke, also das Bild, in dem die
+  Oberflaeche reagiert; der Kringel beginnt zwei Bilder davor. Ein Kringel, der
+  NACH der Wirkung aufblitzt, ist das Verraeterischste am ganzen Clip.
+
+Der Kringel ist eine aufgehende Welle mit stehendem Kern, kein Fleck: ein
+stehender Fleck auf dunklem Grund liest sich als Lichtreflex.
+
+**Der Rahmen** (`handy_rahmen.png`, aus `handy.py` heraus einmal gebaut) ist
+eine RGBA-Ebene mit durchsichtigem Loch bei (50, 89), 980x1741. Der Inhalt
+wird exakt in dieses Loch skaliert — die Masse stehen an genau einer Stelle im
+Skript und duerfen nur dort geaendert werden. Die Hoermuschel sitzt IN der
+Blende und nicht als Kerbe im Bild: eine Kerbe verdeckte die Kopfzeile, um die
+es geht.
+
+**Das Drehbuch des Clips** sind die fuenf Stuecke in `SEGMENTE`. Wo eine Geste
+hingehoert, steht dort NICHT — das ergibt die Messung.
+
+## Der Hochkant-Clip ab 2026-09-01: Gesten kommen aus dem Protokoll
+
+Der Abschnitt oben beschreibt, wie `handy.py` die Beruehrungen aus dem BILD
+gemessen hat. Das gilt nicht mehr, und es galt auch nie richtig.
+
+**Der Fehler.** `zeitmarken.txt` zaehlt ab Skriptstart, das Band ab
+ffmpeg-Start; dazwischen liegen **2,08 s** (`aufnahme.sh` startet ffmpeg, dann
+`sleep 2`, dann das Drehskript). `handy.py` hat `ffmpeg_start.txt` nie gelesen
+und die skriptrelativen Zahlen direkt als Bandzeit eingesetzt. Das Suchfenster
+des ersten Tipps lag damit mitten in der Tippphase, und `argmax` ueber
+Bildspruenge lieferte dort Rauschen der Staerke 0,05 gegen 2,78 am wirklichen
+Ereignis — ein Kringel beim Eintippen, der aussah, als gehoere er dorthin.
+`schnitt.py:50-59` rechnet den Versatz seit jeher richtig heraus; das Wissen
+ist beim Ableiten des Hochkant-Werkzeugs nicht mitgekommen.
+
+**Die Loesung.** Das Drehskript schreibt mit, was es tut: `protokoll.py` ->
+`gesten.jsonl`, eine Zeile je Klick, Radklick, Taste und Marke, mit Epoch und
+Koordinate aus dem AUFRUF. `handy.py` liest das. Es wird nichts neu erhoben —
+es wird nur aufgehoert, es wegzuwerfen.
+
+Die Bildmessung ist geblieben und hat die Seite gewechselt:
+
+* sie **prueft** die Zeitbasis am ersten Tipp (Abbruch, wenn der staerkste
+  Bildsprung mehr als vier Bilder danebenliegt oder unter dem fuenffachen
+  Rauschen bleibt),
+* sie misst, **wie weit** ein Radklick die Seite bewegt hat — bei 1,8 px je
+  Messzeile statt 7,2, mit Subpixel, und nur noch in den bekannten Fenstern.
+
+`TIPPS`, `tippmoment()`, `tippstelle()` und `schuebe()` sind entfallen.
+`SEGMENTE` steht als NAMEN von Zeitmarken; abgeschriebene Zahlen waren dreimal
+veraltet.
+
+**Betrieb:** `MAUS=0` schaltet das Protokoll ein (`aufnahme.sh`), weil MAUS=0
+heisst „der Zeiger ist nicht im Bild, also muessen Beruehrungen gemalt werden".
+`STAMM=<name>` legt Band, ffmpeg-Log, Protokoll und Marken unter einen
+gemeinsamen Namen — getrennt sind die vier verwechselbar.
+
+Alles Weitere, samt der Fallen, steht im Skill `.claude/skills/zettel-video/`.
+
