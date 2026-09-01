@@ -571,6 +571,10 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 .freitext button { flex: 0 0 auto; }
 .freitext button:active { transform: scale(0.96); }
 .abschicken { margin-top: var(--v4); }
+.summe { margin: var(--v4) 0 0; padding: 0 var(--v1); text-align: right;
+         font-size: var(--t-text); color: var(--gedaempft);
+         font-variant-numeric: tabular-nums; }
+.summe strong { color: var(--tinte); font-size: 1.2em; }
 .abschicken .gross {
   width: 100%; min-height: 54px; font-size: var(--t-text); font-weight: 700;
   border: none; background: var(--akzent); color: var(--auf-akzent);

@@ -632,3 +632,15 @@ def test_posten_und_zutat_benutzen_denselben_feldnamen(con):
     assert _katalogfelder(zutat) == _katalogfelder(posten)
     for feld in _katalogfelder(zutat):
         assert zutat[feld] is True and posten[feld] is True
+
+
+def test_die_summe_rechnet_menge_mal_preis_und_zaehlt_preislose_mit():
+    """UI-Review 2026-09-01, Fund 7: vor „Bestellung abschicken" stand keine
+    Zahl. `summe` ist eine reine Funktion über die Korbzeilen, wie
+    `orders.inhalt()` sie liefert — Freitext hat keinen Preis und wird
+    gezählt, nicht geschätzt."""
+    posten = [{"qty": 2, "price_cents": 119},
+              {"qty": 1, "price_cents": 250},
+              {"qty": 3, "price_cents": None}]
+    assert korb_modul.summe(posten) == {"cents": 488, "ohne_preis": 1}
+    assert korb_modul.summe([]) == {"cents": 0, "ohne_preis": 0}

@@ -840,7 +840,9 @@ def create_app(db_path: str | Path | None = None,
         sondern als Rückweg: der Korb zeigt darüber, was verschwunden ist, und
         einen Knopf, der es zurückholt.
         """
-        return {"posten": _posten_mit_bild(orders.inhalt(c), app.state.image_dir),
+        posten = _posten_mit_bild(orders.inhalt(c), app.state.image_dir)
+        return {"posten": posten,
+                "summe": orders.summe(posten),
                 "stores": db.STORES,
                 "laden_titel": orders.LADEN_TITEL,
                 "korb_anzahl": orders.korb_anzahl(c),

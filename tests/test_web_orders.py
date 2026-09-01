@@ -122,6 +122,18 @@ def test_warenkorb_zeigt_die_zeilen(client, con):
     assert "Bestellung abschicken" in text
 
 
+def test_der_warenkorb_nennt_die_summe_vor_dem_bestellknopf(client, con):
+    pid = _pid(con, MILCH)                       # 1,19 €
+    client.post(f"/katalog/einlegen?product_id={pid}", headers=HTMX)
+    client.post(f"/katalog/einlegen?product_id={pid}", headers=HTMX)
+    client.post("/warenkorb/einlegen", data={"free_text": "Blumen"}, headers=HTMX)
+    text = client.get("/warenkorb").text
+    summe = text.split('class="summe"', 1)[1].split("</p>", 1)[0]
+    assert "2,38 €" in summe
+    assert "1 Posten ohne Preis" in summe
+    assert text.index('class="summe"') < text.index("Bestellung abschicken")
+
+
 def test_leerer_warenkorb_sagt_es_und_bietet_kein_abschicken(client):
     text = client.get("/warenkorb").text
     assert "Der Warenkorb ist leer." in text

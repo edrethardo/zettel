@@ -156,6 +156,11 @@
 </form>
 
 {% if posten %}
+{# Die Zahl vor dem Knopf (UI-Review 2026-09-01, Fund 7). „Etwa", weil
+   Freitext keinen Preis hat und ein Katalogpreis alt sein kann — beides
+   steht dabei, statt eine glatte Summe vorzutäuschen. #}
+<p class="summe">Zusammen etwa <strong>{{ summe.cents | euro }}</strong>
+  {%- if summe.ohne_preis %} · {{ summe.ohne_preis }} Posten ohne Preis{% endif %}</p>
 <form class="abschicken" method="post" action="/warenkorb/abschicken">
   <button class="gross" type="submit">Bestellung abschicken</button>
 </form>
