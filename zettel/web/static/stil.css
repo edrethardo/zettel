@@ -657,9 +657,12 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
    ~118 px breit, der Textspalte bleiben dann ~100 px, und „Champignons"
    bricht mitten im Wort — das ist der Fall, den WB-373 mit der zweiten
    Zeile vermieden hatte. Zwei Wörter untereinander kosten ~40 px Breite
-   weniger, und die gehen an den Namen. `--tap` bleibt die Mindesthöhe. */
-.pickzeile .stellen .mini { white-space: normal; max-width: 5.2em;
-                            line-height: 1.15; padding: var(--v1) var(--v2); }
+   weniger, und die gehen an den Namen. `--tap` bleibt die Mindesthöhe. Die
+   5,2em halten die zwei Wörter „gab's" / „nicht", nicht beliebige
+   Beschriftungen — ein längeres Einzelwort liefe über. */
+.pickzeile .stellen .mini { font-size: var(--t-klein); white-space: normal;
+                            max-width: 5.2em; line-height: 1.15;
+                            padding: var(--v1) var(--v2); }
 .haken {
   display: flex; align-items: center; gap: var(--rand);
   flex: 1 1 auto; min-width: 0; min-height: 64px;
@@ -716,7 +719,6 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 /* „Gab's nicht" (WB-373): Rotstift wie das „Nein" am Chat-Vorschlag, denn es
    ist dieselbe Geste — etwas kommt NICHT mit. Der Knopf trägt Text und kein
    Zeichen: vor dem Regal wird nicht geraten, was ein Symbol bedeutet. */
-.pickzeile .stellen .mini { font-size: var(--t-klein); }
 /* Nur die Kontur, keine Füllung (WB-400). Der Knopf steht an JEDER offenen
    Zeile — als gefüllte rote Pille las sich die halbe Liste, als wäre sie
    schon gescheitert, und auf einer abgehakten Zeile war er das Lauteste im

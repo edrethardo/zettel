@@ -480,3 +480,6 @@ def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
     assert "flex: 0 0 auto" in stellen
     knopf = stil.split(".pickzeile .stellen .mini {", 1)[1].split("}", 1)[0]
     assert "white-space: normal" in knopf
+    # Ein Selektor, ein Block — sonst gewinnt der spätere Block die Kaskade,
+    # und der Test sieht nur den ersten.
+    assert stil.count(".pickzeile .stellen .mini {") == 1
