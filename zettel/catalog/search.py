@@ -326,6 +326,36 @@ def _reihenfolge(p: dict) -> tuple:
     return (-p["wortstufe"], -p["rang"], len(p["name"] or ""), p["name"] or "")
 
 
+#: Alltagswörter, die der Katalog anders schreibt.
+#:
+#: „Klopapier" ist der Beleg, und er kam aus dem Video: der Satz „alles für
+#: Lasagne, und Klopapier" liess das Klopapier als Freitext liegen — WEIL das
+#: Wort in keinem Produktnamen vorkommt. Im Katalog stehen elf Packungen, alle
+#: als „Toilettenpapier". Das ist keine Lücke im Sortiment, sondern eine
+#: zwischen zwei Vokabularen.
+#:
+#: **Die Aufnahmeregel ist eng, und sie ist prüfbar:** ein Paar kommt nur
+#: hinein, wenn das Alltagswort im Katalog NULL Treffer hat und das Ladenwort
+#: welche. Alles andere wäre geraten — „Zahnpasta", „Sprudel" und „Pommes"
+#: finden längst etwas und stehen deshalb NICHT hier, obwohl sie sich als
+#: Synonyme anböten. `tests/test_alltagswort.py` prüft die Regel gegen den
+#: echten Katalog, damit ein Eintrag auffällt, sobald er überflüssig wird.
+#:
+#: Geprüft am 2026-09-01 gegen 10.361 aktive Produkte.
+ALLTAGSWORT = {
+    "klopapier": "Toilettenpapier",
+    "wc-papier": "Toilettenpapier",
+    "spüli": "Spülmittel",
+    "tempos": "Taschentücher",
+    "kloreiniger": "WC-Reiniger",
+}
+
+
+def ladenwort(begriff: str) -> str | None:
+    """Das Wort, unter dem der Laden führt, was der Satz anders nennt."""
+    return ALLTAGSWORT.get(begriff.strip().casefold())
+
+
 def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
                 obergrenze: int | None = None) -> list[dict]:
     """Sucht eine ganze Begriffskette und VEREINIGT die Treffer (WB-340).
@@ -391,6 +421,26 @@ def suche_kette(con: sqlite3.Connection, suchbegriffe, *, limit: int = 20,
             # herausbekommen, als hätte man gleich mit ihr gesucht
             # (`kuerze_kette`, WB-359).
             gewaehlt.append({**p, "via": begriff, "via_platz": platz})
+    if not gewaehlt:
+        # Erst wenn die ganze Kette leer ausgeht. Vorher zu übersetzen wäre
+        # falsch: solange irgendein Begriff trägt, ist die Kette des Modells
+        # die genauere Auskunft, und ein Ladenwort daneben zöge nur breitere
+        # Kandidaten herein.
+        for begriff in suchbegriffe:
+            laden = ladenwort(begriff)
+            if not laden:
+                continue
+            for platz, p in enumerate(search(con, laden, limit=limit)):
+                pid = int(p["id"])
+                if pid in gesehen:
+                    continue
+                gesehen.add(pid)
+                if obergrenze is not None and len(gewaehlt) >= obergrenze:
+                    continue
+                # `via` ist das LADENWORT, nicht das getippte: die Zeile soll
+                # sagen, worüber das Produkt gefunden wurde. „Klopapier" stünde
+                # dort sonst neben einem Produkt, in dem es nicht vorkommt.
+                gewaehlt.append({**p, "via": laden, "via_platz": platz})
     return gewaehlt
 
 

@@ -1,0 +1,6321 @@
+[
+ {
+  "gericht": "Rouladen",
+  "achse": "Alltagsküche",
+  "satz": "alles für Rouladen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Rouladen",
+  "quelle_name": "Rinderrouladen klassisch",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 10,
+  "freitext": 0,
+  "entwurf": "Rouladen",
+  "entwurf_zutaten": 10,
+  "meldung": "„Rinderrouladen klassisch“ von Chefkoch — 14 Zutaten im Rezept, 10 davon auf dem Zettel, 10 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.87 aus 1905 Stimmen). 1 von 10 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Rouladen“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 14,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 11,
+  "zutaten_zugeordnet_mit_menge": 11,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 9,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 10,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [
+   "Kühne Gewürzgurken"
+  ],
+  "zeilen": [
+   {
+    "name": "Freshfoodz Rinderroulade mit Preiselbeerrotkohl und Butterkartoffeln",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": "1 × 0,59 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kühne Gewürzgurken",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 190 g",
+    "freitext": false
+   },
+   {
+    "name": "Handl AMA Feinster Bacon Frühstücksspeck",
+    "qty": 1,
+    "bedarf": "12 Scheibe gebraucht",
+    "gebinde": "1 × 80 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knollensellerie, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 0,96 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "0,5 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "BIO Möhren, Beutel",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Cabernet Sauvignon",
+    "qty": 1,
+    "bedarf": "0,5 Flasche gebraucht",
+    "gebinde": "1 × 0,75 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Fuchs Rinder Fond",
+    "qty": 2,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 2 × 400 ml",
+    "freitext": false
+   },
+   {
+    "name": "Mondamin Feine Speisestärke",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 7.8
+ },
+ {
+  "gericht": "Frikadellen",
+  "achse": "Alltagsküche",
+  "satz": "alles für Frikadellen, und Klopapier",
+  "rest": "Klopapier",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Frikadellen",
+  "quelle_name": "Omas beste Frikadellen",
+  "begriffe": 13,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 5,
+  "entwurf": "Frikadellen",
+  "entwurf_zutaten": 12,
+  "meldung": "„Omas beste Frikadellen“ von Chefkoch — 16 Zutaten im Rezept, 13 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.80 aus 3226 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Majoran“, „Paprikapulver“, „Knoblauchpulver“, „Flüssigwürze“, „Klopapier“. „Klopapier“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. 4 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Frikadellen“ werden — 12 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 16,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 12,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [
+   "Klopapier"
+  ],
+  "vorschlaege": 13,
+  "mit_menge": 11,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 4,
+  "rest_da": true,
+  "korbposten": 13,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 13,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [
+   "Caputo Mehl \"00\" Classica",
+   "Klopapier"
+  ],
+  "zeilen": [
+   {
+    "name": "KuchenMeister Milch Brötchen",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Thomy Senf scharf",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": "1 × 200 ml — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Majoran",
+    "qty": 1,
+    "bedarf": "1 Tl, gestr gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Paprikapulver",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "2 Tl gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauchpulver",
+    "qty": 1,
+    "bedarf": "1 Prise gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Flüssigwürze",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Ludwigsluster Hackfleisch gemischt, gewolft",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Rama Dreiviertelfett Margarine 60%",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Klopapier",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 7.9
+ },
+ {
+  "gericht": "Grünkohl mit Pinkel",
+  "achse": "Alltagsküche",
+  "satz": "alles für Grünkohl mit Pinkel",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Grünkohl mit Pinkel",
+  "quelle_name": "Grünkohl mit Pinkel nach Ammerländer Art",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 3,
+  "entwurf": "Grünkohl mit Pinkel",
+  "entwurf_zutaten": 10,
+  "meldung": "„Grünkohl mit Pinkel nach Ammerländer Art“ von Chefkoch — 12 Zutaten im Rezept, 10 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.54 aus 24 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Hafergrütze“, „Kochwürste“, „Pinkelwürste“. 2 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Grünkohl mit Pinkel“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 12,
+  "zutaten_quelle_mit_menge": 11,
+  "zutaten_zugeordnet": 9,
+  "zutaten_zugeordnet_mit_menge": 9,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 10,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 3,
+  "rest_da": false,
+  "korbposten": 10,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Levoni Bauchspeck in Würfeln",
+    "qty": 2,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 2 × 140 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Kasseler Braten",
+    "qty": 5,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 5 × 80 g",
+    "freitext": false
+   },
+   {
+    "name": "Butaris Butterschmalz",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Baby Grünkohl, Schale",
+    "qty": 1,
+    "bedarf": "1 Gr. dose gebraucht",
+    "gebinde": "1 × 125 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hafergrütze",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kochwürste",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": "1 × 2,5 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Pinkelwürste",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Thomy Senf scharf",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 200 ml — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 8.4
+ },
+ {
+  "gericht": "Maultaschen",
+  "achse": "Alltagsküche",
+  "satz": "alles für Maultaschen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Maultaschen",
+  "quelle_name": "Überbackene Maultaschen",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 0,
+  "entwurf": "Maultaschen",
+  "entwurf_zutaten": 5,
+  "meldung": "„Überbackene Maultaschen“ von Chefkoch — 8 Zutaten im Rezept, 5 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.64 aus 425 Stimmen). 2 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Maultaschen“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 8,
+  "zutaten_quelle_mit_menge": 5,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Bürger Maultaschen Unsere Besten",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Tomaten rund, Wiegeware",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × ca. 300 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, Netz",
+    "qty": 1,
+    "bedarf": "2 Zehe gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Marutomo EU Katsuo Dashi no Moto –⁠⁠⁠⁠⁠⁠ Japanisches Brühepulver",
+    "qty": 1,
+    "bedarf": "1,5 Tl gebraucht",
+    "gebinde": "1 × 480 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "2 Becher gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.0
+ },
+ {
+  "gericht": "Semmelknödel",
+  "achse": "Alltagsküche",
+  "satz": "alles für Semmelknödel",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Semmelknödel",
+  "quelle_name": "Serviettenknödel",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 0,
+  "entwurf": "Semmelknödel",
+  "entwurf_zutaten": 6,
+  "meldung": "„Serviettenknödel“ von Chefkoch — 8 Zutaten im Rezept, 6 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.88 aus 629 Stimmen). 4 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Semmelknödel“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 8,
+  "zutaten_quelle_mit_menge": 5,
+  "zutaten_zugeordnet": 6,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 5,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [
+   "Bio Petersilie glatt im Topf"
+  ],
+  "zeilen": [
+   {
+    "name": "Conditorei Coppenrath & Wiese Kaiser-Semmeln 9 Stück",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 450 g",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "300 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "70 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "60 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 1 Stk",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 6.8
+ },
+ {
+  "gericht": "Königsberger Klopse",
+  "achse": "Alltagsküche",
+  "satz": "alles für Königsberger Klopse",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Königsberger Klopse",
+  "quelle_name": "Königsberger Klopse",
+  "begriffe": 17,
+  "verworfen": 0,
+  "katalogtreffer": 15,
+  "freitext": 1,
+  "entwurf": "Königsberger Klopse",
+  "entwurf_zutaten": 16,
+  "meldung": "„Königsberger Klopse“ von Chefkoch — 25 Zutaten im Rezept, 17 davon auf dem Zettel, 16 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.84 aus 2060 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Schweinehackfleisch“. 4 von 16 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Königsberger Klopse“ werden — 16 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 25,
+  "zutaten_quelle_mit_menge": 18,
+  "zutaten_zugeordnet": 20,
+  "zutaten_zugeordnet_mit_menge": 17,
+  "ohne_zutat": [
+   "Eier"
+  ],
+  "vorschlaege": 16,
+  "mit_menge": 15,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 16,
+  "korb_mit_menge": 15,
+  "abgeschickt": true,
+  "listenzeilen": 16,
+  "liste_zeigt_menge": 15,
+  "liste_ohne_menge": [
+   "Delicius Sardellenfilets in Olivenöl"
+  ],
+  "zeilen": [
+   {
+    "name": "KuchenMeister Milch Brötchen",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ludwigsluster Rinderhackfleisch gewolft",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Schweinehackfleisch",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Delicius Sardellenfilets in Olivenöl",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 58 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Paniermehl",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 0,5 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Maggi Fette Brühe - Würfel",
+    "qty": 1,
+    "bedarf": "1375 ml gebraucht",
+    "gebinde": "dafür 1 × 5 l",
+    "freitext": false
+   },
+   {
+    "name": "Lorbeer",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "STAY SPICED! Piment despilette",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 50 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ostmann Pfefferkörner schwarz",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 50 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lindner Kapern in Weinessig",
+    "qty": 1,
+    "bedarf": "1 Kl. glas gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 405",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "125 ml gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "1 Kl. bund gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 14.4
+ },
+ {
+  "gericht": "Sauerbraten",
+  "achse": "Alltagsküche",
+  "satz": "alles für Sauerbraten",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Sauerbraten",
+  "quelle_name": "Rindsschmorbraten mit Essig und Rahm",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 1,
+  "entwurf": "Sauerbraten",
+  "entwurf_zutaten": 6,
+  "meldung": "„Rindsschmorbraten mit Essig und Rahm“ von Chefkoch — 8 Zutaten im Rezept, 6 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.80 aus 818 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Fleischbrühe“. 4 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Sauerbraten“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 8,
+  "zutaten_quelle_mit_menge": 7,
+  "zutaten_zugeordnet": 6,
+  "zutaten_zugeordnet_mit_menge": 6,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 6,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Bergsdorfer Wiesenrind Rindfleisch gewolft",
+    "qty": 2,
+    "bedarf": "800 g gebraucht",
+    "gebinde": "dafür 2 × ca. 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Fleischbrühe",
+    "qty": 1,
+    "bedarf": "200 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 2.6
+ },
+ {
+  "gericht": "Rotkohl",
+  "achse": "Alltagsküche",
+  "satz": "alles für Rotkohl",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Rotkohl",
+  "quelle_name": "Blaukraut oder Rotkohl, klassisch",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 1,
+  "entwurf": "Rotkohl",
+  "entwurf_zutaten": 7,
+  "meldung": "„Blaukraut oder Rotkohl, klassisch“ von Chefkoch — 13 Zutaten im Rezept, 7 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.64 aus 414 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Rotweinessig“. 2 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Rotkohl“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 11,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kitchin Rotkohl",
+    "qty": 1,
+    "bedarf": "1 M.-grosser gebraucht",
+    "gebinde": "1 × 490 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Äpfel rot, Beutel",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 2 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Bedford Gänseschmaus Schmalz",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 125 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Rotweinessig",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "4 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Cabernet Sauvignon",
+    "qty": 1,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 1 × 0,75 l",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 10.3
+ },
+ {
+  "gericht": "Chili con Carne",
+  "achse": "international, im Katalog",
+  "satz": "alles für Chili con Carne, und Spülmittel",
+  "rest": "Spülmittel",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Chili con Carne",
+  "quelle_name": "Chili con Carne à la Benjo",
+  "begriffe": 11,
+  "verworfen": 1,
+  "katalogtreffer": 9,
+  "freitext": 2,
+  "entwurf": "Chili con Carne",
+  "entwurf_zutaten": 10,
+  "meldung": "„Chili con Carne à la Benjo“ von Chefkoch — 19 Zutaten im Rezept, 11 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.77 aus 174 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Piri-Piri“, „Chilibohnen“. „Spülmittel“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. 4 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. 1 Antwort(en) des Modells verworfen, weil sie kein vorgelegtes Produkt nannten. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Chili con Carne“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 19,
+  "zutaten_quelle_mit_menge": 17,
+  "zutaten_zugeordnet": 13,
+  "zutaten_zugeordnet_mit_menge": 13,
+  "ohne_zutat": [
+   "Spülmittel"
+  ],
+  "vorschlaege": 11,
+  "mit_menge": 8,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 2,
+  "rest_da": true,
+  "korbposten": 11,
+  "korb_mit_menge": 8,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 8,
+  "liste_ohne_menge": [
+   "Rapunzel BIO Tomaten geschält in der Dose",
+   "Paprika Rot, 1 Stk.",
+   "everdrop Spülmittel"
+  ],
+  "zeilen": [
+   {
+    "name": "Ludwigsluster Rinderhackfleisch gewolft",
+    "qty": 2,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": "dafür 2 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Rapunzel BIO Tomaten geschält in der Dose",
+    "qty": 2,
+    "bedarf": null,
+    "gebinde": "2 × 400 g",
+    "freitext": false
+   },
+   {
+    "name": "Paprika Rot, 1 Stk.",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × ca. 150 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Piri-Piri",
+    "qty": 1,
+    "bedarf": "6 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kitchin Mais",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 285 g",
+    "freitext": false
+   },
+   {
+    "name": "Bonduelle Kidney Bohnen",
+    "qty": 1,
+    "bedarf": "2 Dose gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Chilibohnen",
+    "qty": 1,
+    "bedarf": "2 Dose gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "everdrop Spülmittel",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 250 ml",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 8.5
+ },
+ {
+  "gericht": "Moussaka",
+  "achse": "international, im Katalog",
+  "satz": "alles für Moussaka",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Moussaka",
+  "quelle_name": "Moussaka",
+  "begriffe": 12,
+  "verworfen": 0,
+  "katalogtreffer": 12,
+  "freitext": 0,
+  "entwurf": "Moussaka",
+  "entwurf_zutaten": 12,
+  "meldung": "„Moussaka“ von Chefkoch — 16 Zutaten im Rezept, 12 davon auf dem Zettel, 12 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.61 aus 638 Stimmen). 7 von 12 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Moussaka“ werden — 12 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 16,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 12,
+  "mit_menge": 12,
+  "ausrechenbar": 8,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 12,
+  "korb_mit_menge": 12,
+  "abgeschickt": true,
+  "listenzeilen": 12,
+  "liste_zeigt_menge": 12,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Aubergine, 1 Stk.",
+    "qty": 3,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 3 × 280 g",
+    "freitext": false
+   },
+   {
+    "name": "Ludwigsluster Hackfleisch gemischt, gewolft",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin BIO geschälte Tomaten",
+    "qty": 1,
+    "bedarf": "1 Gr. dose gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lorbeer",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "375 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Andechser BIO Reibekäse 45%",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 150 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 8.3
+ },
+ {
+  "gericht": "Gnocchi mit Salbeibutter",
+  "achse": "international, im Katalog",
+  "satz": "alles für Gnocchi mit Salbeibutter",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Gnocchi mit Salbeibutter",
+  "quelle_name": "Selbstgemachte Gnocchi in Salbei-Butter",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 0,
+  "entwurf": "Gnocchi mit Salbeibutter",
+  "entwurf_zutaten": 6,
+  "meldung": "„Selbstgemachte Gnocchi in Salbei-Butter“ von Chefkoch — 9 Zutaten im Rezept, 6 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.50 aus 12 Stimmen). 2 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Gnocchi mit Salbeibutter“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 4,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 4,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 4,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 4,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 4,
+  "liste_ohne_menge": [
+   "Weihenstephan Butter",
+   "Potager`s Berliner Salbei, Topf"
+  ],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "700 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Diamant Weizenmehl Extra Type 405",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura DEMETER Grieß Getreidebrei",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Potager`s Berliner Salbei, Topf",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 1 Stk",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.8
+ },
+ {
+  "gericht": "Shakshuka",
+  "achse": "international, im Katalog",
+  "satz": "alles für Shakshuka",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Shakshuka",
+  "quelle_name": "Shakshuka",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 0,
+  "entwurf": "Shakshuka",
+  "entwurf_zutaten": 7,
+  "meldung": "„Shakshuka“ von Chefkoch — 12 Zutaten im Rezept, 7 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.72 aus 848 Stimmen). 6 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Shakshuka“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 12,
+  "zutaten_quelle_mit_menge": 10,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 6,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 5,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [
+   "Paprika Rot, 1 Stk.",
+   "Koriander"
+  ],
+  "zeilen": [
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, Netz",
+    "qty": 1,
+    "bedarf": "1 Zehe gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Paprika Rot, 1 Stk.",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × ca. 150 g",
+    "freitext": false
+   },
+   {
+    "name": "Tomaten rund, Wiegeware",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": "1 × ca. 300 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Koriander",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 100 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.0
+ },
+ {
+  "gericht": "Paella",
+  "achse": "international, im Katalog",
+  "satz": "alles für Paella",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Paella",
+  "quelle_name": "Paella mit Meeresfrüchten",
+  "begriffe": 12,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 4,
+  "entwurf": "Paella",
+  "entwurf_zutaten": 12,
+  "meldung": "„Paella mit Meeresfrüchten“ von Chefkoch — 13 Zutaten im Rezept, 12 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.75 aus 141 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Paellareis“, „Safran“, „Paprikapulver“, „Cayennepfeffer“. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Paella“ werden — 12 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 12,
+  "mit_menge": 12,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 4,
+  "rest_da": false,
+  "korbposten": 12,
+  "korb_mit_menge": 12,
+  "abgeschickt": true,
+  "listenzeilen": 12,
+  "liste_zeigt_menge": 12,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Nuchar Meeresfrüchte Mix",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Paellareis",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kitchin grüne Erbsen",
+    "qty": 1,
+    "bedarf": "80 g gebraucht",
+    "gebinde": "dafür 1 × 265 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Paprika Rot, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Käfer Olivenöl",
+    "qty": 1,
+    "bedarf": "6 El gebraucht",
+    "gebinde": "1 × 1 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Safran",
+    "qty": 1,
+    "bedarf": "0,5 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Paprikapulver",
+    "qty": 1,
+    "bedarf": "0,5 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Cayennepfeffer",
+    "qty": 1,
+    "bedarf": "1 Msp gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 3,
+    "bedarf": "700 ml gebraucht",
+    "gebinde": "dafür 3 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Chardonnay",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 0,75 l",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 0.1
+ },
+ {
+  "gericht": "Quiche Lorraine",
+  "achse": "international, im Katalog",
+  "satz": "alles für Quiche Lorraine",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Quiche Lorraine",
+  "quelle_name": "Majas Quiche Lorraine in verschiedenen Variationen",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 0,
+  "entwurf": "Quiche Lorraine",
+  "entwurf_zutaten": 6,
+  "meldung": "„Majas Quiche Lorraine in verschiedenen Variationen“ von Chefkoch — 11 Zutaten im Rezept, 6 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.73 aus 151 Stimmen). 3 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Quiche Lorraine“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 10,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 6,
+  "ausrechenbar": 6,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 405",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Landfleischerei Schmelzer Durchwachsener Speck",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "250 ml gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Miil geräucherter Käse",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 180 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.7
+ },
+ {
+  "gericht": "Tortilla Espanola",
+  "achse": "international, im Katalog",
+  "satz": "alles für Tortilla Espanola",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Tortilla Espanola",
+  "quelle_name": "Tortilla Espanola",
+  "begriffe": 2,
+  "verworfen": 0,
+  "katalogtreffer": 2,
+  "freitext": 0,
+  "entwurf": "Tortilla Espanola",
+  "entwurf_zutaten": 2,
+  "meldung": "„Tortilla Espanola“ von Chefkoch — 5 Zutaten im Rezept, 2 davon auf dem Zettel, 2 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.14 aus 37 Stimmen). 1 von 2 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Tortilla Espanola“ werden — 2 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 5,
+  "zutaten_quelle_mit_menge": 4,
+  "zutaten_zugeordnet": 2,
+  "zutaten_zugeordnet_mit_menge": 2,
+  "ohne_zutat": [],
+  "vorschlaege": 2,
+  "mit_menge": 2,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 2,
+  "korb_mit_menge": 2,
+  "abgeschickt": true,
+  "listenzeilen": 2,
+  "liste_zeigt_menge": 2,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 2,5 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 2.3
+ },
+ {
+  "gericht": "Pho Bo",
+  "achse": "international, exotisch",
+  "satz": "alles für Pho Bo",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Pho Bo",
+  "quelle_name": "Pho Bo - Vietnamesische Rindfleischsuppe",
+  "begriffe": 18,
+  "verworfen": 0,
+  "katalogtreffer": 11,
+  "freitext": 6,
+  "entwurf": "Pho Bo",
+  "entwurf_zutaten": 17,
+  "meldung": "„Pho Bo - Vietnamesische Rindfleischsuppe“ von Chefkoch — 23 Zutaten im Rezept, 18 davon auf dem Zettel, 12 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.84 aus 62 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Markknochen“, „Nelken“, „Sternanis“, „Sojasprossen“, „Frühlingszwiebel“, „Chilischote“. 2 von 12 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Pho Bo“ werden — 18 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 23,
+  "zutaten_quelle_mit_menge": 22,
+  "zutaten_zugeordnet": 19,
+  "zutaten_zugeordnet_mit_menge": 19,
+  "ohne_zutat": [],
+  "vorschlaege": 17,
+  "mit_menge": 17,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 6,
+  "rest_da": false,
+  "korbposten": 17,
+  "korb_mit_menge": 17,
+  "abgeschickt": true,
+  "listenzeilen": 17,
+  "liste_zeigt_menge": 17,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Markknochen",
+    "qty": 1,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Ludwigsluster Rinder-Fleischknochen",
+    "qty": 2,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": "dafür 2 × ca. 0,73 kg",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Nelken",
+    "qty": 1,
+    "bedarf": "15 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Gragger BIO Kardamomböller",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 90 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ostmann Zimtstangen",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 4 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Sternanis",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Koriander",
+    "qty": 1,
+    "bedarf": "0,5 Tl gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ingwer, Wiegeware",
+    "qty": 1,
+    "bedarf": "3 Scheibe gebraucht",
+    "gebinde": "1 × ca. 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Thai Basilikum",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Sojasprossen",
+    "qty": 1,
+    "bedarf": "1 Pkt gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Frühlingszwiebel",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Diamond Quick Cooking Nudeln",
+    "qty": 1,
+    "bedarf": "1 Pkt gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Sutcha Argentina Rinderfilet Steak",
+    "qty": 2,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 2 × ca. 250 g",
+    "freitext": false
+   },
+   {
+    "name": "BIO Zitrone, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Chilischote",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Flying Goose Chilisauce, Sriracha Knoblauch",
+    "qty": 1,
+    "bedarf": "1 Flasche gebraucht",
+    "gebinde": "1 × 200 ml — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 14.6
+ },
+ {
+  "gericht": "Bibimbap",
+  "achse": "international, exotisch",
+  "satz": "alles für Bibimbap",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Bibimbap",
+  "quelle_name": "Bibimbap nach Art des Hauses",
+  "begriffe": 8,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 1,
+  "entwurf": "Bibimbap",
+  "entwurf_zutaten": 8,
+  "meldung": "„Bibimbap nach Art des Hauses“ von Chefkoch — 10 Zutaten im Rezept, 8 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.65 aus 46 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Frühlingszwiebel“. 3 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Bibimbap“ werden — 8 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 10,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 8,
+  "zutaten_zugeordnet_mit_menge": 8,
+  "ohne_zutat": [],
+  "vorschlaege": 8,
+  "mit_menge": 8,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 8,
+  "korb_mit_menge": 8,
+  "abgeschickt": true,
+  "listenzeilen": 8,
+  "liste_zeigt_menge": 8,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "BIO Möhren, Beutel",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Salatgurke, 1 Stk.",
+    "qty": 1,
+    "bedarf": "0,5 Stk gebraucht",
+    "gebinde": "dafür 1 × 1 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Bio Austernpilze, Schale",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 200 g",
+    "freitext": false
+   },
+   {
+    "name": "Frühlingszwiebel",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Berliner BIO Alfalfasprossen, Schale",
+    "qty": 1,
+    "bedarf": "1 Handvoll gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Langkorn Reis",
+    "qty": 1,
+    "bedarf": "1 Tasse gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.7
+ },
+ {
+  "gericht": "Pad Thai",
+  "achse": "international, exotisch",
+  "satz": "alles für Pad Thai, und Zahnpasta",
+  "rest": "Zahnpasta",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Pad Thai",
+  "quelle_name": "Pad Thai",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 4,
+  "entwurf": "Pad Thai",
+  "entwurf_zutaten": 10,
+  "meldung": "„Pad Thai“ von Chefkoch — 15 Zutaten im Rezept, 11 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.45 aus 138 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Frühlingszwiebel“, „Sojasprossen“, „Tamarindenpaste“, „Fischsauce“. „Zahnpasta“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. 3 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Pad Thai“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 15,
+  "zutaten_quelle_mit_menge": 15,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [
+   "Zahnpasta"
+  ],
+  "vorschlaege": 11,
+  "mit_menge": 10,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 4,
+  "rest_da": true,
+  "korbposten": 11,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [
+   "Colgate Total Zahnpasta Original"
+  ],
+  "zeilen": [
+   {
+    "name": "Diamond Quick Cooking Nudeln",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Pappudia Tofu",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × ca. 200 g",
+    "freitext": false
+   },
+   {
+    "name": "Frühlingszwiebel",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Sojasprossen",
+    "qty": 1,
+    "bedarf": "50 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Tamarindenpaste",
+    "qty": 1,
+    "bedarf": "10 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Fischsauce",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "BIO Limette, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 1 Stk",
+    "freitext": false
+   },
+   {
+    "name": "ültje Erdnüsse pikant",
+    "qty": 1,
+    "bedarf": "1 Handvoll gebraucht",
+    "gebinde": "1 × 180 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Colgate Total Zahnpasta Original",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 75 ml",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 11.3
+ },
+ {
+  "gericht": "Ramen",
+  "achse": "international, exotisch",
+  "satz": "alles für Ramen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Ramen",
+  "quelle_name": "Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet",
+  "begriffe": 15,
+  "verworfen": 0,
+  "katalogtreffer": 11,
+  "freitext": 4,
+  "entwurf": "Ramen",
+  "entwurf_zutaten": 15,
+  "meldung": "„Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet“ von Chefkoch — 22 Zutaten im Rezept, 15 davon auf dem Zettel, 11 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.73 aus 364 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Algen“, „Frühlingszwiebel“, „Noriblatt“, „Sojasprossen“. 3 von 11 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Ramen“ werden — 15 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 22,
+  "zutaten_quelle_mit_menge": 18,
+  "zutaten_zugeordnet": 19,
+  "zutaten_zugeordnet_mit_menge": 17,
+  "ohne_zutat": [],
+  "vorschlaege": 15,
+  "mit_menge": 15,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 4,
+  "rest_da": false,
+  "korbposten": 15,
+  "korb_mit_menge": 15,
+  "abgeschickt": true,
+  "listenzeilen": 15,
+  "liste_zeigt_menge": 15,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Traditionsgeflügel Suppenhuhn",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 1,25 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 1 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, Netz",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ingwer, Wiegeware",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Algen",
+    "qty": 1,
+    "bedarf": "1 Handvoll gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Schweinefilet",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 0,57 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kikkoman Sojasauce",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Bamboo Garden JAPAN Mirin Reiswein",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 140 ml",
+    "freitext": false
+   },
+   {
+    "name": "Frühlingszwiebel",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "BIOASIA BIO Ramen Nudeln",
+    "qty": 2,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Noriblatt",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Sojasprossen",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 10.3
+ },
+ {
+  "gericht": "Tom Kha Gai",
+  "achse": "international, exotisch",
+  "satz": "alles für Tom Kha Gai",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Tom Kha Gai",
+  "quelle_name": "Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant",
+  "begriffe": 13,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 5,
+  "entwurf": "Tom Kha Gai",
+  "entwurf_zutaten": 12,
+  "meldung": "„Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant“ von Chefkoch — 15 Zutaten im Rezept, 13 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.70 aus 579 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Galgant“, „Chilischoten“, „Fischsauce“, „Kaffir-Limettenblätter“, „Thai-Frühlingszwiebeln“. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Tom Kha Gai“ werden — 12 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 15,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 14,
+  "zutaten_zugeordnet_mit_menge": 12,
+  "ohne_zutat": [
+   "Limetten"
+  ],
+  "vorschlaege": 13,
+  "mit_menge": 11,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 5,
+  "rest_da": false,
+  "korbposten": 13,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 13,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [
+   "SanLucar Limetten, 4er Schale",
+   "Koriander"
+  ],
+  "zeilen": [
+   {
+    "name": "Kitchin Kokosmilch",
+    "qty": 1,
+    "bedarf": "2 Dose gebraucht",
+    "gebinde": "1 × 400 ml — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Maggi Hühner Brühe",
+    "qty": 1,
+    "bedarf": "250 ml gebraucht",
+    "gebinde": "dafür 1 × 4 l",
+    "freitext": false
+   },
+   {
+    "name": "Zitronengras, Beutel",
+    "qty": 1,
+    "bedarf": "5 Staengel gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Galgant",
+    "qty": 1,
+    "bedarf": "7 Cm gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Chilischoten",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Fischsauce",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kaffir-Limettenblätter",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Gutfried Hähnchenbrust natur",
+    "qty": 4,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 4 × 100 g",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "SanLucar Limetten, 4er Schale",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 240 g",
+    "freitext": false
+   },
+   {
+    "name": "Cock Brand Palmzucker",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": "1 × 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Koriander",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 100 g",
+    "freitext": false
+   },
+   {
+    "name": "Thai-Frühlingszwiebeln",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 14.0
+ },
+ {
+  "gericht": "Massaman Curry",
+  "achse": "international, exotisch",
+  "satz": "alles für Massaman Curry",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Massaman Curry",
+  "quelle_name": "Annas Massaman-Curry",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 10,
+  "freitext": 1,
+  "entwurf": "Massaman Curry",
+  "entwurf_zutaten": 11,
+  "meldung": "„Annas Massaman-Curry“ von Chefkoch — 14 Zutaten im Rezept, 11 davon auf dem Zettel, 10 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.62 aus 349 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Fischsauce“. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Massaman Curry“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 14,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 11,
+  "zutaten_zugeordnet_mit_menge": 11,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "KIKOK Hähnchen Brustfilet halbiert ohne Haut",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × ca. 0,55 kg",
+    "freitext": false
+   },
+   {
+    "name": "Fehmel's Lauchzwiebeln, Bund",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": "dafür 1 × 1 Bund",
+    "freitext": false
+   },
+   {
+    "name": "Cock grüne Currypaste",
+    "qty": 1,
+    "bedarf": "1 Beutel gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Kokosmilch",
+    "qty": 1,
+    "bedarf": "400 ml gebraucht",
+    "gebinde": "dafür 1 × 400 ml",
+    "freitext": false
+   },
+   {
+    "name": "Yutto Erdnussbutter Cremig",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 350 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Fischsauce",
+    "qty": 1,
+    "bedarf": "4 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "ültje Erdnüsse pikant",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 180 g",
+    "freitext": false
+   },
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 2,5 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ingwer, Wiegeware",
+    "qty": 1,
+    "bedarf": "3 Cm gebraucht",
+    "gebinde": "1 × ca. 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Koriander",
+    "qty": 1,
+    "bedarf": "0,5 Bund gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zitronengras, Beutel",
+    "qty": 1,
+    "bedarf": "1 Staengel gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 15.5
+ },
+ {
+  "gericht": "Okonomiyaki",
+  "achse": "international, exotisch",
+  "satz": "alles für Okonomiyaki",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Okonomiyaki",
+  "quelle_name": "Okonomiyaki Osaka-Style",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 4,
+  "freitext": 1,
+  "entwurf": "Okonomiyaki",
+  "entwurf_zutaten": 5,
+  "meldung": "„Okonomiyaki Osaka-Style“ von Chefkoch — 9 Zutaten im Rezept, 5 davon auf dem Zettel, 4 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.91 aus 23 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Weißkohl“. 2 von 4 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Okonomiyaki“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 4,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 4,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 4,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 4,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 4,
+  "liste_ohne_menge": [
+   "Develey Our Original Mayonnaise"
+  ],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 405",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Weißkohl",
+    "qty": 1,
+    "bedarf": "0,5 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Develey Our Original Mayonnaise",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Landfleischerei Schmelzer Durchwachsener Speck",
+    "qty": 1,
+    "bedarf": "4 Scheibe gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 9.8
+ },
+ {
+  "gericht": "Gemüselasagne",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Gemüselasagne",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Gemüselasagne",
+  "quelle_name": "Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße",
+  "begriffe": 13,
+  "verworfen": 0,
+  "katalogtreffer": 12,
+  "freitext": 1,
+  "entwurf": "Gemüselasagne",
+  "entwurf_zutaten": 13,
+  "meldung": "„Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße“ von Chefkoch — 16 Zutaten im Rezept, 13 davon auf dem Zettel, 12 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 2125 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „süße Sahne“. 7 von 12 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Gemüselasagne“ werden — 13 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 16,
+  "zutaten_quelle_mit_menge": 14,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 13,
+  "mit_menge": 13,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 13,
+  "korb_mit_menge": 13,
+  "abgeschickt": true,
+  "listenzeilen": 13,
+  "liste_zeigt_menge": 13,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "iglo Rahm-Blattspinat, portionierbar",
+    "qty": 2,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 2 × 0,54 kg",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "7 Stk gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "5 El gebraucht",
+    "gebinde": "1 × 1 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "miree Frischkäse Kräuter",
+    "qty": 1,
+    "bedarf": "0,5 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Mutti Passierte Tomaten",
+    "qty": 1,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 1 × 0,7 kg",
+    "freitext": false
+   },
+   {
+    "name": "süße Sahne",
+    "qty": 1,
+    "bedarf": "150 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Barilla Collezione Lasagne",
+    "qty": 1,
+    "bedarf": "1 Paket gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Arla Finello Cheddar Mix Käse gerieben",
+    "qty": 2,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 2 × 150 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 11.6
+ },
+ {
+  "gericht": "Kichererbsencurry",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Kichererbsencurry",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Kichererbsencurry",
+  "quelle_name": "Kichererbsen-Curry Chana Masala",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 3,
+  "entwurf": "Kichererbsencurry",
+  "entwurf_zutaten": 11,
+  "meldung": "„Kichererbsen-Curry Chana Masala“ von Chefkoch — 15 Zutaten im Rezept, 11 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.59 aus 270 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Chilischote“, „Korianderpulver“, „Chilipulver“. 2 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Kichererbsencurry“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 15,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 11,
+  "zutaten_zugeordnet_mit_menge": 11,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 3,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kitchin Kichererbsen",
+    "qty": 1,
+    "bedarf": "1 Dose gebraucht",
+    "gebinde": "1 × 420 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Tomaten rund, Wiegeware",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × ca. 300 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "TRS Garam Masala",
+    "qty": 1,
+    "bedarf": "1 Tl, gestr gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "TRS Kurkumapulver Haldi",
+    "qty": 1,
+    "bedarf": "1 Tl, gestr gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ingwer, Wiegeware",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "4 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Chilischote",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "TRS Kreuzkümmel-Pulver Jeera",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Korianderpulver",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Chilipulver",
+    "qty": 1,
+    "bedarf": "0,5 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 8.8
+ },
+ {
+  "gericht": "Linsenbolognese",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Linsenbolognese",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Linsenbolognese",
+  "quelle_name": "Rote Linsen-Bolognese",
+  "begriffe": 9,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 1,
+  "entwurf": "Linsenbolognese",
+  "entwurf_zutaten": 9,
+  "meldung": "„Rote Linsen-Bolognese“ von Chefkoch — 10 Zutaten im Rezept, 9 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.78 aus 223 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Kräuter“. 6 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Linsenbolognese“ werden — 9 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 10,
+  "zutaten_quelle_mit_menge": 9,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 9,
+  "mit_menge": 9,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 9,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 9,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Pomito Stückige Tomaten",
+    "qty": 1,
+    "bedarf": "1 Dose gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 2,
+    "bedarf": "450 ml gebraucht",
+    "gebinde": "dafür 2 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin rote Linsen",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Diamond Quick Cooking Nudeln",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Kräuter",
+    "qty": 1,
+    "bedarf": "4 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 5.9
+ },
+ {
+  "gericht": "Falafel",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Falafel",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Falafel",
+  "quelle_name": "Hummus bi Tahina",
+  "begriffe": 8,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 1,
+  "entwurf": "Falafel",
+  "entwurf_zutaten": 8,
+  "meldung": "„Hummus bi Tahina“ von Chefkoch — 11 Zutaten im Rezept, 8 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.60 aus 945 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Chilischote“. 2 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Falafel“ werden — 8 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 6,
+  "zutaten_zugeordnet_mit_menge": 6,
+  "ohne_zutat": [],
+  "vorschlaege": 8,
+  "mit_menge": 8,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 8,
+  "korb_mit_menge": 8,
+  "abgeschickt": true,
+  "listenzeilen": 8,
+  "liste_zeigt_menge": 8,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kitchin Kichererbsen",
+    "qty": 1,
+    "bedarf": "1 Dose gebraucht",
+    "gebinde": "1 × 420 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura Bio Tahin Sesammus",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "BIO Zitrone, 1 Stk.",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × ca. 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, Netz",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "TRS Kreuzkümmel-Pulver Jeera",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Chilischote",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Ostmann Curry",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 30 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 7.4
+ },
+ {
+  "gericht": "Chili sin Carne",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Chili sin Carne, und Katzenstreu",
+  "rest": "Katzenstreu",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Chili sin Carne",
+  "quelle_name": "Vegetarisch-veganes Chili sin Carne \"SuperNova\"",
+  "begriffe": 14,
+  "verworfen": 0,
+  "katalogtreffer": 11,
+  "freitext": 3,
+  "entwurf": "Chili sin Carne",
+  "entwurf_zutaten": 11,
+  "meldung": "„Vegetarisch-veganes Chili sin Carne \"SuperNova\"“ von Chefkoch — 21 Zutaten im Rezept, 14 davon auf dem Zettel, 11 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.60 aus 237 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Sojagranulat“, „rote Chilischote“, „Katzenstreu“. „Katzenstreu“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. 5 von 11 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Chili sin Carne“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 21,
+  "zutaten_quelle_mit_menge": 18,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 8,
+  "ohne_zutat": [
+   "geschälte Tomaten",
+   "passierte Tomaten",
+   "Katzenstreu"
+  ],
+  "vorschlaege": 14,
+  "mit_menge": 9,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 2,
+  "rest_da": true,
+  "korbposten": 14,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 14,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [
+   "Paprika Rot, 1 Stk.",
+   "Kitchin BIO geschälte Tomaten",
+   "Mutti Passierte Tomaten",
+   "Kitchin Tomatenmark",
+   "Katzenstreu"
+  ],
+  "zeilen": [
+   {
+    "name": "Sojagranulat",
+    "qty": 1,
+    "bedarf": "90 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "BioZentrale BIO Grünkern",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 2,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 2 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Paprika Rot, 1 Stk.",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × ca. 150 g",
+    "freitext": false
+   },
+   {
+    "name": "Reinheimer`s Zucchini",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 450 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin BIO geschälte Tomaten",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 400 g",
+    "freitext": false
+   },
+   {
+    "name": "Bonduelle Kidney Bohnen",
+    "qty": 1,
+    "bedarf": "2 Kl. dose gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Mais",
+    "qty": 1,
+    "bedarf": "1 Kl. dose gebraucht",
+    "gebinde": "1 × 285 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "rote Chilischote",
+    "qty": 1,
+    "bedarf": "5 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Mutti Passierte Tomaten",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 0,7 kg",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 140 g",
+    "freitext": false
+   },
+   {
+    "name": "Basilikum",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Katzenstreu",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 9.3
+ },
+ {
+  "gericht": "Ofengemüse mit Feta",
+  "achse": "vegetarisch/vegan",
+  "satz": "alles für Ofengemüse mit Feta",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Ofengemüse mit Feta",
+  "quelle_name": "Mediterranes Ofengemüse",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 0,
+  "entwurf": "Ofengemüse mit Feta",
+  "entwurf_zutaten": 7,
+  "meldung": "„Mediterranes Ofengemüse“ von Chefkoch — 15 Zutaten im Rezept, 7 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.67 aus 994 Stimmen). 2 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Ofengemüse mit Feta“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 15,
+  "zutaten_quelle_mit_menge": 7,
+  "zutaten_zugeordnet": 6,
+  "zutaten_zugeordnet_mit_menge": 6,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Spitzpaprika rot, 1 Stk.",
+    "qty": 4,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 4 × ca. 100 g",
+    "freitext": false
+   },
+   {
+    "name": "BIO Cherrytomaten, Schale",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Miil Feta P.D.O.",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 200 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "6 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 9.0
+ },
+ {
+  "gericht": "Apfelkuchen",
+  "achse": "Backen",
+  "satz": "alles für Apfelkuchen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Apfelkuchen",
+  "quelle_name": "Apfelkuchen mit Streuseln",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 0,
+  "entwurf": "Apfelkuchen",
+  "entwurf_zutaten": 5,
+  "meldung": "„Apfelkuchen mit Streuseln“ von Chefkoch — 11 Zutaten im Rezept, 5 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.84 aus 2523 Stimmen). 4 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Apfelkuchen“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 11,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 2,
+    "bedarf": "275 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 405",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Marks & Spencer Backpulver",
+    "qty": 1,
+    "bedarf": "0,5 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Äpfel rot, Beutel",
+    "qty": 1,
+    "bedarf": "1500 g gebraucht",
+    "gebinde": "dafür 1 × 2 kg",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 3.2
+ },
+ {
+  "gericht": "Käsekuchen",
+  "achse": "Backen",
+  "satz": "alles für Käsekuchen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Käsekuchen",
+  "quelle_name": "Russischer Zupfkuchen",
+  "begriffe": 9,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 1,
+  "entwurf": "Käsekuchen",
+  "entwurf_zutaten": 9,
+  "meldung": "„Russischer Zupfkuchen“ von Chefkoch — 15 Zutaten im Rezept, 9 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.84 aus 1672 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Vanillepuddingpulver“. 4 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Käsekuchen“ werden — 9 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 15,
+  "zutaten_quelle_mit_menge": 14,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 9,
+  "mit_menge": 9,
+  "ausrechenbar": 6,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 9,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 9,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 405",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Dr. Oetker Kakao zum Backen",
+    "qty": 1,
+    "bedarf": "30 g gebraucht",
+    "gebinde": "dafür 1 × 100 g",
+    "freitext": false
+   },
+   {
+    "name": "Marks & Spencer Backpulver",
+    "qty": 1,
+    "bedarf": "2 Tl, gestr gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Bourbon Vanillezucker",
+    "qty": 1,
+    "bedarf": "2 Pck gebraucht",
+    "gebinde": "1 × 24 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 2,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Miil Magerquark",
+    "qty": 2,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Vanillepuddingpulver",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Decocino BIO Bourbon Vanilleschoten 2er",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "dafür 1 × 2 Stk",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 8.1
+ },
+ {
+  "gericht": "Pizzateig",
+  "achse": "Backen",
+  "satz": "alles für Pizzateig",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Pizzateig",
+  "quelle_name": "Knusprig dünne Pizza mit Chorizo und Mozzarella",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 1,
+  "entwurf": "Pizzateig",
+  "entwurf_zutaten": 6,
+  "meldung": "„Knusprig dünne Pizza mit Chorizo und Mozzarella“ von Chefkoch — 11 Zutaten im Rezept, 6 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.81 aus 556 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Hartweizengrieß“. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Pizzateig“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 10,
+  "zutaten_zugeordnet": 6,
+  "zutaten_zugeordnet_mit_menge": 6,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 6,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 550",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Hartweizengrieß",
+    "qty": 1,
+    "bedarf": "50 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Dr. Oetker frische Hefe",
+    "qty": 1,
+    "bedarf": "0,25 Wuerfel gebraucht",
+    "gebinde": "1 × 42 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Watzkendorf´s BIO Romatomaten gelb, Schale",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Goikoa Chorizo Extra Picante",
+    "qty": 1,
+    "bedarf": "70 g gebraucht",
+    "gebinde": "dafür 1 × 70 g",
+    "freitext": false
+   },
+   {
+    "name": "MIIL Büffelmozzarella aus Kampanien g.U.",
+    "qty": 1,
+    "bedarf": "1 Kugel gebraucht",
+    "gebinde": "1 × 125 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 7.1
+ },
+ {
+  "gericht": "Waffeln",
+  "achse": "Backen",
+  "satz": "alles für Waffeln",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Waffeln",
+  "quelle_name": "Geheimes Waffelrezept",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 0,
+  "entwurf": "Waffeln",
+  "entwurf_zutaten": 7,
+  "meldung": "„Geheimes Waffelrezept“ von Chefkoch — 9 Zutaten im Rezept, 7 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.73 aus 3669 Stimmen). 5 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Waffeln“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Rama Dreiviertelfett Margarine 60%",
+    "qty": 2,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 2 × 400 g",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "10 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Dr. Oetker Natürlich Bourbon Vanillezucker",
+    "qty": 1,
+    "bedarf": "2 Pck gebraucht",
+    "gebinde": "1 × 24 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Appleton Estate Signature Blend Jamaica Rum",
+    "qty": 1,
+    "bedarf": "1 Schuss gebraucht",
+    "gebinde": "1 × 0,7 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "1000 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Marks & Spencer Backpulver",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 3.4
+ },
+ {
+  "gericht": "Zwetschgendatschi",
+  "achse": "Backen",
+  "satz": "alles für Zwetschgendatschi",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Zwetschgendatschi",
+  "quelle_name": "Zwetschgendatschi mit Butterstreuseln",
+  "begriffe": 8,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 3,
+  "entwurf": "Zwetschgendatschi",
+  "entwurf_zutaten": 8,
+  "meldung": "„Zwetschgendatschi mit Butterstreuseln“ von Chefkoch — 17 Zutaten im Rezept, 8 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 897 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Vanillemark“, „Zitronenabrieb“, „Zwetschge“. 3 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Zwetschgendatschi“ werden — 8 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 17,
+  "zutaten_quelle_mit_menge": 14,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 9,
+  "ohne_zutat": [],
+  "vorschlaege": 8,
+  "mit_menge": 6,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 2,
+  "rest_da": false,
+  "korbposten": 8,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 8,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [
+   "Zitronenabrieb",
+   "Alnatura BIO Bourbon Vanillezucker"
+  ],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Weizenmehl Typ 550",
+    "qty": 1,
+    "bedarf": "650 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Vanillemark",
+    "qty": 1,
+    "bedarf": "1 Msp gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "180 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Dr. Oetker frische Hefe",
+    "qty": 1,
+    "bedarf": "30 g gebraucht",
+    "gebinde": "dafür 1 × 42 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 2,
+    "bedarf": "260 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Zitronenabrieb",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Zwetschge",
+    "qty": 1,
+    "bedarf": "1500 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Alnatura BIO Bourbon Vanillezucker",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 24 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.7
+ },
+ {
+  "gericht": "Marmorkuchen",
+  "achse": "Backen",
+  "satz": "alles für Marmorkuchen, und Taschentücher",
+  "rest": "Taschentücher",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Marmorkuchen",
+  "quelle_name": "Marmor-Gugelhupf",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 9,
+  "freitext": 1,
+  "entwurf": "Marmorkuchen",
+  "entwurf_zutaten": 9,
+  "meldung": "„Marmor-Gugelhupf“ von Chefkoch — 11 Zutaten im Rezept, 10 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.77 aus 849 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Kakaopulver“. „Taschentücher“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. 7 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Marmorkuchen“ werden — 9 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 9,
+  "zutaten_zugeordnet": 11,
+  "zutaten_zugeordnet_mit_menge": 9,
+  "ohne_zutat": [
+   "Taschentücher"
+  ],
+  "vorschlaege": 10,
+  "mit_menge": 9,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 1,
+  "rest_da": true,
+  "korbposten": 10,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [
+   "Moddia Taschentücher 4-lagig"
+  ],
+  "zeilen": [
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Diamant Puderzucker",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Bourbon Vanillezucker",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 24 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "350 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Marks & Spencer Backpulver",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Appleton Estate Signature Blend Jamaica Rum",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 0,7 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "250 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Kakaopulver",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Moddia Taschentücher 4-lagig",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 15 Stk",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.2
+ },
+ {
+  "gericht": "Knoblauchsuppe",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Knoblauchsuppe",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Knoblauchsuppe",
+  "quelle_name": "Knoblauchsuppe mit Parmesan",
+  "begriffe": 8,
+  "verworfen": 0,
+  "katalogtreffer": 7,
+  "freitext": 1,
+  "entwurf": "Knoblauchsuppe",
+  "entwurf_zutaten": 8,
+  "meldung": "„Knoblauchsuppe mit Parmesan“ von Chefkoch — 10 Zutaten im Rezept, 8 davon auf dem Zettel, 7 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.65 aus 155 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Parmesan“. 4 von 7 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Knoblauchsuppe“ werden — 8 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 10,
+  "zutaten_quelle_mit_menge": 9,
+  "zutaten_zugeordnet": 8,
+  "zutaten_zugeordnet_mit_menge": 8,
+  "ohne_zutat": [],
+  "vorschlaege": 8,
+  "mit_menge": 8,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 8,
+  "korb_mit_menge": 8,
+  "abgeschickt": true,
+  "listenzeilen": 8,
+  "liste_zeigt_menge": 8,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Knolle gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Maggi Fette Brühe - Würfel",
+    "qty": 1,
+    "bedarf": "800 ml gebraucht",
+    "gebinde": "dafür 1 × 5 l",
+    "freitext": false
+   },
+   {
+    "name": "Miil Frische Schlagsahne 33%",
+    "qty": 2,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 2 × 250 ml",
+    "freitext": false
+   },
+   {
+    "name": "Parmesan",
+    "qty": 1,
+    "bedarf": "80 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Schnittlauch",
+    "qty": 1,
+    "bedarf": "0,5 Bund gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.0
+ },
+ {
+  "gericht": "Spargel mit Sauce Hollandaise",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Spargel mit Sauce Hollandaise",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Spargel mit Sauce Hollandaise",
+  "quelle_name": "Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",
+  "begriffe": 12,
+  "verworfen": 0,
+  "katalogtreffer": 9,
+  "freitext": 3,
+  "entwurf": "Spargel mit Sauce Hollandaise",
+  "entwurf_zutaten": 12,
+  "meldung": "„Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin“ von Chefkoch — 18 Zutaten im Rezept, 12 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.46 aus 169 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Spargel“, „Nelke“, „Schweinemedaillons“. 6 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Spargel mit Sauce Hollandaise“ werden — 12 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 18,
+  "zutaten_quelle_mit_menge": 15,
+  "zutaten_zugeordnet": 14,
+  "zutaten_zugeordnet_mit_menge": 14,
+  "ohne_zutat": [],
+  "vorschlaege": 12,
+  "mit_menge": 10,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 3,
+  "rest_da": false,
+  "korbposten": 12,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 12,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [
+   "Gallo Chardonnay",
+   "Weihenstephan Butter"
+  ],
+  "zeilen": [
+   {
+    "name": "Spargel",
+    "qty": 1,
+    "bedarf": "1 Bund gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Reinheimer's Schalotten Mix",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Chardonnay",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 0,75 l",
+    "freitext": false
+   },
+   {
+    "name": "Nelke",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Lorbeer",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "150 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Schweinemedaillons",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 8.1
+ },
+ {
+  "gericht": "Petersilienpesto",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Petersilienpesto",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Petersilienpesto",
+  "quelle_name": "Petersilien-Pesto",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 4,
+  "freitext": 1,
+  "entwurf": "Petersilienpesto",
+  "entwurf_zutaten": 5,
+  "meldung": "„Petersilien-Pesto“ von Chefkoch — 7 Zutaten im Rezept, 5 davon auf dem Zettel, 4 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.62 aus 100 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „geriebener Parmesan“. 1 von 4 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Petersilienpesto“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 7,
+  "zutaten_quelle_mit_menge": 6,
+  "zutaten_zugeordnet": 4,
+  "zutaten_zugeordnet_mit_menge": 4,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "75 g gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "YUTTO Pinienkerne",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 50 g",
+    "freitext": false
+   },
+   {
+    "name": "Rapunzel BIO Mandelblättchen",
+    "qty": 1,
+    "bedarf": "40 g gebraucht",
+    "gebinde": "dafür 1 × 100 g",
+    "freitext": false
+   },
+   {
+    "name": "geriebener Parmesan",
+    "qty": 1,
+    "bedarf": "65 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 5.3
+ },
+ {
+  "gericht": "Toast Hawaii",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Toast Hawaii",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Toast Hawaii",
+  "quelle_name": "Hawaii Toast",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 0,
+  "entwurf": "Toast Hawaii",
+  "entwurf_zutaten": 5,
+  "meldung": "„Hawaii Toast“ von Chefkoch — 5 Zutaten im Rezept, 5 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.32 aus 133 Stimmen). 1 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Toast Hawaii“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 5,
+  "zutaten_quelle_mit_menge": 5,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Schwartau Extra Ananas",
+    "qty": 1,
+    "bedarf": "4 Scheibe gebraucht",
+    "gebinde": "1 × 340 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Mestemacher BIO Dinkel Toastbrot",
+    "qty": 1,
+    "bedarf": "4 Scheibe gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Rama Dreiviertelfett Margarine 60%",
+    "qty": 1,
+    "bedarf": "4 Msp gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Dacello Prager Schinken",
+    "qty": 1,
+    "bedarf": "2 Scheibe gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Grünländer Käsescheiben, mild & nussig",
+    "qty": 1,
+    "bedarf": "4 Scheibe gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.3
+ },
+ {
+  "gericht": "Gefüllte Paprika",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Gefüllte Paprika",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Gefüllte Paprika",
+  "quelle_name": "Gefüllte Paprika nach Uroma Susanne",
+  "begriffe": 9,
+  "verworfen": 0,
+  "katalogtreffer": 9,
+  "freitext": 0,
+  "entwurf": "Gefüllte Paprika",
+  "entwurf_zutaten": 9,
+  "meldung": "„Gefüllte Paprika nach Uroma Susanne“ von Chefkoch — 13 Zutaten im Rezept, 9 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.67 aus 2326 Stimmen). 7 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Gefüllte Paprika“ werden — 9 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 10,
+  "zutaten_zugeordnet": 8,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 9,
+  "mit_menge": 9,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 9,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 9,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Zehe gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "BioLust BIO Hackfleisch gemischt",
+    "qty": 2,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Langkorn Reis",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Spitzpaprika gelb, 1 Stk",
+    "qty": 1,
+    "bedarf": "10 Stk gebraucht",
+    "gebinde": "1 × ca. 80 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 2,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 2 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "1 Kl. dose gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 6.0
+ },
+ {
+  "gericht": "Lauchkuchen",
+  "achse": "zählbare Einheiten",
+  "satz": "alles für Lauchkuchen",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Lauchkuchen",
+  "quelle_name": "Lauchkuchen vom Blech",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 0,
+  "entwurf": "Lauchkuchen",
+  "entwurf_zutaten": 5,
+  "meldung": "„Lauchkuchen vom Blech“ von Chefkoch — 8 Zutaten im Rezept, 5 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.59 aus 222 Stimmen). 1 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Lauchkuchen“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 8,
+  "zutaten_quelle_mit_menge": 5,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Jeden Tag Pizzateig mit Tomatensauce",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 0,6 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Speckwürfel",
+    "qty": 1,
+    "bedarf": "50 g gebraucht",
+    "gebinde": "dafür 1 × 80 g",
+    "freitext": false
+   },
+   {
+    "name": "MIIL Saure Sahne 18%",
+    "qty": 1,
+    "bedarf": "1 Becher gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Miil Emmentaler 45% Fett",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.7
+ },
+ {
+  "gericht": "Lasagne",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Lasagne",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Lasagne",
+  "quelle_name": "Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße",
+  "begriffe": 13,
+  "verworfen": 0,
+  "katalogtreffer": 12,
+  "freitext": 1,
+  "entwurf": "Lasagne",
+  "entwurf_zutaten": 13,
+  "meldung": "„Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße“ von Chefkoch — 16 Zutaten im Rezept, 13 davon auf dem Zettel, 12 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 2125 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „süße Sahne“. 7 von 12 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Lasagne“ werden — 13 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 16,
+  "zutaten_quelle_mit_menge": 14,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 13,
+  "mit_menge": 13,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 13,
+  "korb_mit_menge": 13,
+  "abgeschickt": true,
+  "listenzeilen": 13,
+  "liste_zeigt_menge": 13,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "iglo Rahm-Blattspinat, portionierbar",
+    "qty": 2,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 2 × 0,54 kg",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "7 Stk gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "5 El gebraucht",
+    "gebinde": "1 × 1 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "miree Frischkäse Kräuter",
+    "qty": 1,
+    "bedarf": "0,5 Pck gebraucht",
+    "gebinde": "1 × 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Mutti Passierte Tomaten",
+    "qty": 1,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 1 × 0,7 kg",
+    "freitext": false
+   },
+   {
+    "name": "süße Sahne",
+    "qty": 1,
+    "bedarf": "150 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Barilla Collezione Lasagne",
+    "qty": 1,
+    "bedarf": "1 Paket gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Arla Finello Cheddar Mix Käse gerieben",
+    "qty": 2,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 2 × 150 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 10.9
+ },
+ {
+  "gericht": "Risotto",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Risotto",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Risotto",
+  "quelle_name": "Risotto alla milanese",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 4,
+  "freitext": 3,
+  "entwurf": "Risotto",
+  "entwurf_zutaten": 7,
+  "meldung": "„Risotto alla milanese“ von Chefkoch — 9 Zutaten im Rezept, 7 davon auf dem Zettel, 4 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.80 aus 821 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Carnaroli-Reis“, „Safranfäden“, „Italienischer Hartkäse“. 1 von 4 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Risotto“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 3,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Carnaroli-Reis",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Reinheimer's Schalotten Mix",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Larco Hühnerbrühe CL",
+    "qty": 5,
+    "bedarf": "1500 ml gebraucht",
+    "gebinde": "dafür 5 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "90 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Weinreich BIO Riesling trocken 2024",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 0,75 l",
+    "freitext": false
+   },
+   {
+    "name": "Safranfäden",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Italienischer Hartkäse",
+    "qty": 1,
+    "bedarf": "75 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 7.8
+ },
+ {
+  "gericht": "Gulasch",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Gulasch",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Gulasch",
+  "quelle_name": "Hirschgulasch",
+  "begriffe": 14,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 6,
+  "entwurf": "Gulasch",
+  "entwurf_zutaten": 14,
+  "meldung": "„Hirschgulasch“ von Chefkoch — 18 Zutaten im Rezept, 14 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 722 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Hirschgulasch“, „getrocknete Steinpilze“, „Wacholderbeere“, „Nelke“, „Wildfond“, „Rotweinessig“. 1 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Gulasch“ werden — 14 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 18,
+  "zutaten_quelle_mit_menge": 14,
+  "zutaten_zugeordnet": 12,
+  "zutaten_zugeordnet_mit_menge": 11,
+  "ohne_zutat": [],
+  "vorschlaege": 14,
+  "mit_menge": 13,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 6,
+  "rest_da": false,
+  "korbposten": 14,
+  "korb_mit_menge": 13,
+  "abgeschickt": true,
+  "listenzeilen": 14,
+  "liste_zeigt_menge": 13,
+  "liste_ohne_menge": [
+   "BIO Thymian im Topf"
+  ],
+  "zeilen": [
+   {
+    "name": "Hirschgulasch",
+    "qty": 1,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Butaris Butterschmalz",
+    "qty": 1,
+    "bedarf": "3 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "BIO Möhren, Beutel",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knollensellerie, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 0,96 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "getrocknete Steinpilze",
+    "qty": 1,
+    "bedarf": "1 Handvoll gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Wacholderbeere",
+    "qty": 1,
+    "bedarf": "6 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Nelke",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "BIO Thymian im Topf",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 1 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Cabernet Sauvignon",
+    "qty": 1,
+    "bedarf": "200 ml gebraucht",
+    "gebinde": "dafür 1 × 0,75 l",
+    "freitext": false
+   },
+   {
+    "name": "Wildfond",
+    "qty": 1,
+    "bedarf": "400 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Rotweinessig",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "D'arbo Naturrein Wildpreiselbeer Kompott",
+    "qty": 1,
+    "bedarf": "4 El gebraucht",
+    "gebinde": "1 × 210 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 11.4
+ },
+ {
+  "gericht": "Bratkartoffeln",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Bratkartoffeln",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Bratkartoffeln",
+  "quelle_name": "Knusprige Bratkartoffeln nach Muttis Rezept",
+  "begriffe": 2,
+  "verworfen": 0,
+  "katalogtreffer": 2,
+  "freitext": 0,
+  "entwurf": "Bratkartoffeln",
+  "entwurf_zutaten": 2,
+  "meldung": "„Knusprige Bratkartoffeln nach Muttis Rezept“ von Chefkoch — 4 Zutaten im Rezept, 2 davon auf dem Zettel, 2 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.61 aus 1764 Stimmen). 1 von 2 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Bratkartoffeln“ werden — 2 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 4,
+  "zutaten_quelle_mit_menge": 3,
+  "zutaten_zugeordnet": 1,
+  "zutaten_zugeordnet_mit_menge": 1,
+  "ohne_zutat": [],
+  "vorschlaege": 2,
+  "mit_menge": 2,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 2,
+  "korb_mit_menge": 2,
+  "abgeschickt": true,
+  "listenzeilen": 2,
+  "liste_zeigt_menge": 2,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 1.8
+ },
+ {
+  "gericht": "Kaiserschmarrn",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Kaiserschmarrn",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Kaiserschmarrn",
+  "quelle_name": "Kaiserschmarrn - Tiroler Landgasthofrezept",
+  "begriffe": 8,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 0,
+  "entwurf": "Kaiserschmarrn",
+  "entwurf_zutaten": 7,
+  "meldung": "„Kaiserschmarrn - Tiroler Landgasthofrezept“ von Chefkoch — 13 Zutaten im Rezept, 8 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 2352 Stimmen). 8 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Kaiserschmarrn“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 8,
+  "zutaten_zugeordnet_mit_menge": 8,
+  "ohne_zutat": [
+   "Eier"
+  ],
+  "vorschlaege": 8,
+  "mit_menge": 7,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 8,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 8,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [
+   "Frische Eier aus Bodenhaltung S-L"
+  ],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Rosinen",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Appleton Estate Signature Blend Jamaica Rum",
+    "qty": 1,
+    "bedarf": "5 El gebraucht",
+    "gebinde": "1 × 0,7 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Alnatura BIO Bourbon Vanillezucker",
+    "qty": 1,
+    "bedarf": "1 Pck gebraucht",
+    "gebinde": "1 × 24 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Diamant Puderzucker",
+    "qty": 1,
+    "bedarf": "4 Tl gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 1.9
+ },
+ {
+  "gericht": "Hühnerfrikassee",
+  "achse": "Einwort-Gericht",
+  "satz": "alles für Hühnerfrikassee",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Hühnerfrikassee",
+  "quelle_name": "Hühnerfrikassee",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 9,
+  "freitext": 2,
+  "entwurf": "Hühnerfrikassee",
+  "entwurf_zutaten": 11,
+  "meldung": "„Hühnerfrikassee“ von Chefkoch — 13 Zutaten im Rezept, 11 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.62 aus 752 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Spargelstücke“, „Erbsen und Möhren“. 5 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Hühnerfrikassee“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 11,
+  "zutaten_zugeordnet_mit_menge": 11,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 2,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "KIKOK Hähnchen",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 1,53 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Tomaten rund, Wiegeware",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 300 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Rama Dreiviertelfett Margarine 60%",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Culinary Zitronensaft 100%",
+    "qty": 1,
+    "bedarf": "1 Spritzer gebraucht",
+    "gebinde": "1 × 250 ml — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frische Eier aus Bodenhaltung S-L",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "dafür 1 × 10 Stk",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "0,5 Becher gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "1 Glas gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Spargelstücke",
+    "qty": 1,
+    "bedarf": "1 Dose gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Erbsen und Möhren",
+    "qty": 1,
+    "bedarf": "1 Dose gebraucht",
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 12.7
+ },
+ {
+  "gericht": "Auflauf",
+  "achse": "mehrdeutig",
+  "satz": "Auflauf",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Auflauf",
+  "quelle_name": "Gyros-Nudelauflauf in Metaxasoße",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 2,
+  "entwurf": "Auflauf",
+  "entwurf_zutaten": 10,
+  "meldung": "„Gyros-Nudelauflauf in Metaxasoße“ von Chefkoch — 12 Zutaten im Rezept, 10 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.79 aus 649 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Gyrosfleisch“, „Metaxa“. 5 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Auflauf“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 12,
+  "zutaten_quelle_mit_menge": 10,
+  "zutaten_zugeordnet": 9,
+  "zutaten_zugeordnet_mit_menge": 8,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 10,
+  "ausrechenbar": 6,
+  "freitext_mit_menge": 2,
+  "rest_da": false,
+  "korbposten": 10,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Diamond Quick Cooking Nudeln",
+    "qty": 1,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Gyrosfleisch",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Paprika Rot, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 150 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Champignons Weiß, Schale",
+    "qty": 1,
+    "bedarf": "150 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "50 g gebraucht",
+    "gebinde": "dafür 1 × 140 g",
+    "freitext": false
+   },
+   {
+    "name": "Berchtesgadener Land Frischer Schmand stichfest 24%",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 200 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 2,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 2 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Metaxa",
+    "qty": 1,
+    "bedarf": "40 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Arla Finello Cheddar Mix Käse gerieben",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 150 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 6.8
+ },
+ {
+  "gericht": "Salat",
+  "achse": "mehrdeutig",
+  "satz": "Salat",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Salat",
+  "quelle_name": "KFC Coleslaw",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 1,
+  "entwurf": "Salat",
+  "entwurf_zutaten": 7,
+  "meldung": "„KFC Coleslaw“ von Chefkoch — 13 Zutaten im Rezept, 7 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 965 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Weißkohl“. 4 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Salat“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weißkohl",
+    "qty": 1,
+    "bedarf": "800 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "60 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Develey Our Original Mayonnaise",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Miil Buttermilch 1%",
+    "qty": 1,
+    "bedarf": "60 ml gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Culinary Zitronensaft 100%",
+    "qty": 1,
+    "bedarf": "2,5 El gebraucht",
+    "gebinde": "1 × 250 ml — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.2
+ },
+ {
+  "gericht": "Suppe",
+  "achse": "mehrdeutig",
+  "satz": "Suppe",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Suppe",
+  "quelle_name": "Erbseneintopf nach Bundeswehrrezept",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 3,
+  "entwurf": "Suppe",
+  "entwurf_zutaten": 11,
+  "meldung": "„Erbseneintopf nach Bundeswehrrezept“ von Chefkoch — 13 Zutaten im Rezept, 11 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.79 aus 1813 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Schälerbsen“, „Schweineschmalz“, „Majoran“. 1 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Suppe“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 3,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Schälerbsen",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Knollensellerie, 1 Stk.",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × ca. 0,96 kg",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × ca. 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kartoffeln mehligkochend, Netz",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 2 kg",
+    "freitext": false
+   },
+   {
+    "name": "Levoni Bauchspeck in Würfeln",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 140 g",
+    "freitext": false
+   },
+   {
+    "name": "Schweineschmalz",
+    "qty": 1,
+    "bedarf": "20 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Majoran",
+    "qty": 1,
+    "bedarf": "1 Tl, gehaeuft gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "2 Staengel gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 1,
+    "bedarf": "8 Tl, gehaeuft gebraucht",
+    "gebinde": "1 × 340 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 9.2
+ },
+ {
+  "gericht": "Eintopf",
+  "achse": "mehrdeutig",
+  "satz": "Eintopf",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Eintopf",
+  "quelle_name": "Erbseneintopf nach Bundeswehrrezept",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 8,
+  "freitext": 2,
+  "entwurf": "Eintopf",
+  "entwurf_zutaten": 10,
+  "meldung": "„Erbseneintopf nach Bundeswehrrezept“ von Chefkoch — 13 Zutaten im Rezept, 10 davon auf dem Zettel, 8 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.79 aus 1813 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Schälerbsen“, „Schweineschmalz“. 1 von 8 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Eintopf“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 9,
+  "zutaten_zugeordnet_mit_menge": 9,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 10,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 2,
+  "rest_da": false,
+  "korbposten": 10,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Schälerbsen",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Knollensellerie, 1 Stk.",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × ca. 0,96 kg",
+    "freitext": false
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × ca. 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kartoffeln mehligkochend, Netz",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 2 kg",
+    "freitext": false
+   },
+   {
+    "name": "Levoni Bauchspeck in Würfeln",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 140 g",
+    "freitext": false
+   },
+   {
+    "name": "Schweineschmalz",
+    "qty": 1,
+    "bedarf": "20 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Bio Petersilie glatt im Topf",
+    "qty": 1,
+    "bedarf": "2 Staengel gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 1,
+    "bedarf": "8 Tl, gehaeuft gebraucht",
+    "gebinde": "1 × 340 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 10.6
+ },
+ {
+  "gericht": "Salat als ganzer Satz",
+  "achse": "mehrdeutig",
+  "satz": "alles für Salat",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Salat",
+  "quelle_name": "KFC Coleslaw",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 1,
+  "entwurf": "Salat",
+  "entwurf_zutaten": 7,
+  "meldung": "„KFC Coleslaw“ von Chefkoch — 13 Zutaten im Rezept, 7 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.85 aus 965 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Weißkohl“. 4 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Salat“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 13,
+  "zutaten_zugeordnet": 7,
+  "zutaten_zugeordnet_mit_menge": 7,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 3,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weißkohl",
+    "qty": 1,
+    "bedarf": "800 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Karotten, Wiegeware",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 500 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "60 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Develey Our Original Mayonnaise",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Miil Buttermilch 1%",
+    "qty": 1,
+    "bedarf": "60 ml gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Culinary Zitronensaft 100%",
+    "qty": 1,
+    "bedarf": "2,5 El gebraucht",
+    "gebinde": "1 × 250 ml — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 7.3
+ },
+ {
+  "gericht": "Nudeln mit Pesto",
+  "achse": "mehrdeutig",
+  "satz": "alles für Nudeln mit Pesto",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Nudeln mit Pesto",
+  "quelle_name": "Spaghetti mit Tomaten-Pesto",
+  "begriffe": 7,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 2,
+  "entwurf": "Nudeln mit Pesto",
+  "entwurf_zutaten": 7,
+  "meldung": "„Spaghetti mit Tomaten-Pesto“ von Chefkoch — 9 Zutaten im Rezept, 7 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.72 aus 197 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Parmesan“, „gemahlene Mandeln“. 2 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Nudeln mit Pesto“ werden — 7 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 9,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 7,
+  "mit_menge": 7,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 2,
+  "rest_da": false,
+  "korbposten": 7,
+  "korb_mit_menge": 7,
+  "abgeschickt": true,
+  "listenzeilen": 7,
+  "liste_zeigt_menge": 7,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Parmesan",
+    "qty": 1,
+    "bedarf": "90 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Riesa Hartweizen Spaghetti",
+    "qty": 1,
+    "bedarf": "200 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Marks & Spencer Getrocknete Tomaten in Olivenöl",
+    "qty": 1,
+    "bedarf": "100 g gebraucht",
+    "gebinde": "dafür 1 × 280 g",
+    "freitext": false
+   },
+   {
+    "name": "gemahlene Mandeln",
+    "qty": 1,
+    "bedarf": "30 g gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Pfanner Orangensaft",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 2 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Basilikum",
+    "qty": 1,
+    "bedarf": "0,5 Bund gebraucht",
+    "gebinde": "1 × 15 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 6.0
+ },
+ {
+  "gericht": "Käse Lauch Suppe",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Käse Lauch Suppe",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Käse Lauch Suppe",
+  "quelle_name": "Käse-Lauch-Suppe mit Hackfleisch",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 0,
+  "entwurf": "Käse Lauch Suppe",
+  "entwurf_zutaten": 6,
+  "meldung": "„Käse-Lauch-Suppe mit Hackfleisch“ von Chefkoch — 12 Zutaten im Rezept, 6 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.76 aus 3852 Stimmen). 1 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Käse Lauch Suppe“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 12,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 6,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Französisches Baguette",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 290 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ludwigsluster Hackfleisch gemischt, gewolft",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "3 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Maggi Gemüse Brühe",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 288 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Milkana Schmelzkäse, Sahne",
+    "qty": 2,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 2 × 190 g",
+    "freitext": false
+   },
+   {
+    "name": "Président Crème Fraiche",
+    "qty": 1,
+    "bedarf": "1 Becher gebraucht",
+    "gebinde": "1 × 200 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 7.4
+ },
+ {
+  "gericht": "Käse-Lauch-Suppe",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Käse-Lauch-Suppe",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Käse-Lauch-Suppe",
+  "quelle_name": "Käse-Lauch-Suppe mit Hackfleisch",
+  "begriffe": 6,
+  "verworfen": 0,
+  "katalogtreffer": 6,
+  "freitext": 0,
+  "entwurf": "Käse-Lauch-Suppe",
+  "entwurf_zutaten": 6,
+  "meldung": "„Käse-Lauch-Suppe mit Hackfleisch“ von Chefkoch — 12 Zutaten im Rezept, 6 davon auf dem Zettel, 6 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.76 aus 3852 Stimmen). 1 von 6 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Käse-Lauch-Suppe“ werden — 6 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 12,
+  "zutaten_quelle_mit_menge": 8,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 6,
+  "mit_menge": 6,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 6,
+  "korb_mit_menge": 6,
+  "abgeschickt": true,
+  "listenzeilen": 6,
+  "liste_zeigt_menge": 6,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Französisches Baguette",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 290 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Ludwigsluster Hackfleisch gemischt, gewolft",
+    "qty": 1,
+    "bedarf": "500 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Lauch / Porree, 1 Stk.",
+    "qty": 1,
+    "bedarf": "3 Stange gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Maggi Gemüse Brühe",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 288 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Milkana Schmelzkäse, Sahne",
+    "qty": 2,
+    "bedarf": "250 g gebraucht",
+    "gebinde": "dafür 2 × 190 g",
+    "freitext": false
+   },
+   {
+    "name": "Président Crème Fraiche",
+    "qty": 1,
+    "bedarf": "1 Becher gebraucht",
+    "gebinde": "1 × 200 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 6.3
+ },
+ {
+  "gericht": "Spagetti Bolognese",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Spagetti Bolognese",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Spagetti Bolognese",
+  "quelle_name": "Die echte Sauce Bolognese",
+  "begriffe": 11,
+  "verworfen": 0,
+  "katalogtreffer": 10,
+  "freitext": 1,
+  "entwurf": "Spagetti Bolognese",
+  "entwurf_zutaten": 11,
+  "meldung": "„Die echte Sauce Bolognese“ von Chefkoch — 13 Zutaten im Rezept, 11 davon auf dem Zettel, 10 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.71 aus 4119 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Staudensellerie“. 1 von 10 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Spagetti Bolognese“ werden — 11 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 13,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 5,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "125 g gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "BIO Möhren, Beutel",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Staudensellerie",
+    "qty": 1,
+    "bedarf": "3 Stange gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Ludwigsluster Rinderhackfleisch gewolft",
+    "qty": 2,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": "dafür 2 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Weinreich BIO Tacheles Weißweincuvée",
+    "qty": 1,
+    "bedarf": "1 Schuss gebraucht",
+    "gebinde": "1 × 0,75 l — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "500 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin BIO geschälte Tomaten",
+    "qty": 2,
+    "bedarf": "600 ml gebraucht",
+    "gebinde": "dafür 2 × 400 g",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Feinkost Dittmann Peperoncini extra mild",
+    "qty": 1,
+    "bedarf": "3 Stk gebraucht",
+    "gebinde": "1 × 160 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Riesa Hartweizen Spaghetti",
+    "qty": 2,
+    "bedarf": "600 g gebraucht",
+    "gebinde": "dafür 2 × 500 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 10.7
+ },
+ {
+  "gericht": "Kartoffelpürree",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Kartoffelpürree",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Kartoffelpürree",
+  "quelle_name": "Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl",
+  "begriffe": 10,
+  "verworfen": 0,
+  "katalogtreffer": 9,
+  "freitext": 1,
+  "entwurf": "Kartoffelpürree",
+  "entwurf_zutaten": 10,
+  "meldung": "„Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl“ von Chefkoch — 14 Zutaten im Rezept, 10 davon auf dem Zettel, 9 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.69 aus 477 Stimmen). Ohne Katalogtreffer und deshalb als Freitext: „Soßenlebkuchen“. 3 von 9 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Kartoffelpürree“ werden — 10 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 14,
+  "zutaten_quelle_mit_menge": 12,
+  "zutaten_zugeordnet": 10,
+  "zutaten_zugeordnet_mit_menge": 10,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 10,
+  "ausrechenbar": 6,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 10,
+  "korb_mit_menge": 10,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 10,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Schweinefilet",
+    "qty": 1,
+    "bedarf": "8 Stk gebraucht",
+    "gebinde": "1 × ca. 0,57 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gallo Cabernet Sauvignon",
+    "qty": 1,
+    "bedarf": "200 ml gebraucht",
+    "gebinde": "dafür 1 × 0,75 l",
+    "freitext": false
+   },
+   {
+    "name": "Fuchs Rinder Fond",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 400 ml",
+    "freitext": false
+   },
+   {
+    "name": "Soßenlebkuchen",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Süßkartoffel, 1 Stk.",
+    "qty": 2,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 2 × ca. 220 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Sahne zum Kochen",
+    "qty": 1,
+    "bedarf": "50 ml gebraucht",
+    "gebinde": "dafür 1 × 250 g",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "50 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "iglo Natur-Gemüse Rosenkohl",
+    "qty": 1,
+    "bedarf": "400 g gebraucht",
+    "gebinde": "dafür 1 × 400 g",
+    "freitext": false
+   },
+   {
+    "name": "Weihenstephan Butter",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Leimer Semmelbrösel",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 12.5
+ },
+ {
+  "gericht": "Broccoliauflauf",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Broccoliauflauf",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Broccoliauflauf",
+  "quelle_name": "Brokkoliauflauf",
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 0,
+  "entwurf": "Broccoliauflauf",
+  "entwurf_zutaten": 5,
+  "meldung": "„Brokkoliauflauf“ von Chefkoch — 7 Zutaten im Rezept, 5 davon auf dem Zettel, 5 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.29 aus 152 Stimmen). 4 von 5 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Broccoliauflauf“ werden — 5 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 7,
+  "zutaten_quelle_mit_menge": 5,
+  "zutaten_zugeordnet": 5,
+  "zutaten_zugeordnet_mit_menge": 5,
+  "ohne_zutat": [],
+  "vorschlaege": 5,
+  "mit_menge": 5,
+  "ausrechenbar": 4,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 5,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 5,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Alnatura BIO Brokkoli",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 300 g",
+    "freitext": false
+   },
+   {
+    "name": "Caputo Mehl \"00\" Classica",
+    "qty": 1,
+    "bedarf": "2 El gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Hemme Milch Milch 1,8 %",
+    "qty": 1,
+    "bedarf": "150 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Larco Gemüsebrühe CL",
+    "qty": 1,
+    "bedarf": "150 ml gebraucht",
+    "gebinde": "dafür 1 × 340 g",
+    "freitext": false
+   },
+   {
+    "name": "Miil geräucherter Käse",
+    "qty": 1,
+    "bedarf": "50 g gebraucht",
+    "gebinde": "dafür 1 × 180 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 4.2
+ },
+ {
+  "gericht": "Cordon bleu",
+  "achse": "Schreibweise/Tippfehler",
+  "satz": "alles für Cordon bleu, und Alufolie",
+  "rest": "Alufolie",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "chefkoch",
+  "abruf": null,
+  "gericht_erkannt": "Cordon bleu",
+  "quelle_name": "Cordon bleu - das Original aus der Schweiz",
+  "begriffe": 4,
+  "verworfen": 0,
+  "katalogtreffer": 4,
+  "freitext": 0,
+  "entwurf": "Cordon bleu",
+  "entwurf_zutaten": 3,
+  "meldung": "„Cordon bleu - das Original aus der Schweiz“ von Chefkoch — 8 Zutaten im Rezept, 4 davon auf dem Zettel, 4 im Katalog gefunden. Bestbewertetes Rezept zum Gericht (4.68 aus 149 Stimmen). „Alufolie“ stand daneben im Satz und liegt als eigene Zeile dabei — nicht im Rezept. Zeiten, Zutaten und Zubereitung stehen gleich darunter. Daraus kann ein Rezept „Cordon bleu“ werden — 3 Zutaten, gespeichert erst beim Abschicken.",
+  "zutaten_quelle": 8,
+  "zutaten_quelle_mit_menge": 4,
+  "zutaten_zugeordnet": 3,
+  "zutaten_zugeordnet_mit_menge": 3,
+  "ohne_zutat": [
+   "Alufolie"
+  ],
+  "vorschlaege": 4,
+  "mit_menge": 3,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": true,
+  "korbposten": 4,
+  "korb_mit_menge": 3,
+  "abgeschickt": true,
+  "listenzeilen": 4,
+  "liste_zeigt_menge": 3,
+  "liste_ohne_menge": [
+   "Toppits Alufolie 10m Karton"
+  ],
+  "zeilen": [
+   {
+    "name": "mein Sonnenkalb Kalbsschnitzel 2 Stück",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 240 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Miil Emmentaler 45% Fett",
+    "qty": 1,
+    "bedarf": "2 Scheibe gebraucht",
+    "gebinde": "1 × 250 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Dacello Kochschinken",
+    "qty": 1,
+    "bedarf": "2 Scheibe gebraucht",
+    "gebinde": "1 × 200 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Toppits Alufolie 10m Karton",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 10 m",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.6
+ },
+ {
+  "gericht": "Schrumpelfrikandel",
+  "achse": "Fantasiename",
+  "satz": "alles für Schrumpelfrikandel",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "llm",
+  "abruf": null,
+  "gericht_erkannt": "Schrumpelfrikandel",
+  "quelle_name": null,
+  "begriffe": 2,
+  "verworfen": 0,
+  "katalogtreffer": 0,
+  "freitext": 2,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "2 Begriffe aus dem Satz, 0 davon im Katalog gefunden. Ohne Katalogtreffer und deshalb als Freitext: „Frikandel“, „Schrumpel“. Zu „Schrumpelfrikandel“ liegt gerade kein Rezept von Chefkoch vor — die Zutaten hier hat das Modell aus dem Gedächtnis genannt.",
+  "zutaten_quelle": 0,
+  "zutaten_quelle_mit_menge": 0,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [
+   "Frikandel",
+   "Schrumpel"
+  ],
+  "vorschlaege": 2,
+  "mit_menge": 0,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 2,
+  "korb_mit_menge": 0,
+  "abgeschickt": true,
+  "listenzeilen": 2,
+  "liste_zeigt_menge": 0,
+  "liste_ohne_menge": [
+   "Frikandel",
+   "Schrumpel"
+  ],
+  "zeilen": [
+   {
+    "name": "Frikandel",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Schrumpel",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 4.2
+ },
+ {
+  "gericht": "Zwuckelpfanne mit Gnubbeln",
+  "achse": "Fantasiename",
+  "satz": "alles für Zwuckelpfanne mit Gnubbeln",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "llm",
+  "abruf": null,
+  "gericht_erkannt": "Zwuckelpfanne mit Gnubbeln",
+  "quelle_name": null,
+  "begriffe": 5,
+  "verworfen": 0,
+  "katalogtreffer": 4,
+  "freitext": 1,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "5 Begriffe aus dem Satz, 4 davon im Katalog gefunden. Ohne Katalogtreffer und deshalb als Freitext: „Gnubbel“. 1 von 4 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zu „Zwuckelpfanne mit Gnubbeln“ liegt gerade kein Rezept von Chefkoch vor — die Zutaten hier hat das Modell aus dem Gedächtnis genannt.",
+  "zutaten_quelle": 0,
+  "zutaten_quelle_mit_menge": 0,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [
+   "Zwuckel",
+   "Gnubbel",
+   "Schweinefleisch",
+   "Zwiebeln",
+   "Schinken"
+  ],
+  "vorschlaege": 5,
+  "mit_menge": 0,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 5,
+  "korb_mit_menge": 0,
+  "abgeschickt": true,
+  "listenzeilen": 5,
+  "liste_zeigt_menge": 0,
+  "liste_ohne_menge": [
+   "Kartoffeln festkochend, Netz",
+   "Gnubbel",
+   "Zartes Schweinefleisch mit Kartoffelknödel & Spinat",
+   "Zwiebeln Gelb, Netz",
+   "Dacello Prager Schinken"
+  ],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Gnubbel",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Zartes Schweinefleisch mit Kartoffelknödel & Spinat",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 450 g",
+    "freitext": false
+   },
+   {
+    "name": "Zwiebeln Gelb, Netz",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 1 kg",
+    "freitext": false
+   },
+   {
+    "name": "Dacello Prager Schinken",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 150 g",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 5.3
+ },
+ {
+  "gericht": "Glibberschmarrn",
+  "achse": "Fantasiename",
+  "satz": "alles für Glibberschmarrn, und Klopapier",
+  "rest": "Klopapier",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "weg": "llm",
+  "abruf": null,
+  "gericht_erkannt": "Glibberschmarrn",
+  "quelle_name": null,
+  "begriffe": 1,
+  "verworfen": 0,
+  "katalogtreffer": 1,
+  "freitext": 0,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "1 Begriff aus dem Satz, 1 davon im Katalog gefunden. 1 von 1 Zeilen kamen aus dem Gedächtnis — dieselbe Wahl wie beim letzten Mal, ohne Modell. „Neu suchen“ fragt es noch einmal. Zu „Glibberschmarrn“ liegt gerade kein Rezept von Chefkoch vor — die Zutaten hier hat das Modell aus dem Gedächtnis genannt.",
+  "zutaten_quelle": 0,
+  "zutaten_quelle_mit_menge": 0,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [
+   "Klopapier"
+  ],
+  "vorschlaege": 1,
+  "mit_menge": 0,
+  "ausrechenbar": 0,
+  "freitext_mit_menge": 0,
+  "rest_da": false,
+  "korbposten": 1,
+  "korb_mit_menge": 0,
+  "abgeschickt": true,
+  "listenzeilen": 1,
+  "liste_zeigt_menge": 0,
+  "liste_ohne_menge": [
+   "Moddia Toilettenpapier 3-lagig"
+  ],
+  "zeilen": [
+   {
+    "name": "Moddia Toilettenpapier 3-lagig",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": "1 × 286 m",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 1.0
+ },
+ {
+  "gericht": "Ratatouille",
+  "achse": "bereits gespeichert",
+  "satz": "alles für Ratatouille",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "vorlauf": "chefkoch",
+  "weg": "recipe",
+  "abruf": null,
+  "gericht_erkannt": null,
+  "quelle_name": null,
+  "begriffe": 0,
+  "verworfen": 0,
+  "katalogtreffer": 10,
+  "freitext": 1,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "„Ratatouille“ — 11 Zutaten aus dem Rezept, ohne Modell.",
+  "zutaten_quelle": 11,
+  "zutaten_quelle_mit_menge": 11,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [],
+  "vorschlaege": 11,
+  "mit_menge": 11,
+  "ausrechenbar": 1,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 11,
+  "korb_mit_menge": 11,
+  "abgeschickt": true,
+  "listenzeilen": 11,
+  "liste_zeigt_menge": 11,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Aubergine, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 280 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Reinheimer`s Zucchini",
+    "qty": 1,
+    "bedarf": "2 Stk gebraucht",
+    "gebinde": "1 × ca. 450 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gemüsezwiebeln, Netz",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × 1 kg — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, Netz",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lorenz Naturals Rosmarin",
+    "qty": 1,
+    "bedarf": "1 Tl gebraucht",
+    "gebinde": "1 × 95 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "BIO Thymian im Topf",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Potager`s Berliner Salbei, Topf",
+    "qty": 1,
+    "bedarf": "1 El gebraucht",
+    "gebinde": "1 × 1 Stk — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Lavendelblüten",
+    "qty": 1,
+    "bedarf": "0,5 Tl gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Käfer Olivenöl",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": "dafür 1 × 1 l",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin Tomatenmark",
+    "qty": 1,
+    "bedarf": "0,5 Tube gebraucht",
+    "gebinde": "1 × 140 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Kitchin BIO geschälte Tomaten",
+    "qty": 1,
+    "bedarf": "1 Gr. dose gebraucht",
+    "gebinde": "1 × 400 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 11.0
+ },
+ {
+  "gericht": "Quesadillas",
+  "achse": "bereits gespeichert",
+  "satz": "alles für Quesadillas",
+  "rest": null,
+  "fehler": null,
+  "faecher_moeglich": false,
+  "vorlauf": "chefkoch",
+  "weg": "recipe",
+  "abruf": null,
+  "gericht_erkannt": null,
+  "quelle_name": null,
+  "begriffe": 0,
+  "verworfen": 0,
+  "katalogtreffer": 3,
+  "freitext": 1,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "„Quesadillas“ — 4 Zutaten aus dem Rezept, ohne Modell.",
+  "zutaten_quelle": 4,
+  "zutaten_quelle_mit_menge": 4,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [],
+  "vorschlaege": 4,
+  "mit_menge": 4,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 1,
+  "rest_da": false,
+  "korbposten": 4,
+  "korb_mit_menge": 4,
+  "abgeschickt": true,
+  "listenzeilen": 4,
+  "liste_zeigt_menge": 4,
+  "liste_ohne_menge": [],
+  "zeilen": [
+   {
+    "name": "Weizentortilla",
+    "qty": 1,
+    "bedarf": "6 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Arla Finello Cheddar Mix Käse gerieben",
+    "qty": 1,
+    "bedarf": "80 g gebraucht",
+    "gebinde": "dafür 1 × 150 g",
+    "freitext": false
+   },
+   {
+    "name": "Spinat, Beutel",
+    "qty": 1,
+    "bedarf": "300 g gebraucht",
+    "gebinde": "dafür 1 × 500 g",
+    "freitext": false
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   }
+  ],
+  "dauer_s": 2.5
+ },
+ {
+  "gericht": "Kartoffelsalat",
+  "achse": "bereits gespeichert",
+  "satz": "alles für Kartoffelsalat, und Spülmittel",
+  "rest": "Spülmittel",
+  "fehler": null,
+  "faecher_moeglich": false,
+  "vorlauf": "chefkoch",
+  "weg": "recipe",
+  "abruf": null,
+  "gericht_erkannt": null,
+  "quelle_name": null,
+  "begriffe": 0,
+  "verworfen": 0,
+  "katalogtreffer": 5,
+  "freitext": 5,
+  "entwurf": null,
+  "entwurf_zutaten": 0,
+  "meldung": "„Kartoffelsalat“ — 9 Zutaten aus dem Rezept, ohne Modell. „Spülmittel“ steht nicht im Rezept und liegt als Freitext dabei.",
+  "zutaten_quelle": 9,
+  "zutaten_quelle_mit_menge": 9,
+  "zutaten_zugeordnet": 0,
+  "zutaten_zugeordnet_mit_menge": 0,
+  "ohne_zutat": [],
+  "vorschlaege": 10,
+  "mit_menge": 9,
+  "ausrechenbar": 2,
+  "freitext_mit_menge": 4,
+  "rest_da": true,
+  "korbposten": 10,
+  "korb_mit_menge": 9,
+  "abgeschickt": true,
+  "listenzeilen": 10,
+  "liste_zeigt_menge": 9,
+  "liste_ohne_menge": [
+   "Spülmittel"
+  ],
+  "zeilen": [
+   {
+    "name": "Kartoffeln festkochend, Netz",
+    "qty": 1,
+    "bedarf": "1000 g gebraucht",
+    "gebinde": "dafür 1 × 2,5 kg",
+    "freitext": false
+   },
+   {
+    "name": "Kühne Gewürzgurken",
+    "qty": 1,
+    "bedarf": "4 Stk gebraucht",
+    "gebinde": "1 × 190 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Apfel",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Develey Senf mittelscharf",
+    "qty": 1,
+    "bedarf": "2 Tl gebraucht",
+    "gebinde": "1 × 250 ml — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Gurkenflüssigkeit",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Alnatura Bio Weißweinessig",
+    "qty": 1,
+    "bedarf": "50 ml gebraucht",
+    "gebinde": "dafür 1 × 500 ml",
+    "freitext": false
+   },
+   {
+    "name": "Distelöl",
+    "qty": 1,
+    "bedarf": "100 ml gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Knoblauch, 1 Stk.",
+    "qty": 1,
+    "bedarf": "1 Stk gebraucht",
+    "gebinde": "1 × ca. 100 g — nicht ausrechenbar",
+    "freitext": false
+   },
+   {
+    "name": "Frühlingszwiebel",
+    "qty": 1,
+    "bedarf": "0,5 Bund gebraucht",
+    "gebinde": null,
+    "freitext": true
+   },
+   {
+    "name": "Spülmittel",
+    "qty": 1,
+    "bedarf": null,
+    "gebinde": null,
+    "freitext": true
+   }
+  ],
+  "dauer_s": 10.4
+ }
+]

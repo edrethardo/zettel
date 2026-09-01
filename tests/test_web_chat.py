@@ -1437,7 +1437,9 @@ def test_der_abgelaufene_zaehler_steht_nicht_bei_null(db_datei, tmp_path):
 
     class AlteBox:
         def zustand(self):
-            return wake.Zustand(wake.WACHT_AUF, seit_s=200.0,
+            # Über die Erwartung hinaus, egal wie die gerade steht.
+            return wake.Zustand(wake.WACHT_AUF,
+                                seit_s=wake.WECKDAUER_S + 110.0,
                                 grund="Weckruf läuft.")
 
     client, _ = _client(db_datei, tmp_path, box=AlteBox())

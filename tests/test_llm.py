@@ -422,7 +422,10 @@ def test_zaehler_laeuft_mit_der_zeit(weckbefehl):
     w.zustand()
     uhr.weiter(80)
     z = w.zustand()
-    assert z.seit_s == 80.0 and z.rest_s == 10.0
+    # Aus der Konstanten gerechnet, nicht aus ihrem Wert: die Weckdauer
+    # gehört der Box und hat sich schon zweimal geändert (90 s nackter
+    # vLLM, 210 s Container). Geprüft wird das Mitlaufen, nicht die Zahl.
+    assert z.seit_s == 80.0 and z.rest_s == wake.WECKDAUER_S - 80.0
     assert not z.ueberfaellig
 
 
@@ -574,3 +577,32 @@ def test_shop_laeuft_ohne_modell(shop):
                      follow_redirects=False).status_code == 303
     assert shop.get("/bestellungen").status_code == 200
     assert shop.get("/pick").status_code == 200
+
+
+def test_health_schickt_den_schluessel_mit():
+    """Ohne Schlüssel antwortet ein geschützter Endpunkt mit 401.
+
+    Und 401 heisst hier „lädt noch" — eine Auskunft, die nie umschlägt. Gegen
+    den syv-Stack meldete der Shop dauerhaft „Box wacht auf", während die Box
+    tadellos bediente (2026-09-01).
+    """
+    def nur_mit_schluessel(request):
+        if request.headers.get("Authorization") != "Bearer geheim":
+            return httpx.Response(401, json={"error": "no api key"})
+        return wache_box(request)
+
+    befund = wake.health(ENDPUNKT, http=http_doppel(nur_mit_schluessel),
+                         umgebung={"ZETTEL_LLM_API_KEY": "geheim"})
+    assert befund.zustand == wake.BEDIENT and befund.modell == KUERZEL
+
+
+def test_health_schickt_ohne_konfiguration_die_vorgabe():
+    """vLLM prüft den Schlüssel nicht — ein leerer Kopf wäre trotzdem falsch."""
+    gesehen = {}
+
+    def merke(request):
+        gesehen["auth"] = request.headers.get("Authorization")
+        return wache_box(request)
+
+    wake.health(ENDPUNKT, http=http_doppel(merke), umgebung={})
+    assert gesehen["auth"] == "Bearer 1"

@@ -34,7 +34,8 @@ from dataclasses import dataclass
 import httpx
 
 from zettel import umgebung as umg
-from zettel.llm.client import KonfigurationsFehler, endpunkt_aus_umgebung
+from zettel.llm.client import (KonfigurationsFehler, endpunkt_aus_umgebung,
+                               schluessel_aus_umgebung)
 
 ENV_WECKBEFEHL = "ZETTEL_WAKE_CMD"
 
@@ -51,12 +52,30 @@ STILL = "still"              # niemand nimmt die Verbindung an
 WACHT_AUF = "wacht_auf"
 NICHT_ERREICHBAR = "nicht_erreichbar"
 
-#: Was die Oberfläche als Erwartung anzeigt. Gemessen 2026-08-09: 96 s.
-WECKDAUER_S = 90.0
+#: Was die Oberfläche als Erwartung anzeigt.
+#:
+#: War 90 s, gemessen 2026-08-09 gegen den nackten vLLM-Prozess (96 s). Seit
+#: dem Umstieg auf den syv-Container am 2026-09-01 kommen Docker, ein
+#: grösserer torch.compile-Lauf und CUDA-Graphen dazu; die Nachbarsitzung
+#: nennt 3 bis 4 Minuten. Beim ersten echten Kaltstart danach (2026-09-01,
+#: Demo-Instanz) lagen zwischen dem abgeschickten Satz und der bedienenden
+#: Engine **5 min 35 s** — gelesen aus `created` in `/v1/models` gegen den
+#: Zeitstempel des Zuges.
+#:
+#: **Die Zahl ist nicht sauber:** ob der Desktop zusätzlich aus S3 aufwachen
+#: musste, lässt sich hinterher nicht mehr sagen, und genau das macht den
+#: Unterschied zwischen 3,5 und 5,5 Minuten aus. Deshalb 300 und nicht 340:
+#: der obere Wert enthält vermutlich Fremdzeit. Zu niedrig ist das schlechtere
+#: Ende — der Zähler läuft dann über seine eigene Erwartung hinaus, und die
+#: Oberfläche sieht kaputt aus, während alles nach Plan läuft.
+WECKDAUER_S = 300.0
 
 #: Ab hier lief der Weckruf so lange, dass er nicht mehr als „gleich soweit"
-#: durchgehen kann. Doppelte Weckdauer plus Luft.
-WECKFRIST_S = 300.0
+#: durchgehen kann. Doppelte Weckdauer plus Luft — die Regel bleibt, die Zahl
+#: wächst mit der Weckdauer mit. Bei 300 s wäre sie nach dem Umstieg nur noch
+#: das 1,25-fache eines normalen Kaltstarts gewesen: ein Lauf, der ordentlich
+#: lädt, hätte als Fehlschlag gegolten.
+WECKFRIST_S = 600.0
 
 #: Nach einem fehlgeschlagenen Weckruf so lange nicht erneut wecken. Ohne das
 #: startet eine Oberfläche, die jede Sekunde nachfragt, jede Sekunde einen
@@ -159,10 +178,17 @@ def health(endpunkt: str | None = None, *, http=None,
     längst wach und vLLM lädt nur noch.
     """
     ziel = endpunkt or endpunkt_aus_umgebung(umgebung)
+    # Der Schlüssel gehört auch an die Gesundheitsprobe. Ein Endpunkt, der
+    # einen verlangt, antwortet ohne ihn mit 401 — und 401 fällt unten in den
+    # LAEDT-Zweig, also „vLLM lädt noch". Das ist eine Auskunft, die nie
+    # umschlägt: der Shop meldete gegen den syv-Stack dauerhaft „Box wacht
+    # auf", während die Box tadellos bediente (2026-09-01).
+    kopf = {"Authorization": f"Bearer {schluessel_aus_umgebung(umgebung)}"}
     eigener = http is None
     client = http if http is not None else httpx.Client(timeout=timeout_s)
     try:
-        antwort = client.get(f"{ziel.rstrip('/')}/models", timeout=timeout_s)
+        antwort = client.get(f"{ziel.rstrip('/')}/models", timeout=timeout_s,
+                             headers=kopf)
     except (httpx.ConnectError, httpx.ConnectTimeout) as e:
         # Es kam keine Verbindung zustande: abgelehnt, kein Weg zum Host, Name
         # nicht auflösbar — oder der Verbindungsversuch lief ins Leere. Der

@@ -1,0 +1,11 @@
+{
+  "stack": "syv-ai/qwen38-27b-rtx3090",
+  "endpunkt": "http://vllm-box.local:18020/v1",
+  "modell": "qwen3.8-27b",
+  "max_model_len": 65536,
+  "created": 1788238627,
+  "created_lesbar": "2026-09-01T06:57:07",
+  "parallel": 2,
+  "karte_watt": 280,
+  "commit": "f8a43bc7396cf6ae0d8512a3f5e4d467a23e529f"
+}
