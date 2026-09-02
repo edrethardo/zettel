@@ -537,9 +537,13 @@ def test_der_primaere_knopf_ist_genau_eine_regel():
     ist die eine Handlung, für die die Seite da ist — Fragen, Abschicken,
     Hochladen. Drei Regeln sagten dasselbe mit 52 und 54 px; jetzt eine."""
     stil = STIL.read_text(encoding="utf-8")
+    # `var(--akzent)` als Teilstring trifft auch `var(--akzent-hell)` und
+    # `var(--akzent-tinte)` — beides gibt es im Blatt (die gewählte Rolle,
+    # der Chip). Das Semikolon beendet die Marke, sonst meldete dieser Test
+    # eines Tages einen zweiten Primärknopf, der keiner ist.
     gefuellt = sorted(sel.strip() for sel, dekl in _bloecke(stil)
                       if ("button" in sel or ".gross" in sel or ".knopf" in sel)
-                      and "background: var(--akzent)" in dekl)
+                      and re.search(r"background: var\(--akzent\)\s*;", dekl))
     assert gefuellt == [".abschicken .gross, .chatform button, .bonupload button"]
 
 
