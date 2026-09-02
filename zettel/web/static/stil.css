@@ -541,10 +541,12 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 }
 
 .freitext { display: flex; gap: var(--v2); margin: var(--rand) 0; }
+/* Formularfelder erben die Schrift nicht von selbst. */
 .freitext input {
   flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--v3);
   font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
+  font-family: inherit;
 }
 .freitext button, .abschicken .gross {
   min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 600;
@@ -709,7 +711,9 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
             color: var(--beere); font-weight: 600; }
 
 /* Die Hauptangabe der Einkaufszeile ist die GEBRAUCHTE Menge (WB-381) und
-   nicht die Packungsgrösse. Sie ist gerechnet und steht deshalb gross. */
+   nicht die Packungsgrösse. Sie ist gerechnet und steht deshalb gross;
+   `tabular-nums` hält ihre Ziffern über die Zeilen der Liste hinweg auf
+   derselben Spalte. */
 .pickzeile .menge { color: var(--tinte); font-size: var(--t-feld); font-weight: 600;
                     font-variant-numeric: tabular-nums; }
 /* Die Packungsangabe („dafür 2 × 1 kg"). Sie steht gross, SOLANGE sie die
@@ -787,10 +791,12 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 /* 16 px, nicht 15: Safari zoomt bei einem kleineren Feld beim Hineintippen in
    die Seite und zoomt nicht zurück (WB-379). Die Breiten stehen in `ch` und
    wachsen mit. */
+/* Formularfelder erben die Schrift nicht von selbst. */
 .bedarf input[type="text"] {
   width: 5ch; min-height: var(--tap); text-align: right; font-size: var(--t-feld);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   padding: 0 var(--v2); background: var(--karte); color: var(--tinte);
+  font-family: inherit;
 }
 /* Die Einheit als eigenes Feld neben der Zahl (WB-375). Linksbündig und
    breiter als die Menge: dort steht Text („Scheibe"), keine Ziffer — und
@@ -810,7 +816,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   width: 4.5ch; min-height: 44px; text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
-  font-variant-numeric: tabular-nums;
+  font-family: inherit; font-variant-numeric: tabular-nums;
 }
 .abschicken.portionen .gross { flex: 1 1 12ch; }
 .abschicken.portionen .hinweis {
@@ -882,8 +888,10 @@ main > .rezeptherkunft {
    Kauf genommen, weil die Alternative die dreizeilige 8ch-Monospace-Spalte
    war (UI-Review 2026-09-01, Fund 4). Keine Monospace — die Zahl ist eine
    Kochangabe und keine Maschinenausgabe; `tabular-nums` genügt, damit
-   Ziffern fluchten. `font-family: inherit` überschreibt die globale
-   `.menge`-Regel (Kassenschrift), die sonst per Kaskade gewinnen würde. */
+   Ziffern fluchten. `font-family: inherit` steht als Zaun und nicht als
+   Kaskaden-Override — die globale `.menge`-Regel setzt heute selbst keine
+   Schrift mehr, aber sollte sie einmal wieder eine bekommen, bliebe diese
+   Kochangabe trotzdem verschont. */
 .rezeptzutaten .menge { flex: 0 0 auto; min-width: 5ch; max-width: 33%;
                         text-align: right; color: var(--gedaempft);
                         font-size: var(--t-klein); font-family: inherit;
@@ -1272,10 +1280,9 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   white-space: nowrap;
 }
 /* KEIN `tabular-nums`: „35 Minuten Arbeitszeit", „4.74 aus 1420 Stimmen"
-   sind von Chefkoch abgeschrieben und nicht gerechnet. Fluchtende Ziffern
-   sind in diesem Blatt die Auszeichnung für die eigene Rechnung
-   (Bedarfsmenge, Preis, Zähler); sie hier zu tragen kehrte ihre Aussage
-   um (WB-400). */
+   stehen als Fliesstext in einer umbrechenden Pillenreihe und fluchten mit
+   nichts — die Ziffern stehen sich hier nie untereinander, `tabular-nums`
+   kostet also nur Breite (WB-400). */
 .andereliste .zahlen {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--v0) var(--v3);
   font-size: var(--t-fein); color: var(--gedaempft);
@@ -1367,7 +1374,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   width: 4.5ch; min-height: var(--tap); text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
-  font-variant-numeric: tabular-nums;
+  font-family: inherit; font-variant-numeric: tabular-nums;
 }
 .zugportionen .fussnote { flex-basis: 100%; margin: 0; }
 

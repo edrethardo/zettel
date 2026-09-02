@@ -408,8 +408,9 @@ def test_der_griff_an_der_rezeptzutat_ist_kein_flex_container():
 def test_die_mengenspalte_der_rezeptzutat_ist_weder_starr_noch_mono():
     """„1 gr. Dose/n" stand dreizeilig in 8ch Monospace. Eine Kochangabe ist
     keine Maschinenausgabe; für fluchtende Ziffern reicht `tabular-nums`. Die
-    globale `.menge`-Regel setzt Kassenschrift — das blosse Fehlen der
-    Deklaration reicht deshalb nicht, es braucht die Gegenregel."""
+    globale `.menge`-Regel setzt heute selbst keine Schrift mehr — die
+    Deklaration steht trotzdem als Zaun, nicht als Kaskaden-Override, damit
+    Monospace hier nie zurückkehrt."""
     stil = STIL.read_text(encoding="utf-8")
     block = _block(stil, ".rezeptzutaten .menge")
     assert "8ch" not in block
@@ -511,3 +512,15 @@ def test_monospace_gibt_es_nur_noch_fuer_code():
     stil = STIL.read_text(encoding="utf-8")
     assert stil.count("var(--mono)") == 1
     assert "var(--mono)" in _block(stil, "code")
+
+
+def test_die_portionsfelder_erben_die_schrift():
+    """`<input>` erbt `font-family` nicht vom Body — das ist eine
+    Eigenheit von Formularfeldern (UA-Stylesheet), keine Kaskade wie sonst
+    im Blatt. Ohne `var(--mono)` UND ohne `font-family: inherit` fiel das
+    Feld auf die Systemschrift des Formularelements zurück (meist Arial),
+    nicht auf die Schrift des Blattes."""
+    stil = STIL.read_text(encoding="utf-8")
+    for sel in (".abschicken.portionen input", ".zugportionen input"):
+        block = _block(stil, sel)
+        assert "font-family: inherit" in block
