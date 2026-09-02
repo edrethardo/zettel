@@ -105,8 +105,8 @@
                autocomplete="off"
                value="{{ z.need_amount | menge }}"
                aria-label="Menge von {{ z.rezeptzeile.name }} im Rezept">
-        <input type="text"
-               name="einheit" autocomplete="off" value="{{ z.need_unit | einheit }}"
+        <input type="text" name="einheit" autocomplete="off"
+               value="{{ z.need_unit | einheit }}"
                aria-label="Einheit von {{ z.rezeptzeile.name }}">
         <button class="mini" type="submit">ok</button>
       </form>

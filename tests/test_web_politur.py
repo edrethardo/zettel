@@ -19,7 +19,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from zettel import db
+from zettel import db, orders
+from zettel.assistant import vorschlaege
 from zettel.web import app as webapp
 
 STIL = Path(webapp.STATIC_DIR) / "stil.css"
@@ -576,13 +577,15 @@ def test_die_wartezeile_im_chat_ist_lesbar():
 
 def test_ein_einzelner_zug_ohne_luecke_bekommt_einen_ganzen_satz(client, con):
     """„Alle 1 Züge tragen eine Span-ID." ist kein Deutsch (Fund 16)."""
-    client.post("/chat", data={"satz": "Milch"})
-    # Der Zug muss eine Span-ID TRAGEN, sonst steht auf der Seite der
-    # Fehlerzweig und der Satz käme überhaupt nicht vor — der Test wäre grün,
-    # ohne etwas geprüft zu haben. Ohne laufendes Tracing setzt `POST /chat`
-    # keine, also wird sie hier nachgetragen.
-    con.execute("UPDATE chat_message SET span_id = 'span-1' WHERE role = 'user'")
-    con.commit()
-    text = client.get("/status").text
-    assert "Der eine Zug trägt eine" in text
-    assert "Alle 1 Züge" not in text
+    # Der Zug wird hier geschrieben statt über `POST /chat` erzeugt: gezählt
+    # werden Züge MIT Span-ID, und ohne laufendes Tracing setzt der Weg über
+    # die Oberfläche keine — dann stünde auf der Seite der Fehlerzweig und
+    # der geprüfte Satz käme gar nicht vor.
+    vorschlaege.nachricht(con, orders.warenkorb(con),
+                          vorschlaege.ROLLE_NUTZERIN, "Milch",
+                          span_id="span-1")
+    # Geglättet, weil der Satz in der Vorlage umbricht — geprüft wird er
+    # ganz, sonst bliebe offen, ob dahinter noch „Züge" steht.
+    flach = " ".join(client.get("/status").text.split())
+    assert "Der eine Zug trägt eine Span-ID." in flach
+    assert "Alle 1 Züge" not in flach

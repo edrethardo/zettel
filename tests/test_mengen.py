@@ -335,6 +335,12 @@ def test_die_einheit_wird_geschrieben_wie_im_kochbuch():
     assert mengen.einheit_text("el") == "EL"
     assert mengen.einheit_text("tl") == "TL"
     assert mengen.einheit_text("pck") == "Pck."
+    # „Pkt." ist die Form, die wirklich aus den Rezepten kommt
+    # (`chefkoch_pho_rezept.json`), „Pck." dagegen keine, die dort je stand.
+    # Ohne eigenen Eintrag stünde im Feld „Pkt" ohne Punkt — die Rückfaltung
+    # unten fiele darauf nicht herein, sie kürzt den Punkt ohnehin weg.
+    assert mengen.einheit_text("pkt") == "Pkt."
+    assert mengen.falte(mengen.einheit_text("pkt")) == "pkt"
     assert mengen.einheit_text("paket") == "Paket"
     assert mengen.einheit_text("g") == "g"
     assert mengen.einheit_text(None) == ""
