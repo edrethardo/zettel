@@ -146,6 +146,32 @@ def test_der_nachtlauf_zieht_die_miniaturen_nach(tmp_path, monkeypatch):
     assert (bilder / "mini" / "neu.jpg.webp").is_file()
 
 
+def test_der_nachtlauf_zieht_die_einheiten_nach(tmp_path, monkeypatch):
+    """`repariere_einheiten` hatte keinen Aufrufer ausser den Tests (UI-Review
+    2026-09-01, Fund 5, Rest). Der Crawl schreibt nur die Zeilen richtig, die
+    er anfasst; der Nachtlauf zieht die anderen nach."""
+    from zettel.scrapers import nachtlauf
+    monkeypatch.setattr(nachtlauf.knuspr, "crawl",
+                        lambda *a, **k: {"run_id": 1, "status": "ok",
+                                         "n_products": 0, "error": None})
+    db_datei = tmp_path / "p.db"
+    con = db.connect(db_datei)
+    db.migrate(con)
+    con.execute("INSERT INTO product (source, external_id, name, unit_text,"
+                " unit, price_cents)"
+                " VALUES ('knuspr', 'x1', 'Nudeln', '0,25 g', 'g', 239)")
+    con.commit()
+    con.close()
+    meldungen = []
+    nachtlauf.lauf(str(db_datei), begriffe=["nudeln"], image_dir=None,
+                   http=object(), sichern=False, schreib=meldungen.append)
+    con = db.connect(db_datei)
+    assert con.execute("SELECT unit_text FROM product WHERE name = 'Nudeln'"
+                       ).fetchone()["unit_text"] == "250 g"
+    con.close()
+    assert "Einheiten nachgezogen: 1" in meldungen
+
+
 # --------------------------------------------------------------------------
 # Der Bildweg
 

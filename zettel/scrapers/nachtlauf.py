@@ -81,6 +81,9 @@ def lauf(db_path: str, *, begriffe, image_dir: str | None,
                 f", {bericht['n_products']} Produkte")
         if bericht["error"]:
             schreib(f"  Begründung: {bericht['error']}")
+        # Was der Crawl nicht angefasst hat, steht noch mit „0,25 g" da
+        # (UI-Review 2026-09-01, Fund 5). Idempotent, deshalb bei jedem Lauf.
+        schreib(f"Einheiten nachgezogen: {knuspr.repariere_einheiten(con)}")
     finally:
         con.close()
 
