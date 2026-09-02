@@ -89,6 +89,10 @@ function kontrast(el){
   return (hi+0.05)/(lo+0.05);
 }
 document.documentElement.style.width = '390px';
+/* Ein festes Element misst sich am FENSTER, nicht am Dokument: die Leiste
+   bliebe 500 px breit, jeder Reiter hätte 100 px, und die Kantenprobe unten
+   könnte nie anschlagen. Deshalb wird sie mit auf 390 gezwungen. */
+var L = document.querySelector('.leiste'); if (L) { L.style.width = '390px'; L.style.right = 'auto'; }
 var out = {breite: document.body.scrollWidth, klein: [], feld: [], kontrast: [], zeilen: []};
 document.querySelectorAll('a,button,summary,input[type=checkbox],select,[role=button]').forEach(function(e){
   var r = e.getBoundingClientRect();
@@ -122,7 +126,7 @@ if (leiste) {
   out.leiste = {unten: Math.round(window.innerHeight - lr.bottom), hoehe: Math.round(lr.height), kanten: []};
   leiste.querySelectorAll('a').forEach(function(a){
     var r = a.getBoundingClientRect();
-    if (r.left < -0.5 || r.right > window.innerWidth + 0.5 || a.scrollWidth > a.clientWidth + 0.5) out.leiste.kanten.push([a.textContent.trim(), Math.round(r.left), Math.round(r.right), a.scrollWidth, a.clientWidth]);
+    if (r.left < -0.5 || r.right > 390 + 0.5 || a.scrollWidth > a.clientWidth + 0.5) out.leiste.kanten.push([a.textContent.trim(), Math.round(r.left), Math.round(r.right), a.scrollWidth, a.clientWidth]);
   });
 }
 return JSON.stringify(out);
@@ -156,6 +160,10 @@ if __name__ == "__main__":
                     zeilen.append(f"  bild-versatz zu text-oben: {versatz}")
                 if d.get("leiste", {}).get("kanten") or d.get("leiste", {}).get("unten"):
                     zeilen.append(f"  leiste: {d['leiste']}")
+                elif "leiste" not in d:
+                    # Keine Leiste ist kein Befund, sondern ein Loch: ohne
+                    # diese Zeile wäre ein Blatt ohne Leiste stumm grün.
+                    zeilen.append("  FEHLT: keine Leiste")
                 # Die Quittung MUSS im Bild sein (Runde 4): ohne einen
                 # ersetzten Zug misst der Stand an /chat nur die halbe
                 # Seite und meldet gruen, was er nie gesehen hat.

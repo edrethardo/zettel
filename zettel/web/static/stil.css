@@ -196,7 +196,7 @@ button, .knopf { overflow-wrap: normal; }
 
 /* Kopf ------------------------------------------------------------------ */
 .kopf {
-  display: flex; align-items: center; gap: var(--v1) var(--rand);
+  display: flex; align-items: center;
   padding: 0 var(--rand);
   background: var(--karte); border-bottom: 1px solid var(--linie);
 }
@@ -223,16 +223,28 @@ button, .knopf { overflow-wrap: normal; }
 .leiste {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
   display: flex; height: var(--leiste);
-  padding: 0 var(--v1) env(safe-area-inset-bottom);
+  /* Seitlich so viel Rand wie die Kerbe verlangt: quer gehalten reicht die
+     Leiste bis unter sie, und der erste oder letzte Reiter läge darunter. */
+  padding: 0 max(var(--v1), env(safe-area-inset-right)) env(safe-area-inset-bottom)
+           max(var(--v1), env(safe-area-inset-left));
   background: var(--karte); border-top: 1px solid var(--linie);
 }
 .leiste a {
   flex: 1 1 0; min-width: 0; display: flex; align-items: center;
-  justify-content: center; gap: var(--v1); padding: 0 var(--v1);
+  justify-content: center; gap: var(--v1); padding: 0 var(--v0);
   color: var(--gedaempft); text-decoration: none;
-  font-size: var(--t-fein); font-weight: 600; white-space: nowrap;
+  /* 12 px: die eine Grösse im Blatt unter `--t-fein`. Fünf Wörter teilen
+     sich 360 px, und „Pick-Liste" ragte mit 13 px auf 390 px schon 3 px
+     und auf 360 px 9 px über sein Fünftel hinaus. iOS setzt die Reiter
+     seiner Leisten in 10 px; 12 sind noch lesbar, und `overflow: hidden`
+     hält, was trotzdem übersteht, im eigenen Fünftel. */
+  font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden;
 }
 .leiste a:active { background: var(--karte-tief); }
+/* Der Fokusring liegt sonst 2 px AUSSERHALB des Reiters — und damit unter
+   der Fensterkante, sobald die Safe-Area 0 ist. Nach innen gelegt bleibt er
+   ganz im Bild. */
+.leiste a:focus-visible { outline-offset: -3px; }
 /* Wo man gerade ist. Nicht nur Farbe: eine Kante oben am Reiter, und
    `aria-current` in der Vorlage für alle, die die Kante nicht sehen. */
 .leiste a.aktiv {
@@ -1519,8 +1531,10 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 
 /* Rückmeldung auf der Pick-Liste (WB-373). Sie klebt unten am Bildrand, weil
    im Laden gescrollt wird und der Daumen unten ist. */
+/* Über der festen Leiste, nicht auf ihr: die unteren 56 px gehören der
+   Leiste, und eine Meldung, die dort liegt, macht sie untappbar. */
 .pick-meldung {
-  position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5;
+  position: fixed; left: 12px; right: 12px; bottom: calc(var(--leiste) + 12px); z-index: 5;
   margin: 0; padding: var(--v3) var(--v3); border-radius: var(--radius);
   box-shadow: var(--schatten); text-align: center; font-weight: 600;
   animation: auftauchen 0.25s ease;

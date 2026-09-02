@@ -6,7 +6,7 @@ geprüft, das Stilblatt als Text.
 
 Was diese Datei NICHT prüfen kann und wofür sie deshalb Stellvertreter
 nimmt, steht bei den betroffenen Tests jeweils dabei: ob Safari wirklich
-hineinzoomt, ob eine quer scrollende Leiste auf 375 px abgeschnitten ist und
+hineinzoomt, ob die feste Leiste unten jeden Reiter ganz zeigt und
 ob ein Sprungziel im Bild landet, entscheidet ein Gerät und kein Test. Was
 hier steht, sind die Bedingungen, ohne die es sicher schiefgeht.
 """
@@ -236,12 +236,20 @@ def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
     stil = STIL.read_text(encoding="utf-8")
     leiste = _block(stil, ".leiste")
     assert "position: fixed" in leiste and "bottom: 0" in leiste
-    assert "var(--leiste)" in _block(stil, "main")
+    assert "calc(var(--leiste) + var(--v6))" in _block(stil, "main")
     assert "bottom: var(--leiste)" in _block(stil, ".kasse")
-    assert "scroll-snap" not in stil and "mask-image" not in stil
     # `.fussnote` bleibt; die Regeln `.fuss`, `.fuss a`, `.kopf nav …` gehen.
     assert not re.search(r"^\.fuss\b", stil, re.M)
     assert not re.search(r"^\.kopf nav", stil, re.M)
+
+
+def test_die_pickmeldung_liegt_ueber_der_leiste():
+    """Die Meldung der Pick-Liste ist fest am unteren Rand — und die Leiste
+    auch. Bei `bottom: 12px` deckte sie 48 der 56 px der Leiste, und ein
+    Fehler bleibt bis zum nächsten Tausch stehen: offline war die Leiste
+    damit nicht mehr zu treffen. Sie sitzt jetzt ÜBER der Leiste."""
+    stil = STIL.read_text(encoding="utf-8")
+    assert "bottom: calc(var(--leiste)" in _block(stil, ".pick-meldung")
 
 
 def test_das_foto_faengt_auf_derselben_hoehe_an_wie_der_name():

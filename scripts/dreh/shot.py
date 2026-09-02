@@ -53,6 +53,15 @@ def schiesse(sid, pfad, datei, extra_js=None):
         time.sleep(0.25)
     time.sleep(0.6)                      # HTMX-Nachzügler (chat-zustand)
     skript(sid, "document.documentElement.style.width = '390px';")
+    # Die Leiste ist fest und misst sich am Fenster (500 px), nicht am
+    # Dokument (390): im Bild wäre sie zu breit und der fünfte Reiter
+    # abgeschnitten. Und ein festes Element malt Firefox in der ganzseitigen
+    # Aufnahme EINMAL, an der aktuellen Scrollhöhe — gemessen: ein Band ein
+    # Fünftel weit unten auf einer 3576 px langen Seite. Absolut steht sie
+    # einmal am Ende des Dokuments, wo ein Leser des Bildes sie erwartet.
+    skript(sid, "var L = document.querySelector('.leiste');"
+                " if (L) { L.style.position = 'absolute';"
+                " L.style.width = '390px'; L.style.right = 'auto'; }")
     if extra_js:
         skript(sid, extra_js)
         time.sleep(0.4)
@@ -95,6 +104,7 @@ SEITEN = [
     ("bestellungen", "/bestellungen", None),
     ("status",      "/status", None),
     ("bons",        "/bons", None),
+    ("mehr",        "/mehr", None),
     ("vierohvier",  "/rezepte/99", None),
     ("frage",       "/rezepte/1/loeschen", None),
 ]
