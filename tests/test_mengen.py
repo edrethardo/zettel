@@ -226,11 +226,16 @@ def test_der_satz_nennt_menge_packungszahl_und_gebinde():
     assert mengen.DICHTE_ANNAHME in satz
 
 
-def test_der_satz_sagt_auch_warum_nichts_gerechnet_wurde():
+def test_der_satz_sagt_kurz_warum_nichts_gerechnet_wurde():
+    """„2 Stk gebraucht — 2 Stk lässt sich nicht gegen die Packung („1 kg")
+    rechnen, die Menge bleibt, wie sie ist." stand an fast jeder Korbzeile
+    (UI-Review 2026-09-01, Fund 8): die Menge zweimal, die Entschuldigung
+    einmal. Der Grund im Trace bleibt lang; der Satz für den Leser sagt es
+    in einer Zeile."""
     r = mengen.rechne(2, None, "1 kg")
     satz = mengen.satz(r, produkt="Zwiebeln", unit_text="1 kg", qty=1)
-    assert "2 Stk gebraucht" in satz
-    assert "bleibt, wie sie ist" in satz
+    assert satz == "2 Stk gebraucht — nicht gegen die Packung („1 kg“) zu rechnen."
+    assert "bleibt, wie sie ist" in r.grund or "rechnen" in r.grund
 
 
 def test_der_satz_verschweigt_nicht_was_von_hand_dazukam():
@@ -308,4 +313,15 @@ def test_der_nachsatz_nennt_den_grund_nur_wenn_ihn_sonst_niemand_nennt():
     mit = mengen.rechne(6, "Stange/n", "1 Stk")
     assert mengen.nachsatz(mit, unit_text="1 Stk", qty=1) is None
     ohne = mengen.rechne(200, "g", None)
-    assert "bleibt, wie sie ist" in mengen.nachsatz(ohne, qty=1)
+    assert mengen.nachsatz(ohne, qty=1) == "Keine lesbare Packungsgrösse."
+
+
+def test_der_kurzgrund_kennt_die_drei_faelle():
+    assert mengen.kurzgrund(mengen.rechne(200, "g", None)) == \
+        "keine lesbare Packungsgrösse"
+    assert mengen.kurzgrund(mengen.rechne(200, "g", "Beutel"), "Beutel") == \
+        "keine lesbare Packungsgrösse („Beutel“)"
+    assert mengen.kurzgrund(mengen.rechne(2, None, "1 kg"), "1 kg") == \
+        "nicht gegen die Packung („1 kg“) zu rechnen"
+    assert mengen.kurzgrund(mengen.rechne(200, "g", "0 g"), "0 g") == \
+        "Packungsgrösse null"
