@@ -88,6 +88,7 @@
   --einzug: 32px;    /* Text unter einem Pfeil oder einem Punkt        */
 
   --rand: var(--v3);
+  --leiste: calc(56px + env(safe-area-inset-bottom)); /* die feste Reiterleiste */
   --radius: 12px;        /* Karten: Blätter                   */
   --radius-knopf: 10px;  /* Knöpfe und Felder: Kästen         */
 
@@ -160,7 +161,10 @@ body {
   overflow-wrap: anywhere;
 }
 
-main { padding: var(--rand) var(--rand) var(--v6); max-width: 680px; margin: 0 auto; }
+/* Unten so viel Luft, wie die feste Leiste deckt — sonst liegt die letzte
+   Zeile jeder Seite unerreichbar unter ihr. */
+main { padding: var(--rand) var(--rand) calc(var(--leiste) + var(--v6));
+       max-width: 680px; margin: 0 auto; }
 
 /* Die Skala steht in `:root` und wird von dort geholt — bis WB-400 stand sie
    nur in diesem Kommentar, während das Blatt daneben zwölf Grössen
@@ -210,75 +214,49 @@ button, .knopf { overflow-wrap: normal; }
   box-shadow: 0 1px 1px rgba(29, 39, 51, 0.25);
   margin-top: calc(var(--v2) * -1);
 }
-/* Sieben Ziele passen auf kein Telefon nebeneinander: die Leiste scrollt quer,
-   statt in drei Zeilen umzubrechen und den halben Bildschirm zu fressen.
-
-   Die Bildlaufleiste ist dünn statt weg: ein 3-px-Strich, der die Leiste
-   nicht höher macht und trotzdem sagt, dass sie weitergeht. */
-.kopf nav {
-  display: flex; gap: var(--v0); margin-left: auto; min-width: 0;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin; scrollbar-color: var(--linie) transparent;
-  /* Die Kante ausblenden statt Wörter abhacken (WB-400): ohne Maske stand
-     auf fast jeder Seite ein Fetzen am Rand („llungen", „Rezep") — das
-     Erste, was man von der Seite sieht. 14 px sind schmaler als das
-     10-px-Polster eines Ziels plus die Lücke, treffen also im Ruhezustand
-     kaum einen Buchstaben und sagen beim Scrollen „hier geht es weiter".
-
-     Die Maske allein reichte nicht (Runde 3, nachgemessen auf allen 13
-     Seiten in beiden Modi): auf 8 von 12 Seiten blieben LINKS zwischen 10
-     und 58 px eines Ziels stehen — „pte", „en", und auf /bestellungen 58 px
-     von „Korb 7" samt der blauen Pille, direkt neben dem Schriftzug. 14 px
-     Verlauf lösen keinen zweisilbigen Rest auf; sie machen ihn blass.
-     Deshalb rastet die Leiste jetzt hart auf den ANFANG eines Ziels
-     (`mandatory` + `start`) und der Aufschlag setzt sie beim Laden genau
-     dorthin. Links steht damit immer ein ganzes Wort; angeschnitten wird
-     nur rechts — dort, wo „hier geht es weiter" hingehört. */
-  mask-image: linear-gradient(90deg, transparent 0, #000 14px,
-                              #000 calc(100% - 14px), transparent 100%);
-  scroll-snap-type: x mandatory;
+/* Die Reiterleiste (UI-Review 2026-09-01, Fund 6, Welle 2) ---------------
+   Fest am unteren Rand, fünf Reiter, jeder ein Fünftel breit. Bis Welle 2
+   scrollte die Leiste quer im Kopf: Maske, Rasten, dünne Bildlaufleiste —
+   drei Runden Feinarbeit dafür, dass „Bons" auf 375 px trotzdem nie im Bild
+   war. Fünf Reiter brauchen nichts davon. Der Aufschlag: 56 px am unteren
+   Rand gehören der Leiste; `main` und die klebende Kasse rechnen das ein. */
+.leiste {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
+  display: flex; height: var(--leiste);
+  padding: 0 var(--v1) env(safe-area-inset-bottom);
+  background: var(--karte); border-top: 1px solid var(--linie);
 }
-/* Ein Abstandhalter am Ende der Leiste. Er ist ein FLEX-ELEMENT und deshalb
-   in `scrollWidth` enthalten — das letzte Ziel selbst war es nicht: „wer bin
-   ich?" ragte 13 px über den scrollbaren Bereich hinaus und blieb auch am
-   Anschlag angeschnitten (Firefox rechnet den Überhang des letzten
-   Flex-Kindes nicht mit). Zugleich bekommt das letzte Ziel damit denselben
-   Rand wie das erste (WB-400 Runde 3). */
-.kopf nav::after { content: ""; flex: 0 0 var(--v3); }
-.kopf nav::-webkit-scrollbar { height: 3px; }
-.kopf nav::-webkit-scrollbar-thumb {
-  background: var(--linie); border-radius: 999px;
-}
-.kopf nav::-webkit-scrollbar-track { background: transparent; }
-.kopf nav a {
-  min-height: var(--tap); display: flex; align-items: center;
-  padding: 0 var(--v3); border-radius: var(--radius-knopf);
+.leiste a {
+  flex: 1 1 0; min-width: 0; display: flex; align-items: center;
+  justify-content: center; gap: var(--v1); padding: 0 var(--v1);
   color: var(--gedaempft); text-decoration: none;
-  font-size: var(--t-klein); font-weight: 500; white-space: nowrap;
-  scroll-snap-align: start;
+  font-size: var(--t-fein); font-weight: 600; white-space: nowrap;
 }
-.kopf nav a:active { background: var(--karte-tief); }
-/* Wo man gerade ist. Nicht nur Farbe: /bestellungen und /pick sind zwei sehr
-   ähnliche Listen, und ein Farbton allein ist auf einem Telefon in der Sonne
-   kein Unterschied. Deshalb Fläche UND Gewicht — und `aria-current` in der
-   Vorlage für alle, die die Fläche nicht sehen. */
-.kopf nav a.aktiv {
-  background: var(--akzent-hell); color: var(--akzent-tinte); font-weight: 700;
+.leiste a:active { background: var(--karte-tief); }
+/* Wo man gerade ist. Nicht nur Farbe: eine Kante oben am Reiter, und
+   `aria-current` in der Vorlage für alle, die die Kante nicht sehen. */
+.leiste a.aktiv {
+  color: var(--akzent-tinte); font-weight: 700;
+  box-shadow: inset 0 3px 0 var(--akzent);
 }
 
-/* Die Fusszeile (UI-Review 2026-09-01, Fund 3): Diagnose und Einstellung,
-   aus der Hauptleiste herausgenommen. Dieselbe Höhe wie ein Leistenziel,
-   damit der Daumen sie trifft; gedämpft, damit das Auge sie nicht sucht. */
-.fuss {
-  display: flex; gap: var(--v4); justify-content: center;
-  margin: var(--v6) 0 0; padding: var(--v3) var(--v3) calc(var(--v3) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--linie); font-size: var(--t-klein);
+/* Die Seite hinter „Mehr": eine Liste von Zielen, jedes eine ganze Zeile
+   hoch. Die zweite Liste ist leiser — Einstellung und Diagnose sind keine
+   Bereiche der App. */
+.mehrliste {
+  list-style: none; margin: 0 0 var(--v5); padding: 0;
+  background: var(--karte); border: 1px solid var(--linie);
+  border-radius: var(--radius);
 }
-.fuss a {
-  display: inline-flex; align-items: center; min-height: var(--tap);
-  padding: 0 var(--v3); color: var(--gedaempft); text-decoration: none;
+.mehrliste li + li { border-top: 1px solid var(--linie); }
+.mehrliste a {
+  display: flex; align-items: center; gap: var(--v2); min-height: 52px;
+  padding: 0 var(--v4); color: var(--tinte); text-decoration: none;
+  font-size: var(--t-text); font-weight: 600;
 }
-.fuss a.aktiv { color: var(--tinte); font-weight: 600; }
+.mehrliste a::after { content: "›"; margin-left: auto; color: var(--gedaempft);
+                      font-size: var(--t-h2); }
+.mehrliste.still a { font-weight: 500; color: var(--gedaempft); }
 
 /* Hinweisband (Spec 11): der Textmarker quer über die Seite. -------------- */
 .band {
@@ -466,7 +444,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 .korbzahl {
   display: inline-block; min-width: 22px; padding: var(--v0) var(--v2); margin-left: var(--v1);
   border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
-  font-size: var(--t-fein); font-weight: 700; text-align: center;
+  font-size: var(--t-fein); font-weight: 700; text-align: center; line-height: 1.4;
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   animation: plopp 0.35s ease;
 }
@@ -576,9 +554,8 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
          font-variant-numeric: tabular-nums; }
 .summe strong { color: var(--tinte); font-size: 1.2em; }
 .kasse {
-  position: sticky; bottom: 0; z-index: 2;
-  margin: var(--v4) calc(-1 * var(--rand)) 0; padding: var(--v2) var(--rand)
-    calc(var(--v3) + env(safe-area-inset-bottom));
+  position: sticky; bottom: var(--leiste); z-index: 2;
+  margin: var(--v4) calc(-1 * var(--rand)) 0; padding: var(--v2) var(--rand) var(--v3);
   background: var(--grund); border-top: 1px solid var(--linie);
 }
 .kasse .summe { margin-top: 0; }

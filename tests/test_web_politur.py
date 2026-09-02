@@ -30,7 +30,12 @@ HTMX = {"HX-Request": "true"}
 #: nicht dabei; `/pick` ohne Bestellung und `/bons` ohne Datei sind ihre
 #: eigenen leeren Zustände und sollen trotzdem antworten.
 VOLLSEITEN = ["/katalog", "/chat", "/warenkorb", "/rezepte", "/bestellungen",
-              "/pick", "/bons", "/status", "/rolle"]
+              "/pick", "/bons", "/status", "/rolle", "/mehr"]
+
+#: Welcher Reiter der Leiste auf einer Seite markiert ist. Fünf Reiter für
+#: zehn Seiten: was nicht selbst einen hat, gehört unter „Mehr".
+REITER = {"/rezepte": "/mehr", "/bestellungen": "/mehr", "/bons": "/mehr",
+          "/status": "/mehr", "/rolle": "/mehr"}
 
 
 def _block(stil: str, selektor: str) -> str:
@@ -163,12 +168,12 @@ def test_die_statusseite_zeigt_keinen_maschinenzeitstempel(client):
 # 2. Die Navigation sagt, wo man ist
 
 @pytest.mark.parametrize("pfad", VOLLSEITEN)
-def test_jede_vollseite_markiert_sich_selbst_in_der_navigation(client, pfad):
+def test_jede_vollseite_markiert_ihren_reiter(client, pfad):
     text = client.get(pfad).text
     treffer = re.findall(r'<a href="([^"]+)" class="aktiv" aria-current="page"',
                          text)
-    assert treffer == [pfad], (
-        f"{pfad} markiert {treffer} statt sich selbst")
+    assert treffer == [REITER.get(pfad, pfad)], (
+        f"{pfad} markiert {treffer} statt {REITER.get(pfad, pfad)}")
 
 
 def test_eine_unterseite_markiert_ihren_bereich_mit(client, con):
@@ -185,72 +190,58 @@ def test_eine_unterseite_markiert_ihren_bereich_mit(client, con):
 
 
 def test_die_markierung_ist_nicht_nur_ansage_sondern_auch_sichtbar():
-    """`aria-current` hört ein Vorleseprogramm, sehen kann man es nicht."""
+    """`aria-current` hört ein Vorleseprogramm, sehen kann man es nicht.
+    Der Reiter bekommt Farbe UND eine Kante — ein Farbton allein ist auf
+    einem Telefon in der Sonne kein Unterschied."""
     stil = STIL.read_text(encoding="utf-8")
-    assert ".kopf nav a.aktiv" in stil
-    block = stil.split(".kopf nav a.aktiv", 1)[1].split("}", 1)[0]
-    assert "background" in block and "color" in block
+    block = _block(stil, ".leiste a.aktiv")
+    assert "color" in block and "box-shadow" in block
 
 
-def test_diagnose_und_einstellung_stehen_nicht_in_der_hauptleiste(client):
-    """Neun Ziele passen in keine 390 px (UI-Review 2026-09-01, Fund 6), und
-    zwei davon sind keine Bereiche: „Status" ist Diagnose, „wer bin ich?"
-    eine Einstellung. Beide stehen in einer Fusszeile — erreichbar, mit
-    Markierung, aber nicht im ersten Blick."""
+def test_die_leiste_hat_fuenf_reiter_und_liegt_unter_dem_blatt(client):
+    """Sieben Ziele passten in keine 390 px (UI-Review 2026-09-01, Fund 6).
+    Fünf Reiter passen; alles Weitere sammelt „Mehr". Die Leiste steht im
+    HTML NACH `<main>`: sie ist fest am unteren Rand, und ein
+    Vorleseprogramm soll erst den Inhalt hören."""
     text = client.get("/katalog").text
-    leiste = text.split('<nav id="hauptnavigation"', 1)[1].split("</nav>", 1)[0]
-    assert 'href="/status"' not in leiste
-    assert 'href="/rolle"' not in leiste
-    fuss = text.split('<footer class="fuss"', 1)[1].split("</footer>", 1)[0]
-    assert 'href="/status"' in fuss
-    assert 'href="/rolle"' in fuss
-    assert text.index("</main>") < text.index('<footer class="fuss"')
+    leiste = text.split('<nav class="leiste" id="hauptnavigation"', 1)[1]
+    leiste = leiste.split("</nav>", 1)[0]
+    assert re.findall(r'<a href="([^"]+)"', leiste) == [
+        "/katalog", "/chat", "/warenkorb", "/pick", "/mehr"]
+    assert 'id="korb-anzahl"' in leiste
+    assert text.index("</main>") < text.index('<nav class="leiste"')
+    assert '<footer class="fuss"' not in text
+    assert "leisteRasten" not in text
 
 
-def test_die_fusszeile_markiert_ihre_seite_wie_die_leiste(client):
-    text = client.get("/status").text
-    fuss = text.split('<footer class="fuss"', 1)[1].split("</footer>", 1)[0]
-    assert '<a href="/status" class="aktiv" aria-current="page"' in fuss
+def test_mehr_sammelt_was_keinen_reiter_hat(client):
+    """Rezepte, Bestellungen, Bons — und darunter, leiser, Rolle und Status:
+    die Fusszeile aus Welle 1 geht in dieser Seite auf."""
+    text = client.get("/mehr").text
+    seite = text.split("<main>", 1)[1].split("</main>", 1)[0]
+    assert re.findall(r'<a href="([^"]+)"', seite) == [
+        "/rezepte", "/bestellungen", "/bons", "/rolle", "/status"]
 
 
-def test_die_leiste_verschweigt_nicht_mehr_dass_sie_weitergeht():
-    """Sieben Ziele passen auf kein Telefon; die Bildlaufleiste war ganz
-    ausgeblendet. Ob sie auf 375 px sichtbar ist, entscheidet ein Gerät —
-    hier steht nur, dass sie nicht mehr weggeschaltet wird."""
+def test_eine_seite_unter_mehr_markiert_den_reiter_mehr(client):
+    text = client.get("/rezepte").text
+    assert '<a href="/mehr" class="aktiv" aria-current="page"' in text
+    assert '<a href="/rezepte" class="aktiv"' not in text
+
+
+def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
+    """Eine feste Leiste deckt die unteren 56 px des Fensters. Was darunter
+    liegt, ist unerreichbar: das Blatt bekommt unten den Abstand der Leiste,
+    und die klebende Kasse setzt sich auf sie statt unter sie."""
     stil = STIL.read_text(encoding="utf-8")
-    nav = _block(stil, ".kopf nav")
-    assert "scrollbar-width: none" not in nav
-    assert "scrollbar-width: thin" in nav
-    balken = _block(stil, ".kopf nav::-webkit-scrollbar")
-    assert "display: none" not in balken
-
-
-def test_die_leiste_rastet_auf_den_anfang_eines_ziels():
-    """Sie darf weitergehen, aber links darf kein halbes Wort stehen
-    (WB-400 Runde 3).
-
-    Gemessen wurde am Bild und im Browser: mit `scrollIntoView({inline:
-    'center'})` und `scroll-snap-align: end` blieben auf acht von zwölf
-    Seiten zwischen 10 und 58 px eines Ziels am linken Rand stehen — „pte"
-    auf /bestellungen, „en" auf /pick. Ob ein Fetzen SICHTBAR ist,
-    entscheidet ein Gerät; hier steht, dass die beiden Stellschrauben, die
-    ihn erzeugt haben, in die andere Richtung stehen."""
-    stil = STIL.read_text(encoding="utf-8")
-    nav = _block(stil, ".kopf nav")
-    assert "scroll-snap-type: x mandatory" in nav
-    ziel = _block(stil, ".kopf nav a")
-    assert "scroll-snap-align: start" in ziel
-    assert "scroll-snap-align: end" not in ziel
-
-
-def test_das_letzte_ziel_der_leiste_ist_erreichbar():
-    """Firefox rechnet den Überhang des letzten Flex-Kindes nicht in
-    `scrollWidth`: „Bons" blieb auch am Anschlag angeschnitten. Der
-    Abstandhalter am Ende der Leiste IST ein Flex-Kind und zählt mit."""
-    stil = STIL.read_text(encoding="utf-8")
-    assert ".kopf nav::after" in stil
-    block = stil.split(".kopf nav::after", 1)[1].split("}", 1)[0]
-    assert "flex:" in block
+    leiste = _block(stil, ".leiste")
+    assert "position: fixed" in leiste and "bottom: 0" in leiste
+    assert "var(--leiste)" in _block(stil, "main")
+    assert "bottom: var(--leiste)" in _block(stil, ".kasse")
+    assert "scroll-snap" not in stil and "mask-image" not in stil
+    # `.fussnote` bleibt; die Regeln `.fuss`, `.fuss a`, `.kopf nav …` gehen.
+    assert not re.search(r"^\.fuss\b", stil, re.M)
+    assert not re.search(r"^\.kopf nav", stil, re.M)
 
 
 def test_das_foto_faengt_auf_derselben_hoehe_an_wie_der_name():

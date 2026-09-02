@@ -176,7 +176,7 @@ def test_der_chat_steht_in_der_navigation(db_datei, tmp_path):
     Grundgerüst und gilt überall."""
     client, _ = _client(db_datei, tmp_path)
     seite = client.get("/katalog").text
-    nav = seite.split('<nav id="hauptnavigation"', 1)[1].split("</nav>", 1)[0]
+    nav = seite.split('<nav class="leiste" id="hauptnavigation"', 1)[1].split("</nav>", 1)[0]
     assert 'href="/chat"' in nav
 
 
@@ -360,13 +360,13 @@ def test_beide_wege_zwischen_chat_und_korb_gehen_ohne_die_leiste(db_datei,
                                                                  tmp_path):
     """Ein Weg, den es nur in der Navigationsleiste gibt, ist keiner.
 
-    Sie scrollt quer, hat sieben Ziele und sieht auf jeder Seite gleich aus;
+    Sie hat fünf Reiter und sieht auf jeder Seite gleich aus;
     Chat und Korb sind aber das Paar, zwischen dem am häufigsten gewechselt
     wird. Geprüft wird deshalb, was IM BLATT steht — die Leiste wird für
     diesen Test herausgeschnitten.
     """
     def ohne_leiste(text):
-        kopf, _, rest = text.partition('<nav id="hauptnavigation"')
+        kopf, _, rest = text.partition('<nav class="leiste" id="hauptnavigation"')
         return kopf + rest.partition("</nav>")[2]
 
     milch = _pid(db_datei, MILCH)

@@ -53,12 +53,6 @@ def schiesse(sid, pfad, datei, extra_js=None):
         time.sleep(0.25)
     time.sleep(0.6)                      # HTMX-Nachzügler (chat-zustand)
     skript(sid, "document.documentElement.style.width = '390px';")
-    # Die Kopfleiste rastet beim Laden auf eine ganze Kante — gerechnet mit
-    # der Breite, die das Dokument DANN hat, und das sind hier noch 500.
-    # Nach dem Zwang auf 390 muss dieselbe Rechnung noch einmal laufen,
-    # sonst zeigt das Bild einen Bildlauf für eine Breite, die kein Telefon
-    # hat (WB-400 Runde 3).
-    skript(sid, "if (window.leisteRasten) { window.leisteRasten(); }")
     if extra_js:
         skript(sid, extra_js)
         time.sleep(0.4)

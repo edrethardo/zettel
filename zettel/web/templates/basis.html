@@ -8,7 +8,7 @@
   {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
      jede Angabe zu Tap-Zielen unten wäre wirkungslos. #}
   {# `viewport-fit=cover`: ohne das bleibt `env(safe-area-inset-bottom)` in
-     `.fuss` auf iOS immer 0, und die Rechnung dort ist nur Dekoration.
+     `.leiste` auf iOS immer 0, und die Rechnung dort ist nur Dekoration.
 
      Der Preis dafür: die Seite reicht damit bis unter die Kerbe. Quer
      gehalten kann Inhalt links und rechts unter ihr verschwinden — nur
@@ -34,88 +34,27 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  {# Wo bin ich? Sieben Ziele in einer quer scrollenden Leiste sahen alle
-     gleich aus — und /bestellungen und /pick sind zwei sehr ähnliche Listen.
-     Die Klasse ist der Teil, den man sieht, `aria-current="page"` der, den ein
-     Vorleseprogramm ansagt; beides zusammen, weil Farbe allein für beides
-     nicht reicht.
+  {# Wo bin ich? Die Klasse ist der Teil, den man sieht, `aria-current="page"`
+     der, den ein Vorleseprogramm ansagt; beides zusammen, weil Farbe allein
+     für beides nicht reicht.
 
-     Verglichen wird mit Präfix, damit /pick/12 und /rezepte/3 ihren Eintrag
+     Verglichen wird mit Präfix, damit /pick/12 und /rezepte/3 ihren Reiter
      mitmarkieren — sonst wäre die Markierung genau auf den Unterseiten weg,
      auf denen man sich am ehesten verläuft. #}
   {%- set hier = request.url.path if request else "" %}
   {%- macro wo(pfad) %}{% if hier == pfad or hier.startswith(pfad ~ "/") %} class="aktiv" aria-current="page"{% endif %}{% endmacro %}
+  {# „Mehr" ist der Reiter für alles, was keinen eigenen hat (UI-Review
+     2026-09-01, Fund 6, Welle 2): Rezepte, Bestellungen, Bons — und Rolle
+     und Status, die seit Welle 1 in einer Fusszeile standen. Auf jeder
+     dieser Seiten ist „Mehr" der markierte Reiter; ein Reiter, der auf
+     /rezepte nirgends leuchtet, sagt „du bist nirgends". #}
+  {%- set ns = namespace(mehr=false) %}
+  {%- for p in ["/mehr", "/rezepte", "/bestellungen", "/bons", "/status", "/rolle"] %}
+  {%- if hier == p or hier.startswith(p ~ "/") %}{% set ns.mehr = true %}{% endif %}
+  {%- endfor %}
   <header class="kopf">
     <a class="marke" href="/">Zettel</a>
-    <nav id="hauptnavigation" aria-label="Hauptbereiche">
-      <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
-      {# Der Chat steht seit WB-382 hier — vorher war er ein Abschnitt der
-         Korbseite und über die Leiste gar nicht zu erreichen. Er steht VOR
-         dem Korb, weil er der Weg dorthin ist: erst sagen, was man braucht,
-         dann nachsehen, was drin liegt. #}
-      <a href="/chat"{{ wo('/chat') }}>Chat</a>
-      {# Die Zahl wird nach jedem „+" per hx-swap-oob nachgezogen (siehe
-         _eingelegt.html) — deshalb braucht sie eine feste id. #}
-      <a href="/warenkorb"{{ wo('/warenkorb') }}>Korb <span id="korb-anzahl"
-         class="korbzahl">{{ korb_anzahl or 0 }}</span></a>
-      <a href="/rezepte"{{ wo('/rezepte') }}>Rezepte</a>
-      <a href="/bestellungen"{{ wo('/bestellungen') }}>Bestellungen</a>
-      <a href="/pick"{{ wo('/pick') }}>Pick-Liste</a>
-      <a href="/bons"{{ wo('/bons') }}>Bons</a>
-    </nav>
   </header>
-  {# Die Leiste scrollt quer: auf 375 px liegt „Bons" ausserhalb des Bildes.
-     Steht man dort, wäre die Markierung unsichtbar — also wird sie
-     hereingeholt.
-
-     Bis WB-400 Runde 3 tat das ein `scrollIntoView({inline: 'center'})`, und
-     genau die Mitte war der Fehler: sie liess auf beiden Seiten einen Rest
-     stehen. Gemessen auf 12 Seiten in beiden Modi standen auf acht davon
-     links zwischen 10 und 58 px eines Ziels — „pte" auf /bestellungen (dort
-     58 px, also „b 7" samt der blauen Korbpille), „en" auf /pick, „Re" auf
-     /chat. Das Erste, was man von der Seite liest, war ein Wortfetzen.
-
-     Jetzt wird der ANFANG des aktiven Ziels an den linken Rand gelegt: links
-     steht ein ganzes Wort, angeschnitten wird nur rechts, wo die Maske sitzt
-     und „hier geht es weiter" hingehört. Steht das Ziel so weit hinten, dass
-     die Leiste nicht mehr genug Weg hat („Bons"), wird auf
-     die früheste Kante gerastet, bei der es noch GANZ im Bild steht — lieber
-     ein Ziel weniger nach links geholt als ein halbes am Rand, aber
-     sichtbar zu sein schlägt bündig zu sein. Ohne JavaScript bleibt die
-     Leiste bei 0 stehen; die Markierung ist dann seitwärts erreichbar wie
-     jedes andere Ziel auch.
-
-     Auch beim Drehen: die Rechnung hängt an der Breite, und ein Telefon,
-     das quer gelegt wird, hat eine andere. Deshalb hat die Funktion einen
-     Namen und wird zweimal gerufen — und der Messstand
-     (`scripts/dreh/shot.py`) ruft dieselbe, nachdem er das Dokument auf
-     390 px gezwungen hat: Firefox lässt kein Fenster unter 500 CSS-px zu,
-     und ohne diesen zweiten Ruf zeigten die Bilder eine Leiste, die für
-     eine Breite gerastet ist, die kein Telefon hat.
-
-     Nur Blockkommentare: ein doppelter Schrägstrich ist im ausgelieferten
-     HTML der Anfang einer fremden Adresse (WB-323 sieht darauf nach). #}
-  <script>
-    window.leisteRasten = function () {
-      var nav = document.querySelector('.kopf nav');
-      var da = nav && nav.querySelector('a[aria-current]');
-      if (!nav || !da) { return; }
-      var weg = nav.scrollWidth - nav.clientWidth;
-      var ziel = da.offsetLeft - nav.offsetLeft;
-      if (ziel > weg) {
-        var passt = weg;
-        Array.prototype.forEach.call(nav.querySelectorAll('a'), function (a) {
-          var x = a.offsetLeft - nav.offsetLeft;
-          if (x <= weg && x < passt
-              && ziel - x + da.offsetWidth <= nav.clientWidth) { passt = x; }
-        });
-        ziel = passt;
-      }
-      nav.scrollLeft = ziel;
-    };
-    window.leisteRasten();
-    window.addEventListener('resize', window.leisteRasten);
-  </script>
 
   {% if hinweis %}
   {# Spec 11: die Oberfläche schweigt nicht, wenn der Katalog alt ist. #}
@@ -124,14 +63,24 @@
 
   <main>{% block inhalt %}{% endblock %}</main>
 
-  {# Diagnose und Einstellung stehen NICHT in der Hauptleiste (UI-Review
-     2026-09-01, Fund 3 und 6): neun Ziele passten in keine 390 px, und ein
-     Fremder las „Status" — Ports, Hostnamen, Trace-Adressen — als Teil der
-     App. Hier unten sind beide erreichbar und tragen dieselbe Markierung wie
-     die Leiste; nur den ersten Blick bekommen sie nicht mehr. #}
-  <footer class="fuss">
-    <a href="/status"{{ wo('/status') }}>Status</a>
-    <a href="/rolle"{{ wo('/rolle') }}>{% if rolle %}{{ rolle }}{% else %}wer bin ich?{% endif %}</a>
-  </footer>
+  {# Die Leiste liegt fest am unteren Rand — unter dem Daumen, auf jedem
+     Telefon ganz im Bild. Bis Welle 2 stand sie im Kopf und scrollte quer:
+     sieben Ziele, eine Maske, ein Rast-Skript und drei Runden Feinarbeit
+     (WB-400), und auf 375 px war „Bons" trotzdem nie zu sehen. Fünf
+     Reiter brauchen nichts davon.
+
+     Sie steht im HTML NACH dem Inhalt: fest positioniert ist die Reihenfolge
+     fürs Auge egal, und ein Vorleseprogramm soll zuerst die Seite hören.
+     Der Chat steht vor dem Korb, weil er der Weg dorthin ist (WB-382). #}
+  <nav class="leiste" id="hauptnavigation" aria-label="Hauptbereiche">
+    <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
+    <a href="/chat"{{ wo('/chat') }}>Chat</a>
+    {# Die Zahl wird nach jedem „+" per hx-swap-oob nachgezogen (siehe
+       _eingelegt.html) — deshalb braucht sie eine feste id. #}
+    <a href="/warenkorb"{{ wo('/warenkorb') }}>Korb <span id="korb-anzahl"
+       class="korbzahl">{{ korb_anzahl or 0 }}</span></a>
+    <a href="/pick"{{ wo('/pick') }}>Pick-Liste</a>
+    <a href="/mehr"{% if ns.mehr %} class="aktiv" aria-current="page"{% endif %}>Mehr</a>
+  </nav>
 </body>
 </html>
