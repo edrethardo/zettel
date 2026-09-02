@@ -718,6 +718,16 @@ def create_app(db_path: str | Path | None = None,
         # lichkeit, kein Tor, durch das man erst hindurch muss.
         return RedirectResponse("/katalog", status_code=303)
 
+    @app.get("/mehr")
+    def mehr(request: Request):
+        """Der fünfte Reiter: was in der Leiste keinen Platz hat (Fund 6)."""
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "mehr.html",
+                                             _rahmen(request, c))
+        finally:
+            c.close()
+
     @app.get("/rolle")
     def rolle_waehlen(request: Request):
         # Öffnet eine Verbindung nur für den Rahmen — die Rollenwahl selbst

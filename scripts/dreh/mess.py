@@ -14,7 +14,7 @@ Sechs Fragen je Seite und Modus, gegen dieselbe Instanz wie `shot.py`:
   nichts, weil sie nur `color` gegen `background-color` hielt.
 * wie viele VERSCHIEDENE Abstaende hat das Bild einer Zeile zu ihrem Text?
   Mehr als einer heisst: die linke Spalte franst aus.
-* steht am linken Rand der Kopfleiste ein angeschnittenes Wort?
+* liegt die Leiste unten am Fenster, und ist jeder Reiter ganz im Bild?
 
 Und EINE Frage an die Buehne selbst (Runde 4): /chat muss einen ERSETZTEN
 Zug zeigen. Bis dahin besuchte der Stand nur Seiten ohne einen, und die
@@ -89,7 +89,6 @@ function kontrast(el){
   return (hi+0.05)/(lo+0.05);
 }
 document.documentElement.style.width = '390px';
-if (window.leisteRasten) { window.leisteRasten(); }
 var out = {breite: document.body.scrollWidth, klein: [], feld: [], kontrast: [], zeilen: []};
 document.querySelectorAll('a,button,summary,input[type=checkbox],select,[role=button]').forEach(function(e){
   var r = e.getBoundingClientRect();
@@ -115,25 +114,23 @@ document.querySelectorAll('.zeile').forEach(function(z){
   out.zeilen.push([Math.round(rb.top - rt.top), (t.textContent||'').trim().slice(0,22)]);
 });
 out.ersetzt = document.querySelectorAll('.zug.ersetzt').length;
-var nav = document.querySelector('.kopf nav');
-if (nav) {
-  out.nav = {links: Math.round(nav.scrollLeft), max: Math.round(nav.scrollWidth - nav.clientWidth)};
-  var kanten = [];
-  nav.querySelectorAll('a').forEach(function(a){
-    var x = a.offsetLeft - nav.offsetLeft - nav.scrollLeft;
-    /* 1,5 px Toleranz: `scrollLeft` ist ein Bruchwert (318,23), und ein
-       halbes Pixel ist kein angeschnittenes Wort. */
-    if (x < -1.5 && x + a.offsetWidth > 0) kanten.push(['links angeschnitten', a.textContent.trim(), Math.round(x + a.offsetWidth), Math.round(-x)]);
-    if (x < nav.clientWidth - 1.5 && x + a.offsetWidth > nav.clientWidth + 1.5) kanten.push(['rechts angeschnitten', a.textContent.trim(), Math.round(nav.clientWidth - x)]);
+var leiste = document.querySelector('.leiste');
+if (leiste) {
+  var lr = leiste.getBoundingClientRect();
+  /* Die Leiste muss am unteren Rand liegen und jeder Reiter ganz im Bild —
+     ein Reiter, dessen Wort breiter ist als sein Fünftel, ist abgeschnitten. */
+  out.leiste = {unten: Math.round(window.innerHeight - lr.bottom), hoehe: Math.round(lr.height), kanten: []};
+  leiste.querySelectorAll('a').forEach(function(a){
+    var r = a.getBoundingClientRect();
+    if (r.left < -0.5 || r.right > window.innerWidth + 0.5 || a.scrollWidth > a.clientWidth + 0.5) out.leiste.kanten.push([a.textContent.trim(), Math.round(r.left), Math.round(r.right), a.scrollWidth, a.clientWidth]);
   });
-  out.nav.kanten = kanten;
 }
 return JSON.stringify(out);
 """
 
 SEITEN = ["/chat", "/warenkorb", "/katalog", "/katalog?q=milch", "/pick",
           "/rezepte/1", "/rezepte", "/bestellungen", "/status", "/bons",
-          "/rezepte/99", "/rezepte/1/loeschen"]
+          "/rezepte/99", "/rezepte/1/loeschen", "/mehr"]
 
 if __name__ == "__main__":
     for dunkel in (False, True):
@@ -157,9 +154,8 @@ if __name__ == "__main__":
                 versatz = sorted({z[0] for z in d["zeilen"]})
                 if len(versatz) > 1:
                     zeilen.append(f"  bild-versatz zu text-oben: {versatz}")
-                if d.get("nav", {}).get("kanten"):
-                    for k in d["nav"]["kanten"]:
-                        zeilen.append(f"  nav: {k}")
+                if d.get("leiste", {}).get("kanten") or d.get("leiste", {}).get("unten"):
+                    zeilen.append(f"  leiste: {d['leiste']}")
                 # Die Quittung MUSS im Bild sein (Runde 4): ohne einen
                 # ersetzten Zug misst der Stand an /chat nur die halbe
                 # Seite und meldet gruen, was er nie gesehen hat.

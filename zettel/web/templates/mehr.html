@@ -1,0 +1,18 @@
+{% extends "basis.html" %}
+{% block titel %}Mehr — Zettel{% endblock %}
+{% block inhalt %}
+<h1>Mehr</h1>
+{# Was keinen Reiter in der Leiste hat (UI-Review 2026-09-01, Fund 6). Drei
+   Bereiche, die man seltener braucht als Katalog, Chat, Korb und Pick-Liste
+   — und darunter, leiser, die zwei Seiten, die keine Bereiche sind: eine
+   Einstellung und eine Diagnose (Fund 3). #}
+<ul class="mehrliste">
+  <li><a href="/rezepte">Rezepte</a></li>
+  <li><a href="/bestellungen">Bestellungen</a></li>
+  <li><a href="/bons">Bons</a></li>
+</ul>
+<ul class="mehrliste still">
+  <li><a href="/rolle">Wer bin ich?{% if rolle %} <span class="anzahl">{{ rolle }}</span>{% endif %}</a></li>
+  <li><a href="/status">Status</a></li>
+</ul>
+{% endblock %}
