@@ -264,6 +264,24 @@ def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
     assert "scroll-snap" not in stil and "mask-image" not in stil
 
 
+def test_die_reiter_bleiben_im_breitbild_ueber_dem_blatt():
+    """Auf einem Desktop-Fenster geht die Leiste sonst mit auseinander.
+
+    Gemessen am 2026-09-02 bei 1440 px: das Blatt steht als 680-px-Spalte
+    mittig, die fünf Reiter waren je 288 px breit und ihre Wörter standen
+    weit neben allem, worauf sie zeigen — der Aktivbalken über „Korb" allein
+    288 px lang. Die Leiste behält ihren Grund über die ganze Breite (sonst
+    endet die Fläche mitten im Fenster), ihre Reiter teilen sich aber
+    dieselbe Breite wie das Blatt darüber. Beide holen die Zahl aus
+    demselben Token — zwei 680 gingen beim nächsten Mal auseinander."""
+    stil = STIL.read_text(encoding="utf-8")
+    assert "--blattbreite:" in _block(stil, ":root")
+    assert "max-width: var(--blattbreite)" in _block(stil, "main")
+    assert "justify-content: center" in _block(stil, ".leiste")
+    assert "max-width: calc(var(--blattbreite) / 5)" in _block(stil, ".leiste a")
+    assert "680px" not in stil.replace("--blattbreite: 680px", "")
+
+
 def test_die_pickmeldung_liegt_ueber_der_leiste():
     """Die Meldung der Pick-Liste ist fest am unteren Rand — und die Leiste
     auch. Bei `bottom: 12px` deckte sie 48 der 56 px der Leiste, und ein

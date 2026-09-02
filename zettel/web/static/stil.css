@@ -79,6 +79,10 @@
   --einzug: 32px;    /* Text unter einem Pfeil oder einem Punkt        */
 
   --rand: var(--v3);
+  /* Die Breite des Blattes — von `main` UND von den Reitern der Leiste
+     benutzt. Zwei eingetragene 680 wären beim nächsten Mal zwei
+     verschiedene Zahlen. */
+  --blattbreite: 680px;
   --leiste: calc(56px + env(safe-area-inset-bottom)); /* die feste Reiterleiste */
   --radius: 12px;        /* Karten: Blätter                   */
   --radius-knopf: 10px;  /* Knöpfe und Felder: Kästen         */
@@ -155,7 +159,7 @@ body {
 /* Unten so viel Luft, wie die feste Leiste deckt — sonst liegt die letzte
    Zeile jeder Seite unerreichbar unter ihr. */
 main { padding: var(--rand) var(--rand) calc(var(--leiste) + var(--v6));
-       max-width: 680px; margin: 0 auto; }
+       max-width: var(--blattbreite); margin: 0 auto; }
 
 /* Die Skala steht in `:root` und wird von dort geholt — bis WB-400 stand sie
    nur in diesem Kommentar, während das Blatt daneben zwölf Grössen
@@ -219,6 +223,12 @@ button, .knopf { overflow-wrap: normal; }
   padding: 0 max(var(--v1), env(safe-area-inset-right)) env(safe-area-inset-bottom)
            max(var(--v1), env(safe-area-inset-left));
   background: var(--karte); border-top: 1px solid var(--linie);
+  /* Auf einem breiten Fenster stünden fünf gedehnte Reiter neben allem, was
+     sie meinen: gemessen bei 1440 px je 288 px breit, während das Blatt
+     darüber 680 px misst. Der Grund bleibt über die ganze Breite — eine
+     Fläche, die mitten im Fenster aufhört, sähe nach Fehler aus —, die
+     Reiter rücken zusammen. */
+  justify-content: center;
 }
 .leiste a {
   flex: 1 1 0; min-width: 0; display: flex; align-items: center;
@@ -230,6 +240,10 @@ button, .knopf { overflow-wrap: normal; }
      seiner Leisten in 10 px; 12 sind noch lesbar, und `overflow: hidden`
      hält, was trotzdem übersteht, im eigenen Fünftel. */
   font-size: var(--t-reiter); font-weight: 600; white-space: nowrap; overflow: hidden;
+  /* Ein Fünftel des Blattes, nicht ein Fünftel des Fensters. Auf dem Telefon
+     ändert das nichts (390 px ergeben 78 px je Reiter, weit unter der
+     Schranke); erst im Breitbild greift sie. */
+  max-width: calc(var(--blattbreite) / 5);
 }
 .leiste a:active { background: var(--karte-tief); }
 /* Die Pille ist im Reiter ein Flex-Kind: bei drei Ziffern und 375 px würde
