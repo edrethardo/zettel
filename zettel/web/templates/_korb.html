@@ -121,14 +121,20 @@
         </form>
       </span>
       {# Der Laden hängt am Posten, nicht am Produkt (Spec 4). Vorbelegt ist
-         die letzte Wahl für dasselbe Produkt. #}
+         die letzte Wahl für dasselbe Produkt. Das Wort „Laden" steht nur an
+         der Option, die es braucht: „Rewe" und „Lidl" erklären sich selbst,
+         „Egal wo" nicht (UI-Review 2026-09-01, Fund 8). Die BREITESTE Option
+         bestimmt die Breite des Felds — mit „Laden: Rewe" an allen dreien
+         passten Steller, Feld und „×" auf 390 px nicht mehr in eine Zeile
+         (334 px in 332), das „×" rutschte allein in eine zweite; „Laden egal"
+         allein braucht 320. #}
       <form method="post" action="/warenkorb/posten/{{ i.id }}/laden"
             hx-post="/warenkorb/posten/{{ i.id }}/laden"
             hx-trigger="change, submit" hx-target="#korb" hx-swap="innerHTML">
         <select name="store" aria-label="Laden für {{ i.name }}">
           {% for s in stores %}
           <option value="{{ s }}" {% if s == i.store %}selected{% endif %}>
-            Laden: {{ laden_titel[s] | lower if s == 'egal' else laden_titel[s] }}</option>
+            {{ 'Laden egal' if s == 'egal' else laden_titel[s] }}</option>
           {% endfor %}
         </select>
         <noscript><button class="mini" type="submit">ok</button></noscript>
