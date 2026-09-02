@@ -17,8 +17,8 @@
 </form>
 
 <p class="fussnote">
-  {{ erlaubt }}, bis {{ max_mb }} MB. Ein eBon als PDF aus der Rewe- oder
-  Lidl-App ist besser lesbar als ein Foto — und er lässt sich hier auslesen.
+  {{ erlaubt }}, bis {{ max_mb }} MB — ein eBon als PDF liest sich besser als
+  ein Foto.
 </p>
 
 {% if not ocr_da %}
@@ -108,10 +108,4 @@
   {% endfor %}
 </ul>
 {% endif %}
-
-<p class="fussnote">
-  Ausgelesen werden Laden, Datum, Artikel, Menge und Preis — und sonst nichts.
-  Kartennummer, Terminal-ID und Belegnummern stehen auf dem Bon und bleiben
-  dort.
-</p>
 {% endblock %}
