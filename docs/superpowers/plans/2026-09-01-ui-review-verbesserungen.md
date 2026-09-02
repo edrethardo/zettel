@@ -1200,6 +1200,8 @@ git commit -m "Die Pick-Zeile ist eine Zeile — gab's nicht steht neben dem Tex
 
 Hier steht je Fund, was zu entscheiden ist und was ich empfehle. Erst nach der Entscheidung wird daraus ein Plan.
 
+**Entschieden am 2026-09-02** — die Antworten und die Aufgaben daraus stehen in [`2026-09-02-ui-review-welle-2.md`](2026-09-02-ui-review-welle-2.md) (Fund 6 → a, Fund 9 → Streichung nach eigenem Urteil, Fund 3 → bleibt; alle anderen Zeilen nach Empfehlung, Fund 8 mit einer Abweichung). Die Tabelle bleibt als Stand der Empfehlungen stehen.
+
 | Fund | Frage | Empfehlung |
 |---|---|---|
 | **6** Reiterleiste nie ganz | Nach Aufgabe 3 sind es sieben Ziele (~620 px bei 15 px Schrift) — sie scrollt weiter. Entweder (a) eine feste untere Tab-Leiste mit vier Zielen (Katalog · Chat · Korb · Pick) plus „Mehr" für Rezepte/Bestellungen/Bons, oder (b) die Leiste behalten und die Schrift/Abstände so setzen, dass sieben Ziele in 390 px passen (≈12 px Schrift — unter der Grenze des Blatts), oder (c) so lassen. | **(a)**, aber erst nach dem Contest: es ändert jede Seite und das Drehskript. Bis dahin (c). |
