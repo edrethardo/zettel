@@ -49,7 +49,7 @@
 - Modify: `tests/test_web_chat.py` (Z. 360–366, nur Docstring)
 - Modify: `scripts/dreh/mess.py` (Z. 92, 118–130, 160–162), `scripts/dreh/shot.py` (Z. 56–61)
 
-- [ ] **Schritt 1: Die Tests umschreiben**
+- [x] **Schritt 1: Die Tests umschreiben**
 
 In `tests/test_web_politur.py` die Zeilen 32–33 ersetzen:
 
@@ -133,12 +133,12 @@ def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
     assert not re.search(r"^\.kopf nav", stil, re.M)
 ```
 
-- [ ] **Schritt 2: Tests laufen lassen — rot**
+- [x] **Schritt 2: Tests laufen lassen — rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_web_politur.py -k "reiter or leiste or mehr or markierung"`
 Expected: FAIL — `/mehr` antwortet 404, `.leiste` steht nicht im Blatt, `_block` findet `.leiste a.aktiv` nicht.
 
-- [ ] **Schritt 3: `basis.html` umbauen**
+- [x] **Schritt 3: `basis.html` umbauen**
 
 Den `<body>` von `basis.html` (ab `<body>` bis `</html>`) durch diesen ersetzen — der `<head>` bleibt, nur der Kommentar zu `viewport-fit=cover` (Z. 10–16) nennt statt `.fuss` jetzt `.leiste`:
 
@@ -198,7 +198,7 @@ Den `<body>` von `basis.html` (ab `<body>` bis `</html>`) durch diesen ersetzen 
 
 Im `<head>` den Kommentar zu `viewport-fit=cover` so ändern (Z. 10–11): „ohne das bleibt `env(safe-area-inset-bottom)` in `.leiste` auf iOS immer 0". Der grosse Kommentarblock zum Rasten (der vor dem `<script>` stand) und das Skript selbst fallen weg — sie erklärten ein Bauteil, das es nicht mehr gibt.
 
-- [ ] **Schritt 4: `mehr.html` anlegen und die Route**
+- [x] **Schritt 4: `mehr.html` anlegen und die Route**
 
 `zettel/web/templates/mehr.html`:
 
@@ -237,7 +237,7 @@ In `zettel/web/app.py` direkt VOR `@app.get("/rolle")` (Z. 721) einfügen:
             c.close()
 ```
 
-- [ ] **Schritt 5: Das Stilblatt**
+- [x] **Schritt 5: Das Stilblatt**
 
 In `:root` (bei `--rand: var(--v3);`, Z. ~91) ergänzen:
 
@@ -324,7 +324,7 @@ Den Block von `/* Sieben Ziele passen auf kein Telefon nebeneinander …` (Z. 21
 }
 ```
 
-- [ ] **Schritt 6: Messstand und Drehskripte**
+- [x] **Schritt 6: Messstand und Drehskripte**
 
 `scripts/dreh/mess.py` Z. 92 (`if (window.leisteRasten) …`) löschen. Z. 118–130 (`var nav = …` bis `}`) ersetzen:
 
@@ -351,20 +351,20 @@ Z. 160–162 (`if d.get("nav", {}).get("kanten"): …`) ersetzen:
 
 `scripts/dreh/shot.py` Z. 56–61 (Kommentar + `skript(sid, "if (window.leisteRasten) …")`) löschen; `SEITEN` in `mess.py` bekommt `"/mehr"` dazu.
 
-- [ ] **Schritt 7: `tests/test_web_chat.py` Z. 362–364**
+- [x] **Schritt 7: `tests/test_web_chat.py` Z. 362–364**
 
 Docstring anpassen: „Sie scrollt quer, hat sieben Ziele und sieht auf jeder Seite gleich aus;" → „Sie hat fünf Reiter und sieht auf jeder Seite gleich aus;". Sonst nichts — `ohne_leiste()` schneidet weiter an `<nav id="hauptnavigation"`? NEIN: die id steht jetzt hinter der Klasse. `partition('<nav id="hauptnavigation"')` in Z. 369 und `split('<nav id="hauptnavigation"'` in Z. 179 auf `'<nav class="leiste" id="hauptnavigation"'` ändern.
 
-- [ ] **Schritt 8: Alles grün**
+- [x] **Schritt 8: Alles grün**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: alle grün (die genaue Zahl steht im Commit).
 
-- [ ] **Schritt 9: Bild**
+- [x] **Schritt 9: Bild**
 
 Run: `.venv/bin/python scripts/dreh/mess.py` gegen den Bühnen-Server (`http://127.0.0.1:8747`, siehe Kopf von `mess.py`) — Erwartung: `leiste: {'unten': 0, 'hoehe': 56, 'kanten': []}` auf jeder Seite, keine `klein`-Zeile für `A.` in der Leiste (jeder Reiter ≥ 44 px hoch, ≥ 24 px breit). Wenn der Bühnen-Server noch den alten Stand serviert, steht das im Bericht — nicht neu starten, das macht die Steuerung (PID nur aus `~/picknick-video/buehne.pids`).
 
-- [ ] **Schritt 10: Commit**
+- [x] **Schritt 10: Commit**
 
 ```bash
 git add zettel/web/templates/basis.html zettel/web/templates/mehr.html zettel/web/app.py zettel/web/static/stil.css tests/test_web_politur.py tests/test_web_chat.py scripts/dreh/mess.py scripts/dreh/shot.py
@@ -381,7 +381,7 @@ git commit -m "Die Leiste liegt unten und hat fünf Reiter"
 - Modify: `zettel/web/static/stil.css` (Kommentarblock Z. 18–40; Regeln Z. 362, 405, 406, 470, 542, 742, 748, 841, 1170, 1213, 1396; `.lauf .menge` Z. 1566)
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Test**
+- [x] **Schritt 1: Test**
 
 Am Ende von `tests/test_web_politur.py` anfügen:
 
@@ -400,12 +400,12 @@ def test_monospace_gibt_es_nur_noch_fuer_code():
     assert "var(--mono)" in _block(stil, "code")
 ```
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_web_politur.py -k monospace`
 Expected: FAIL — `12 == 1`.
 
-- [ ] **Schritt 3: Stilblatt**
+- [x] **Schritt 3: Stilblatt**
 
 In jeder der elf Regeln (Z. 362 `.anzahl`, 405 `.menge`, 406 `.preis`, 470 `.korbzahl`, 542 `.stellen .anzahl`, 742 `.pickzeile .menge`, 748 `.pickzeile .gebinde`, 841 `.abschicken.portionen input`, 1170 `.entwurfsliste .menge`, 1213 `.gesamtzeit`, 1396 `.zugportionen input`) `font-family: var(--mono);` streichen; wo in derselben Regel noch kein `font-variant-numeric: tabular-nums;` steht (742, 748, 841, 1170, 1213, 1396), es an die Stelle setzen. Z. 1566 `.lauf .menge { font-family: inherit; }` löschen — sie nahm eine Schrift zurück, die es nicht mehr gibt. Den Kommentar Z. 739–740 („Sie ist gerechnet — also Monospace, wie von der Kasse gedruckt: …") auf einen Satz kürzen: „Sie ist gerechnet und steht deshalb gross."
 
@@ -423,12 +423,12 @@ Den Kommentarblock Z. 18–40 (von `- GERECHNETE ZAHLEN stehen in Monospace` bis
        IST: Trace-IDs und Endpunkte auf /status, in `<code>`.
 ```
 
-- [ ] **Schritt 4: grün**
+- [x] **Schritt 4: grün**
 
 Run: `.venv/bin/python -m pytest -q tests/test_web_politur.py tests/test_mengen.py`
 Expected: PASS (der Test `test_mengen.py:409` verbietet Monospace in `.rezeptzutaten` — bleibt grün).
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/static/stil.css tests/test_web_politur.py
@@ -445,7 +445,7 @@ git commit -m "Eine Schrift für das Blatt — Monospace nur noch für Code"
 - Modify: `zettel/web/static/stil.css` (Z. 307–316, 427–431, 565–572, 586–591, 1503–1511, 1600–1607)
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Tests**
+- [x] **Schritt 1: Tests**
 
 Anfügen:
 
@@ -487,12 +487,12 @@ def test_die_gekappte_trefferzahl_ist_keine_warnung():
     assert "var(--gedaempft)" in block
 ```
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_web_politur.py -k "knopf or gekappt"`
 Expected: FAIL (drei Tests).
 
-- [ ] **Schritt 3: Stilblatt**
+- [x] **Schritt 3: Stilblatt**
 
 Vor Z. 307 (`.suche button, .knopf, .rollen button {`) diesen Kommentar und die Regeln setzen; die alten Blöcke Z. 307–316 und Z. 565–572 (`.freitext button, .abschicken .gross { … }`, `.freitext button { flex … }`, `.freitext button:active`) und Z. 586–591 (`.abschicken .gross { … }`, `:active`) und Z. 1503–1511 (`.chatform button`) und Z. 1600–1607 (`.bonupload button`) werden dadurch ersetzt:
 
@@ -547,12 +547,12 @@ Der Kommentar vor Z. 565 (`.freitext input`-Umfeld) bleibt; `.abschicken { margi
 }
 ```
 
-- [ ] **Schritt 4: grün, und ein Blick**
+- [x] **Schritt 4: grün, und ein Blick**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: PASS. Dann mit dem Browser (oder `scripts/dreh/shot.py`) /chat, /warenkorb, /bons, /katalog?q=milch ansehen: je Seite genau ein gefüllter Knopf; „Dazu" und „Suchen" sehen gleich aus.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/web/static/stil.css tests/test_web_politur.py
@@ -570,7 +570,7 @@ git commit -m "Vier Sorten Knöpfe, aufgeschrieben — und die Trefferzahl warnt
 - Modify: `zettel/web/templates/_korb.html` Z. 130–131
 - Test: `tests/test_mengen.py` Z. 229–233, 304–311; `tests/test_web_orders.py` (neu)
 
-- [ ] **Schritt 1: Tests**
+- [x] **Schritt 1: Tests**
 
 `tests/test_mengen.py` Z. 229–233 ersetzen:
 
@@ -621,12 +621,12 @@ def test_das_ladenfeld_sagt_was_es_ist(client, con):
 
 (`_pid(con, name)`, `MILCH` und `HTMX` stehen in `test_web_orders.py` schon — siehe Z. 47–63.)
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_mengen.py tests/test_web_orders.py -k "kurz or nachsatz or ladenfeld"`
 Expected: FAIL — `kurzgrund` gibt es nicht.
 
-- [ ] **Schritt 3: `mengen.py`**
+- [x] **Schritt 3: `mengen.py`**
 
 Vor `def nachsatz` (Z. 480) einfügen:
 
@@ -667,7 +667,7 @@ In `satz` Z. 537–539 ersetzen:
 
 Den Kommentar in `satz` Z. 531–535 („Der Zusatz „die Menge bleibt, wie sie ist" antwortet …") kürzen auf: „„3 Stk gebraucht." und sonst nichts (WB-385): beim Freitext war nie eine Rechnung im Gang, und ein Grund erklärte eine Lücke, die keine ist."
 
-- [ ] **Schritt 4: `_korb.html` Z. 130–131**
+- [x] **Schritt 4: `_korb.html` Z. 130–131**
 
 ```html
           <option value="{{ s }}" {% if s == i.store %}selected{% endif %}>
@@ -676,12 +676,12 @@ Den Kommentar in `satz` Z. 531–535 („Der Zusatz „die Menge bleibt, wie sie
 
 Vorher mit `grep -n "LADEN_TITEL" -A6 zettel/orders/__init__.py zettel/orders/*.py | head` nachsehen, wie der Schlüssel für „Egal wo" heisst und wie der Titel lautet; die Zeile so setzen, dass jedes `<option>` mit „Laden: " beginnt (z. B. „Laden: egal wo", „Laden: Rewe", „Laden: Lidl"). Der Test oben lässt beide Schreibweisen zu.
 
-- [ ] **Schritt 5: grün**
+- [x] **Schritt 5: grün**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: PASS. Falls `tests/test_portionen.py:378` oder `tests/test_mengen.py:155/170` (Docstrings, keine Asserts) — nichts zu tun. Bricht ein anderer Test auf den alten Satz, seine Erwartung auf den neuen Satz setzen und im Commit nennen.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/mengen.py zettel/web/templates/_korb.html tests/test_mengen.py tests/test_web_orders.py
@@ -701,7 +701,7 @@ git commit -m "Der Rechensatz im Korb sagt es in einer Zeile, das Ladenfeld sagt
 - Modify: `zettel/web/templates/_entwurf.html` Z. 109; `_chat.html` Z. 68; `status.html` Z. 97–99
 - Test: `tests/test_mengen.py`, `tests/test_entwurf.py`, `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Tests**
+- [x] **Schritt 1: Tests**
 
 `tests/test_mengen.py` anfügen:
 
@@ -763,12 +763,12 @@ def test_ein_einzelner_zug_ohne_luecke_bekommt_einen_ganzen_satz(client):
 
 (Der zweite Test setzt voraus, dass ein Chat-Zug ohne Modell entsteht — `POST /chat` mit einem Katalogwort geht den Rezept-/Suchweg ohne Modell, wie `tests/test_web_chat.py` es tut. Antwortet die Seite ohne Zug mit „Noch kein Chat-Zug", den Zug so anlegen, wie `test_web_chat.py::_langer_verlauf` es macht.)
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_mengen.py tests/test_entwurf.py tests/test_web_politur.py -k "kochbuch or wartezeile or einzelner"`
 Expected: FAIL.
 
-- [ ] **Schritt 3: `mengen.py`**
+- [x] **Schritt 3: `mengen.py`**
 
 Nach `schreibe` (Z. 404) einfügen und `schreibe` darauf umstellen:
 
@@ -812,12 +812,12 @@ Und in `schreibe` die letzte Zeile:
     eine Span-ID.{% endif %}</p>
 ```
 
-- [ ] **Schritt 4: grün**
+- [x] **Schritt 4: grün**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: PASS.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/mengen.py zettel/recipes/sammlung.py zettel/web/app.py zettel/web/templates/_entwurf.html zettel/web/templates/status.html zettel/web/static/stil.css tests/test_mengen.py tests/test_entwurf.py tests/test_web_politur.py
@@ -835,7 +835,7 @@ git commit -m "Einheiten stehen wie im Kochbuch — und drei kleine Sätze"
 - Unverändert: `warenkorb.html:7` („Ein gemeinsamer Korb …" bleibt — er verhindert ein Missverständnis), `bestellungen.html` (leerer Zustand ist schon ein Satz)
 - Test: `tests/test_web_politur.py`
 
-- [ ] **Schritt 1: Test**
+- [x] **Schritt 1: Test**
 
 ```python
 def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
@@ -850,12 +850,12 @@ def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
     assert "Spec 5.1" not in client.get("/katalog").text
 ```
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_web_politur.py -k erklaeren`
 Expected: FAIL.
 
-- [ ] **Schritt 3: Streichen**
+- [x] **Schritt 3: Streichen**
 
 `rezept.html` Z. 91–93:
 
@@ -900,12 +900,12 @@ Expected: FAIL.
 
 `katalog.html` Z. 60–61: „Preise stammen von knuspr.de und sind Richtwerte — eingekauft wird bei Rewe und Lidl." (das „(Spec 5.1)" fällt).
 
-- [ ] **Schritt 4: grün**
+- [x] **Schritt 4: grün**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: PASS (`test_portionsfeld.py:116` bleibt grün, `test_betrieb.py:277` prüft Verhalten, nicht den Satz).
 
-- [ ] **Schritt 5: Commit — mit jedem gestrichenen Satz**
+- [x] **Schritt 5: Commit — mit jedem gestrichenen Satz**
 
 ```bash
 git add zettel/web/templates/rezept.html zettel/web/templates/_rezept.html zettel/web/templates/bons.html zettel/web/templates/status.html zettel/web/templates/katalog.html tests/test_web_politur.py
@@ -964,7 +964,7 @@ MSG
 - Modify: `zettel/web/templates/_entwurf.html` Z. 44–59; `bestellungen.html` Z. 23
 - Test: `tests/test_entwurf.py`, `tests/test_web_orders.py`
 
-- [ ] **Schritt 1: Tests**
+- [x] **Schritt 1: Tests**
 
 `tests/test_entwurf.py` neben `test_die_menge_laesst_sich_ueber_die_oberflaeche_aendern` (Z. ~972; Aufrufform von dort):
 
@@ -1006,12 +1006,12 @@ def test_die_quittung_fuehrt_zur_pick_liste(client, con):
 
 (Antwortet `/warenkorb/abschicken` ohne HTMX mit einer Weiterleitung auf `/bestellungen`, folgt `follow_redirects=True` ihr; sonst `client.get("/bestellungen")` danach prüfen — `grep -n "abschicken" -A12 zettel/web/app.py`.)
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_entwurf.py tests/test_web_orders.py -k "offen or quittung"`
 Expected: FAIL.
 
-- [ ] **Schritt 3: `app.py`**
+- [x] **Schritt 3: `app.py`**
 
 `_teilantwort` bekommt einen Parameter `entwurf_offen: bool = False` (hinter `gerade`), und im Kontext-Dict (Z. 1382) `"entwurf_offen": entwurf_offen,`. `_zug_antwort`:
 
@@ -1029,7 +1029,7 @@ Expected: FAIL.
 
 In den vier Endpunkten `entwurf_benennen` (Z. 2300), `entwurf_verwerfen` (Z. 2319), `entwurf_zeile` (Z. 2341), `entwurf_bedarf` (Z. 2362): `return _zug_antwort(request, c, mid, fehler=fehler, entwurf_offen=True)` (bei 2341/2362 mit `_zug_von(c, sid)` wie bisher).
 
-- [ ] **Schritt 4: Vorlagen**
+- [x] **Schritt 4: Vorlagen**
 
 `_entwurf.html` Z. 44–59: den Kommentar ab „Zu ist er danach aber nicht nur …" bis „… keine Aufräumarbeit." ersetzen durch:
 
@@ -1045,12 +1045,12 @@ und Z. 59: `<details{% if entwurf_offen %} open{% endif %}>`.
 
 `bestellungen.html` Z. 23: `Die Bestellung steht jetzt auf der <a href="/pick">Pick-Liste</a>.</p>`
 
-- [ ] **Schritt 5: grün**
+- [x] **Schritt 5: grün**
 
 Run: `.venv/bin/python -m pytest -q`
 Expected: PASS.
 
-- [ ] **Schritt 6: Commit**
+- [x] **Schritt 6: Commit**
 
 ```bash
 git add zettel/web/app.py zettel/web/templates/_entwurf.html zettel/web/templates/bestellungen.html tests/test_entwurf.py tests/test_web_orders.py
@@ -1067,7 +1067,7 @@ git commit -m "Der Entwurf bleibt offen, wenn man darin arbeitet — und die Qui
 - Modify: `zettel/scrapers/nachtlauf.py` Z. 77–82
 - Test: `tests/test_miniaturen.py` (neben `test_der_nachtlauf_zieht_die_miniaturen_nach`, Z. 131)
 
-- [ ] **Schritt 1: Test**
+- [x] **Schritt 1: Test**
 
 ```python
 def test_der_nachtlauf_zieht_die_einheiten_nach(tmp_path, monkeypatch):
@@ -1097,12 +1097,12 @@ def test_der_nachtlauf_zieht_die_einheiten_nach(tmp_path, monkeypatch):
 
 (Die Pflichtspalten von `product` vorher mit `grep -n "CREATE TABLE product" -A20 zettel/db.py` prüfen und das INSERT darauf setzen — `NOT NULL`-Spalten ohne Vorgabe brauchen einen Wert.)
 
-- [ ] **Schritt 2: rot**
+- [x] **Schritt 2: rot**
 
 Run: `.venv/bin/python -m pytest -q tests/test_miniaturen.py -k einheiten`
 Expected: FAIL — `unit_text` bleibt „0,25 g".
 
-- [ ] **Schritt 3: `nachtlauf.py`** — nach der Fehlermeldung des Crawls (Z. 82, vor dem äusseren `finally`):
+- [x] **Schritt 3: `nachtlauf.py`** — nach der Fehlermeldung des Crawls (Z. 82, vor dem äusseren `finally`):
 
 ```python
         # Was der Crawl nicht angefasst hat, steht noch mit „0,25 g" da
@@ -1110,12 +1110,12 @@ Expected: FAIL — `unit_text` bleibt „0,25 g".
         schreib(f"Einheiten nachgezogen: {knuspr.repariere_einheiten(con)}")
 ```
 
-- [ ] **Schritt 4: grün**
+- [x] **Schritt 4: grün**
 
 Run: `.venv/bin/python -m pytest -q tests/test_miniaturen.py tests/test_betrieb.py tests/test_knuspr.py`
 Expected: PASS.
 
-- [ ] **Schritt 5: Commit**
+- [x] **Schritt 5: Commit**
 
 ```bash
 git add zettel/scrapers/nachtlauf.py tests/test_miniaturen.py
@@ -1128,7 +1128,7 @@ git commit -m "Der Nachtlauf zieht die Knuspr-Einheiten nach"
 
 **Warum:** Rezept 1 „Einkauf vom 2026-08-28" (keine Quelle, 0 Zutaten) und die Dubletten 25 und 26 „Caesar Salad" (Chefkoch-Import ohne Prüfung) stehen in der Rezeptliste des Videos. Rezept 24 („Caesar's Salad mit Parmesan-Croûtons", von `dish` 11 referenziert) und 27 („Caesar Salat", 17 Zutaten) bleiben. Keins der drei wird von `dish`, `recipe_zuordnung` oder `chat_rezept` referenziert (geprüft am 2026-09-02). Fund 10c (kein Rezept aus einer leeren Bestellung) ist schon abgedeckt: `uebernahme.aus_bestellung` wirft `LeeresRezept` (Z. 271–274, Test `test_uebernahme.py:181`).
 
-- [ ] **Schritt 1: Kopie, DELETE auf der Kopie, Gegenprobe**
+- [x] **Schritt 1: Kopie, DELETE auf der Kopie, Gegenprobe**
 
 ```bash
 cp ~/picknick-demo/demo.db ~/picknick-demo/demo.db.vor-welle-2
@@ -1150,7 +1150,7 @@ con.close()
 PY
 ```
 
-- [ ] **Schritt 2: Kopie zurück** (nur wenn Schritt 1 die erwarteten Zeilen meldet: recipe 3, recipe_ingredient 0 für Nr. 1 plus die Zutaten von 25/26)
+- [x] **Schritt 2: Kopie zurück** (nur wenn Schritt 1 die erwarteten Zeilen meldet: recipe 3, recipe_ingredient 0 für Nr. 1 plus die Zutaten von 25/26)
 
 ```bash
 cp $SCRATCH/demo-kopie.db ~/picknick-demo/demo.db
@@ -1162,9 +1162,9 @@ Kein Commit — die Datenbank liegt ausserhalb des Repos. Was entfernt wurde, st
 
 ### Aufgabe 10: Nachtrag, Bühne, Video — Steuerung
 
-- [ ] REVIEW.md: Abschnitt „Welle 2 — Nachtrag (2026-09-02)": je Fund, was geändert wurde; Fund 8 mit der Abweichung; Fund 10a mit den drei gelöschten Rezepten; Fund 12 als verworfen (Gegenprobe aus der Welle-2-Tabelle); Fund 16 `scroll-margin-top` als durch WB-417 erledigt; die Knuspr-Messung: der Preisquotient kann die Lesart nicht beweisen (35 Zeilen mit Quotient ≈ Zahl, 30 davon echte Gramm mit Grundpreis je Gramm — ein echtes „0,5 g" Safran würde falsch „bestätigt"), die 12 Zeilen mit Einheitenfehler ≥ 1 („1 g" für 1 kg) bleiben ein offener Rest ohne Regel.
-- [ ] Welle-1-Plan: Welle-2-Tabelle mit Verweis auf diesen Plan; hier alle Kästchen.
-- [ ] Memory `ui-review-welle-2-offen.md` → Welle 2 auf master, offene Reste.
+- [x] REVIEW.md: Abschnitt „Welle 2 — Nachtrag (2026-09-02)": je Fund, was geändert wurde; Fund 8 mit der Abweichung; Fund 10a mit den drei gelöschten Rezepten; Fund 12 als verworfen (Gegenprobe aus der Welle-2-Tabelle); Fund 16 `scroll-margin-top` als durch WB-417 erledigt; die Knuspr-Messung: der Preisquotient kann die Lesart nicht beweisen (35 Zeilen mit Quotient ≈ Zahl, 30 davon echte Gramm mit Grundpreis je Gramm — ein echtes „0,5 g" Safran würde falsch „bestätigt"), die 12 Zeilen mit Einheitenfehler ≥ 1 („1 g" für 1 kg) bleiben ein offener Rest ohne Regel.
+- [x] Welle-1-Plan: Welle-2-Tabelle mit Verweis auf diesen Plan; hier alle Kästchen.
+- [x] Memory `ui-review-welle-2-offen.md` → Welle 2 auf master, offene Reste.
 - [ ] Bühne: App-PID aus `~/picknick-video/buehne.pids` beenden (nur diese PID), neu starten, PID eintragen; `scripts/dreh/mess.py` auf allen Seiten.
 - [ ] Video: `bereit.sh`, `MAUS=0 SKRIPT=dreh_handy.py STAMM=… bash aufnahme.sh 75`, `handy.py <STAMM>`; dann `MAUS=1 SKRIPT=dreh.py STAMM=… bash aufnahme.sh 300`, `schnitt.py`. Die Drehskripte suchen Elemente über `finde.py`; die Leiste unten verschiebt nichts im Blatt, aber die Kasse und der Chatkopf haben andere Abstände — jeden Tipp im Einzelbild prüfen.
 

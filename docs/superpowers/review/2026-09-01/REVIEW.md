@@ -78,6 +78,46 @@ ohne Media-Query, Hell- und Dunkelbild waren pixelgleich.
 **Zu beachten vor dem nächsten Take:** `dreh_handy.py` klickt auf Koordinaten; Aufgabe 3, 6 und 8
 verschieben Elemente (Fusszeile, Chips, klebende Kasse). Trockenlauf vor dem Video.
 
+## Nachtrag 2026-09-02 — Welle 2 umgesetzt
+
+Plan: [`../../plans/2026-09-02-ui-review-welle-2.md`](../../plans/2026-09-02-ui-review-welle-2.md)
+(die Entscheidungstabelle am Ende des Welle-1-Plans ist damit abgearbeitet).
+Stand nach Welle 2: Commit `5159be9`, 1345 Tests grün; der Abschluss-Review über alle 23 Commits fand keinen Blocker, drei Wichtige (Docstring-SQL ohne `WHERE` in `stage.py`, doppeltes `margin-left: auto` auf `/mehr` — das Rollenabzeichen stand in der Zeilenmitte —, ein veralteter Testkommentar) sind in `5159be9` behoben; die vierte, eine Seite ohne Leiste hätte der Messstand stumm durchgewinkt, stand schon seit `6b74091` als „FEHLT: keine Leiste“ im Skript. Entschieden vom Nutzer: Fund 6 → (a) untere
+Tab-Leiste; Fund 9 → Streichung nach meinem Urteil, jeder Satz steht im Commit-Body; Fund 3 →
+die Hostnamen auf `/status` bleiben. Bilder danach: [`bilder/welle2_*.png`](bilder/), dieselbe
+Strecke wie bei Welle 1 (390 px, Kopie der Demo-Datenbank). `scripts/dreh/mess.py` meldet auf
+allen 14 Seiten nur noch die WCAG-ausgenommenen Inline-Links („Ansehen", „Rezeptseite", „Chat"
+im Fliesstext) und die sechs 13-px-Kästchen der Pick-Liste, die absichtlich klein sind, weil die
+ganze Zeile das Ziel ist.
+
+| # | Stand | Commits | Beleg danach |
+|---|---|---|---|
+| 6 | **erledigt** — feste untere Leiste mit fünf Reitern (Katalog · Chat · Korb · Pick · Mehr); Rezepte, Bestellungen, Bons, Status und „wer bin ich?" liegen unter `/mehr`. Die Korbzahl sitzt im Reiter, `<main>` hält am Ende so viel Platz frei, wie die Leiste hoch ist; Rauchtest und Messstand kennen sie | `5e8ddb1`, `f81654b`, `6b74091`, `9be055e`, `93088bd` | `welle2_chat`, `welle2_pick` |
+| 13 | **erledigt** — eine Schrift für das Blatt; `var(--mono)` nur noch für Trace-IDs und Pfade auf `/status`. Zahlen in Spalten bekommen `tabular-nums`, die Portionsfelder erben die Schrift | `3ac64e0`, `b87728c`, `839a100` | `welle2_rezept`, `welle2_warenkorb` |
+| 14 | **erledigt** — die Knopfregel steht als Kommentarblock in `stil.css`: genau ein gefüllter Primärknopf je Seite, Sekundär umrandet, Ja/Nein als Entscheidung, `zurueck` als Rückweg; `Suchen`/`Dazu`/`Fragen` angeglichen. Der Kommentar nennt bewusst nur die vier Sorten — `.knopf.still`, `.beispiel` und die Wahlknöpfe der Listen stehen ausserhalb | `e1c9c67`, `2426e8e` | alle `welle2_*` |
+| 15 | **erledigt** — die Trefferzahl im Katalog („60 von 10066") ist eine neutrale Zeile, keine gelbe Warnung mehr | `e1c9c67` | — |
+| 8 | **erledigt mit Abweichung** — der Rechensatz im Korb ist kurz: „2 Stk gebraucht — nicht gegen die Packung („1 kg“) zu rechnen.“ statt der Menge zweimal und einer Entschuldigung (`mengen.kurzgrund`); beim Freitext schweigt er, weil die Zeile dort schon „Freitext“ trägt. Nicht wie empfohlen versteckt: der Satz trägt die gebrauchte Menge, die Hauptangabe der Zeile (WB-381). `Rechnung.grund` für den Trace ist unverändert. **Abweichung beim Ladenfeld:** der Plan wollte „Laden:" vor jede Option. Gemessen: „Laden: Rewe / Laden: Lidl / Laden: egal" braucht 334 px für die breiteste Option, das Feld hat 332 — das × rutschte in die zweite Zeile. Jetzt heisst nur die Vorgabe „Laden egal" (320 px), die Läden stehen als „Rewe" und „Lidl" ohne Vorsatz; das Wort steht damit dort, wo es ohne Wert sonst fehlt. Die Gruppenüberschrift auf der Pick-Liste heisst weiter „Egal wo“ (`LADEN_TITEL`) — derselbe Wert, zwei Namen; die Rohfunde nannten beide Stellen, offen | `8d55dc7`, `5225f14`, `4322c25` | `welle2_warenkorb` |
+| 16 | **erledigt bis auf eines** — Einheiten aus dem Chefkoch-Import stehen wie im Kochbuch („EL", „Paket", „Pkt." bleibt, so steht es im Rezept); „Das Modell überlegt …" auf `--t-klein`, der Wartezähler bleibt sichtbar; „Züge ohne Trace" hat einen Satz; `.korbzahl` nachgemessen: die Pille hatte 19 px Höhe, der Befund „12×11“ war die Ziffer, nicht die Pille; sie sitzt jetzt im Reiter mit `line-height: 1.4`, damit „0“ nicht flacher ist als „12“. `scroll-margin-top` am Zug war schon durch WB-417 erledigt (`7b001fe`, der jüngste Zug rückt von oben nach). **Offen:** der Fehlerzweig auf `/status` sagt „1 von 1 Zügen haben keine Span-ID" — derselbe Grammatikfehler im Singular, nicht behoben | `fbbcddc`, `134f4a5` | `welle2_chat`, `welle2_rezept` |
+| 9 | **erledigt nach eigenem Urteil** — die Anleitungsabsätze auf Korb, Rezept, Bons, Bestellungen (leer) und Status sind weg; die Seiten erklären sich nicht mehr selbst. Geblieben, weil es Zusagen sind und keine Anleitung: „Ausgelesen werden Laden, Datum, Artikel, Menge und Preis — und sonst nichts." auf Bons und die Rechenerklärung unter dem Portionsfeld (zwei Zweige, weil ein Rezept ohne Bezugszahl keinen Faktor liefert). Jeder gestrichene Satz steht im Body von `7ac1b4e` | `7ac1b4e`, `c036c69`, `4852431` | `welle2_bons`, `welle2_rezept` |
+| 10 | **a erledigt, c war schon dicht, b offen** — (a) aus der Demo-Datenbank entfernt: Rezept 1 „Einkauf vom 2026-08-28" (keine Quelle, 0 Zutaten) und die Dublette „Caesar Salad" (Rezepte 25 und 26, zwei Chefkoch-Nummern); 23 Zutatenzeilen, keine Bestellposten, keine Verweise aus Gerichten, Zuordnungen oder Chat. 35 → 32 Rezepte, Sicherung `demo.db.vor-welle-2` neben der Demo-DB, kopiert über die SQLite-Backup-API, weil die Bühne im WAL lief. (c) `uebernahme.aus_bestellung` lehnt eine Bestellung ohne Posten seit `cd34680` ab — Rezept 1 stammt vom selben Tag, vor der Sperre. (b) Namensprüfung beim Chefkoch-Import: nach dem Contest | Daten, kein Commit | `welle2_rezept` |
+| 2 (Rest) | **erledigt** — der Rezeptentwurf klappt nicht mehr zu, wenn man darin arbeitet: ein Ja/Nein *im* Entwurf lässt ihn offen, ein Ja/Nein *oben* schliesst ihn (auch wenn er von Hand offen war — Entscheidung, kein Versehen). Die Quittung nach dem Abschicken führt zur Pick-Liste. **Offen:** ohne JavaScript (`_chat_antwort`, ganze Seite) klappt er weiter zu; die saubere Lösung braucht ein Signal je Zug | `6447ebc` | `welle2_chat` |
+| 5 (Rest) | **teilweise** — `repariere_einheiten` hat jetzt einen Aufrufer: der Nachtlauf zieht die Knuspr-Einheiten nach dem Crawl nach, und ein Fehler dabei kostet nicht die Sicherung. **Offen bleiben die 12 Zeilen je DB mit Einheitenfehler ≥ 1** („1 g" für 1 kg Kaffee, „1,5 ml" für 1,5 L Reiniger). Geprüft, ob der Grundpreis die Lesart beweisen kann: nein — 35 Zeilen haben einen Preisquotienten ≈ Zahl, 30 davon sind echte Gramm-Zeilen mit Grundpreis je Gramm; ein echtes „0,5 g" Safran würde dieselbe Probe falsch „bestätigen". Ohne Regel bleibt es beim Rest | `4537058`, `3b2a18b` | — |
+| 12 | **verworfen** — Gegenprobe aus der Welle-2-Tabelle: „raus", „zurück", „rückgängig", „Kein Rezept daraus" sind `button.mini.zurueck` mit 44 px Mindesthöhe; nur der Text ist 13 px und unterstrichen. WB-361 hat den Rahmen absichtlich entfernt, damit „rückgängig" nicht wie eine dritte Wahl neben Ja/Nein wirkt. Wahrnehmungsbefund, kein Bedienfehler | — | — |
+| 3 (Hostnamen) | **bleibt so** — Entscheidung des Nutzers: `vllm-box.local` und `localhost:6006` stehen auf `/status`, die Seite liegt unter „Mehr" | — | — |
+
+**Werkzeug:** Der Messstand (`scripts/dreh/mess.py`, `shot.py`, `text.py`) fragt die Rezeptliste
+nach der ersten Nummer, statt „1" anzunehmen — nach dem Aufräumen gab es Rezept 1 nicht mehr, und
+ein Stand, der eine 404-Seite vermisst, ist stumm falsch (`d3627ca`). `stage.py` sagt jetzt, dass
+der Vorführ-Zug an einem Entwurf hängen muss: nach einem Dreh bis zur Kasse hängt er an einer
+abgeschickten Bestellung, und das `DELETE` in Schritt 4 nimmt den Chat per Kaskade mit.
+
+**Offen nach Welle 2 (Folge-Tickets, keins davon vor dem Video):** die Singular-Grammatik auf
+`/status`; die `client`-Fixture in `tests/test_web_politur.py` übergibt kein `chat=` — ein
+`POST /chat` dort liefe gegen den echten Chat und damit gegen Spec 13 (heute kein Aufrufer;
+ein autouse-Guard sollte das verbieten); der No-JS-Pfad des Entwurfs; die Vorschlagsnummern in
+`stage.py` sind hartkodiert; der Knopfregel-Kommentar zählt vier Sorten, `.plus` (gefüllt, Sinnbild) ist eine fünfte, die der Ein-Primärknopf-Test nicht sieht; der Freitext-Zweig in `mengen.kurzgrund` ist tot und gäbe „3 Stk gebraucht — .“ zurück; `checks/smoke.py` hat einen vorbestehenden roten Punkt („der Verlauf
+hängt weiter an der Bestellung"), der mit Welle 2 nichts zu tun hat; Fund 10b.
+
 ## Was funktioniert (von allen dreien unabhängig genannt)
 
 * **Der Ablauf schließt sich sichtbar.** Satz → 15 Artikel mit Bild im Korb → Bestellung → Pick-Liste, in der „gab's nicht" den Zähler ehrlich auf „13 zu holen, 1 gab's nicht" stellt.
