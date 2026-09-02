@@ -488,6 +488,11 @@ def kurzgrund(rechnung: Rechnung, unit_text: str | None = None) -> str:
     """
     if rechnung.ausrechenbar or rechnung.bedarf is None:
         return ""
+    # Beide Aufrufer kehren beim Freitext schon vorher um; stünde hier je
+    # etwas, wäre es „keine lesbare Packungsgrösse" an einer Zeile ohne
+    # Produkt — und damit unwahr (WB-385).
+    if rechnung.freitext:
+        return ""
     if rechnung.packung is None:
         return f"keine lesbare Packungsgrösse{_zitat(unit_text)}"
     if rechnung.packung <= 0:
