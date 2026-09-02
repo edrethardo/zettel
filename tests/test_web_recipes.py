@@ -60,8 +60,9 @@ def _rid(client, name="Milchreis"):
 # --------------------------------------------------------------------------
 # Navigation und Liste (Spec 9)
 
-def test_rezepte_haengen_in_der_navigation(client):
-    assert '<a href="/rezepte">Rezepte</a>' in client.get("/katalog").text
+def test_rezepte_stehen_unter_mehr(client):
+    """Seit Welle 2 hat die Leiste fünf Reiter; die Rezepte stehen unter „Mehr"."""
+    assert '<a href="/rezepte">Rezepte</a>' in client.get("/mehr").text
 
 
 def test_leere_liste_sagt_es_und_bietet_das_anlegen_an(client):
