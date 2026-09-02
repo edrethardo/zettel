@@ -174,10 +174,10 @@ h2 { font-size: var(--t-h2); margin: var(--v5) 0 var(--v2); }
 input::placeholder { color: var(--gedaempft); opacity: 1; }
 /* Ein Platzhalter, der mitten im Wort endet, liest sich wie ein Absturz —
    auf 390 px stand im Korb „Etwas, das der Katalog nicht" und hörte an der
-   Feldkante auf (WB-400 Runde 3). Dasselbe Übel wie der Wortfetzen in der
-   Kopfleiste, dieselbe Antwort: lieber sichtbar gekürzt als hart
-   abgeschnitten. Gilt auch für einen zu langen WERT — der Schnitt fällt
-   dann auf drei Punkte statt auf einen halben Buchstaben. */
+   Feldkante auf (WB-400 Runde 3). Ein hart abgeschnittenes Wort sieht aus
+   wie ein Fehler, ein sichtbar gekürztes wie eine Entscheidung; deshalb die
+   drei Punkte. Gilt auch für einen zu langen WERT — der Schnitt fällt dann
+   auf drei Punkte statt auf einen halben Buchstaben. */
 input { text-overflow: ellipsis; }
 button:disabled { opacity: 0.5; cursor: default; }
 /* In Knöpfen bricht kein Wort in der Mitte: „Frage\nn" ist kein Knopf mehr.
@@ -262,6 +262,9 @@ button, .knopf { overflow-wrap: normal; }
 }
 .mehrliste a::after { content: "›"; margin-left: auto; color: var(--gedaempft);
                       font-size: var(--t-h2); }
+/* Sonst schöben Abzeichen UND Pfeil je mit `margin-left: auto` und teilten
+   den freien Platz — die Rolle stünde in der Zeilenmitte statt am Rand. */
+.mehrliste .anzahl { margin-left: 0; }
 .mehrliste.still a { font-weight: 500; color: var(--gedaempft); }
 
 /* Hinweisband (Spec 11): der Textmarker quer über die Seite. -------------- */

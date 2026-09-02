@@ -230,6 +230,21 @@ def test_eine_seite_unter_mehr_markiert_den_reiter_mehr(client):
     assert '<a href="/rezepte" class="aktiv"' not in text
 
 
+def test_das_rollenabzeichen_steht_neben_dem_pfeil_und_nicht_in_der_mitte():
+    """`.mehrliste a` ist ein Flex-Container, in dem ZWEI Kinder nach rechts
+    wollen: das Abzeichen mit der Rolle und der Pfeil aus `::after`. Zwei
+    `margin-left: auto` teilen den freien Platz unter sich auf, statt ihn
+    einem zu geben — „Wer bin ich?" trug seine Rolle damit mitten in der
+    Zeile. Nur der Pfeil schiebt, das Abzeichen fährt neben ihm mit; genau
+    die Antwort, die `.leiste .korbzahl` schon bekommen hat."""
+    stil = STIL.read_text(encoding="utf-8")
+    # Die Vorgabe von `.anzahl` bleibt, wie sie ist — in den Kategorien, wo
+    # sie herkommt, soll die Zahl weiterhin an den rechten Rand.
+    assert "margin-left: auto" in _block(stil, ".anzahl")
+    assert "margin-left: auto" in _block(stil, ".mehrliste a::after")
+    assert "margin-left: 0" in _block(stil, ".mehrliste .anzahl")
+
+
 def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
     """Eine feste Leiste deckt die unteren 56 px des Fensters. Was darunter
     liegt, ist unerreichbar: das Blatt bekommt unten den Abstand der Leiste,
@@ -242,6 +257,11 @@ def test_die_leiste_ist_fest_und_das_blatt_macht_ihr_platz():
     # `.fussnote` bleibt; die Regeln `.fuss`, `.fuss a`, `.kopf nav …` gehen.
     assert not re.search(r"^\.fuss\b", stil, re.M)
     assert not re.search(r"^\.kopf nav", stil, re.M)
+    # Der Zaun gegen den Rückweg: die Leiste, die sie ersetzt, scrollte quer
+    # und blendete ihre Ränder aus. Kommen diese beiden Eigenschaften ins
+    # Blatt zurück, ist die alte Leiste zurück — dann soll hier etwas rot
+    # werden und nicht erst ein Blick auf ein Telefon.
+    assert "scroll-snap" not in stil and "mask-image" not in stil
 
 
 def test_die_pickmeldung_liegt_ueber_der_leiste():
