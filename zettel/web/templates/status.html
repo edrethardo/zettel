@@ -95,8 +95,9 @@
   {% if not trace_luecke.zuege %}
   <p class="leer">Noch kein Chat-Zug — es kann noch nichts fehlen.</p>
   {% elif not trace_luecke.ohne_trace %}
-  <p class="fertig">Alle <strong>{{ trace_luecke.zuege }}</strong> Züge tragen
-    eine Span-ID.</p>
+  <p class="fertig">{% if trace_luecke.zuege == 1 %}Der eine Zug trägt eine
+    Span-ID.{% else %}Alle <strong>{{ trace_luecke.zuege }}</strong> Züge tragen
+    eine Span-ID.{% endif %}</p>
   {% else %}
   <p class="fehler"><strong>{{ trace_luecke.ohne_trace }} von
     {{ trace_luecke.zuege }}</strong> Zügen haben keine Span-ID — sie sind nie

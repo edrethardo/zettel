@@ -326,3 +326,20 @@ def test_der_kurzgrund_kennt_alle_faelle():
     assert mengen.kurzgrund(mengen.rechne(200, "g", "0 g"), "0 g") == \
         "Packungsgrösse null"
     assert mengen.kurzgrund(mengen.rechne(3, None, None, freitext=True)) == ""
+
+
+def test_die_einheit_wird_geschrieben_wie_im_kochbuch():
+    """Gefaltet ist „el"; gelesen wird „EL" (UI-Review 2026-09-01, Fund 16).
+    `schreibe` gab Hauptwörtern den grossen Anfangsbuchstaben zurück —
+    „Paket" — und machte aus der Abkürzung „El"."""
+    assert mengen.einheit_text("el") == "EL"
+    assert mengen.einheit_text("tl") == "TL"
+    assert mengen.einheit_text("pck") == "Pck."
+    assert mengen.einheit_text("paket") == "Paket"
+    assert mengen.einheit_text("g") == "g"
+    assert mengen.einheit_text(None) == ""
+    assert mengen.schreibe(2, "el") == "2 EL"
+    # Die Schreibweise faltet auf sich selbst zurück — ein Feld, das „EL"
+    # anzeigt und „EL" zurückschickt, speichert wieder „el".
+    for gefaltet in mengen.SCHREIBWEISE:
+        assert mengen.falte(mengen.SCHREIBWEISE[gefaltet]) == gefaltet

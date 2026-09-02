@@ -394,14 +394,31 @@ def schreibe(menge, einheit) -> str:
     Die Grundeinheiten werden gespeichert, wie die Suche sie faltet — klein
     und ohne Umlaute, damit „Zehe(n)" und „Zehen" dieselbe Einheit sind. Zum
     LESEN taugt das nicht: „3 stange gebraucht" sieht aus wie ein Fehler.
-    Alles, was keine der drei Grundeinheiten ist, ist im Deutschen ein
-    Hauptwort und bekommt seinen grossen Anfangsbuchstaben zurück.
+    Alles, was keine der drei Grundeinheiten ist, schreibt `einheit_text`
+    aus — Hauptwörter mit grossem Anfangsbuchstaben, Abkürzungen so, wie sie
+    im Kochbuch stehen.
     """
     if menge is None:
         return ""
     if einheit in (GRAMM, MILLILITER, STUECK, None):
         return f"{zahl_deutsch(menge)} {einheit or STUECK}".strip()
-    return f"{zahl_deutsch(menge)} {einheit[:1].upper()}{einheit[1:]}"
+    return f"{zahl_deutsch(menge)} {einheit_text(einheit)}"
+
+
+#: Gefaltete Einheit -> Schreibweise im Kochbuch. Nur, was `schreibe` nicht
+#: aus der Faltung zurückrechnen kann: die Abkürzungen. Jede Schreibweise
+#: faltet auf ihren Schlüssel zurück (`test_die_einheit_wird_geschrieben_wie_
+#: im_kochbuch`), damit ein Feld, das sie zeigt, sie auch zurückgeben darf.
+SCHREIBWEISE = {"el": "EL", "tl": "TL", "pck": "Pck.", "msp": "Msp."}
+
+
+def einheit_text(einheit) -> str:
+    """`„el"` -> `„EL"`, `„paket"` -> `„Paket"`, `„g"` -> `„g"`, `None` -> `„"`."""
+    if not einheit:
+        return ""
+    if einheit in (GRAMM, MILLILITER, STUECK):
+        return einheit
+    return SCHREIBWEISE.get(einheit, f"{einheit[:1].upper()}{einheit[1:]}")
 
 
 def _zitat(text) -> str:

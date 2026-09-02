@@ -285,7 +285,7 @@ def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
     z["mengentext"] = mengen.schreibe(z.get("amount"), z.get("unit"))
     # Dieselbe Einheit ohne die Zahl — für das Feld, in dem die Menge
     # geändert wird: dort steht die Zahl schon im Eingabefeld.
-    z["einheit_text"] = mengen.schreibe(1, z.get("unit")).split(" ", 1)[-1]
+    z["einheit_text"] = mengen.einheit_text(z.get("unit")) or mengen.STUECK
     # Dasselbe noch einmal als FELDINHALT — und leer, wo keine Einheit
     # gespeichert ist (WB-375). `einheit_text` taugt dafür nicht: es schreibt
     # „Stk", auch wenn in der Spalte NULL steht. Ein vorbelegtes Feld ist aber
