@@ -308,8 +308,11 @@ def test_der_nachsatz_behaelt_annahme_und_handmenge():
 
 def test_der_nachsatz_nennt_den_grund_nur_wenn_ihn_sonst_niemand_nennt():
     """Steht eine Packungsangabe an der Zeile, trägt sie das „nicht
-    ausrechenbar" selbst. Fehlt sie ganz — ein Freitext hat keine —, muss der
-    Nachsatz sagen, warum nichts gerechnet wurde."""
+    ausrechenbar" selbst. Fehlt sie ganz, muss der Nachsatz sagen, warum
+    nichts gerechnet wurde. Der Freitext ist der dritte Fall und seit WB-385
+    kein Beispiel mehr für den zweiten: er trägt „Freitext" an der Stelle der
+    Packungsangabe und bekommt deshalb gar keinen Grund
+    (`test_ein_freitext_hat_keine_packung_und_das_ist_kein_mangel`)."""
     mit = mengen.rechne(6, "Stange/n", "1 Stk")
     assert mengen.nachsatz(mit, unit_text="1 Stk", qty=1) is None
     ohne = mengen.rechne(200, "g", None)

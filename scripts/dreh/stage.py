@@ -10,8 +10,16 @@ Voraussetzung: der Zug der Kopie hängt am WARENKORB (`orders.state = 'draft'`),
 nicht an einer abgeschickten Bestellung. Nach einem Dreh, der bis zur Kasse
 geht, hängt er an `state = 'offen'` — dann räumt Schritt 4 ihn mit der
 Bestellung ab (ON DELETE CASCADE), die Chatseite ist leer und Schritt 5 findet
-nichts. Auf der Kopie vorher `UPDATE orders SET state = 'draft',
-submitted_at = NULL` setzen (Welle 2, 2026-09-02)."""
+nichts. Auf der Kopie vorher genau DIE eine Bestellung zurückstellen, an der
+der Zug hängt:
+
+    UPDATE orders SET state = 'draft', submitted_at = NULL
+     WHERE id = (SELECT order_id FROM chat_message ORDER BY id DESC LIMIT 1)
+
+Das `WHERE` ist nicht Kosmetik: `ux_orders_ein_draft` lässt nur EINEN Entwurf
+zu (zettel/db.py), und ohne die Einschränkung endet das Kommando auf einer
+Kopie mit mehr als einer Bestellung im IntegrityError. Gibt es schon einen
+anderen Entwurf, muss der erst weg (Welle 2, 2026-09-02)."""
 import pathlib
 import sqlite3, sys, urllib.request, urllib.parse
 
