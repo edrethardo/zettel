@@ -122,9 +122,10 @@
            value="{{ rezept.servings if rezept.servings is not none else '' }}"
            aria-describedby="portionen-hinweis"></label>
   {# Zwei Sätze, weil einer davon falsch wäre: ohne `servings` gibt es keine
-     Bezugsgrösse, `sammlung.skaliere` liefert dann `None` und eine neue Zahl
-     ändert KEINE Menge (Regel 4). „Alle Mengen rechnen mit" zu versprechen,
-     wo nichts rechnet, ist genau die Lüge aus WB-384. #}
+     Bezugsgrösse, `sammlung._mengen_umrechnen` steigt vor `mengen.skaliere`
+     aus und eine neue Zahl ändert KEINE Menge (Regel 4). „Alle Mengen
+     rechnen mit" zu versprechen, wo nichts rechnet, ist genau die Lüge aus
+     WB-384. #}
   <p class="fussnote" id="portionen-hinweis">
     {%- if rezept.servings %}Dauerhaft, und alle Mengen rechnen mit.
     {%- else %}Dauerhaft — ohne Zahl im Rezept gibt es keinen Faktor.

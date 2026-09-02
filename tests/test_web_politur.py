@@ -606,9 +606,17 @@ def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
     # sonst gar nicht gerendert wird und der Satz darunter unprüfbar bliebe.
     rezept = client.get(f"/rezepte/{rid}?amount=500&unit=g").text
     assert "Noch kein Produkt verknüpft" in rezept
+    assert "Menge aus dem Rezept" in rezept
     assert "Vorrang vor der Suche" not in rezept
     assert "wächst mit den Portionen" not in rezept
     assert "in der Zutatenliste" not in rezept
+    # Der Hinweis am Portionsfeld hat zwei Fassungen, und die kurze darf die
+    # lange nicht ersetzen: ohne `servings` rechnet nichts mit, und dann wäre
+    # „alle Mengen rechnen mit" eine Zusage, die der Shop nicht hält.
+    ohne = recipes.anlegen(con, "Handrezept")
+    seite = client.get(f"/rezepte/{ohne}").text
+    assert "ohne Zahl im Rezept gibt es keinen Faktor" in seite
+    assert "alle Mengen rechnen mit" not in seite
     bons = client.get("/bons").text
     assert "Kartennummer" not in bons and "besser lesbar" not in bons
     status = client.get("/status").text
