@@ -802,7 +802,11 @@ def test_das_tap_ziel_des_rueckwegs_ist_gross_genug(db_datei, tmp_path):
     """
     stil = (Path(webapp.__file__).parent / "static" / "stil.css").read_text(
         encoding="utf-8")
-    block = stil.split(".mini.zurueck")[1].split("}")[0]
+    # Der Name steht seit dem Knopf-Kommentar (UI-Review 2026-09-01,
+    # Fund 14) auch in einer Erklärung im Blatt. Gesucht ist die REGEL,
+    # also der Block, dessen Selektor am Zeilenanfang steht — sonst liest
+    # der Test den Kommentar und nicht den Knopf.
+    block = re.split(r"^\.mini\.zurueck \{", stil, flags=re.M)[1].split("}")[0]
     assert "min-height" not in block and "min-width" not in block
     assert "font-size: var(--t-fein)" in block
     wurzel = stil.split(":root {")[1].split("}")[0]
