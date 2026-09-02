@@ -246,7 +246,7 @@ button, .knopf { overflow-wrap: normal; }
 .leiste a:active { background: var(--karte-tief); }
 /* Die Pille ist im Reiter ein Flex-Kind: bei drei Ziffern und 375 px würde
    sie unter ihre Ziffern zusammengedrückt. Sie behält ihre Breite. */
-.leiste .korbzahl { flex: 0 0 auto; }
+.leiste .korbzahl { flex: 0 0 auto; margin-left: 0; } /* der `gap` reicht — sonst 8 px statt 4 */
 /* Der Fokusring liegt sonst 2 px AUSSERHALB des Reiters — und damit unter
    der Fensterkante, sobald die Safe-Area 0 ist. Nach innen gelegt bleibt er
    ganz im Bild. */
