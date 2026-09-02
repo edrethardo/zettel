@@ -247,8 +247,9 @@ def test_upload_geht_ohne_javascript(client):
     assert 'type="file"' in seite
 
 
-def test_bons_stehen_in_der_navigation(client):
-    assert '<a href="/bons">' in client.get("/katalog").text
+def test_bons_stehen_unter_mehr(client):
+    """Seit Welle 2 hat die Leiste fünf Reiter; die Bons stehen unter „Mehr"."""
+    assert '<a href="/bons">' in client.get("/mehr").text
 
 
 def test_leere_seite_sagt_dass_nichts_da_ist(client):

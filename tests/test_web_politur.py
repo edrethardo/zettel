@@ -454,7 +454,8 @@ def test_summe_und_bestellknopf_kleben_am_unteren_rand():
     stil = STIL.read_text(encoding="utf-8")
     block = _block(stil, ".kasse")
     assert "position: sticky" in block
-    assert "bottom: 0" in block
+    # Die Kasse klebt AUF der festen Leiste (Welle 2), nicht am Fensterrand.
+    assert "bottom: var(--leiste)" in block
     assert "background: var(--grund)" in block
 
 

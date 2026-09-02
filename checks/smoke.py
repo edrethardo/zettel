@@ -1399,11 +1399,11 @@ def checks_zwei_orte(b: Bericht, db_datei: Path, bild_dir: Path) -> None:
 def _ohne_leiste(text: str) -> str:
     """Die Seite ohne die Navigationsleiste des Grundgerüsts.
 
-    Ein Weg, den es nur in der Leiste gibt, ist keiner: sie scrollt quer, hat
-    neun Ziele und sieht auf jeder Seite gleich aus. Geprüft wird deshalb, was
-    IM BLATT steht.
+    Ein Weg, den es nur in der Leiste gibt, ist keiner: sie hat fünf Reiter
+    und sieht auf jeder Seite gleich aus. Geprüft wird deshalb, was IM BLATT
+    steht.
     """
-    kopf, _, rest = text.partition('<nav id="hauptnavigation"')
+    kopf, _, rest = text.partition('<nav class="leiste" id="hauptnavigation"')
     return kopf + rest.partition("</nav>")[2]
 
 
@@ -1411,7 +1411,7 @@ def _chat_ist_ein_ort(client) -> str:
     seite = client.get("/chat")
     gleich(seite.status_code, 200, "GET /chat")
     wahr('name="satz"' in seite.text, "Auf /chat steht kein Eingabefeld.")
-    leiste = seite.text.partition('<nav id="hauptnavigation"')[2].partition(
+    leiste = seite.text.partition('<nav class="leiste" id="hauptnavigation"')[2].partition(
         "</nav>")[0]
     wahr('href="/chat"' in leiste, "Der Chat steht nicht in der Navigation.")
     return "GET /chat trägt den Chat, die Leiste führt hin"
