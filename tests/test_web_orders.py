@@ -444,6 +444,14 @@ def test_nach_dem_abschicken_steht_eine_quittung(client, con):
     assert 'class="fertig"' not in client.get("/bestellungen").text
 
 
+def test_die_quittung_fuehrt_zur_pick_liste(client, con):
+    """„Die Bestellung steht jetzt auf der Pick-Liste." nannte die Seite,
+    ohne hinzuführen."""
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    text = client.post("/warenkorb/abschicken", follow_redirects=True).text
+    assert 'auf der <a href="/pick">Pick-Liste</a>.' in text
+
+
 def _quittung(client, ziel):
     """Der Quittungsabsatz unter `ziel` — oder None, wenn keiner dasteht."""
     text = client.get(ziel).text

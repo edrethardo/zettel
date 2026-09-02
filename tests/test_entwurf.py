@@ -991,6 +991,30 @@ def test_die_menge_laesst_sich_ueber_die_oberflaeche_aendern(
     assert (v["need_amount"], v["need_unit"]) == (250.0, "g")
 
 
+def test_nach_einer_entwurfsaktion_bleibt_der_entwurf_offen(con, db_pfad, tmp_path):
+    """Wer drei Mengen ändert, klappte dreimal auf (UI-Review 2026-09-01,
+    Fund 2, Rest): jede Aktion im Entwurf rendert den Zug neu und lieferte
+    das `<details>` zu zurück. Nach einer Aktion IM Entwurf kommt es offen;
+    nach einem Ja/Nein oben bleibt es zu."""
+    _bolo_geholt(con)
+    client = _web(db_pfad, tmp_path, _web_zug(con))
+    client.post("/chat",
+                data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
+                headers={"HX-Request": "true"})
+    mid = con.execute("SELECT max(id) AS id FROM chat_message"
+                      " WHERE role = 'assistant'").fetchone()["id"]
+    hack = con.execute(
+        "SELECT s.id FROM chat_suggestion s JOIN product p ON p.id = s.product_id"
+        " WHERE p.name LIKE 'Rinderhack%'").fetchone()["id"]
+    antwort = client.post(f"/chat/vorschlag/{hack}/bedarf",
+                          data={"menge": "0,25", "einheit": "kg"},
+                          headers={"HX-Request": "true"}).text
+    assert "<details open>" in antwort
+    oben = client.post(f"/chat/{mid}/alle?decision=kept",
+                       headers={"HX-Request": "true"}).text
+    assert "<details open>" not in oben and "<details>" in oben
+
+
 def test_das_einheitenfeld_zeigt_die_kochbuchschreibweise(con, db_pfad, tmp_path):
     """„el" im Feld sah aus wie ein Tippfehler (Fund 16). Gespeichert bleibt
     die gefaltete Form; gezeigt wird „EL"."""

@@ -1362,7 +1362,7 @@ def create_app(db_path: str | Path | None = None,
     def _teilantwort(request: Request, c: sqlite3.Connection, mid: int | None,
                      vorlage: str, fehler: str | None = None,
                      aufklappen: int | None = None, sid: int | None = None,
-                     gerade: int | None = None):
+                     gerade: int | None = None, entwurf_offen: bool = False):
         """Ein Zug oder eine Zeile statt des ganzen Verlaufs (WB-372).
 
         **Ohne HTMX gibt es hier nichts zu tauschen**, dann geht die ganze
@@ -1395,6 +1395,7 @@ def create_app(db_path: str | Path | None = None,
         return vorlagen.TemplateResponse(
             request, vorlage,
             {"m": zeile, "v": v, "aufklappen": aufklappen, "gerade": gerade,
+             "entwurf_offen": entwurf_offen,
              "chat_fehler": fehler, **_korb_zahlen(c)})
 
     def _zug_von(c: sqlite3.Connection, sid: int) -> int | None:
@@ -1433,9 +1434,14 @@ def create_app(db_path: str | Path | None = None,
                             aufklappen=aufklappen, sid=sid, gerade=gerade)
 
     def _zug_antwort(request: Request, c: sqlite3.Connection, mid: int,
-                     fehler: str | None = None):
-        """Die Antwort auf alles, was Zeilen ANLEGT oder mehrere ändert."""
-        return _teilantwort(request, c, mid, "_zugantwort.html", fehler=fehler)
+                     fehler: str | None = None, entwurf_offen: bool = False):
+        """Die Antwort auf alles, was Zeilen ANLEGT oder mehrere ändert.
+
+        `entwurf_offen`: die Aktion kam aus dem Rezeptentwurf — das
+        `<details>` kommt offen zurück, sonst klappt es bei jeder Menge zu.
+        """
+        return _teilantwort(request, c, mid, "_zugantwort.html", fehler=fehler,
+                            entwurf_offen=entwurf_offen)
 
     @app.get("/chat")
     def chat_seite(request: Request, verlauf: str = ""):
@@ -2311,7 +2317,8 @@ def create_app(db_path: str | Path | None = None,
                 entwuerfe.benennen(c, mid, werte.get("name", ""))
             except entwuerfe.EntwurfFehler as e:
                 fehler = str(e)
-            return _zug_antwort(request, c, mid, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler,
+                                entwurf_offen=True)
         finally:
             c.close()
 
@@ -2330,7 +2337,8 @@ def create_app(db_path: str | Path | None = None,
                 entwuerfe.verwerfen(c, mid, werte.get("ja", "1") != "0")
             except entwuerfe.EntwurfFehler as e:
                 fehler = str(e)
-            return _zug_antwort(request, c, mid, fehler=fehler)
+            return _zug_antwort(request, c, mid, fehler=fehler,
+                                entwurf_offen=True)
         finally:
             c.close()
 
@@ -2352,7 +2360,8 @@ def create_app(db_path: str | Path | None = None,
             except (entwuerfe.EntwurfFehler,
                     vorschlagsliste.VorschlagFehler) as e:
                 fehler = str(e)
-            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler)
+            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler,
+                                entwurf_offen=True)
         finally:
             c.close()
 
@@ -2373,7 +2382,8 @@ def create_app(db_path: str | Path | None = None,
             except (entwuerfe.EntwurfFehler,
                     vorschlagsliste.VorschlagFehler) as e:
                 fehler = str(e)
-            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler)
+            return _zug_antwort(request, c, _zug_von(c, sid), fehler=fehler,
+                                entwurf_offen=True)
         finally:
             c.close()
 
