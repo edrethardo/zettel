@@ -10,7 +10,7 @@
 
 **Entscheidungen (Aaron, 2026-09-02):** Fund 6 → (a) untere Tab-Leiste. Fund 9 → Prosa nach meinem Urteil streichen, jeder gestrichene Satz steht in der Commit-Nachricht. Fund 3 → Hostnamen auf /status bleiben. Alle anderen Zeilen nach der Empfehlung im Welle-1-Plan — mit einer begründeten Abweichung bei Fund 8 (siehe Aufgabe 4).
 
-**Regeln für jeden Subagenten:** Commit-Sätze auf Deutsch ohne Präfix, kein `Co-Authored-By`, nur die berührten Dateien committen. Niemals `pkill -f`. Keine Hostnamen der vLLM-Box, kein `user`, kein `/home/user` in getrackten Dateien (`tests/test_betrieb.py::test_keine_privaten_angaben_im_repo`). In Inline-JavaScript nur Blockkommentare (WB-323). Nichts an `~/picknick-demo/demo.db` ändern.
+**Regeln für jeden Subagenten:** Commit-Sätze auf Deutsch ohne Präfix, kein `Co-Authored-By`, nur die berührten Dateien committen. Niemals `pkill -f`. Keine Hostnamen der vLLM-Box, kein Benutzername, kein Heimverzeichnis-Pfad in getrackten Dateien (`tests/test_betrieb.py::test_keine_privaten_angaben_im_repo`). In Inline-JavaScript nur Blockkommentare (WB-323). Nichts an `~/picknick-demo/demo.db` ändern.
 
 ---
 
@@ -1132,10 +1132,11 @@ git commit -m "Der Nachtlauf zieht die Knuspr-Einheiten nach"
 
 ```bash
 cp ~/picknick-demo/demo.db ~/picknick-demo/demo.db.vor-welle-2
-cp ~/picknick-demo/demo.db /tmp/claude-1000/-home-user-code-picknick-klon/078ca831-1f24-4f6d-9ddc-aa589fe7e866/scratchpad/demo-kopie.db
+SCRATCH=<Scratchpad-Verzeichnis dieser Sitzung>
+cp ~/picknick-demo/demo.db $SCRATCH/demo-kopie.db
 python3 - <<'PY'
 import sqlite3
-p = "/tmp/claude-1000/-home-user-code-picknick-klon/078ca831-1f24-4f6d-9ddc-aa589fe7e866/scratchpad/demo-kopie.db"
+p = "$SCRATCH/demo-kopie.db"
 con = sqlite3.connect(p)
 for t, sp in [("dish", "recipe_id"), ("recipe_zuordnung", "recipe_id"), ("chat_rezept", "recipe_id")]:
     n = con.execute(f"SELECT count(*) FROM {t} WHERE {sp} IN (1, 25, 26)").fetchone()[0]
@@ -1152,7 +1153,7 @@ PY
 - [ ] **Schritt 2: Kopie zurück** (nur wenn Schritt 1 die erwarteten Zeilen meldet: recipe 3, recipe_ingredient 0 für Nr. 1 plus die Zutaten von 25/26)
 
 ```bash
-cp /tmp/claude-1000/-home-user-code-picknick-klon/078ca831-1f24-4f6d-9ddc-aa589fe7e866/scratchpad/demo-kopie.db ~/picknick-demo/demo.db
+cp $SCRATCH/demo-kopie.db ~/picknick-demo/demo.db
 ```
 
 Kein Commit — die Datenbank liegt ausserhalb des Repos. Was entfernt wurde, steht im Nachtrag zu REVIEW.md (Aufgabe 10).
