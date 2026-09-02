@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from zettel import db, orders
+from zettel import db, orders, recipes
 from zettel.assistant import vorschlaege
 from zettel.web import app as webapp
 
@@ -594,8 +594,21 @@ def test_ein_einzelner_zug_ohne_luecke_bekommt_einen_ganzen_satz(client, con):
 def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
     """Anleitungsprosa in 13 px (UI-Review 2026-09-01, Fund 9), gestrichen
     nach eigenem Urteil; die Sätze stehen in der Commit-Nachricht."""
-    assert "Vorrang vor der Suche" not in client.get("/rezepte/1").text \
-        if con.execute("SELECT 1 FROM recipe WHERE id = 1").fetchone() else True
+    # Ein geholtes Rezept: Zutatenliste, aber noch kein verknüpftes Produkt
+    # (Bauart wie `test_portionen.py`). Nur so steht der leere Zustand aus
+    # `_rezept.html` überhaupt auf der Seite — sonst prüfte der Test nichts.
+    rid = recipes.anlegen(con, "Pho Bo", servings=4)
+    for pos, name in enumerate(["Rinderbrühe", "Reisnudeln", "Ingwer"]):
+        con.execute("INSERT INTO recipe_ingredient (recipe_id, pos, raw_name,"
+                    " name) VALUES (?, ?, ?, ?)", (rid, pos, name, name))
+    con.commit()
+    # Mit `amount` in der Adresse, weil die Fussnote „Menge aus dem Rezept"
+    # sonst gar nicht gerendert wird und der Satz darunter unprüfbar bliebe.
+    rezept = client.get(f"/rezepte/{rid}?amount=500&unit=g").text
+    assert "Noch kein Produkt verknüpft" in rezept
+    assert "Vorrang vor der Suche" not in rezept
+    assert "wächst mit den Portionen" not in rezept
+    assert "in der Zutatenliste" not in rezept
     bons = client.get("/bons").text
     assert "Kartennummer" not in bons and "besser lesbar" not in bons
     status = client.get("/status").text
