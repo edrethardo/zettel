@@ -20,7 +20,7 @@ DRIVER = "http://127.0.0.1:4455"
 BASIS = "http://127.0.0.1:8748"
 SEITEN = ["/katalog", "/katalog?q=milch", "/chat", "/warenkorb", "/rezepte",
           "/rezepte/1", "/rezepte/1/loeschen", "/rezepte/99", "/bestellungen",
-          "/pick", "/bons", "/status", "/rolle"]
+          "/pick", "/bons", "/status", "/rolle", "/mehr"]
 
 def ruf(m, p, d=None):
     r = urllib.request.Request(
