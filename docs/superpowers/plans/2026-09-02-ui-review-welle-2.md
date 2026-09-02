@@ -1165,8 +1165,8 @@ Kein Commit — die Datenbank liegt ausserhalb des Repos. Was entfernt wurde, st
 - [x] REVIEW.md: Abschnitt „Welle 2 — Nachtrag (2026-09-02)": je Fund, was geändert wurde; Fund 8 mit der Abweichung; Fund 10a mit den drei gelöschten Rezepten; Fund 12 als verworfen (Gegenprobe aus der Welle-2-Tabelle); Fund 16 `scroll-margin-top` als durch WB-417 erledigt; die Knuspr-Messung: der Preisquotient kann die Lesart nicht beweisen (35 Zeilen mit Quotient ≈ Zahl, 30 davon echte Gramm mit Grundpreis je Gramm — ein echtes „0,5 g" Safran würde falsch „bestätigt"), die 12 Zeilen mit Einheitenfehler ≥ 1 („1 g" für 1 kg) bleiben ein offener Rest ohne Regel.
 - [x] Welle-1-Plan: Welle-2-Tabelle mit Verweis auf diesen Plan; hier alle Kästchen.
 - [x] Memory `ui-review-welle-2-offen.md` → Welle 2 auf master, offene Reste.
-- [ ] Bühne: App-PID aus `~/picknick-video/buehne.pids` beenden (nur diese PID), neu starten, PID eintragen; `scripts/dreh/mess.py` auf allen Seiten.
-- [ ] Video: `bereit.sh`, `MAUS=0 SKRIPT=dreh_handy.py STAMM=… bash aufnahme.sh 75`, `handy.py <STAMM>`; dann `MAUS=1 SKRIPT=dreh.py STAMM=… bash aufnahme.sh 300`, `schnitt.py`. Die Drehskripte suchen Elemente über `finde.py`; die Leiste unten verschiebt nichts im Blatt, aber die Kasse und der Chatkopf haben andere Abstände — jeden Tipp im Einzelbild prüfen.
+- [x] Bühne: App-PID aus `~/picknick-video/buehne.pids` beenden (nur diese PID), neu starten, PID eintragen; `scripts/dreh/mess.py` auf allen Seiten.
+- [x] Video: `bereit.sh`, `MAUS=0 SKRIPT=dreh_handy.py STAMM=… bash aufnahme.sh 75`, `handy.py <STAMM>`; dann `MAUS=1 SKRIPT=dreh.py STAMM=… bash aufnahme.sh 300`, `schnitt.py`. Die Drehskripte suchen Elemente über `finde.py`; die Leiste unten verschiebt nichts im Blatt, aber die Kasse und der Chatkopf haben andere Abstände — jeden Tipp im Einzelbild prüfen.
 
 ---
 

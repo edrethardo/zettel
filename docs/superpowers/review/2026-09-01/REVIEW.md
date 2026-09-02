@@ -111,6 +111,17 @@ ein Stand, der eine 404-Seite vermisst, ist stumm falsch (`d3627ca`). `stage.py`
 der Vorführ-Zug an einem Entwurf hängen muss: nach einem Dreh bis zur Kasse hängt er an einer
 abgeschickten Bestellung, und das `DELETE` in Schritt 4 nimmt den Chat per Kaskade mit.
 
+**Video (Drehskripte außerhalb des Repos):** Beide Fassungen neu gedreht. Die Einzelbildprüfung
+des ersten Hochkant-Takes zeigte zwei Fehltipps, die schon in den Welle-1-Takes drin waren und
+nur nicht aufgefallen sind: die Kartensuche auf /bestellungen begann bei y = 150 und fand
+zuerst die Überschrift „Bestellungen" (akzentfarbene Kantenpixel), und die Versatz-Reihe für
+das Kästchen auf der Pick-Liste probierte 62/50/75 vor 38 — seit Welle 1 sitzt das Kästchen
+auf der Zeile des Namens, die drei anderen trafen die Gruppenüberschrift „Egal wo". Suche ab
+y = 510, Reihe 38/62/50/75; der zweite Take trifft in allen acht Tipps. Nebenbefund am
+Werkzeug: `aufnahme.sh` legte `ffmpeg_start.txt` nicht unter dem Stamm ab, `handy.py` las
+also die Startzeit des *nächsten* Takes und wies den Hochkant-Take mit „−87 s" ab — beides
+umgestellt, die Prüfung liest jetzt `<Stamm>.ffmpeg_start.txt`.
+
 **Offen nach Welle 2 (Folge-Tickets, keins davon vor dem Video):** die Singular-Grammatik auf
 `/status`; die `client`-Fixture in `tests/test_web_politur.py` übergibt kein `chat=` — ein
 `POST /chat` dort liefe gegen den echten Chat und damit gegen Spec 13 (heute kein Aufrufer;
