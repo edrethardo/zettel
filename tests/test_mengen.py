@@ -316,7 +316,7 @@ def test_der_nachsatz_nennt_den_grund_nur_wenn_ihn_sonst_niemand_nennt():
     assert mengen.nachsatz(ohne, qty=1) == "Keine lesbare Packungsgrösse."
 
 
-def test_der_kurzgrund_kennt_die_drei_faelle():
+def test_der_kurzgrund_kennt_alle_faelle():
     assert mengen.kurzgrund(mengen.rechne(200, "g", None)) == \
         "keine lesbare Packungsgrösse"
     assert mengen.kurzgrund(mengen.rechne(200, "g", "Beutel"), "Beutel") == \
@@ -325,3 +325,4 @@ def test_der_kurzgrund_kennt_die_drei_faelle():
         "nicht gegen die Packung („1 kg“) zu rechnen"
     assert mengen.kurzgrund(mengen.rechne(200, "g", "0 g"), "0 g") == \
         "Packungsgrösse null"
+    assert mengen.kurzgrund(mengen.rechne(3, None, None, freitext=True)) == ""
