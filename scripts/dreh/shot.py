@@ -95,7 +95,20 @@ def schiesse(sid, pfad, datei, extra_js=None):
     import os; os.unlink(roh)
     print(datei)
 
-SEITEN = [
+def rezept_id() -> int:
+    """Das erste Rezept der Liste — nicht „1": die Demo-DB hat ihre Nummer 1
+    verloren (Welle 2 hat einen leeren Bon-Import gelöscht), und ein Stand,
+    der eine 404-Seite als Rezeptseite misst, ist stumm falsch."""
+    import re as _re
+    with urllib.request.urlopen(BASIS + "/rezepte", timeout=30) as a:
+        m = _re.search(rb'href="/rezepte/(\d+)"', a.read())
+    if not m:
+        sys.exit("kein Rezept auf /rezepte — Buehne leer?")
+    return int(m.group(1))
+
+def seiten():
+    r = rezept_id()
+    return [
     ("chat",        "/chat", None),
     ("chat-alternativen", "/chat",
      "document.querySelectorAll('details.alternativen')"
@@ -104,19 +117,20 @@ SEITEN = [
     ("katalog",     "/katalog", None),
     ("katalog-suche", "/katalog?q=milch", None),
     ("pick",        "/pick", None),
-    ("rezept",      "/rezepte/1", None),
+    ("rezept",      f"/rezepte/{r}", None),
     ("rezepte",     "/rezepte", None),
     ("bestellungen", "/bestellungen", None),
     ("status",      "/status", None),
     ("bons",        "/bons", None),
     ("mehr",        "/mehr", None),
     ("vierohvier",  "/rezepte/99", None),
-    ("frage",       "/rezepte/1/loeschen", None),
-]
+    ("frage",       f"/rezepte/{r}/loeschen", None),
+    ]
 
 if __name__ == "__main__":
     ziel = sys.argv[1]
     nur = sys.argv[2].split(",") if len(sys.argv) > 2 else None
+    SEITEN = seiten()
     for dunkel in (False, True):
         sid = session(dunkel)
         modus = "dunkel" if dunkel else "hell"

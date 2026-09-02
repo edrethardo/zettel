@@ -18,15 +18,28 @@ import json, sys, time, urllib.request
 
 DRIVER = "http://127.0.0.1:4455"
 BASIS = "http://127.0.0.1:8748"
-SEITEN = ["/katalog", "/katalog?q=milch", "/chat", "/warenkorb", "/rezepte",
-          "/rezepte/1", "/rezepte/1/loeschen", "/rezepte/99", "/bestellungen",
-          "/pick", "/bons", "/status", "/rolle", "/mehr"]
 
 def ruf(m, p, d=None):
     r = urllib.request.Request(
         DRIVER + p, data=json.dumps(d).encode() if d is not None else None,
         headers={"Content-Type": "application/json"}, method=m)
     return json.loads(urllib.request.urlopen(r, timeout=60).read())["value"]
+
+def rezept_id() -> int:
+    """Das erste Rezept der Liste — nicht „1": die Demo-DB hat ihre Nummer 1
+    verloren (Welle 2 hat einen leeren Bon-Import gelöscht), und ein Stand,
+    der eine 404-Seite als Rezeptseite misst, ist stumm falsch."""
+    import re as _re
+    with urllib.request.urlopen(BASIS + "/rezepte", timeout=30) as a:
+        m = _re.search(rb'href="/rezepte/(\d+)"', a.read())
+    if not m:
+        sys.exit("kein Rezept auf /rezepte — Buehne leer?")
+    return int(m.group(1))
+
+R = rezept_id()
+SEITEN = ["/katalog", "/katalog?q=milch", "/chat", "/warenkorb", "/rezepte",
+          f"/rezepte/{R}", f"/rezepte/{R}/loeschen", "/rezepte/99", "/bestellungen",
+          "/pick", "/bons", "/status", "/rolle", "/mehr"]
 
 sid = ruf("POST", "/session", {"capabilities": {"alwaysMatch": {
     "moz:firefoxOptions": {"args": ["-headless"]}}}})["sessionId"]
