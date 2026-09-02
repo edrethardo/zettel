@@ -524,3 +524,40 @@ def test_die_portionsfelder_erben_die_schrift():
     for sel in (".abschicken.portionen input", ".zugportionen input"):
         block = _block(stil, sel)
         assert "font-family: inherit" in block
+
+
+def _bloecke(stil: str):
+    """(Selektor, Deklarationen) für jeden Block im Blatt, ohne Kommentare."""
+    ohne = re.sub(r"/\*.*?\*/", "", stil, flags=re.S)
+    return re.findall(r"([^{}]+)\{([^{}]*)\}", ohne)
+
+
+def test_der_primaere_knopf_ist_genau_eine_regel():
+    """Sechs Knopfstile (UI-Review 2026-09-01, Fund 14). Die Regel: gefüllt
+    ist die eine Handlung, für die die Seite da ist — Fragen, Abschicken,
+    Hochladen. Drei Regeln sagten dasselbe mit 52 und 54 px; jetzt eine."""
+    stil = STIL.read_text(encoding="utf-8")
+    gefuellt = sorted(sel.strip() for sel, dekl in _bloecke(stil)
+                      if ("button" in sel or ".gross" in sel or ".knopf" in sel)
+                      and "background: var(--akzent)" in dekl)
+    assert gefuellt == [".abschicken .gross, .chatform button, .bonupload button"]
+
+
+def test_der_sekundaere_knopf_ist_genau_eine_regel():
+    """„Dazu" (`.freitext button`) war eine Kopie von „Suchen" — Zeile für
+    Zeile dieselben Deklarationen unter zweitem Namen."""
+    stil = STIL.read_text(encoding="utf-8")
+    block = _block(stil, ".suche button, .freitext button, .knopf, .rollen button")
+    assert "border: 1.5px solid var(--knopflinie)" in block
+    assert "background: var(--karte)" in block
+    assert ".freitext button, .abschicken .gross {" not in stil
+
+
+def test_die_gekappte_trefferzahl_ist_keine_warnung():
+    """„60 von 10066" in Honig las sich als Warnung (Fund 15); es ist eine
+    Zählung. Honig heisst in diesem Blatt „es fehlt etwas" — hier fehlt
+    nichts, die Liste ist nur geschnitten."""
+    stil = STIL.read_text(encoding="utf-8")
+    block = _block(stil, ".gekappt")
+    assert "honig" not in block
+    assert "var(--gedaempft)" in block

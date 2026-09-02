@@ -288,7 +288,17 @@ button, .knopf { overflow-wrap: normal; }
   font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
-.suche button, .knopf, .rollen button {
+/* Knöpfe — die Regel (UI-Review 2026-09-01, Fund 14) --------------------
+   Vier Sorten, und jede hat einen Grund:
+   PRIMÄR, gefüllt in Akzent: die eine Handlung, für die die Seite da ist —
+     „Fragen" auf /chat, „Abschicken" im Korb, „Hochladen" auf /bons. Genau
+     einer je Seite; ein zweiter gefüllter Knopf macht den ersten unwahr.
+   SEKUNDÄR, umrandet: schickt ein Feld ab, ohne die Seite zu sein —
+     „Suchen", „Dazu", die Rollenwahl, jeder `.knopf`-Link.
+   ENTSCHEIDUNG: Ja/Nein an einer Zeile (`.mini.ja`, `.mini.nein`, unten).
+   RÜCKWEG: „zurück", „rückgängig", „raus" — `.mini.zurueck`, ohne Rahmen
+     (WB-361), damit er nicht wie eine dritte Wahl neben Ja/Nein aussieht. */
+.suche button, .freitext button, .knopf, .rollen button {
   min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 600;
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); text-decoration: none;
@@ -296,8 +306,20 @@ button, .knopf { overflow-wrap: normal; }
   cursor: pointer; transition: transform 0.12s ease;
   white-space: nowrap;
 }
-.suche button { flex: 0 0 auto; }
-.suche button:active, .knopf:active, .rollen button:active { transform: scale(0.96); }
+.suche button, .freitext button { flex: 0 0 auto; }
+.suche button:active, .freitext button:active, .knopf:active,
+.rollen button:active { transform: scale(0.96); }
+.abschicken .gross, .chatform button, .bonupload button {
+  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 700;
+  border: none; border-radius: var(--radius-knopf);
+  background: var(--akzent); color: var(--auf-akzent);
+  box-shadow: var(--schatten); cursor: pointer;
+  transition: transform 0.12s ease; white-space: nowrap;
+}
+.chatform button { flex: 0 0 auto; }
+.abschicken .gross, .bonupload button { width: 100%; min-height: 54px; }
+.abschicken .gross:active, .chatform button:active,
+.bonupload button:active { transform: scale(0.98); }
 .rollen { display: flex; flex-direction: column; gap: var(--v3); }
 .rollen button { width: 100%; min-height: 56px; }
 .rollen .gewaehlt { background: var(--akzent-hell); border-color: var(--akzent);
@@ -405,13 +427,14 @@ button, .knopf { overflow-wrap: normal; }
 .leer .knopf + .knopf { margin-left: var(--v2); }
 .knopf.still { font-weight: 500; color: var(--gedaempft);
                background: none; }
-/* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Der
-   Textmarker in der Liste: honig heisst in diesem Blatt „lies mich, es
-   fehlt etwas". */
+/* „60 von 657" über einer geschnittenen Trefferliste (WB-375). Eine
+   Zählung, keine Warnung (UI-Review 2026-09-01, Fund 15): Honig heisst in
+   diesem Blatt „es fehlt etwas" — hier fehlt nichts, die Liste ist nur
+   geschnitten. */
 .gekappt {
   margin: 0 0 var(--v3); padding: var(--v2) var(--v3); font-size: var(--t-fein);
-  color: var(--honig); background: var(--honig-hell);
-  border: 1px solid var(--honig-linie); border-radius: var(--radius-knopf);
+  color: var(--gedaempft); background: var(--karte-tief);
+  border: 1px solid var(--linie); border-radius: var(--radius-knopf);
 }
 /* Sprungziele bekommen Luft nach oben. `#treffer` ist das Ziel der
    Katalogsuche und jedes Kategoriezweigs, `#rezept-treffer` das des Ankers
@@ -548,14 +571,6 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   font-family: inherit;
 }
-.freitext button, .abschicken .gross {
-  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 600;
-  border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
-  background: var(--karte); color: var(--tinte); cursor: pointer;
-  transition: transform 0.12s ease; white-space: nowrap;
-}
-.freitext button { flex: 0 0 auto; }
-.freitext button:active { transform: scale(0.96); }
 .abschicken { margin-top: var(--v4); }
 .summe { margin: var(--v4) 0 0; padding: 0 var(--v1); text-align: right;
          font-size: var(--t-text); color: var(--gedaempft);
@@ -568,12 +583,6 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 }
 .kasse .summe { margin-top: 0; }
 .kasse .abschicken { margin-top: var(--v2); }
-.abschicken .gross {
-  width: 100%; min-height: 54px; font-size: var(--t-text); font-weight: 700;
-  border: none; background: var(--akzent); color: var(--auf-akzent);
-  box-shadow: var(--schatten);
-}
-.abschicken .gross:active { transform: scale(0.98); }
 
 .fehler { padding: var(--v3) var(--v3); border-radius: var(--radius);
           background: var(--fehler-hell); color: var(--fehler-text);
@@ -1481,15 +1490,6 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   font-size: var(--t-text); color: var(--tinte); background: var(--karte);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
 }
-.chatform button {
-  min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 700;
-  border: none; border-radius: var(--radius-knopf);
-  background: var(--akzent); color: var(--auf-akzent);
-  box-shadow: var(--schatten); cursor: pointer;
-  transition: transform 0.12s ease;
-  white-space: nowrap; flex: 0 0 auto;
-}
-.chatform button:active { transform: scale(0.96); }
 
 /* Die drei Beispiele des leeren Chats (UI-Review 2026-09-01, Fund 1).
    Chips, keine Knöpfe: umrandet, in Akzenttinte, untereinander — auf
@@ -1575,14 +1575,6 @@ code { background: var(--karte-tief); border-radius: 6px; padding: var(--v0) var
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--grund);
 }
-.bonupload button { width: 100%; min-height: 52px; font-size: var(--t-text);
-                    font-weight: 700; border: none;
-                    border-radius: var(--radius-knopf);
-                    background: var(--akzent);
-                    color: var(--auf-akzent); box-shadow: var(--schatten);
-                    cursor: pointer; transition: transform 0.12s ease;
-                    white-space: nowrap; }
-.bonupload button:active { transform: scale(0.98); }
 .bons { list-style: none; margin: 0; padding: 0 var(--v3);
         background: var(--karte); border: 1px solid var(--linie);
         border-radius: var(--radius); box-shadow: var(--schatten); }
