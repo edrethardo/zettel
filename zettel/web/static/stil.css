@@ -1455,7 +1455,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 /* Im Kopf klebt nichts mehr für sich — er klebt als Ganzes. */
 .chatkopf .korbbruecke { position: static; }
 .chatkopf .chatform { margin-top: var(--v2); }
-.chatkopf #chat-laeuft { margin: var(--v2) 0 0; }
+.chatkopf #chat-laeuft { margin: var(--v2) 0 0; font-size: var(--t-klein); }
 /* Ein leerer Fehlerplatz soll keinen Abstand aufreissen. */
 .chatkopf #chat-fehler:empty { display: none; }
 

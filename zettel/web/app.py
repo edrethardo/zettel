@@ -26,8 +26,8 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from zettel import (betrieb, bons as bonmodul, db, gerichte, miniaturen,
-                    obs, orders, recipes)
+from zettel import (betrieb, bons as bonmodul, db, gerichte, mengen,
+                    miniaturen, obs, orders, recipes)
 from zettel import umgebung as umg
 from zettel.assistant import chat as chatmodul
 from zettel.assistant import entwurf as entwuerfe
@@ -685,6 +685,10 @@ def create_app(db_path: str | Path | None = None,
     vorlagen.env.filters["euro"] = euro
     vorlagen.env.filters["menge"] = menge
     vorlagen.env.filters["zeit"] = zeit
+    # Die gefaltete Einheit ist ein Speicherformat, kein Satz: „el" steht so
+    # in der Spalte, gelesen wird „EL" (Fund 16). Als Filter und nicht in der
+    # Vorlage nachgebaut, damit Feld und Fliesstext dieselbe Regel benutzen.
+    vorlagen.env.filters["einheit"] = mengen.einheit_text
 
     def con() -> sqlite3.Connection:
         return db.connect(app.state.db_path)

@@ -565,3 +565,24 @@ def test_die_gekappte_trefferzahl_ist_keine_warnung():
     block = _block(stil, ".gekappt")
     assert "honig" not in block
     assert "var(--gedaempft)" in block
+
+
+def test_die_wartezeile_im_chat_ist_lesbar():
+    """„Das Modell überlegt …" in 13 px grau (Fund 16): die einzige Zeile,
+    die während der Wartezeit etwas sagt, war die kleinste der Seite."""
+    stil = STIL.read_text(encoding="utf-8")
+    assert "font-size: var(--t-klein)" in _block(stil, ".chatkopf #chat-laeuft")
+
+
+def test_ein_einzelner_zug_ohne_luecke_bekommt_einen_ganzen_satz(client, con):
+    """„Alle 1 Züge tragen eine Span-ID." ist kein Deutsch (Fund 16)."""
+    client.post("/chat", data={"satz": "Milch"})
+    # Der Zug muss eine Span-ID TRAGEN, sonst steht auf der Seite der
+    # Fehlerzweig und der Satz käme überhaupt nicht vor — der Test wäre grün,
+    # ohne etwas geprüft zu haben. Ohne laufendes Tracing setzt `POST /chat`
+    # keine, also wird sie hier nachgetragen.
+    con.execute("UPDATE chat_message SET span_id = 'span-1' WHERE role = 'user'")
+    con.commit()
+    text = client.get("/status").text
+    assert "Der eine Zug trägt eine" in text
+    assert "Alle 1 Züge" not in text

@@ -990,6 +990,24 @@ def test_die_menge_laesst_sich_ueber_die_oberflaeche_aendern(
     assert (v["need_amount"], v["need_unit"]) == (250.0, "g")
 
 
+def test_das_einheitenfeld_zeigt_die_kochbuchschreibweise(con, db_pfad, tmp_path):
+    """„el" im Feld sah aus wie ein Tippfehler (Fund 16). Gespeichert bleibt
+    die gefaltete Form; gezeigt wird „EL"."""
+    _bolo_geholt(con)
+    client = _web(db_pfad, tmp_path, _web_zug(con))
+    client.post("/chat",
+                data={"satz": "alles für Spaghetti Bolognese, und Klopapier"},
+                headers={"HX-Request": "true"})
+    hack = con.execute(
+        "SELECT s.id FROM chat_suggestion s JOIN product p ON p.id = s.product_id"
+        " WHERE p.name LIKE 'Rinderhack%'").fetchone()["id"]
+    stueck = client.post(f"/chat/vorschlag/{hack}/bedarf",
+                         data={"menge": "2", "einheit": "EL"},
+                         headers={"HX-Request": "true"}).text
+    assert 'name="einheit" autocomplete="off" value="EL"' in stueck
+    assert 'value="el"' not in stueck
+
+
 def test_kein_rezept_daraus_und_wieder_zurueck(con, db_pfad, tmp_path):
     _bolo_geholt(con)
     client = _web(db_pfad, tmp_path, _web_zug(con))
