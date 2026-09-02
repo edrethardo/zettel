@@ -16,10 +16,7 @@
   <button type="submit">Hochladen</button>
 </form>
 
-<p class="fussnote">
-  {{ erlaubt }}, bis {{ max_mb }} MB — ein eBon als PDF liest sich besser als
-  ein Foto.
-</p>
+<p class="fussnote">{{ erlaubt }}, bis {{ max_mb }} MB.</p>
 
 {% if not ocr_da %}
 {# Keine Fehlermeldung, sondern eine Auskunft: ein Bild-Bon ist nicht kaputt,
@@ -108,4 +105,8 @@
   {% endfor %}
 </ul>
 {% endif %}
+
+<p class="fussnote">
+  Ausgelesen werden Laden, Datum, Artikel, Menge und Preis — und sonst nichts.
+</p>
 {% endblock %}
