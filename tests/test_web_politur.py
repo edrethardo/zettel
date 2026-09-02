@@ -589,3 +589,15 @@ def test_ein_einzelner_zug_ohne_luecke_bekommt_einen_ganzen_satz(client, con):
     flach = " ".join(client.get("/status").text.split())
     assert "Der eine Zug trägt eine Span-ID." in flach
     assert "Alle 1 Züge" not in flach
+
+
+def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
+    """Anleitungsprosa in 13 px (UI-Review 2026-09-01, Fund 9), gestrichen
+    nach eigenem Urteil; die Sätze stehen in der Commit-Nachricht."""
+    assert "Vorrang vor der Suche" not in client.get("/rezepte/1").text \
+        if con.execute("SELECT 1 FROM recipe WHERE id = 1").fetchone() else True
+    bons = client.get("/bons").text
+    assert "Kartennummer" not in bons and "besser lesbar" not in bons
+    status = client.get("/status").text
+    assert "Magic Packet" not in status and "Warum eine Zeile leer blieb" not in status
+    assert "Spec 5.1" not in client.get("/katalog").text

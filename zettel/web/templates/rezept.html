@@ -89,8 +89,7 @@
    und geht mit dem „+“ ins Rezept. Sie STEHT hier, statt still mitzureisen —
    was gleich mitgespeichert wird, soll vorher zu lesen sein. #}
 <p class="fussnote" role="status">Menge aus dem Rezept:
-  {{ amount | menge }} {{ unit or "Stk" }} — sie wird beim „+“ mit verknüpft
-  und wächst mit den Portionen.</p>
+  {{ amount | menge }} {{ unit or "Stk" }} — geht beim „+“ mit.</p>
 {% endif %}
 <form class="suche" action="/rezepte/{{ rezept.id }}" method="get" role="search">
   <input type="search" name="q" value="{{ q or '' }}" placeholder="Produkt suchen…"
@@ -123,10 +122,7 @@
            value="{{ rezept.servings if rezept.servings is not none else '' }}"
            aria-describedby="portionen-hinweis"></label>
   <p class="fussnote" id="portionen-hinweis">Dauerhaft, und alle Mengen
-    rechnen mit: aus „500 g" für 4 werden „1000 g" für 8 — in der Zutatenliste
-    wie an den verknüpften Produkten.
-    {%- if not rezept.servings %} Steht hier nichts, gibt es keinen Faktor,
-    und die Mengen bleiben, wie sie sind.{% endif %}</p>
+    rechnen mit.</p>
   <label>Notiz
     <textarea name="note" rows="3">{{ rezept.note or '' }}</textarea></label>
   <button class="knopf" type="submit">Speichern</button>
