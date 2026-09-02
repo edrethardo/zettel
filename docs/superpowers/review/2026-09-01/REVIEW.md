@@ -122,6 +122,21 @@ Werkzeug: `aufnahme.sh` legte `ffmpeg_start.txt` nicht unter dem Stamm ab, `hand
 also die Startzeit des *nächsten* Takes und wies den Hochkant-Take mit „−87 s" ab — beides
 umgestellt, die Prüfung liest jetzt `<Stamm>.ffmpeg_start.txt`.
 
+**Der Seitenwechsel geht wieder über die App.** `zur_seite()` suchte das
+Korb-Abzeichen im Seitenkopf und klickte links davon — seit Welle 2 steht dort
+keins mehr, die Suche fand nichts, und der Zweig darunter tippte STILL die
+Adresse ein. Im Clip war deshalb eine Hand zu sehen, die eine URL in den
+Browser tippt; von einem Klickpfad durch die App war der Weg in den Korb nicht
+mehr zu unterscheiden. Jetzt wird der Reiter unten angetippt: die Leiste wird
+im Bild vermessen (die Zeile mitten durch sie trägt über ihre ganze Breite den
+Kartenton und endet genau am Sichtfenster — die Bildlaufleiste des Browsers
+stünde in keiner Rechnung), fünf gleich breite Fünftel ergeben die Mitte jedes
+Reiters, und der Fenstertitel sagt, ob die Seite aufging. Die Adresszeile
+bleibt als letzter Ausweg, warnt jetzt aber — ein Take mit Warnung gilt als
+unbrauchbar. Damit die Leiste im Hochkant-Clip überhaupt im Bild liegt, stutzt
+`aufnahme.sh` das App-Fenster für diese Fassung auf die Höhe des Ausschnitts
+(1012 statt 1080 px); vorher lag sie 68 px unter der Bildkante.
+
 **Offen nach Welle 2 (Folge-Tickets, keins davon vor dem Video):** die Singular-Grammatik auf
 `/status`; die `client`-Fixture in `tests/test_web_politur.py` übergibt kein `chat=` — ein
 `POST /chat` dort liefe gegen den echten Chat und damit gegen Spec 13 (heute kein Aufrufer;
