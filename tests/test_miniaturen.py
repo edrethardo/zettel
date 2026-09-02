@@ -172,6 +172,37 @@ def test_der_nachtlauf_zieht_die_einheiten_nach(tmp_path, monkeypatch):
     assert "Einheiten nachgezogen: 1" in meldungen
 
 
+def test_ein_fehler_beim_nachziehen_haelt_den_nachtlauf_nicht_auf(tmp_path,
+                                                                  monkeypatch):
+    """Miniaturen und Sicherung sind bedingungslos zugesagt. Das Nachziehen
+    der Einheiten ist der einzige Schritt zwischen Crawl und Sicherung, der
+    eine Ausnahme durchliesse — eine gesperrte Datenbank darf nicht die
+    Sicherung kosten, die genau dann besonders viel wert ist."""
+    import sqlite3
+
+    from zettel.scrapers import nachtlauf
+    bilder = tmp_path / "bilder"
+    bilder.mkdir()
+    _foto(bilder / "neu.jpg", groesse=(400, 400))
+    monkeypatch.setattr(nachtlauf.knuspr, "crawl",
+                        lambda *a, **k: {"run_id": 1, "status": "ok",
+                                         "n_products": 1, "error": None})
+
+    def gesperrt(_con):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(nachtlauf.knuspr, "repariere_einheiten", gesperrt)
+    meldungen = []
+    nachtlauf.lauf(str(tmp_path / "p.db"), begriffe=["nudeln"],
+                   image_dir=str(bilder), http=object(),
+                   sicherung_dir=str(tmp_path / "staende"),
+                   schreib=meldungen.append)
+    assert (bilder / "mini" / "neu.jpg.webp").is_file()
+    assert any(z.startswith("Sicherung: ") for z in meldungen)
+    assert ("Einheiten nicht nachgezogen: OperationalError: database is locked"
+            in meldungen)
+
+
 # --------------------------------------------------------------------------
 # Der Bildweg
 

@@ -9,7 +9,10 @@ Reihenfolge:
 1. **Crawlen** — `knuspr.crawl()` über die Begriffsliste aus
    `zettel.scrapers.begriffe`. Der Lauf ist in `scrape_run` protokolliert,
    samt Begründung, falls er verworfen wird; die Statusseite des Shops liest
-   genau diese Tabelle (Spec 11).
+   genau diese Tabelle (Spec 11). Danach zieht `knuspr.repariere_einheiten()`
+   die `unit_text`-Zeilen in Form, die der Crawl nicht angefasst hat und die
+   deshalb noch „0,25 g" statt „250 g" sagen — idempotent, und auch nach einem
+   gescheiterten Crawl, denn der Altbestand steht ja trotzdem da.
 2. **Miniaturen ableiten** — `miniaturen.lauf()` zieht die Kachelbilder zu den
    frisch geholten Fotos nach (WB-374). Das gehört hierher und nicht in den
    Web-Prozess: umrechnen kostet ~11 ms je Bild, und der Antwortweg einer
@@ -30,6 +33,7 @@ zettel-crawl` und nicht nur in einer Tabelle, in die niemand schaut.
 from __future__ import annotations
 
 import argparse
+import sqlite3
 import sys
 
 from zettel import betrieb, db, miniaturen, umgebung
@@ -83,7 +87,16 @@ def lauf(db_path: str, *, begriffe, image_dir: str | None,
             schreib(f"  Begründung: {bericht['error']}")
         # Was der Crawl nicht angefasst hat, steht noch mit „0,25 g" da
         # (UI-Review 2026-09-01, Fund 5). Idempotent, deshalb bei jedem Lauf.
-        schreib(f"Einheiten nachgezogen: {knuspr.repariere_einheiten(con)}")
+        #
+        # Eingepackt, weil dies der einzige Schritt zwischen Crawl und
+        # Sicherung ist, der eine Ausnahme durchliesse: eine gesperrte
+        # Datenbank oder eine volle Platte würde sonst die Miniaturen und die
+        # Sicherung kosten — und die sind hier bedingungslos zugesagt.
+        # Kosmetik darf den Lauf nicht anhalten.
+        try:
+            schreib(f"Einheiten nachgezogen: {knuspr.repariere_einheiten(con)}")
+        except sqlite3.Error as e:
+            schreib(f"Einheiten nicht nachgezogen: {type(e).__name__}: {e}")
     finally:
         con.close()
 
