@@ -497,3 +497,17 @@ def test_gabs_nicht_steht_neben_dem_text_und_nicht_darunter():
     # Ein Selektor, ein Block — sonst gewinnt der spätere Block die Kaskade,
     # und der Test sieht nur den ersten.
     assert stil.count(".pickzeile .stellen .mini {") == 1
+
+
+# --------------------------------------------------------------------------
+# Welle 2: eine Schrift für das Blatt
+
+def test_monospace_gibt_es_nur_noch_fuer_code():
+    """Zwölf Regeln setzten `var(--mono)` — Preise, Packungszahlen,
+    Portionsfelder, die Gesamtzeit (UI-Review 2026-09-01, Fund 13). Die
+    Regel „gerechnete Zahlen wie von der Kasse" war für den Leser kein
+    Unterschied, den er deuten konnte. Ziffern, die untereinander stehen,
+    bekommen `tabular-nums`; Monospace bleibt, wo Code steht."""
+    stil = STIL.read_text(encoding="utf-8")
+    assert stil.count("var(--mono)") == 1
+    assert "var(--mono)" in _block(stil, "code")

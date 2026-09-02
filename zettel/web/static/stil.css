@@ -16,27 +16,15 @@
    - DUNKEL ist die Kreidetafel in der Küche: Schiefer statt Papier, Kreide
      statt Tinte, dieselben Stifte als Kreidefarben. Ein zweiter Entwurf,
      kein Negativ — die Fotos werden sanft gedimmt statt zu blenden.
-   - GERECHNETE ZAHLEN stehen in Monospace, wie von der Kasse gedruckt.
-     Die Regel steht seit WB-400 genau da, weil sie vorher an fünf Orten
-     fünf Antworten gab:
+   - EINE SCHRIFT. Bis Welle 2 des UI-Reviews 2026-09-01 standen gerechnete
+     Zahlen in Monospace, „wie von der Kasse gedruckt" — zwölf Regeln, und
+     die Grenze (was ist gerechnet, was abgeschrieben, was Fliesstext?) gab
+     an fünf Orten fünf Antworten. Für den Leser war die zweite Schrift kein
+     Unterschied, den er deuten konnte (Fund 13). Jetzt gilt:
 
-       Monospace bekommt eine Zahl, die der Shop SELBST rechnet oder zählt,
-       und nur dort, wo sie ALS ZAHL dasteht — nicht im Fliesstext.
-
-     Also: Preise und Packungsgrössen (`.preis`, `.zeile .menge`), die
-     Packungs- und Korbzahlen (`.anzahl`, `.korbzahl`), die Bedarfsmenge auf
-     der Einkaufsliste (`.pickzeile .menge`, `.gebinde`) und die Gesamtzeit
-     der Rezeptkarte.
-     Also NICHT: was von Chefkoch abgeschrieben ist und nur weitergereicht
-     wird (`.andereliste .zahlen` — „35 Minuten Arbeitszeit", „4.74 aus 1420
-     Stimmen"), und NICHT ein ganzer Satz, auch wenn Zahlen darin vorkommen
-     (`.hinweis.gebraucht` — „1000 ml gebraucht — 2 × Mutti Passierte
-     Tomaten 0,7 kg."). Eine Kassenschrift über drei Zeilen Fliesstext ist
-     eine Wand und keine Auszeichnung. Und NICHT die mit dem Portionsfeld
-     hochgerechneten Rezeptmengen (`.rezeptzutaten .menge`): die Angabe ist
-     halb Text — „1 gr. Dose/n", „etwas", „0,5 TL" —, und das Hochrechnen
-     macht aus „Dose/n" keine Maschinenzahl. Seit dem UI-Review 2026-09-01
-     (Fund 4/13) tragen sie die Schrift des Blattes, mit `tabular-nums`.
+       Ziffern, die untereinander stehen sollen, bekommen
+       `font-variant-numeric: tabular-nums`. Monospace bekommt nur, was Code
+       IST: Trace-IDs und Endpunkte auf /status, in `<code>`.
    - FORMEN: Karten sind Blätter (12 px, feiner Rand, flacher Schatten),
      Knöpfe sind gezeichnete Kästen (10 px), Abzeichen bleiben Pillen,
      der Plus-Knopf bleibt ein Punkt. Vier Formen, jede mit einem Grund.
@@ -173,7 +161,7 @@ main { padding: var(--rand) var(--rand) calc(var(--leiste) + var(--v6));
    nur in diesem Kommentar, während das Blatt daneben zwölf Grössen
    deklarierte. Überschriften eng und schwer: die Systemschrift bekommt ihren
    Charakter über Gewicht und Laufweite, nicht über eine Datei aus dem Netz.
-   Gerechnete Zahlen: Monospace. */
+   Gerechnete Zahlen: `tabular-nums`. */
 h1, h2 {
   font-weight: 800; letter-spacing: -0.03em;
 }
@@ -355,7 +343,7 @@ button, .knopf { overflow-wrap: normal; }
 .anzahl {
   margin-left: auto; color: var(--gedaempft); font-size: var(--t-fein);
   background: var(--karte-tief); border-radius: 999px; padding: var(--v0) var(--v2);
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -393,13 +381,13 @@ button, .knopf { overflow-wrap: normal; }
    („Hemme Milch Milch 1,8 / %"). Wo der Browser es nicht kennt, bleibt alles
    wie bisher — es ist eine Verbesserung und keine Bedingung. */
 .name { font-weight: 600; text-wrap: pretty; }
-/* Packungsgrösse und Preis: von der Kasse, also Monospace — dieselbe Schrift
-   wie `.preis` an der Katalogkachel, die denselben Preis zeigt. Bis WB-400
-   war derselbe Preis einen Tap voneinander entfernt einmal Kassenschrift
-   und einmal nicht. */
+/* Packungsgrösse und Preis: dieselbe Schrift wie `.preis` an der
+   Katalogkachel, die denselben Preis zeigt, beide mit `tabular-nums`. Bis
+   WB-400 war derselbe Preis einen Tap voneinander entfernt einmal anders
+   behandelt. */
 .menge { color: var(--gedaempft); font-size: var(--t-klein);
-         font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.preis { white-space: nowrap; font-family: var(--mono);
+         font-variant-numeric: tabular-nums; }
+.preis { white-space: nowrap;
          font-variant-numeric: tabular-nums; font-weight: 700;
          font-size: var(--t-feld); }
 
@@ -463,7 +451,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   display: inline-block; min-width: 22px; padding: var(--v0) var(--v2); margin-left: var(--v1);
   border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
   font-size: var(--t-fein); font-weight: 700; text-align: center; line-height: 1.4;
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
   animation: plopp 0.35s ease;
 }
 
@@ -535,7 +523,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
 }
 .stellen .anzahl { margin: 0; min-width: 2ch; text-align: center;
                    padding: 0; background: none; font-size: var(--t-text);
-                   color: inherit; font-family: var(--mono);
+                   color: inherit;
                    font-variant-numeric: tabular-nums;
                    font-weight: 600; }
 .steller .anzahl {
@@ -608,16 +596,6 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   border-radius: var(--radius); box-shadow: var(--schatten);
 }
 .bestellungen .zweig, .rezepte .zweig { padding: var(--v3) var(--v1); align-items: flex-start; }
-/* Kein Kassenzettel für einen Halbsatz (WB-400 Runde 3) — dieselbe Ausnahme
-   wie `.lauf .menge` auf /status, aus demselben Grund und bisher nur dort
-   gezogen. In `.menge` steht auf diesen beiden Seiten kein Zahlenfeld,
-   sondern eine verkettete Auskunft: „16 Zutaten · 16 verknüpft · für 3
-   Portionen · mit Zubereitung · von chefkoch" und, auf /bestellungen, fünf
-   Zeilen Produktnamen. Die Regel oben im Blatt sagt es selbst — Monospace
-   bekommt eine Zahl, die als Zahl dasteht, nicht ein Satz, in dem eine
-   vorkommt; drei Zeilen Kassenschrift sind eine Wand und keine
-   Auszeichnung. */
-.rezeptzeile .menge, .bestellung .menge { font-family: inherit; }
 .bestellungen > li:last-child .zweig,
 .rezepte > li:last-child .zweig { border-bottom: none; }
 .bestellung.erledigt .name { color: var(--gedaempft); }
@@ -731,16 +709,15 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
             color: var(--beere); font-weight: 600; }
 
 /* Die Hauptangabe der Einkaufszeile ist die GEBRAUCHTE Menge (WB-381) und
-   nicht die Packungsgrösse. Sie ist gerechnet — also Monospace, wie von der
-   Kasse gedruckt: die Wahrheit über Mengen hat hier eine eigene Schrift. */
+   nicht die Packungsgrösse. Sie ist gerechnet und steht deshalb gross. */
 .pickzeile .menge { color: var(--tinte); font-size: var(--t-feld); font-weight: 600;
-                    font-family: var(--mono); }
+                    font-variant-numeric: tabular-nums; }
 /* Die Packungsangabe („dafür 2 × 1 kg"). Sie steht gross, SOLANGE sie die
    einzige Mengenangabe der Zeile ist; steht die gebrauchte Menge darüber,
    rückt sie hinter sie zurück. */
 .pickzeile .gebinde { font-size: var(--t-klein); color: var(--gedaempft);
                       line-height: 1.35; white-space: normal;
-                      font-family: var(--mono); }
+                      font-variant-numeric: tabular-nums; }
 .pickzeile .menge + .gebinde { font-size: var(--t-fein); }
 
 /* Rezepte (WB-325): Zutatenliste = `.zeile` + `.stellen` wie im Warenkorb,
@@ -833,7 +810,7 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   width: 4.5ch; min-height: 44px; text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 .abschicken.portionen .gross { flex: 1 1 12ch; }
 .abschicken.portionen .hinweis {
@@ -1162,7 +1139,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
 .entwurfsliste .text { flex: 1 1 140px; min-width: 0; }
 .entwurfsliste .name { font-weight: 600; }
 .entwurfsliste .menge { display: block; font-size: var(--t-fein);
-                        color: var(--gedaempft); font-family: var(--mono); }
+                        color: var(--gedaempft); font-variant-numeric: tabular-nums; }
 /* Herausgenommen — wieder: das Beiwerk dimmen, die Menge nicht (WB-400). */
 .entwurfsliste > li.raus .name { color: var(--gedaempft);
                                  text-decoration: line-through 2px; }
@@ -1194,7 +1171,8 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
                 letter-spacing: -0.02em; }
 /* Eine eigene Klasse und nicht das `.zeit` der Rezeptseite: dort ist es die
    kleine Pille in `.rezeptherkunft`, und die steht in dieser Karte auch.
-   Monospace: die Zeit ist eine gerechnete Zahl, die grösste der Karte.
+   Sie ist eine gerechnete Zahl, die grösste der Karte, und bekommt deshalb
+   `tabular-nums`.
 
    In Tinte und nicht in Tintenblau (WB-400): das Blatt hat EINE
    Handlungsfarbe, und die grösste statische Zahl der Karte trug sie —
@@ -1205,7 +1183,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
    Zahl, dieselbe Gestalt. */
 .gesamtzeit {
   margin: 0 0 var(--v1); font-size: var(--t-zahl); font-weight: 700; line-height: 1.2;
-  color: var(--tinte); font-family: var(--mono);
+  color: var(--tinte); font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 /* Im Kopfblatt der Rezeptseite ist sie ein Flex-Kind der Pillenreihe: volle
@@ -1293,10 +1271,11 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   background: var(--akzent); color: var(--auf-akzent);
   white-space: nowrap;
 }
-/* KEIN Monospace: „35 Minuten Arbeitszeit", „4.74 aus 1420 Stimmen" sind von
-   Chefkoch abgeschrieben und nicht gerechnet. Die Kassenschrift ist in
-   diesem Blatt die Auszeichnung für die eigene Rechnung (Bedarfsmenge,
-   Preis, Zähler); sie hier zu tragen kehrte ihre Aussage um (WB-400). */
+/* KEIN `tabular-nums`: „35 Minuten Arbeitszeit", „4.74 aus 1420 Stimmen"
+   sind von Chefkoch abgeschrieben und nicht gerechnet. Fluchtende Ziffern
+   sind in diesem Blatt die Auszeichnung für die eigene Rechnung
+   (Bedarfsmenge, Preis, Zähler); sie hier zu tragen kehrte ihre Aussage
+   um (WB-400). */
 .andereliste .zahlen {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--v0) var(--v3);
   font-size: var(--t-fein); color: var(--gedaempft);
@@ -1388,7 +1367,7 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
   width: 4.5ch; min-height: var(--tap); text-align: center; font-size: var(--t-text);
   border: 1.5px solid var(--knopflinie); border-radius: var(--radius-knopf);
   background: var(--karte); color: var(--tinte); padding: 0 var(--v2);
-  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 .zugportionen .fussnote { flex-basis: 100%; margin: 0; }
 
@@ -1556,11 +1535,6 @@ span.marke.nein { background: var(--beere-hell); color: var(--beere); }
         border-bottom: 1px solid var(--linie); }
 .laeufe > .lauf:last-child { border-bottom: none; }
 .lauf .name { font-weight: 600; }
-/* Auf dieser Seite steht in `.menge` ein SATZ und keine Zahl („Die Schlange
-   fasst 10.000; was darüber hinaus anfällt, geht verloren.") — die
-   Kassenschrift gilt der Zahl, die als Zahl dasteht, und nicht dem
-   Fliesstext, in dem eine vorkommt. */
-.lauf .menge { font-family: inherit; }
 .lauf.verworfen { background: var(--honig-hell); border-radius: var(--radius-knopf); }
 .lauf.error .name { color: var(--fehler-text); }
 code { background: var(--karte-tief); border-radius: 6px; padding: var(--v0) var(--v1);
