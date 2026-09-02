@@ -1017,7 +1017,12 @@ def test_die_neuen_zustaende_der_pickzeile_sind_im_stil_sichtbar():
 
 def test_das_ladenfeld_sagt_was_es_ist(client, con):
     """Ein Auswahlfeld mit „Egal wo" als einzigem sichtbaren Wort (UI-Review
-    2026-09-01, Fund 8). Das `aria-label` hört nur ein Vorleseprogramm."""
+    2026-09-01, Fund 8). Das `aria-label` hört nur ein Vorleseprogramm.
+
+    Das Wort steht nur an der einen Option, die es braucht — „Laden: Rewe"
+    an allen dreien machte das Feld so breit, dass das „×" der Zeile auf
+    390 px in eine zweite Zeile rutschte (Welle 2, Aufgabe 10)."""
     client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
     text = client.get("/warenkorb").text
-    assert "Laden: egal" in text or "Laden: Egal" in text
+    assert "Laden egal" in text
+    assert "Laden: Rewe" not in text and "Laden: Lidl" not in text
