@@ -1005,3 +1005,11 @@ def test_die_neuen_zustaende_der_pickzeile_sind_im_stil_sichtbar():
     assert ".pickzeile .hinweis" in stil
     block = stil.split(".pick-meldung {", 1)[1].split("}", 1)[0]
     assert "position: fixed" in block and "bottom:" in block
+
+
+def test_das_ladenfeld_sagt_was_es_ist(client, con):
+    """Ein Auswahlfeld mit „Egal wo" als einzigem sichtbaren Wort (UI-Review
+    2026-09-01, Fund 8). Das `aria-label` hört nur ein Vorleseprogramm."""
+    client.post(f"/katalog/einlegen?product_id={_pid(con, MILCH)}", headers=HTMX)
+    text = client.get("/warenkorb").text
+    assert "Laden: egal" in text or "Laden: Egal" in text

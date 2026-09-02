@@ -128,7 +128,7 @@
         <select name="store" aria-label="Laden für {{ i.name }}">
           {% for s in stores %}
           <option value="{{ s }}" {% if s == i.store %}selected{% endif %}>
-            {{ laden_titel[s] }}</option>
+            Laden: {{ laden_titel[s] | lower if s == 'egal' else laden_titel[s] }}</option>
           {% endfor %}
         </select>
         <noscript><button class="mini" type="submit">ok</button></noscript>

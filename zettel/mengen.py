@@ -477,6 +477,26 @@ def _handsatz(rechnung: Rechnung, qty) -> str | None:
     return f"Im Korb {wort} {qty} — {woher}."
 
 
+def kurzgrund(rechnung: Rechnung, unit_text: str | None = None) -> str:
+    """Warum nicht gerechnet wurde — in einer Zeile, ohne die Menge.
+
+    `rechnung.grund` ist der ganze Satz für den Trace (`zettel.reason`) und
+    nennt die Menge noch einmal: „2 Stk lässt sich nicht gegen die Packung
+    („1 kg") rechnen". Unter einer Korbzeile, die mit „2 Stk gebraucht"
+    beginnt, ist das die Menge zweimal (UI-Review 2026-09-01, Fund 8). Hier
+    steht nur der Grund; leer, wenn gerechnet wurde.
+    """
+    if rechnung.ausrechenbar or rechnung.bedarf is None:
+        return ""
+    if rechnung.packung is None:
+        return f"keine lesbare Packungsgrösse{_zitat(unit_text)}"
+    if rechnung.packung <= 0:
+        return "Packungsgrösse null"
+    packung = _zitat(unit_text) or " " + schreibe(rechnung.packung,
+                                                  rechnung.packung_einheit)
+    return f"nicht gegen die Packung{packung} zu rechnen"
+
+
 def nachsatz(rechnung: Rechnung, unit_text: str | None = None,
              qty: int | None = None) -> str | None:
     """Was NEBEN Bedarf und Packungsangabe noch zu sagen bleibt, oder `None`.
@@ -501,9 +521,8 @@ def nachsatz(rechnung: Rechnung, unit_text: str | None = None,
     # zu viel.
     if not rechnung.ausrechenbar and not rechnung.freitext \
             and not _gebinde(rechnung, unit_text):
-        grund = rechnung.grund or ""
-        teile.append(f"{grund[:1].upper()}{grund[1:]}, "
-                     "die Menge bleibt, wie sie ist.")
+        grund = kurzgrund(rechnung, unit_text)
+        teile.append(f"{grund[:1].upper()}{grund[1:]}.")
     hand = _handsatz(rechnung, qty)
     if hand:
         teile.append(hand)
@@ -529,14 +548,12 @@ def satz(rechnung: Rechnung, produkt: str | None = None,
     if gebraucht is None:
         return None
     if rechnung.freitext and not rechnung.ausrechenbar:
-        # „3 Stk gebraucht." und sonst nichts (WB-385). Der Zusatz „die Menge
-        # bleibt, wie sie ist" antwortet auf eine Rechnung, die nicht aufging
-        # — beim Freitext war nie eine im Gang, und der Grund dahinter
-        # erklärt eine Lücke, die keine ist.
+        # „3 Stk gebraucht." und sonst nichts (WB-385): beim Freitext war nie
+        # eine Rechnung im Gang, und ein Grund erklärte eine Lücke, die keine
+        # ist.
         return f"{gebraucht}."
     if not rechnung.ausrechenbar:
-        return (f"{gebraucht} — {rechnung.grund}, die Menge bleibt, "
-                "wie sie ist.")
+        return f"{gebraucht} — {kurzgrund(rechnung, unit_text)}."
     name = f" {produkt}" if produkt else ""
     teile = [f"{gebraucht} — {rechnung.packungen} ×{name} "
              f"{_gebinde(rechnung, unit_text)}".rstrip() + "."]
