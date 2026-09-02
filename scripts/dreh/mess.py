@@ -132,11 +132,25 @@ if (leiste) {
 return JSON.stringify(out);
 """
 
-SEITEN = ["/chat", "/warenkorb", "/katalog", "/katalog?q=milch", "/pick",
-          "/rezepte/1", "/rezepte", "/bestellungen", "/status", "/bons",
-          "/rezepte/99", "/rezepte/1/loeschen", "/mehr"]
+def rezept_id() -> int:
+    """Das erste Rezept der Liste — nicht „1": die Demo-DB hat ihre Nummer 1
+    verloren (Welle 2 hat einen leeren Bon-Import gelöscht), und ein Stand,
+    der eine 404-Seite als Rezeptseite misst, ist stumm falsch."""
+    import re as _re
+    with urllib.request.urlopen(BASIS + "/rezepte", timeout=30) as a:
+        m = _re.search(rb'href="/rezepte/(\d+)"', a.read())
+    if not m:
+        sys.exit("kein Rezept auf /rezepte — Buehne leer?")
+    return int(m.group(1))
+
+def seiten():
+    r = rezept_id()
+    return ["/chat", "/warenkorb", "/katalog", "/katalog?q=milch", "/pick",
+            f"/rezepte/{r}", "/rezepte", "/bestellungen", "/status", "/bons",
+            "/rezepte/99", f"/rezepte/{r}/loeschen", "/mehr"]
 
 if __name__ == "__main__":
+    SEITEN = seiten()
     for dunkel in (False, True):
         sid = session(dunkel)
         modus = "dunkel" if dunkel else "hell"

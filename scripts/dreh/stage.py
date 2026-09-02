@@ -4,7 +4,14 @@
 Über HTTP, wo es einen Weg gibt (die Entscheidungen laufen durch den echten
 Code), und direkt in SQL, wo der Weg ein Modell oder einen Laden bräuchte
 (chat_kandidat, die offene Bestellung für die Pick-Ansicht, seit Runde 4
-auch die Quittung eines ersetzten Zugs)."""
+auch die Quittung eines ersetzten Zugs).
+
+Voraussetzung: der Zug der Kopie hängt am WARENKORB (`orders.state = 'draft'`),
+nicht an einer abgeschickten Bestellung. Nach einem Dreh, der bis zur Kasse
+geht, hängt er an `state = 'offen'` — dann räumt Schritt 4 ihn mit der
+Bestellung ab (ON DELETE CASCADE), die Chatseite ist leer und Schritt 5 findet
+nichts. Auf der Kopie vorher `UPDATE orders SET state = 'draft',
+submitted_at = NULL` setzen (Welle 2, 2026-09-02)."""
 import pathlib
 import sqlite3, sys, urllib.request, urllib.parse
 
