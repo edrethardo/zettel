@@ -137,6 +137,36 @@ unbrauchbar. Damit die Leiste im Hochkant-Clip überhaupt im Bild liegt, stutzt
 `aufnahme.sh` das App-Fenster für diese Fassung auf die Höhe des Ausschnitts
 (1012 statt 1080 px); vorher lag sie 68 px unter der Bildkante.
 
+**Die rechte Bildhälfte hat dieselbe Kur bekommen.** Shot 7 fuhr im Spanbaum
+von Phoenix noch auf vier fest eingetragenen Punkten und prüfte nichts. Auf
+dem Take vom 02.09. traf davon keiner: geöffnet war eine Rezeptzuordnung
+statt des Chatzugs, und die Pointe des Shots — die Attributsuche nach
+`zettel.rejected` — endete auf „No matching attributes". Ursache war eine
+Zeile früher: der gesuchte Zug steht als ältester Wurzelzug ganz unten im
+Tisch, sein Name „chat.turn" hat neun Zeichen, und bei `toleranz=45,
+mindest=60` blieben davon zehn Bildpunkte übrig — die Gruppe fiel weg, und
+gegriffen wurde die Zeile darüber. Gemessen am Einzelbild: 70/30 findet alle
+zwölf Zeilen in gleichmässigem Abstand von 30 px. Im Baum wird jetzt nach
+Bedeutung gegriffen statt nach Koordinaten — jede Zeile trägt links ein
+Sinnbild in der Farbe ihrer Art (Kette blau, Modell orange, Abruf türkis),
+der Wurzelzug ist die einzige Kette, ein Abruf der oberste Türkis. Und drei
+Prüfungen entscheiden, ob der Take etwas taugt: die Tafel des geöffneten
+Zuges muss eine Ausgabe zeigen (gemessen 6.937 Bildpunkte Tinte gegen 997
+bei einer Rezeptzuordnung), im Baum darf genau eine Kette stehen, und die
+Attributsuche muss eine Zeile finden (302 Bildpunkte gegen 0). Der erste
+Take danach hat prompt zweimal gewarnt und sich damit selbst verworfen; der
+zweite zeigt `chat.turn` mit seiner Produktliste, einen `catalog.search` mit
+Dokument und Rangwert, und `zettel.rejected` in der gefilterten Tafel.
+
+**Das Blatt im Breitbild** (`02896f0`): `stil.css` hat keine
+Breiten-Media-Query, und das war an einer Stelle zu sehen. `main` steht als
+zentrierte Spalte, die Reiterleiste lief aber über die ganze Fensterbreite —
+bei 1440 px fünf Reiter zu je 288 px, deren Wörter weit neben allem standen,
+worauf sie zeigen. Der Grund der Leiste bleibt randlos (eine Fläche, die
+mitten im Fenster aufhört, sähe nach Fehler aus), die Reiter teilen sich
+jetzt die Breite des Blattes. Beide holen sie aus `--blattbreite`; zwei
+eingetragene 680 wären beim nächsten Mal zwei verschiedene Zahlen.
+
 **Offen nach Welle 2 (Folge-Tickets, keins davon vor dem Video):** die Singular-Grammatik auf
 `/status`; die `client`-Fixture in `tests/test_web_politur.py` übergibt kein `chat=` — ein
 `POST /chat` dort liefe gegen den echten Chat und damit gegen Spec 13 (heute kein Aufrufer;
