@@ -58,8 +58,13 @@ def schiesse(sid, pfad, datei, extra_js=None):
     # abgeschnitten. Und ein festes Element malt Firefox in der ganzseitigen
     # Aufnahme EINMAL, an der aktuellen Scrollhöhe — gemessen: ein Band ein
     # Fünftel weit unten auf einer 3576 px langen Seite. Absolut steht sie
-    # einmal am Ende des Dokuments, wo ein Leser des Bildes sie erwartet.
-    skript(sid, "var L = document.querySelector('.leiste');"
+    # einmal am Ende des Dokuments, wo ein Leser des Bildes sie erwartet —
+    # aber nur, wenn `body` ihr Bezug ist: ohne ein positioniertes Elternteil
+    # rechnet `bottom: 0` gegen den Anfangsblock, der fenstergross ist, und
+    # das Band lag wieder bei 702 px. Mit `body { position: relative }`
+    # landet es bei 3520–3575, bündig am Ende (gemessen).
+    skript(sid, "document.body.style.position = 'relative';"
+                " var L = document.querySelector('.leiste');"
                 " if (L) { L.style.position = 'absolute';"
                 " L.style.width = '390px'; L.style.right = 'auto'; }")
     if extra_js:
