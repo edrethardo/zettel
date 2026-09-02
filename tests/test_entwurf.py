@@ -13,6 +13,7 @@ Pho-Fixture hat 23 Zutaten, und ein Test, der 23 Zeilen sortiert, prüft nicht
 mehr die Trennung, sondern die Fixture.
 """
 import json
+import re
 
 import pytest
 
@@ -1004,8 +1005,13 @@ def test_das_einheitenfeld_zeigt_die_kochbuchschreibweise(con, db_pfad, tmp_path
     stueck = client.post(f"/chat/vorschlag/{hack}/bedarf",
                          data={"menge": "2", "einheit": "EL"},
                          headers={"HX-Request": "true"}).text
-    assert 'name="einheit" autocomplete="off" value="EL"' in stueck
-    assert 'value="el"' not in stueck
+    # Über den geglätteten Text und als Muster: wo die Vorlage umbricht und
+    # in welcher Reihenfolge sie die Attribute schreibt, ist keine Aussage
+    # über die Oberfläche — ein Test, der daran hängt, bricht beim nächsten
+    # Umformatieren, ohne dass sich etwas Sichtbares geändert hätte.
+    flach = " ".join(stueck.split())
+    assert re.search(r'<input[^>]*name="einheit"[^>]*value="EL"', flach)
+    assert 'value="el"' not in flach
 
 
 def test_kein_rezept_daraus_und_wieder_zurueck(con, db_pfad, tmp_path):

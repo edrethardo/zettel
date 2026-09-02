@@ -287,11 +287,11 @@ def _zutat_aufbereiten(row: sqlite3.Row) -> dict:
     # geändert wird: dort steht die Zahl schon im Eingabefeld.
     z["einheit_text"] = mengen.einheit_text(z.get("unit")) or mengen.STUECK
     # Dasselbe noch einmal als FELDINHALT — und leer, wo keine Einheit
-    # gespeichert ist (WB-375). `einheit_text` taugt dafür nicht: es schreibt
-    # „Stk", auch wenn in der Spalte NULL steht. Ein vorbelegtes Feld ist aber
-    # keine Anzeige, sondern der Wert, der beim nächsten Abschicken
-    # zurückkommt — es darf nichts behaupten, was nicht in der Datenbank
-    # steht.
+    # gespeichert ist (WB-375). `z["einheit_text"]` taugt dafür nicht: es
+    # fällt eine Zeile weiter oben auf „Stk" zurück, auch wenn in der Spalte
+    # NULL steht. Ein vorbelegtes Feld ist aber keine Anzeige, sondern der
+    # Wert, der beim nächsten Abschicken zurückkommt — es darf nichts
+    # behaupten, was nicht in der Datenbank steht.
     z["einheit_feld"] = z["einheit_text"] if z.get("unit") else ""
     if z["name"] is None:
         # Kann nur passieren, wenn eine Produktzeile trotz Fremdschlüssel

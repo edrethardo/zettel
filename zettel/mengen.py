@@ -409,7 +409,8 @@ def schreibe(menge, einheit) -> str:
 #: aus der Faltung zurückrechnen kann: die Abkürzungen. Jede Schreibweise
 #: faltet auf ihren Schlüssel zurück (`test_die_einheit_wird_geschrieben_wie_
 #: im_kochbuch`), damit ein Feld, das sie zeigt, sie auch zurückgeben darf.
-SCHREIBWEISE = {"el": "EL", "tl": "TL", "pck": "Pck.", "msp": "Msp."}
+SCHREIBWEISE = {"el": "EL", "tl": "TL", "pkt": "Pkt.", "pck": "Pck.",
+                "msp": "Msp."}
 
 
 def einheit_text(einheit) -> str:
