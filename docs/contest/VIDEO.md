@@ -225,7 +225,7 @@ sie bewusst voneinander ab.
 
 | # | Zeit | Bild (aus Take) | Voice-Over (wortwörtlich) | Untertitel |
 |---|---|---|---|---|
-| 0 | 0:00–0:06 | **Take B:** Gesicht, ein Satz in die Kamera | `I built a grocery agent for my girlfriend and me — it runs on one RTX 3090 in my living room.` | `A grocery agent for two — on one RTX 3090 in my living room.` |
+| 0 | 0:00–0:06 | **Take B:** Gesicht, ein Satz in die Kamera | `I built a grocery agent for my girlfriend and me — it runs on one RTX 3090 in my living room.` | `A grocery agent for our household — on one RTX 3090 in my living room.` |
 | 1 | 0:06–0:12 | Take A, T−10…0: tippen, **Fragen** | `One sentence, the way we say it at home: everything for lasagna — and toilet paper. Send.` | `One sentence, like at home (the app speaks German): "everything for lasagna — and toilet paper."` |
 | 2 | 0:12–0:20 | Take A, T+0…2 **hart geschnitten auf** T+11…15: Spinner links, rechts schlagen die 16 Spans ein, nvtop auf 100 % | `Right side: Phoenix, tracing the agent live. Bottom: my 3090, at full power. No cloud. No API key.` | `Phoenix traces the agent live — on the 3090 under my TV. No cloud, no API key. (~29 s, cut)` |
 | 3 | 0:20–0:34 | Take A, T+29…60: Antwort, Rezeptkarte, Alternativen, Portionen 3 → 6 mit sichtbarer Neurechnung | `It found a real, top-rated recipe. Cooking time, rating, five alternatives. Guests tonight? Servings to six — every quantity rescales.` | `A real top-rated recipe in ~100 ms — set servings to 6 and every quantity and pack count rescales.` |
@@ -277,7 +277,7 @@ zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 
 **Endcard** (Standbild, 5 s):
 
-> *A grocery app for a two-person household where a 27B open model —
+> *A grocery app for a multi-person household where a 27B open model —
 > quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
 > and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
 > evaluated across 64 dishes, zero cloud, zero API keys.*

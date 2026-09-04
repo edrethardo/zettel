@@ -2,7 +2,7 @@
 
 *Zettel* (ˈtsɛtl̩) is German for the slip of paper you take to the shop.
 
-> **A grocery app for a two-person household where a 27B open model —
+> **A grocery app for a multi-person household where a 27B open model —
 > quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
 > and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
 > evaluated across 64 dishes, zero cloud, zero API keys.**

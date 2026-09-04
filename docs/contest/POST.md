@@ -21,7 +21,7 @@ Checkliste vor dem Absenden:
 
 ---
 
-I built a grocery app for our two-person household — and made the LLM inside
+I built a grocery app for our multi-person household — and made the LLM inside
 it fully accountable.
 
 Type "everything for lasagna, and toilet paper" (in German — it's our

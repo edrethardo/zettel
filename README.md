@@ -1,7 +1,7 @@
 # Zettel
 
 > **English** — Zettel (German for the slip of paper you take to the shop) is
-> a private grocery-ordering shop for a two-person
+> a private grocery-ordering shop for a multi-person
 > household on a [Tailscale](https://tailscale.com/) tailnet: she fills the
 > cart, he buys the groceries at a physical store and checks them off on his
 > phone. A chat box maps free text ("everything for spaghetti bolognese, plus
@@ -15,7 +15,7 @@
 > 83 %; [`GETTING-STARTED.md`](GETTING-STARTED.md) gets it running on your
 > machine. The rest of this README is in German, the household's language.
 
-Ein privater Bestell-Shop für zwei Personen im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
+Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
 dort auf dem Handy ab. **Es wird nie eine
 Bestellung an einen echten Händler geschickt.** Dazu ein Chat-Feld: freier Text
@@ -51,7 +51,7 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 
 | Datei | worum es geht |
 |---|---|
-| [`ANLEITUNG.md`](ANLEITUNG.md) | **die Bedienungsanleitung** für die zwei, die damit einkaufen: Reiter, Chat, Korb, Pick-Liste, Rezepte, Bons |
+| [`ANLEITUNG.md`](ANLEITUNG.md) | **die Bedienungsanleitung** für alle im Haushalt, die damit einkaufen: Reiter, Chat, Korb, Pick-Liste, Rezepte, Bons |
 | [`GETTING-STARTED.md`](GETTING-STARTED.md) | Englisch: installieren, konfigurieren, der erste Zug, prüfen, ein Modell messen |
 | [`DESIGN.md`](DESIGN.md) | Architektur und die Entscheidungen, die von aussen wie ein Versehen aussehen |
 | [`OBSERVABILITY.md`](OBSERVABILITY.md) | **der Span-Vertrag**: welcher Span, welche Attribute, was sie bedeuten |
