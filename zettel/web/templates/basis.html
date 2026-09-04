@@ -26,6 +26,14 @@
      Modus. #}
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#12171e">
+  {# Als App auf den Startbildschirm (2026-09-04): im Laden soll Zettel ohne
+     Adressleiste aufgehen. Das Manifest liegt bei den statischen Dateien,
+     die Symbole sind aus den Farben des Blattes gezeichnet — der gelbe
+     Zettel mit Eselsohr auf der dunklen Kachel; `maskable` ist die Fassung
+     ohne Rundung, die Android selbst beschneidet. iOS liest kein Manifest-
+     Symbol, darum das `apple-touch-icon` daneben. #}
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <title>{% block titel %}Zettel{% endblock %}</title>
   <link rel="stylesheet" href="/static/stil.css">
   {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:

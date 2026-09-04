@@ -660,3 +660,41 @@ def test_die_seiten_erklaeren_sich_nicht_mehr_selbst(client, con):
     status = client.get("/status").text
     assert "Magic Packet" not in status and "Warum eine Zeile leer blieb" not in status
     assert "Spec 5.1" not in client.get("/katalog").text
+
+
+def test_zettel_laesst_sich_als_app_auf_den_startbildschirm_legen(client):
+    """Ein Manifest mit Symbol, `standalone` und der Farbe des Blattes — ohne
+    das liegt Zettel im Laden als Browser-Lesezeichen samt Adressleiste da.
+    Die Werte kommen aus dem Manifest selbst, nicht aus einem Test-String:
+    was hier steht, muss das Telefon so lesen können."""
+    kopf = client.get("/chat").text
+    assert '<link rel="manifest" href="/static/manifest.webmanifest">' in kopf
+    assert '<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">' in kopf
+    antwort = client.get("/static/manifest.webmanifest")
+    assert antwort.status_code == 200
+    m = antwort.json()
+    assert m["name"] == "Zettel" and m["short_name"] == "Zettel"
+    assert m["display"] == "standalone" and m["start_url"] == "/"
+    assert m["background_color"] == m["theme_color"] == "#12171e"
+    groessen = {i["sizes"] for i in m["icons"]}
+    assert {"192x192", "512x512"} <= groessen
+    assert any(i.get("purpose") == "maskable" for i in m["icons"])
+    for i in m["icons"]:
+        assert client.get(i["src"]).status_code == 200, i["src"]
+
+
+def test_ein_einzelner_zug_ohne_span_id_bekommt_einen_ganzen_satz(client, con):
+    """„1 von 1 Zügen haben keine Span-ID" ist kein Deutsch — der Rest von
+    Fund 16, nach Welle 2 noch offen."""
+    # Ohne Auszeichnung geglättet: die Zahl steht in einem <strong>, und der
+    # Satz soll als Satz geprüft werden, nicht als Markup.
+    def satz():
+        return " ".join(re.sub(r"<[^>]+>", " ", client.get("/status").text).split())
+    vorschlaege.nachricht(con, orders.warenkorb(con),
+                          vorschlaege.ROLLE_NUTZERIN, "Milch")
+    assert "Der eine Zug hat keine Span-ID" in satz()
+    assert "Zügen haben" not in satz()
+    vorschlaege.nachricht(con, orders.warenkorb(con),
+                          vorschlaege.ROLLE_NUTZERIN, "Butter",
+                          span_id="span-2")
+    assert "1 von 2 Zügen hat keine Span-ID" in satz()

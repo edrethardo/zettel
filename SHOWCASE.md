@@ -264,12 +264,17 @@ A showcase that hides its edges is an ad. The measured ones:
   *model* path actually needs the sentence ("Milch für den Kaffee") remains
   an assumption: every frozen fixture is a recipe-path turn, so the path
   that kept the sentence is the one that was never measured.
-* **The search knows prefixes only.** "milch" never finds "Landmilch" by
-  name — German compounds put the noun at the end. The everyday-word table
-  patches five such gaps by hand ("Klopapier" → "Toilettenpapier") and
-  none of the thousands it does not know about. This is the single biggest
-  retrieval weakness; part of what looks like model failure in traces is
-  this one property.
+* **The search knows prefixes only** — "milch" never finds "Landmilch" by
+  name, German compounds put the noun at the end — **but that is not where
+  the eval loses its terms.** Measured 2026-09-04 without a model, on the
+  264 distinct first search terms of the 64-dish run: 91 find nothing by
+  prefix, and a substring fallback would rescue exactly **one** of them
+  ("Fleischbrühe" → "Rindfleischbrühe"). The other 90 are vocabulary the
+  catalog does not carry under that name ("Knoblauchzehe", "festkochende
+  Kartoffeln", "Staudensellerie") — which the term chain already handles by
+  falling back to the plain noun. So the substring index stays unbuilt, on
+  purpose, and the five-word everyday table ("Klopapier" → "Toilettenpapier")
+  remains the only patch: measured before built, and the measurement said no.
 * **"2 onions" vs. "1 kg net"**: 328 of 485 quantities reach the list but
   cannot be computed against the pack unit (95× piece-vs-weight, then
   tablespoons). The list shows the need; the pack count stays an honest 1.
