@@ -861,9 +861,10 @@ span.ok { color: var(--ok-text); white-space: nowrap; font-weight: 600;
   width: 100%; font-family: inherit;
 }
 .rezeptkopf .knopf { align-self: flex-start; }
-.rezeptloeschen { margin: var(--v5) 0; }
-.rezeptloeschen .knopf.loeschen { color: var(--beere); border-color: var(--beere-hell);
-                                  background: var(--beere-hell); }
+.rezeptloeschen, .pickloeschen { margin: var(--v5) 0; }
+.rezeptloeschen .knopf.loeschen,
+.pickloeschen .knopf.loeschen { color: var(--beere); border-color: var(--beere-hell);
+                                background: var(--beere-hell); }
 
 /* Ein geholtes Rezept (WB-338): Herkunft, Zeiten, Zutaten laut Rezept und
    die Zubereitung — zum LESEN AM HERD, nicht zum Tippen. Die Angaben sind

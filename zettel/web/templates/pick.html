@@ -1,6 +1,9 @@
 {% extends "basis.html" %}
 {% block titel %}Pick-Liste — Zettel{% endblock %}
 {% block inhalt %}
+{% if weg %}
+<p class="fertig" role="status">Einkauf Nr. {{ weg }} ist gelöscht.</p>
+{% endif %}
 {% if bestellung %}
   <h1>Einkauf Nr. {{ bestellung.id }}</h1>
   <div id="pickliste">{% include "_pick.html" %}</div>
@@ -67,5 +70,13 @@
   </li>
   {% endfor %}
 </ul>
+{% endif %}
+
+{% if bestellung %}
+{# Ganz unten, nach allem anderen: der Knopf ist der letzte Griff auf dieser
+   Seite, nicht der erste, und er führt auf eine Rückfrage (2026-09-04). #}
+<div class="pickloeschen">
+  <a class="knopf loeschen" href="/pick/{{ bestellung.id }}/loeschen">Pick-Liste löschen</a>
+</div>
 {% endif %}
 {% endblock %}

@@ -1026,3 +1026,49 @@ def test_das_ladenfeld_sagt_was_es_ist(client, con):
     text = client.get("/warenkorb").text
     assert "Laden egal" in text
     assert "Laden: Rewe" not in text and "Laden: Lidl" not in text
+
+
+# --------------------------------------------------------------------------
+# Die Pick-Liste löschen (2026-09-04)
+
+def test_die_pick_liste_hat_ganz_unten_einen_loeschknopf(client, offene_bestellung):
+    """Unter der Liste, nicht im Kopf: der Knopf ist der letzte Griff, nicht
+    der erste. Und er führt auf eine Rückfrage, nicht direkt ins Löschen."""
+    text = client.get("/pick").text
+    knopf = f'href="/pick/{offene_bestellung}/loeschen"'
+    assert knopf in text
+    assert text.index(knopf) > text.index('id="pickliste"')
+    assert "Pick-Liste löschen" in text
+
+
+def test_die_rueckfrage_sagt_was_mit_der_bestellung_verschwindet(
+        client, con, offene_bestellung):
+    text = client.get(f"/pick/{offene_bestellung}/loeschen").text
+    assert f"Einkauf Nr. {offene_bestellung} löschen?" in text
+    assert "3 Posten" in text
+    assert f'href="/pick/{offene_bestellung}"' in text        # Abbrechen zurück zur Liste
+    assert f'action="/pick/{offene_bestellung}/loeschen"' in text
+
+
+def test_loeschen_nimmt_die_bestellung_samt_posten_und_meldet_es(
+        client, con, offene_bestellung):
+    antwort = client.post(f"/pick/{offene_bestellung}/loeschen",
+                          follow_redirects=False)
+    assert antwort.status_code == 303
+    assert antwort.headers["location"] == f"/pick?weg={offene_bestellung}"
+    assert orders.bestellung(con, offene_bestellung) is None
+    assert con.execute("SELECT count(*) AS n FROM order_item WHERE order_id = ?",
+                       (offene_bestellung,)).fetchone()["n"] == 0
+    text = client.get(f"/pick?weg={offene_bestellung}").text
+    assert f"Einkauf Nr. {offene_bestellung} ist gelöscht" in text
+    assert "Nichts zu holen" in text
+
+
+def test_der_warenkorb_laesst_sich_nicht_als_pick_liste_loeschen(client, con):
+    """Der Entwurf ist der Korb, nicht die Pick-Liste: dafür gibt es das „×"
+    am Posten. Der Löschweg der Pick-Liste kennt nur offene Bestellungen."""
+    korb = orders.warenkorb(con)
+    assert client.get(f"/pick/{korb}/loeschen").status_code == 404
+    assert client.post(f"/pick/{korb}/loeschen", follow_redirects=False
+                       ).status_code == 404
+    assert orders.bestellung(con, korb) is not None
