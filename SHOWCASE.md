@@ -45,10 +45,20 @@ wrong), and answers with:
   needed amount from the recipe (*"600 g gebraucht — 2 × 0,54 kg"* — the pack
   count is computed, not guessed), the search term it came from, and its
   retrieval rank,
-* **"Klopapier" as free text** — the catalog's prefix-only search cannot find
-  "Toilettenpapier", so the term stays visible instead of silently
-  disappearing. A dropped ingredient is only discovered in the store; a free
-  text line is discovered now.
+* **what the catalog cannot find stays visible as free text** — here
+  *"süße Sahne"* (sweet cream: the recipe wants it, no product carries the
+  words), shown with a dashed placeholder instead of silently disappearing.
+  A dropped ingredient is only discovered in the store; a free text line is
+  discovered now.
+* **"Klopapier" finds "Toilettenpapier"** — not through the model. A
+  five-entry table of everyday words the catalog spells differently
+  (`ALLTAGSWORT` in `catalog/search.py`) is consulted in code, and the row
+  names which word found the product. The admission rule is strict and
+  tested against the real catalog: a pair goes in only if the everyday word
+  has zero hits and the shop's word has some; "Zahnpasta" finds things on
+  its own and is therefore *not* in the table. The rest of the sentence
+  ("…und Klopapier") is appended in code, never left to the prompt (measured:
+  0 of 35 turns carried it through when asked politely).
 
 Nothing lands in the cart yet. Every row is confirmed with a per-row
 **Yes/No** — and that decision doubles as the eval label later.
@@ -58,8 +68,8 @@ Nothing lands in the cart yet. Every row is confirmed with a per-row
 | ![Cart with computed pack counts](docs/images/cart.png) | ![Free text survives into the cart](docs/images/cart-free-text.png) |
 | ![Pick list in the store](docs/images/pick-list.png) | ![Status page with label counts](docs/images/status.png) |
 
-After "Yes": the cart shows the computed pack counts, the free-text toilet
-paper is still there, submitting turns the cart into the **pick list** he
+After "Yes": the cart shows the computed pack counts, the free-text line
+("süße Sahne", no price, no photo) is still there, submitting turns the cart into the **pick list** he
 checks off in the store ("gab's nicht" = the shelf was empty — an honest third
 state), and the status page counts the labels every decision produced.
 
@@ -80,19 +90,18 @@ Confirmed ingredients become a **saved recipe** on submit — the next
 | Piece | Why this one |
 |---|---|
 | **Qwen3.8-27B-Instruct** (dense, open weights) | AWQ 4-bit (W4A16, repo `philbert440/Qwen3.8-27B-W4A16-AWQ`), KV cache FP8 (fp8_e4m3) — **~17.4 GiB VRAM on a single NVIDIA RTX 3090 (24 GB)**. A consumer GPU, not a datacenter. |
-| **vLLM 0.24.0** | Self-hosted on the LAN, systemd unit, `--gpu-memory-utilization 0.97`, `--max-num-seqs 32`. Context length 106,496 tokens — kept deliberately below the tested 131k after crash-restarts at the higher setting. |
+| **vLLM 0.27.1** | Self-hosted on the LAN, systemd unit, `--max-num-seqs 32`, DFlash speculative decoding since 2026-09-01. Context length 65,536 tokens — the box reports it on `/v1/models`, and the docs quote what it reports. |
 | **FastAPI + Jinja2 + HTMX** | One process, server-rendered, no build step. HTMX is a vendored file, not a CDN — the tailnet is not necessarily online. Every form also works without JavaScript. |
 | **SQLite + FTS5** | Catalog (10,361 products), orders, chat, recipes, eval labels — one file, WAL mode, idempotent SQL migrations, no ORM. |
 | **Arize Phoenix** (self-hosted) | Traces via OpenTelemetry/OpenInference, datasets, experiments, and annotations that flow back from real user decisions. |
 | **No cloud, no API key** | The only external calls are a nightly catalog crawl and a twice-per-dish recipe fetch. If the internet is down, shopping still works. |
 
-Measured throughput on this box (single RTX 3090):
+Measured throughput on this box (single RTX 3090, re-measured 2026-09-04 on vLLM 0.27.1 with speculative decoding — the earlier 24.9 / 74.8 tok/s were vLLM 0.24 without it):
 
 | Metric | Value | Conditions |
 |---|---|---|
-| Single-stream, end-to-end | **24.9 tok/s** | 2.2k-token prompt (stage-3 candidate list), ~0.4k completion, guided JSON, thinking disabled, temperature 0 |
-| Aggregate, 4 concurrent requests | **74.8 tok/s** | same workload |
-| Decode-only rate | ~34 tok/s | prefill measured at ~1,645 tok/s |
+| Single-stream, end-to-end | **70.0 tok/s** | 5.1k-token prompt, 450-token completion, thinking disabled, temperature 0 |
+| Aggregate, 4 concurrent requests | **306 tok/s** | same workload, 76–80 tok/s per stream |
 
 ## The guarantees that make it interesting
 
@@ -216,7 +225,7 @@ reason (it stopped forgetting onions and garlic), and precision 0.850 →
 0.960 — partly by **omitting** an item, which the docs flag as suspect
 rather than celebrate.
 
-**Gates: 1,150 tests and a 76-check smoke gate** (counted 2026-08-29 — the
+**Gates: 1,346 tests and a 79-check smoke gate** (counted 2026-09-04 — the
 numbers keep growing), both running without
 network, model, or Phoenix — and for the gate that is *enforced, not
 assumed*: it monkeypatches `socket.connect/bind/getaddrinfo` before the
@@ -235,9 +244,11 @@ A showcase that hides its edges is an ad. The measured ones:
   an assumption: every frozen fixture is a recipe-path turn, so the path
   that kept the sentence is the one that was never measured.
 * **The search knows prefixes only.** "milch" never finds "Landmilch" by
-  name, "Klopapier" never finds "Toilettenpapier" — German compounds put the
-  noun at the end. This is the single biggest retrieval weakness; part of
-  what looks like model failure in traces is this one property.
+  name — German compounds put the noun at the end. The everyday-word table
+  patches five such gaps by hand ("Klopapier" → "Toilettenpapier") and
+  none of the thousands it does not know about. This is the single biggest
+  retrieval weakness; part of what looks like model failure in traces is
+  this one property.
 * **"2 onions" vs. "1 kg net"**: 328 of 485 quantities reach the list but
   cannot be computed against the pack unit (95× piece-vs-weight, then
   tablespoons). The list shows the need; the pack count stays an honest 1.

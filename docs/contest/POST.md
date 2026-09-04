@@ -15,7 +15,7 @@ Checkliste vor dem Absenden:
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
 - [ ] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      die 1,146/76 sind vom 2026-08-29 und wachsen weiter
+      die 1,346/79 sind vom 2026-09-04 und wachsen weiter
 
 ---
 
@@ -25,8 +25,8 @@ it fully accountable.
 Type "everything for lasagna, and toilet paper" (in German — it's our
 household app) and it pulls a real top-rated recipe, computes pack counts
 from the ingredient quantities, and puts nothing in the cart without a
-per-item Yes. The toilet paper survives as free text because the catalog
-doesn't know the word — nothing is ever silently dropped.
+per-item Yes. What the catalog cannot find stays on the list as visible
+free text — nothing is ever silently dropped.
 
 The part I care about most: the model is only allowed to choose from
 candidates the shop retrieved. Invented product IDs are rejected, counted,
@@ -40,7 +40,7 @@ The stack:
   taps becomes an eval label.
 
 Measured, not vibed: 64 dishes end-to-end (77 % of search terms found a
-catalog product, median 83 % per dish), 1,146 tests, a 76-check smoke gate
+catalog product, median 89 % per dish), 1,346 tests, a 79-check smoke gate
 that blocks the network at socket level. The write-up includes the failure
 cases — "Salat" scores zero, and the docs explain exactly why.
 

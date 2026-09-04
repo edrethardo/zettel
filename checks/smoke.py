@@ -1473,7 +1473,7 @@ def _verlauf_wandert_mit(client, con) -> str:
     gleich([(z["state"], z["n"]) for z in danach], [("offen", vorher)],
            "Chatzeilen je Bestellzustand")
     # Und der frische Chat fängt leer an — er hängt am neuen Entwurf.
-    wahr("Schreib, was du brauchst" in client.get("/chat").text,
+    wahr("Sag, was du brauchst" in client.get("/chat").text,
          "Nach dem Abschicken steht der alte Verlauf noch im Chat.")
     return f"{vorher} Chatzeilen mit der Bestellung auf 'offen' gewandert"
 
