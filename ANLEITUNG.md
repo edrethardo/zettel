@@ -1,6 +1,6 @@
 # Zettel — die Anleitung
 
-Für die zwei, die damit einkaufen. Zettel ist der gemeinsame Einkaufszettel:
+Für alle im Haushalt, die damit einkaufen. Zettel ist der gemeinsame Einkaufszettel:
 **sie** legt in den Korb, **er** kauft im Laden und hakt ab. Dazwischen sitzt
 ein Chat, der aus einem Satz eine Liste macht — und nichts davon landet im
 Korb, ohne dass jemand „Ja" tippt.

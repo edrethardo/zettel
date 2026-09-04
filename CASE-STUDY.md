@@ -1,7 +1,7 @@
 # Case Study: Observability on a Self-Hosted Grocery Agent
 
 Zettel — German for the slip of paper you take to the shop — is a grocery
-agent for a two-person household: a 27B open-weights model on a single
+agent for a multi-person household: a 27B open-weights model on a single
 RTX 3090 turns "everything for lasagna, and toilet paper" into a real
 shopping list, fully traced in Arize Phoenix.
 [`SHOWCASE.md`](SHOWCASE.md) is the product tour. This document tells three
