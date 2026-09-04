@@ -242,3 +242,35 @@ def wechsle(con: sqlite3.Connection, order_id: int, ziel: str,
                 (*werte, order_id))
     con.commit()
     return bestellung(con, order_id)
+
+
+def loeschen(con: sqlite3.Connection, order_id: int) -> dict:
+    """Eine OFFENE Bestellung samt Posten und Chatverlauf löschen.
+
+    Nur `offen`: der Entwurf ist der Warenkorb, und den räumt man Posten für
+    Posten mit dem „×" — ein ganzer Korb verschwindet nie auf einen Tipp.
+    Eine erledigte Bestellung ist Geschichte (und die Quelle für „Daraus ein
+    Rezept machen"); sie bleibt.
+
+    Was mitgeht, geht per `ON DELETE CASCADE`: `order_item` und
+    `chat_message` hängen an der Bestellung. Die Eval-Labels, die beim
+    Abschicken nach Phoenix gingen, hängen NICHT daran — sie sind längst
+    dort, und das ist der Grund, warum die Bestellung hier gelöscht werden
+    darf, ohne dass eine Messung verloren geht.
+
+    Gibt zurück, was weg ist — damit die Seite es sagen kann.
+    """
+    aktuell = bestellung(con, order_id)
+    if aktuell is None:
+        raise BestellFehler(f"Bestellung {order_id} gibt es nicht.")
+    if aktuell["state"] != "offen":
+        raise FalscherZustand(
+            f"Bestellung {order_id} steht auf {aktuell['state']!r} — gelöscht"
+            " wird nur eine offene Bestellung.")
+    n_posten = con.execute("SELECT count(*) AS n FROM order_item WHERE order_id = ?",
+                           (order_id,)).fetchone()["n"]
+    n_chat = con.execute("SELECT count(*) AS n FROM chat_message WHERE order_id = ?",
+                         (order_id,)).fetchone()["n"]
+    con.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+    con.commit()
+    return {"id": order_id, "posten": int(n_posten), "chatzeilen": int(n_chat)}

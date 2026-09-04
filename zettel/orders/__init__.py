@@ -13,6 +13,7 @@ sonst der Modulname die hier re-exportierte Funktion `warenkorb()`
 Importreihenfolge etwas anderes lieferte.
 """
 from zettel.orders.bestellung import (  # noqa: F401
+    loeschen,
     UEBERGAENGE, BestellFehler, FalscherZustand, LeererWarenkorb,
     UngueltigerPosten, bestellung, bestellungen, jetzt,
     markiere_katalogstand, posten, wechsle)
@@ -28,7 +29,7 @@ __all__ = [
     "UEBERGAENGE", "BestellFehler", "FalscherZustand", "LeererWarenkorb",
     "UngueltigerPosten", "LADEN_TITEL", "LADEN_VORGABE", "POSTEN_STAENDE",
     "abhaken", "abschicken", "bestellung", "bestellungen", "einlegen",
-    "entfernen", "gebinde", "genau_eines", "inhalt", "jetzt", "korb_anzahl",
+    "entfernen", "gebinde", "genau_eines", "inhalt", "jetzt", "korb_anzahl", "loeschen",
     "laden_setzen", "markiere_katalogstand", "menge_setzen", "nach_laden",
     "naechste", "offene", "posten", "rechnung",
     "setze_stand", "summe", "vorbelegter_laden", "warenkorb", "warenkorb_id",

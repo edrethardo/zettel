@@ -2440,16 +2440,80 @@ def create_app(db_path: str | Path | None = None,
                 "auswahl": [b for b in orders.offene(c) if b["id"] != order_id]}
 
     @app.get("/pick")
-    def pick(request: Request):
+    def pick(request: Request, weg: int | None = None):
         """Die Pick-Ansicht macht mit der ältesten offenen Bestellung auf.
 
         Ohne Auswahlschritt: im Laden will man die Liste sehen, nicht erst
         eine Liste von Listen. Gibt es weitere offene, stehen sie unten.
+        `?weg=` meldet eine gerade gelöschte (wie `/rezepte?weg=`).
         """
         c = con()
         try:
             return vorlagen.TemplateResponse(request, "pick.html", {
-                **_rahmen(request, c), **_pick_kontext(c, orders.naechste(c))})
+                **_rahmen(request, c), **_pick_kontext(c, orders.naechste(c)),
+                "weg": weg})
+        finally:
+            c.close()
+
+    @app.get("/pick/{order_id}/loeschen")
+    def pick_loeschen_fragen(request: Request, order_id: int):
+        """Die Rückfrage vor dem Löschen einer Pick-Liste (2026-09-04).
+
+        Der Knopf steht ganz unten unter der Liste — der letzte Griff, nicht
+        der erste. Gelöscht wird nur eine OFFENE Bestellung; der Entwurf ist
+        der Korb, den räumt das „×" am Posten (siehe `orders.loeschen`).
+        Aufgezählt wird, was wirklich dranhängt, mit Zahlen.
+        """
+        c = con()
+        try:
+            b = orders.bestellung(c, order_id)
+            if b is None or b["state"] != "offen":
+                return _nicht_gefunden(
+                    request, f"Die Bestellung {order_id} ist keine offene"
+                    " Pick-Liste.",
+                    [{"url": "/pick", "text": "Zur Pick-Liste"},
+                     {"url": "/bestellungen", "text": "Alle Bestellungen"}])
+            gruppen = orders.nach_laden(c, order_id)
+            n = sum(len(g["posten"]) for g in gruppen)
+            geholt = sum(g["n_geholt"] for g in gruppen)
+            fehlt = sum(g["n_fehlt"] for g in gruppen)
+            chat = c.execute("SELECT count(*) AS n FROM chat_message"
+                             " WHERE order_id = ?", (order_id,)).fetchone()["n"]
+            verlust = [f"{n} Posten" + (f", davon {geholt} schon abgehakt"
+                                        if geholt else "")
+                       + (f" und {fehlt} als „gab's nicht“ gemeldet" if fehlt
+                          else "")]
+            if chat:
+                verlust.append(f"der Chatverlauf dazu ({chat} Zeilen)")
+            return _bestaetigen(
+                request,
+                titel=f"Einkauf Nr. {order_id} löschen?",
+                frage=("Die Bestellung wird endgültig gelöscht. Es gibt"
+                       " keinen Papierkorb, aus dem sie zurückzuholen wäre."),
+                verlust=verlust,
+                bleibt=("Die Entscheidungen, die beim Abschicken als Labels"
+                        " nach Phoenix gingen, bleiben dort. Der Warenkorb"
+                        " ist nicht betroffen."),
+                aktion=f"/pick/{order_id}/loeschen",
+                knopf="Ja, Pick-Liste löschen",
+                zurueck=f"/pick/{order_id}")
+        finally:
+            c.close()
+
+    @app.post("/pick/{order_id}/loeschen")
+    def pick_loeschen(request: Request, order_id: int):
+        """Löscht wirklich. Der zweite Schritt der Rückfrage von oben."""
+        c = con()
+        try:
+            try:
+                orders.loeschen(c, order_id)
+            except orders.BestellFehler:
+                return _nicht_gefunden(
+                    request, f"Die Bestellung {order_id} ist keine offene"
+                    " Pick-Liste.",
+                    [{"url": "/pick", "text": "Zur Pick-Liste"},
+                     {"url": "/bestellungen", "text": "Alle Bestellungen"}])
+            return RedirectResponse(f"/pick?weg={order_id}", status_code=303)
         finally:
             c.close()
 
