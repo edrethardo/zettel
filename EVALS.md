@@ -641,14 +641,58 @@ wie OBSERVABILITY.md es zusichert: ein Zug ohne Antwort bekommt keinen
 geratenen Modellnamen. Von den 1.356 Spans des Projekts tragen 127 einen, und
 alle 127 denselben.
 
-### Lauf 2 — Nemotron-Nano: offen
+### Lauf 2 — `Llama-3.1-Nemotron-Nano-8B`, 2026-08-30
 
-Blockiert auf den Modellwechsel auf der Box; der ist Nutzersache und hat
-hinter dem Videodreh zu warten. Der Harness ist vorbereitet, das Kommando ist
-dasselbe mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron"`. Zu prüfen
-ist dabei ausdrücklich, ob Guided JSON mit dem Tool-Parser des Nano
-zusammenarbeitet — **tut es das nicht, ist das der Befund** und nicht der
-Anlass für einen Umweg.
+Der Wechsel ist am 30.08. zwischen 02:06 und 02:18 Uhr passiert — die
+Box-Session hat `nvidia/Llama-3.1-Nemotron-Nano-8B-v1` (BF16, 15 GiB, reines
+LM, 32k Kontext) serviert, den Idle-Stop der Box für das Fenster ausgesetzt
+und Qwen danach wiederhergestellt (Werkbank WB-394). Die Messung lief direkt
+zwischen den beiden Sitzungen; dieser Abschnitt stand deshalb bis zum 04.09.
+auf „offen", obwohl die Zahlen seit dem 30.08. im Ticket WB-393 lagen.
+**Nachgerechnet am 04.09. aus den Phoenix-Spans** der beiden Projekte
+(`Zettel Eval Qwen`, `Zettel Eval Nemotron`; je `chat.turn`-Span das Paar
+`terms`/`products` unter `attributes.picknick`), nicht aus dem Ticket
+abgeschrieben:
+
+```
+                                   Qwen3.8-27B (AWQ)   Nemotron-Nano-8B (BF16)
+Züge mit Begriffen                       64 von 67             63 von 67
+Katalogtreffer, Mittel je Gericht           84 %                  25 %
+Katalogtreffer, Median je Gericht           88 %                   0 %
+Gerichte bei 0 %                             1                    41
+Gerichte im Band 0–20 %                      1                    42
+Gerichte im Band 80–100 %                   43                    10
+Begriffe gesamt / gefunden               564 / 463             399 / 42
+zettel.rejected gesamt                       6                     2
+Dauer je Zug, Median (Spanne)           37 s (2–69)           21 s (7–61)
+```
+
+(Das Ticket nennt für Qwen „Median 89 %" und „40 von 64 im Band 0–20 %" für
+Nano — dieselbe Messung, aus der Probenausgabe statt aus den Spans gerechnet;
+die Abweichung um einen Punkt bzw. ein Gericht kommt daher, dass hier vier
+Züge ohne Begriffe herausfallen und das Verhältnis je Span gebildet wird.)
+
+**Der Befund:** Nemotron-Nano 8B ist auf diesem Weg fast unbrauchbar — nicht
+„etwas schlechter", sondern bei ganzen Gerichten vollständig daneben:
+Ratatouille 0 von 13, Kartoffelsalat 0 von 5, Broccoliauflauf 0 von 4, wo
+Qwen dieselben Gerichte zu 80–100 % trifft. Die halbierte Dauer ist kein
+Vorteil, sondern die Folge: es liefert weniger, was der Katalog findet.
+**Guided JSON lief fehlerfrei** (`rejected` 2, kein Formatfehler) — es ist
+die Auswahl selbst, nicht das Format. Beide Läufe unter identischen
+Bedingungen (ein gedrosselter Download lief bei beiden durch), 0 Fehler.
+
+**Was dieser Lauf NICHT sagt:** nichts über NVIDIAs aktuelle Generation.
+Das 8B-Nano ist ein Llama-3.1-Abkömmling von Anfang 2025; das
+`Nemotron 3.5 Lightning 30B-A3B` vom 10.08.2026 ist eine andere Klasse
+(hybrides MoE, 3B aktiv), und für die RTX 3090 gibt es seit August eine
+W4A16-Fassung (`useful-quants/…-W4A16`, 16,6 GiB, auf genau dieser Box- und
+vLLM-Kombination validiert). Dieser Lauf 3 ist der offene Posten dieser
+Tabelle — der Harness ist derselbe, der Handgriff ist der Modellwechsel auf
+der Box.
+
+Die Antwort auf die Eingangsfrage bleibt: ein zweites Modell zu beurteilen
+kostet einen Nachmittag und keine Zeile Produktionscode — und das Ergebnis
+kann eine Absage sein, die genauso hier steht wie ein Erfolg.
 
 ## Was hier schwächer ist, als es aussieht
 

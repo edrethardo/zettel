@@ -198,6 +198,27 @@ No run failed. Median 34 s per dish.
 
 ![Per-dish catalog hit rate before and after the one-line fix](docs/images/eval-vorher-nachher.svg)
 
+**A second open model through the same harness.** Because the 64 dishes,
+the database-copy discipline and the per-turn attributes are fixed, judging
+another model costs an afternoon and no production code. On 2026-08-30 the
+box served NVIDIA's `Llama-3.1-Nemotron-Nano-8B` (BF16) for twelve minutes;
+same run, same conditions, traces in their own Phoenix project, numbers
+recomputed from the spans:
+
+| per dish, 64 dishes | Qwen3.8-27B (AWQ 4-bit) | Nemotron-Nano-8B (BF16) |
+|---|---|---|
+| catalog hit rate, mean / median | **84 % / 88 %** | 25 % / 0 % |
+| dishes at 0 % | 1 | 41 |
+| dishes at 80–100 % | 43 | 10 |
+| guided JSON | fine | fine (`rejected` = 2) |
+| median turn | 37 s | 21 s |
+
+The 8B model is faster because it produces less that the catalog can find —
+whole dishes come back empty (Ratatouille 0 of 13). That is the honest
+result, and it says nothing about NVIDIA's current generation: Nemotron 3.5
+Lightning (30B-A3B, August 2026) has a 4-bit build validated on exactly this
+GPU and is the open next run — see [`EVALS.md`](EVALS.md), .
+
 The quantity chain was audited link by link in [`EVALS.md`](EVALS.md):
 
 * **Not one suggestion line was lost**: 481 rows → 481 cart items → 481
@@ -274,6 +295,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 The chat needs a local vLLM endpoint (`ZETTEL_LLM_ENDPOINT`); everything
 else — catalog, cart, pick list, saved recipes — runs without it, by design.
+Every variable, the first turn and the eval harness are in
+[`GETTING-STARTED.md`](GETTING-STARTED.md); the household manual (German)
+is [`ANLEITUNG.md`](ANLEITUNG.md).
 There is no password: the shop refuses to bind anything but loopback and a
 tailnet address, with a whitelist, before a socket exists.
 

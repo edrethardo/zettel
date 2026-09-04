@@ -41,10 +41,12 @@ The stack:
 - Arize Phoenix — every chat turn is one trace, and every Yes/No the user
   taps becomes an eval label.
 
-Measured, not vibed: 64 dishes end-to-end (77 % of search terms found a
+Measured, not vibed: 64 dishes end-to-end (83 % of search terms found a
 catalog product, median 89 % per dish), 1,346 tests, a 79-check smoke gate
-that blocks the network at socket level. The write-up includes the failure
-cases — "Salat" scores zero, and the docs explain exactly why.
+that blocks the network at socket level. The same harness judged a second
+open model in an afternoon — NVIDIA's Nemotron-Nano-8B scored a median of
+0 %, and that number is in the docs next to the wins. The write-up includes
+the failure cases — "Salat" scores zero, and the docs explain exactly why.
 
 60-second demo: <video link>
 Repo & engineering tour: <repo link>

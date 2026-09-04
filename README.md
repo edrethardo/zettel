@@ -12,7 +12,8 @@
 > screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md);
 > [`CASE-STUDY.md`](CASE-STUDY.md) is the English deep-dive on how a trace
 > acquitted the model and how one measured line took the eval from 76 % to
-> 83 %. The rest of this README is in German, the household's language.
+> 83 %; [`GETTING-STARTED.md`](GETTING-STARTED.md) gets it running on your
+> machine. The rest of this README is in German, the household's language.
 
 Ein privater Bestell-Shop für zwei Personen im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
@@ -50,6 +51,8 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 
 | Datei | worum es geht |
 |---|---|
+| [`ANLEITUNG.md`](ANLEITUNG.md) | **die Bedienungsanleitung** für die zwei, die damit einkaufen: Reiter, Chat, Korb, Pick-Liste, Rezepte, Bons |
+| [`GETTING-STARTED.md`](GETTING-STARTED.md) | Englisch: installieren, konfigurieren, der erste Zug, prüfen, ein Modell messen |
 | [`DESIGN.md`](DESIGN.md) | Architektur und die Entscheidungen, die von aussen wie ein Versehen aussehen |
 | [`OBSERVABILITY.md`](OBSERVABILITY.md) | **der Span-Vertrag**: welcher Span, welche Attribute, was sie bedeuten |
 | [`EVALS.md`](EVALS.md) | Dataset, Evaluatoren, die vier Varianten und die echten Zahlen |
