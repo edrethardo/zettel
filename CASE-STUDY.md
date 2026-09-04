@@ -237,6 +237,6 @@ The butter case, the span contract, and the label design:
 probe, and the before/after tables: [`EVALS.md`](EVALS.md). The one-line fix:
 commit `6e5e144` ("WB-386: Stufe 3 sieht auf dem Rezeptweg den Satz nicht
 mehr — 76 % -> 83 %"). All measurements dated 2026-08-28/29, model
-`Qwen3.8-27B-Instruct`, single RTX 3090. The repo's gates — 1,150 tests and
-a 76-check smoke gate at the time of writing — run without network, model,
+`Qwen3.8-27B-Instruct`, single RTX 3090. The repo's gates — 1,346 tests and
+a 79-check smoke gate at the time of writing — run without network, model,
 or Phoenix.
