@@ -9,6 +9,13 @@ Der Shop läuft im Tailnet unter `http://<Adresse>:8730`. Es gibt **kein
 Passwort**: wer im Tailnet ist, ist drin. Es wird **nie** eine Bestellung an
 einen echten Händler geschickt — der Korb ist der Zettel, mehr nicht.
 
+## Aufs Handy legen
+
+Einmal im Browser öffnen, dann **„Zum Startbildschirm hinzufügen"** (Android:
+Menü des Browsers; iPhone: Teilen-Symbol). Danach liegt Zettel als App mit
+gelbem Zettel-Symbol neben den anderen und geht ohne Adressleiste auf —
+im Laden ist das der Unterschied zwischen einer App und einem Lesezeichen.
+
 ## Die fünf Reiter
 
 Unten am Bildschirm, auf jeder Seite gleich:

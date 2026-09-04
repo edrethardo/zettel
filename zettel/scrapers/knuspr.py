@@ -106,25 +106,54 @@ def _kategorien(cats) -> tuple[str | None, str | None, str | None]:
 #: in derselben Einheit steht wie der Nenner des Grundpreises, nicht welche
 #: das ist. Kilo und Liter („0,75 l") sind richtig und bleiben.
 #: Knuspr schreibt durchweg das Komma, nie den Punkt — deshalb kennt das
-#: Muster nur das Komma, und `repariere_einheiten` fragt mit `LIKE '0,%'`
-#: genau dasselbe in SQL ab.
+#: Muster nur das Komma.
 _KLEINE_EINHEIT_UNTER_EINS = re.compile(r"^0,(\d+)\s*(g|ml)$")
 
+#: Dieselbe Verwechslung ohne führende Null (2026-09-04): „1,5 ml" für die
+#: 1,5-Liter-Flasche, „1 g" für ein Kilo Kaffeebohnen — das erste Produkt der
+#: Katalogseite stand so da. Hier hilft die Null-Regel nicht, dafür beweist
+#: der GRUNDPREIS die Lesart, und zwar wirklich: Knuspr gibt ihn je Kilo bzw.
+#: Liter an, und `price_cents / zahl` trifft ihn genau dann, wenn die Zahl in
+#: Kilo bzw. Litern steht. Stünde sie in Gramm, läge der Quotient um den
+#: Faktor 1000 daneben. Gemessen an der Demo-Datenbank: 12 aktive Zeilen mit
+#: g/ml und Zahl < 10, alle 12 so belegt — und keine einzige echte
+#: Kleinstmenge, deren Grundpreis zur Gramm-Lesart passte. Ab 10 greift die
+#: Regel nicht mehr: 12 ml Aroma gibt es, 12 Liter Aroma nicht.
+_KLEINE_ZAHL_KLEINE_EINHEIT = re.compile(r"^(\d+(?:,\d+)?)\s*(g|ml)$")
+_GROSSE_EINHEIT = {"g": "kg", "ml": "l"}
 
-def normalisiere_einheit(text, unit):
-    """`„0,25 g"` -> `„250 g"`. Alles andere unverändert — auch `None`."""
+
+def normalisiere_einheit(text, unit, price_cents=None, price_per_unit_cents=None):
+    """`„0,25 g"` -> `„250 g"`; `„1,5 ml"` mit passendem Grundpreis -> `„1,5 l"`.
+
+    Alles andere unverändert — auch `None`. Ohne Preise greift nur die
+    Null-Regel; die Grosse-Einheit-Regel braucht den Beleg.
+    """
     if not text:
         return text
-    treffer = _KLEINE_EINHEIT_UNTER_EINS.match(str(text).strip())
+    roh = str(text).strip()
+    treffer = _KLEINE_EINHEIT_UNTER_EINS.match(roh)
+    if treffer and unit in ("g", "ml"):
+        nachkomma, einheit = treffer.groups()
+        # „0,25" -> 250, „0,225" -> 225, „0,5" -> 500: die Nachkommastellen
+        # auf drei auffüllen und als ganze Zahl lesen. Mehr als drei Stellen
+        # gäbe Bruchteile von Gramm — die gibt es nicht, also bleibt so ein
+        # Text stehen.
+        if len(nachkomma) > 3:
+            return text
+        return f"{int(nachkomma.ljust(3, '0'))} {einheit}"
+    treffer = _KLEINE_ZAHL_KLEINE_EINHEIT.match(roh)
     if not treffer or unit not in ("g", "ml"):
         return text
-    nachkomma, einheit = treffer.groups()
-    # „0,25" -> 250, „0,225" -> 225, „0,5" -> 500: die Nachkommastellen auf
-    # drei auffüllen und als ganze Zahl lesen. Mehr als drei Stellen gäbe
-    # Bruchteile von Gramm — die gibt es nicht, also bleibt so ein Text stehen.
-    if len(nachkomma) > 3:
+    if not price_cents or not price_per_unit_cents:
         return text
-    return f"{int(nachkomma.ljust(3, '0'))} {einheit}"
+    zahl = float(treffer.group(1).replace(",", "."))
+    if not 0 < zahl < 10:
+        return text
+    # Zwei Prozent oder drei Cent Spiel: Knuspr rundet den Grundpreis.
+    if abs(price_cents / zahl - price_per_unit_cents) > max(3, 0.02 * price_per_unit_cents):
+        return text
+    return f"{treffer.group(1)} {_GROSSE_EINHEIT[treffer.group(2)]}"
 
 
 def repariere_einheiten(con) -> int:
@@ -135,11 +164,12 @@ def repariere_einheiten(con) -> int:
     Idempotent: eine normalisierte Zeile trifft das Muster nicht mehr.
     """
     zeilen = con.execute(
-        "SELECT id, unit_text, unit FROM product"
-        " WHERE unit IN ('g', 'ml') AND unit_text LIKE '0,%'").fetchall()
+        "SELECT id, unit_text, unit, price_cents, price_per_unit_cents"
+        " FROM product WHERE unit IN ('g', 'ml')").fetchall()
     n = 0
     for z in zeilen:
-        neu = normalisiere_einheit(z["unit_text"], z["unit"])
+        neu = normalisiere_einheit(z["unit_text"], z["unit"],
+                                   z["price_cents"], z["price_per_unit_cents"])
         if neu != z["unit_text"]:
             con.execute("UPDATE product SET unit_text = ? WHERE id = ?",
                         (neu, z["id"]))
@@ -170,7 +200,9 @@ def parse_products(payload: dict) -> list[dict]:
             "price_cents": _cents(p.get("price")),
             "price_per_unit_cents": _cents(p.get("pricePerUnit")),
             "unit_text": normalisiere_einheit(p.get("textualAmount"),
-                                              p.get("unit")),
+                                              p.get("unit"),
+                                              _cents(p.get("price")),
+                                              _cents(p.get("pricePerUnit"))),
             "unit": p.get("unit"),
             "image_path": p.get("imgPath"),   # wird beim Crawl lokalisiert
             "category_l1": l1,

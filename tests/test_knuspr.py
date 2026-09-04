@@ -301,3 +301,45 @@ def test_fehlendes_bild_verhindert_kein_produkt(con, tmp_path):
         "SELECT name, image_path FROM product WHERE external_id='1'").fetchone()
     assert row["name"] == "Milch"
     assert row["image_path"] is None
+
+
+# --------------------------------------------------------------------------
+# „1,5 ml" für eine 1,5-Liter-Flasche (2026-09-04)
+
+@pytest.mark.parametrize("text, unit, preis, grundpreis, erwartet", [
+    ("1,5 ml", "ml", 319, 213, "1,5 l"),    # Sagrotan „Frischetraum 1,5 L": 3,19 € / 1,5 = 2,13 €/l
+    ("1 ml", "ml", 269, 269, "1 l"),        # Saft „1L": Grundpreis gleich Preis -> ein Liter
+    ("1 g", "g", 2299, 2299, "1 kg"),       # Kaffeebohnen „1 kg"
+    ("2,5 g", "g", 500, 200, "2,5 kg"),     # 5,00 € / 2,5 = 2,00 €/kg
+    ("5 g", "g", 99, 19800, "5 g"),         # echte 5 g: 0,99 € * 1000 / 5 = 198 €/kg — bleibt
+    ("1,5 ml", "ml", 319, None, "1,5 ml"),  # ohne Grundpreis kein Beleg: Finger weg
+    ("1,5 ml", "ml", 319, 400, "1,5 ml"),   # Grundpreis passt zu keiner Lesart: Finger weg
+    ("12 ml", "ml", 100, 8, "12 ml"),       # ab 10 greift die Regel nicht — 12 ml gibt es
+    ("1,5 l", "l", 319, 213, "1,5 l"),      # schon richtig
+])
+def test_eine_kleine_zahl_mit_kleiner_einheit_ist_liter_oder_kilo_wenn_der_grundpreis_es_belegt(
+        text, unit, preis, grundpreis, erwartet):
+    """Das erste Produkt der Katalogseite hiess „Sagrotan … 1,5 L" und stand
+    mit „1,5 ml" da. Knuspr liefert die Zahl in Litern und die Einheit in
+    Millilitern — wie bei „0,25 g", nur ohne führende Null, deshalb griff
+    die Regel oben nicht. Diesmal beweist der Grundpreis die Lesart: er ist
+    je Kilo bzw. Liter angegeben, und `preis / zahl` trifft ihn genau dann,
+    wenn die Zahl in Kilo bzw. Litern steht. Gemessen am 2026-09-04 an der
+    Demo-Datenbank: 12 aktive Zeilen mit g/ml und Zahl < 10, alle 12 so
+    belegt — und keine einzige echte Kleinstmenge, deren Grundpreis zur
+    Gramm-Lesart (× 1000) passte."""
+    assert knuspr.normalisiere_einheit(text, unit, preis, grundpreis) == erwartet
+
+
+def test_repariere_einheiten_belegt_die_grosse_einheit_mit_dem_grundpreis(con):
+    http = FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Reiniger")], 2)])
+    knuspr.crawl(con, http, ["milch"], pause_s=0)
+    con.execute("UPDATE product SET unit_text = '1,5 ml', unit = 'ml',"
+                " price_cents = 319, price_per_unit_cents = 213"
+                " WHERE name = 'Reiniger'")
+    con.commit()
+
+    assert knuspr.repariere_einheiten(con) == 1
+    assert con.execute("SELECT unit_text FROM product WHERE name = 'Reiniger'"
+                       ).fetchone()["unit_text"] == "1,5 l"
+    assert knuspr.repariere_einheiten(con) == 0     # idempotent

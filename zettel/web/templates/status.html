@@ -99,9 +99,13 @@
     Span-ID.{% else %}Alle <strong>{{ trace_luecke.zuege }}</strong> Züge tragen
     eine Span-ID.{% endif %}</p>
   {% else %}
-  <p class="fehler"><strong>{{ trace_luecke.ohne_trace }} von
-    {{ trace_luecke.zuege }}</strong> Zügen haben keine Span-ID — sie sind nie
-    in Phoenix angekommen. Es gibt keinen Trace zu ihnen und es wird keinen
+  <p class="fehler">{% if trace_luecke.zuege == 1 %}<strong>Der eine Zug</strong>
+    hat keine Span-ID — er ist nie{% else %}<strong>{{ trace_luecke.ohne_trace }} von
+    {{ trace_luecke.zuege }}</strong> Zügen
+    {{ "hat" if trace_luecke.ohne_trace == 1 else "haben" }} keine Span-ID —
+    {{ "er ist" if trace_luecke.ohne_trace == 1 else "sie sind" }} nie{% endif %}
+    in Phoenix angekommen. Es gibt keinen Trace
+    {{ "dazu" if trace_luecke.ohne_trace == 1 else "zu ihnen" }} und es wird keinen
     mehr geben.</p>
   <p class="stand">{{ trace_luecke.mit_trace }} Züge sind angekommen
     ({{ (trace_luecke.anteil * 100) | round | int }} %).</p>
