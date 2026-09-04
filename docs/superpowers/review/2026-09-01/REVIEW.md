@@ -174,6 +174,16 @@ ein autouse-Guard sollte das verbieten); der No-JS-Pfad des Entwurfs; die Vorsch
 `stage.py` sind hartkodiert; der Knopfregel-Kommentar zählt vier Sorten, `.plus` (gefüllt, Sinnbild) ist eine fünfte, die der Ein-Primärknopf-Test nicht sieht; der Freitext-Zweig in `mengen.kurzgrund` ist tot und gäbe „3 Stk gebraucht — .“ zurück; `checks/smoke.py` hat einen vorbestehenden roten Punkt („der Verlauf
 hängt weiter an der Bestellung"), der mit Welle 2 nichts zu tun hat; Fund 10b.
 
+**Stand 2026-09-04 (Contest-Politur, `ee47fe9`):** erledigt sind der Status-Singular („Der eine
+Zug hat keine Span-ID" / „1 von 2 Zügen hat"), der rote Smoke-Check (er prüfte den Satz des leeren
+Chats von vor Welle 1) und die Einheiten — der Grundpreis beweist die Lesart doch, weil Knuspr ihn
+je Kilo/Liter angibt und `preis / zahl` ihn nur in der Kilo-Lesart trifft; 12 Zeilen, alle belegt,
+Regel in `knuspr.normalisiere_einheit`, Demo-DB repariert. Der Substring-Rückfall für die Suche
+wurde vor dem Bau an den 264 ersten Eval-Begriffen gemessen: 91 finden per Präfix nichts, der
+Rückfall rettete einen — bleibt ungebaut. Weiter offen: `client`-Fixture ohne `chat=`, No-JS-Pfad
+des Entwurfs, `stage.py`-Nummern, der Knopfregel-Kommentar, der tote Freitext-Zweig in
+`mengen.kurzgrund`, Fund 10b.
+
 ## Was funktioniert (von allen dreien unabhängig genannt)
 
 * **Der Ablauf schließt sich sichtbar.** Satz → 15 Artikel mit Bild im Korb → Bestellung → Pick-Liste, in der „gab's nicht" den Zähler ehrlich auf „13 zu holen, 1 gab's nicht" stellt.
