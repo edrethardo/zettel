@@ -133,6 +133,12 @@ Ohne Empfang springt ein Tipp zurück — dann einfach noch einmal tippen,
 sobald das Netz wieder da ist. Weitere offene Bestellungen stehen unten auf
 der Seite; jede hat ihre eigene Liste.
 
+**Pick-Liste löschen** steht ganz unten auf der Seite: eine Bestellung, die
+nicht mehr gebraucht wird, verschwindet samt Posten und Chatverlauf — nach
+einer Rückfrage, die sagt, was dranhängt. Der Warenkorb ist davon nicht
+betroffen, und was beim Abschicken als Entscheidung gezählt wurde, bleibt
+gezählt.
+
 Unter **Mehr → Bestellungen** steht, was abgeschickt wurde, mit dem Stand
 („15 von 15 noch zu holen"). **„Daraus ein Rezept machen"** an einer
 erledigten Bestellung legt sie als Rezept in die Sammlung.
