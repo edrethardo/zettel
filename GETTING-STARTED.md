@@ -19,7 +19,7 @@ pieces — by design (Spec 11).
 ## Install and run
 
 ```bash
-git clone <this repo> zettel && cd zettel
+git clone https://github.com/edrethardo/zettel && cd zettel
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 # a first slice of catalog (one search term, a few hundred products)

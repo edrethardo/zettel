@@ -284,7 +284,7 @@ zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 >
 > FastAPI · SQLite · vLLM (Qwen, open weights) · OpenTelemetry → Arize Phoenix
 > Recipe eval **83 %** across 64 dishes (up from 76 %) · 1,150 tests · 76 checks
-> Repo: `<Link>`
+> Repo: `github.com/edrethardo/zettel`
 
 Die Zahlen der Endcard vor dem Dreh gegen `SHOWCASE.md`/`EVALS.md` abgleichen
 — sie wachsen mit jedem Ticket.
