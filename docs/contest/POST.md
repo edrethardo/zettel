@@ -6,8 +6,10 @@ machst du. Der Text behauptet nur, was das Repo belegt.
 
 Checkliste vor dem Absenden:
 
-- [ ] `<judge>` durch das LinkedIn-Handle des Judges ersetzen (und wirklich
-      taggen, nicht nur tippen)
+- [ ] Judge ist **Merve Noyan** (Hugging Face) — von ihr hast du vom Contest
+      erfahren, und die Regeln verlangen genau diesen Tag. Beim Posten wirklich
+      taggen (LinkedIn: „@Merve Noyan“ tippen und den Vorschlag anklicken),
+      nicht nur schreiben
 - [ ] `<video link>` — das 60-Sekunden-Video (Drehbuch: `VIDEO.md`)
 - [ ] `<repo link>` — das öffentliche Repo (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
@@ -47,7 +49,7 @@ cases — "Salat" scores zero, and the docs explain exactly why.
 60-second demo: <video link>
 Repo & engineering tour: <repo link>
 
-@<judge> #NVIDIAGTC
+@Merve Noyan #NVIDIAGTC
 
 ---
 
@@ -69,4 +71,4 @@ Qwen3.8-27B (AWQ 4-bit) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
 
 Demo: <video link> · Repo: <repo link>
 
-@<judge> #NVIDIAGTC
+@Merve Noyan #NVIDIAGTC
