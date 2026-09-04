@@ -789,6 +789,27 @@ Beutel · 250 g · 2,99 €" samt `via`, Kategorie, Preis und `vorraetig: false`
   Schlusspause nach der letzten Marke. Wer nachträgt, setzt `DAUER` in
   `aufnahme.sh` auf 300.
 
+## Stand 04.09. — Endcard und eingebrannte Untertitel
+
+Die Takes vom 02.09. (nach beiden Review-Wellen, Seitenwechsel über die
+Reiterleiste, Shot 7 auf gesuchte Spans — siehe
+`docs/superpowers/review/2026-09-01/REVIEW.md`, Nachtrag) sind die aktuelle
+Grundlage. Dazu am 04.09. gebaut, alles in `~/picknick-video/`:
+
+| Datei | Was |
+|---|---|
+| `endcard.py` → `endcard.png`, `_endcard.mkv` | die Endcard als 5-s-Standbild: Satz, Stack, Zahlen (83 % · 1.346 Tests · 79 Checks · 70 tok/s). Ohne Repo-Link, solange keiner feststeht — ein Platzhalter im Bild wäre eine Lüge |
+| `zettel_demo_welle2_final.mp4` | lange Fassung **mit** Endcard (89,9 s) und **eingebrannten** Untertiteln — LinkedIn spielt stumm, und eine `.srt` lädt dort niemand hoch. Untertitel unten, mittig über der rechten Bildhälfte (`MarginL=104` im 384er-Raster von libass), 30 px, damit sie weder die App-Spalte noch den GPU-Streifen decken |
+| `zettel_linkedin_welle2.mp4` | Hochkant-Clip, unverändert vom 02.09. |
+
+**Befund am GPU-Streifen, offen:** die Box lädt das Modell nach dem Zug aus
+dem Speicher (vLLM-Schlafmodus des syv-Stacks): bei 25 s stehen 100 % /
+280 W / 22,8 GiB, ab ~65 s bis zum Ende **0 % / 43 W / 0,1 GiB**. Das ist
+die Wahrheit über die Box — aber im Film sieht es drei Viertel der Zeit so
+aus, als liefe das Modell gar nicht. Vor dem nächsten Take den Schlafmodus
+aussetzen oder eine Wachhalte-Anfrage mitlaufen lassen; beides ist
+Box-Konfiguration und liegt nicht im Repo.
+
 ## Der Take vom 01.09. — der Echtzeit-Take
 
 Aufgenommen, weil der Shop seit dem Umstieg auf den syv-Stack (Docker,
