@@ -11,7 +11,7 @@ Checkliste vor dem Absenden:
       taggen (LinkedIn: „@Merve Noyan“ tippen und den Vorschlag anklicken),
       nicht nur schreiben
 - [ ] `<video link>` — das 60-Sekunden-Video (Drehbuch: `VIDEO.md`)
-- [ ] `<repo link>` — das öffentliche Repo (SHOWCASE.md ist die
+- [ ] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
@@ -49,7 +49,7 @@ open model in an afternoon — NVIDIA's Nemotron-Nano-8B scored a median of
 the failure cases — "Salat" scores zero, and the docs explain exactly why.
 
 60-second demo: <video link>
-Repo & engineering tour: <repo link>
+Repo & engineering tour: https://github.com/edrethardo/zettel
 
 @Merve Noyan #NVIDIAGTC
 
@@ -71,6 +71,6 @@ cases documented.
 
 Qwen3.8-27B (AWQ 4-bit) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
 
-Demo: <video link> · Repo: <repo link>
+Demo: <video link> · Repo: https://github.com/edrethardo/zettel
 
 @Merve Noyan #NVIDIAGTC
