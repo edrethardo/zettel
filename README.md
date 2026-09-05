@@ -1,14 +1,17 @@
 # Zettel
 
 > **English** — Zettel (German for the slip of paper you take to the shop) is
-> a private grocery-ordering shop for a multi-person
-> household on a [Tailscale](https://tailscale.com/) tailnet: she fills the
-> cart, he buys the groceries at a physical store and checks them off on his
-> phone. A chat box maps free text ("everything for spaghetti bolognese, plus
-> toilet paper") onto real catalog products — and the LLM agent behind it is
-> fully traced, evaluated and reproducibly comparable in Arize Phoenix.
-> No cloud, no API keys: Qwen3.8-27B (open weights) served by a local vLLM,
-> FastAPI + HTMX, SQLite with FTS5. The engineering tour in English —
+> a grocery agent for a multi-person household that is allowed to do exactly
+> one thing: **choose from the products the shop retrieved** — never invent.
+> An invented product id is rejected and counted; every Yes/No the household
+> taps becomes an eval label; every turn is one trace in Arize Phoenix. The
+> pattern is extracted in [`PATTERN.md`](PATTERN.md) and applies to any agent
+> that picks rows from a database. Measured on 128 German dishes with three
+> open models on one NVIDIA RTX 3090 — NVIDIA's Nemotron 3.5 Lightning finds
+> 85 % of the ingredients at six seconds a dish, the Qwen3.8-27B reference
+> 87 % ([`EVALS.md`](EVALS.md)). No cloud, no API keys: vLLM, FastAPI + HTMX,
+> SQLite with FTS5; she fills the cart on her phone, he checks it off in the
+> store. The engineering tour in English —
 > screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md);
 > [`CASE-STUDY.md`](CASE-STUDY.md) is the English deep-dive on how a trace
 > acquitted the model and how one measured line took the eval from 76 % to

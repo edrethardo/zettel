@@ -21,8 +21,11 @@ Checkliste vor dem Absenden:
 
 ---
 
-I built a grocery app for our multi-person household — and made the LLM inside
-it fully accountable.
+NVIDIA's Nemotron 3.5 Lightning, 4-bit on one RTX 3090, now runs our
+household's grocery agent: 128 dishes, 85 % of the ingredients found in the
+catalog, six seconds a dish — and it may only pick from what the shop
+retrieved. I built the app for us and made the LLM inside it fully
+accountable; here is what you can take from it.
 
 Type "everything for lasagna, and toilet paper" (in German — it's our
 household app) and it pulls a real top-rated recipe, computes pack counts
@@ -51,7 +54,14 @@ that number is in the docs next to the wins. 1,362 tests, a 79-check smoke
 gate that blocks the network at socket level, and the failure cases written
 up — "Salat" once scored zero, and the docs explain exactly why.
 
-60-second demo: <video link>
+What you can take from it: retrieve first, present ids, reject anything
+not presented and count it, and let the user's Yes/No be the eval label.
+That works for any agent that picks rows from a database — products,
+tickets, documents. The pattern with its three code locations: PATTERN.md
+in the repo. (Same discipline in my model-eval harness, where the LLM judge
+is checked against real test runs: github.com/edrethardo/llm-eval-phoenix.)
+
+Demo: <video link>
 Repo & engineering tour: https://github.com/edrethardo/zettel
 
 @Merve Noyan #NVIDIAGTC

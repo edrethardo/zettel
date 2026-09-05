@@ -56,10 +56,10 @@
 **Files:**
 - Modify: `docs/contest/POST.md`, `README.md` (erste 15 Zeilen)
 
-- [ ] **Step 1: Erste Zeile des Posts** — sie ist alles, was der Feed zeigt. Muster: „NVIDIA's Nemotron 3.5 Lightning on one RTX 3090 runs our household's grocery agent: 85 % of ingredients found across 128 dishes, 6 s per dish — and it may only pick from what the shop retrieved." (Zahlen nach Task 1 einsetzen.)
-- [ ] **Step 2: Absatz „what you can take from it"** — das Muster in drei Sätzen, Link auf PATTERN.md, ein Halbsatz zur Arena (`llm-eval-phoenix`: „same discipline, judge checked against real test runs").
-- [ ] **Step 3: README-Kopf** — der englische Absatz beginnt mit dem Muster und dem Nemotron-Satz, nicht mit „private grocery-ordering shop".
-- [ ] **Step 4: Kurze Fassung des Posts angleichen; Checkliste im Kopf der Datei abhaken, was erledigt ist.**
+- [x] **Step 1: Erste Zeile des Posts** — sie ist alles, was der Feed zeigt. Muster: „NVIDIA's Nemotron 3.5 Lightning on one RTX 3090 runs our household's grocery agent: 85 % of ingredients found across 128 dishes, 6 s per dish — and it may only pick from what the shop retrieved." (Zahlen nach Task 1 einsetzen.)
+- [x] **Step 2: Absatz „what you can take from it"** — das Muster in drei Sätzen, Link auf PATTERN.md, ein Halbsatz zur Arena (`llm-eval-phoenix`: „same discipline, judge checked against real test runs").
+- [x] **Step 3: README-Kopf** — der englische Absatz beginnt mit dem Muster und dem Nemotron-Satz, nicht mit „private grocery-ordering shop".
+- [x] **Step 4: Kurze Fassung des Posts angleichen; Checkliste im Kopf der Datei abhaken, was erledigt ist.**
 
 ### Task 4: Die Pointe des Videos
 
@@ -89,7 +89,7 @@
 
 ### Task 7: Veröffentlichen
 
-- [ ] **Step 1: Klon frisch bauen** (nach dem letzten Commit): `git clone --no-local . <tmp> && git-filter-repo --replace-text ersetzungen.txt --force`, Gegenprobe `git log -S` auf Hostname/IP/Home-Pfad = 0, Privatscan grün, nach `~/code/zettel-public`.
+- [x] **Step 1: Klon frisch bauen** (nach dem letzten Commit): `git clone --no-local . <tmp> && git-filter-repo --replace-text ersetzungen.txt --force`, Gegenprobe `git log -S` auf Hostname/IP/Home-Pfad = 0, Privatscan grün, nach `~/code/zettel-public`.
 - [ ] **Step 2: Push (Aaron)** — `git remote add origin git@github.com:edrethardo/zettel.git && git push -u origin master`; danach die drei Links prüfen: README, SHOWCASE, Endcard-Adresse.
 - [ ] **Step 3: Post (Aaron, Montag früh)** — Video nativ hochladen, Hochkant-Clip als ersten Kommentar, Merve Noyan über den Tag-Vorschlag, `#NVIDIAGTC`, erste Stunde antworten.
 
