@@ -34,6 +34,13 @@ Danach die Fensternummern festhalten — `bereit.sh` liest sie aus `fenster.txt`
 
 Prüfen: `DISPLAY=:78 xdotool getdisplaygeometry` muss **1920 1080** sagen.
 
+Der Schirm `:78` ist auf dem Laptop ein Xephyr-Fenster in der angemeldeten
+Sitzung, auf der Basisstation (kopfloser Server, seit 2026-09-05) ein
+Xvfb — `buehne.sh` wählt selbst (`BUEHNE_SCHIRM=xvfb` erzwingt Xvfb). Die
+Bühne braucht keinen Fenstermanager: alle Fenster setzt `xdotool`, gegriffen
+wird der Schirm. Der Server braucht dafür `xvfb x11-utils python3-tk ffmpeg
+xdotool wmctrl firefox` und den SSH-Zugang zur Box für den GPU-Streifen.
+
 **2. Vor-Take-Zustand.**
 
     ./bereit.sh
