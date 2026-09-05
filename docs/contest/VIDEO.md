@@ -31,7 +31,7 @@ vom Morgen (`take_lang_nemotron2`, `take_handy_nemotron`) bleiben.
 
 | Datei | Was |
 |---|---|
-| `zettel_demo_nemotron_final.mp4` (+ `.srt`) | lange Fassung, **90,5 s**, 1920×1230: 3 s Titelkarte, 79,2 s Shots, 8 s Endcard |
+| `zettel_demo_nemotron_final.mp4` (+ `.srt`) | lange Fassung, **90,9 s**, 1920×1250: 3 s Titelkarte, 79,7 s Shots, 8 s Endcard |
 | `zettel_linkedin_nemotron.mp4` | Hochkant, **44,3 s**: 40,8 s Clip mit drei Textkarten, 3,5 s Endcard |
 | `thumbnail.png` | = Titelkarte (Antwortmoment, GPU 100 %, Satz darüber) — als Vorschaubild hochladen |
 
@@ -51,7 +51,7 @@ Was sich geändert hat, und warum:
   danach und bricht ab, wenn beides nicht zur Marke passt. Untertitel 2 sagt
   jetzt **3 s**, und der Schnitt trägt keine 4 s Standbild mehr.
 * **Untertitelband unter dem Bild.** Das Bild wird um 150 px erweitert
-  (1920×1230); die Untertitel stehen dort mittig in ~44 px statt ~32 px
+  (1920×1250); die Untertitel stehen dort mittig in ~44 px statt ~32 px
   über dem GPU-Streifen. Kein Untertitel verdeckt UI, keiner über 3,5 Wörter/s
   (`schnitt.py` warnt sonst), keiner länger als zwei Zeilen.
 * **Nemotron im Bild.** Rechts im GPU-Streifen steht als Badge, was beim Take
@@ -71,6 +71,19 @@ Was sich geändert hat, und warum:
   des Takes gehängt (Satz tippen · Rezeptkarte · Pick-Liste), dann 3,5 s
   Endcard mit Link — vorher endete er hart auf Schwarz und trug kein
   einziges Contest-Kriterium.
+
+**Runde 2 desselben Jurors** auf den neuen Dateien: Präsentation 4 → 7,
+NVIDIA-Technik 4 → 6, Innovation gestützt 5 → 6, Trailer 3 → 7. Nichts
+überlappt, nichts abgeschnitten. Seine sechs Reste, alle umgesetzt:
+Untertitel 2 geteilt an der Antwort („The wait, uncut:" · „3 s — on my
+3090 … Phoenix, on the right, clocks the same turn"), Shot 7 dreizeilig mit
+„Here: 0." vor der 1-in-1.167, Korbkopf 2,2 s statt 1,7, Endcard „6 s per
+dish (eval)", die Zeile „Zettel — a grocery agent …" ins Band des
+Vorschaubilds (kein leerer Streifen), Trailer-Karte 2 ab +2,2 s über der
+Zutatenliste statt über „4,85 aus 2125 Stimmen". Endstand: lange Fassung
+**90,9 s**, Trailer **44,3 s**. Was bleibt, braucht einen neuen Take: der
+Modellname im Phoenix-Span, und die GPU, die im 1-s-Raster von nvidia-smi
+erst rot wird, wenn die Antwort schon steht.
 
 Nicht getan, mit Grund: kein neuer Take für den Modellnamen im Trace (~20 min
 plus Box-Fenster, Nutzen: ein Beleg statt eines Badges); „gab's nicht" trifft
