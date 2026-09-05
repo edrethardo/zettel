@@ -12,8 +12,10 @@
 > screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md);
 > [`CASE-STUDY.md`](CASE-STUDY.md) is the English deep-dive on how a trace
 > acquitted the model and how one measured line took the eval from 76 % to
-> 83 %; [`GETTING-STARTED.md`](GETTING-STARTED.md) gets it running on your
-> machine. The rest of this README is in German, the household's language.
+> 83 %; [`PATTERN.md`](PATTERN.md) extracts the part worth copying — retrieve,
+> present ids, reject anything not presented, count it, let the user's Yes/No
+> be the label; [`GETTING-STARTED.md`](GETTING-STARTED.md) gets it running on
+> your machine. The rest of this README is in German, the household's language.
 
 Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
@@ -51,6 +53,7 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 
 | Datei | worum es geht |
 |---|---|
+| [`PATTERN.md`](PATTERN.md) | Englisch: das übertragbare Muster — nur aus Gefundenem wählen, Erfundenes verwerfen und zählen, Entscheidungen als Labels — mit den drei Codestellen |
 | [`ANLEITUNG.md`](ANLEITUNG.md) | **die Bedienungsanleitung** für alle im Haushalt, die damit einkaufen: Reiter, Chat, Korb, Pick-Liste, Rezepte, Bons |
 | [`GETTING-STARTED.md`](GETTING-STARTED.md) | Englisch: installieren, konfigurieren, der erste Zug, prüfen, ein Modell messen |
 | [`DESIGN.md`](DESIGN.md) | Architektur und die Entscheidungen, die von aussen wie ein Versehen aussehen |
