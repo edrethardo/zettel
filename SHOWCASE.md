@@ -220,7 +220,7 @@ projects, numbers recomputed from the spans:
 | extra article reaches the cart | 8 of 8 | — | 6 of 8 |
 | structured output | fine | fine (`rejected` = 2) | fine (`rejected` = 2) |
 | median turn (same vLLM 0.27.1) | 7 s | — | **6 s** |
-| whole run, 64 dishes | 7.0 min | — | **1.1 min** |
+| whole run, 64 dishes | 7.0 min (on vLLM 0.24) | — | **1.1 min** |
 
 The 8B Nano is faster because it produces less that the catalog can find —
 whole dishes come back empty (Ratatouille 0 of 13). The 3.5 Lightning is on
