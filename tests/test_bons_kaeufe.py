@@ -298,7 +298,7 @@ def test_zuordner_schaltet_das_denken_ab(con, bon):
     _, weitere = llm.aufrufe[0]
     assert weitere["extra_body"]["chat_template_kwargs"] == {
         "enable_thinking": False}
-    assert "guided_json" in weitere["extra_body"]
+    assert weitere["response_format"]["type"] == "json_schema"
 
 
 def test_nicht_artikel_bekommt_keinen_produktvorschlag(con, bon):

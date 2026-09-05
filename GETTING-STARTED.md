@@ -57,11 +57,13 @@ the two LLM values.
 | `ZETTEL_PHOENIX_PROJECT` | `Zettel Agent` | Phoenix project; eval runs use their own |
 
 What the chat sends to the model, and why it is safe with other servers:
-stage 1 and stage 3 ask for `guided_json` and pass
+stage 1 and stage 3 send their JSON schema as `response_format`
+(`{"type": "json_schema", …}`, the OpenAI wire format) and pass
 `chat_template_kwargs: {"enable_thinking": false}` through `extra_body`.
 A server that does not know these fields ignores them; the schema check
 against the presented candidates lives in code, not in the sampler
-(see “The guarantees” in `SHOWCASE.md`).
+(see “The guarantees” in `SHOWCASE.md`). Do not use vLLM's older
+`guided_json` extra-body field: on 0.27.1 it is ignored without a warning.
 
 ## The first turn
 

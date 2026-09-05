@@ -224,7 +224,7 @@ def deuten(zugang, bon_texte: list[str], *, guided: bool = True,
 # `plan._frage`, `_eintraege`, `_text` und `_kette` sind bewusst
 # WIEDERVERWENDET und nicht nachgebaut. Sie sind der Teil von `assistant.plan`,
 # der nichts mit Einkaufszetteln zu tun hat, sondern mit dem Umgang mit
-# Modellantworten: Denken abschalten, `guided_json` durchreichen, einen
+# Modellantworten: Denken abschalten, das Schema als `response_format` mitgeben, einen
 # Codefence abziehen, `finish_reason=length` als Budgetproblem benennen. Eine
 # zweite Kopie davon hier hiesse, dieselben Fallen ein zweites Mal zu stellen —
 # der Unterstrich sagt „nicht Teil der öffentlichen Oberfläche", nicht
