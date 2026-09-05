@@ -219,7 +219,7 @@ projects, numbers recomputed from the spans:
 | dishes at 80–100 % | 43 | 10 | 42 |
 | extra article reaches the cart | 8 of 8 | — | 6 of 8 |
 | structured output | fine | fine (`rejected` = 2) | fine (`rejected` = 2) |
-| median turn (same vLLM 0.27.1) | 7 s | — | **6 s** |
+| median turn (vLLM 0.27.1; Qwen with DFlash2 speculative decoding, Nemotron without) | 7 s | — | **6 s** |
 | whole run, 64 dishes | 7.0 min (on vLLM 0.24) | — | **1.1 min** |
 
 The 8B Nano is faster because it produces less that the catalog can find —
