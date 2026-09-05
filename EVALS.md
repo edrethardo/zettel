@@ -692,7 +692,9 @@ Die aktuelle Generation: hybrides MoE, 30B gesamt, 3B aktiv, erschienen am
 (compressed-tensors, 16,6 GiB) auf der RTX 3090 serviert, vLLM 0.27.1,
 32k Kontext, `--reasoning-parser nemotron_v3`, Denken je Anfrage aus. Die
 Box-Session hat das Modell über Nacht geladen und um 08:02 serviert, den
-Idle-Stop fürs Fenster ausgesetzt; gemessen 08:05–08:09 vom Laptop aus,
+Idle-Stop fürs Fenster ausgesetzt (Serverseite laut Box-Session: KV-Pool
+767.317 Token, `gpu-memory-utilization 0.94`, kein Neustart im Fenster, keine
+Spekulation); gemessen 08:05–08:09 vom Laptop aus,
 dasselbe Kommando wie oben mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval
 Nemotron 3.5"`. Rohdaten: `evals/breite_probe-2026-09-05-nemotron35.json`
 (+ `.provenienz.json`).
@@ -719,9 +721,13 @@ Bedingungen des 01.09.)
 
 **Der Befund:** Nemotron 3.5 Lightning ist auf diesem Weg **auf Augenhöhe
 mit dem 27B-Referenzmodell** — 85 % / 88 % gegen 84 % / 88 %, dieselbe
-Zahl der Gerichte über 80 %, kein Gericht bei null — und **fünf- bis
-sechsmal schneller** je Zug als Qwen auf derselben vLLM-Version (Median 6 s
-gegen 7 s beim 01.09.-Lauf mit DFlash; gegen 37 s ohne). Was schwächer ist,
+Zahl der Gerichte über 80 %, kein Gericht bei null — bei Median 6 s je Zug.
+**Die Dauer ist kein sauberer Modellvergleich:** die Qwen-Fassung im
+syv-Container läuft mit spekulativem Decoding (DFlash2, laut Box-Session
+`SPEC=dflash2`), die Nemotron-Instanz lief ohne; 6 s gegen 7 s stellt also
+auch nicht-spekulativ gegen spekulativ. Gegen den 30.08.-Lauf (0.24, ohne
+Spekulation, 37 s) ist der Abstand sechsfach — und ein 3B-aktives MoE ist
+ohne jede Spekulation so schnell wie das dichte 27B mit. Was schwächer ist,
 steht daneben: der Zusatzartikel („… und Klopapier") kam in 6 von 8 Zügen
 mit (Qwen 8 von 8) — bei Frikadellen und Glibberschmarrn fehlte er; und
 „Käse Lauch Suppe" fand nur 1 von 7 Begriffen, wo Qwen 5 von 7 fand. Das
