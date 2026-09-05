@@ -727,7 +727,15 @@ syv-Container läuft mit spekulativem Decoding (DFlash2, laut Box-Session
 `SPEC=dflash2`), die Nemotron-Instanz lief ohne; 6 s gegen 7 s stellt also
 auch nicht-spekulativ gegen spekulativ. Gegen den 30.08.-Lauf (0.24, ohne
 Spekulation, 37 s) ist der Abstand sechsfach — und ein 3B-aktives MoE ist
-ohne jede Spekulation so schnell wie das dichte 27B mit. Was schwächer ist,
+ohne jede Spekulation so schnell wie das dichte 27B mit. Die Box-Session hat
+das im Fenster nachgemessen (Einzelstrom, Denken aus, ~27-Token-Prompt, 300
+und 800 Token Antwort): **Nemotron 219–222 tok/s ohne Spekulation**, die
+Qwen-Fassung laut ihrem Drop-in 226 tok/s mit DFlash2 — die
+Generierungsrate ist also praktisch dieselbe, der Unterschied je Zug liegt
+eher in der Zahl der erzeugten Token. (Mein eigener Qwen-Wert von 70 tok/s
+vom 04.09. gilt für einen 5,1k-Prompt; die Zahlen sind nicht gegeneinander
+zu stellen.) Spekulationsgewichte bringt der Nemotron-Build nicht mit
+(`num_nextn_predict_layers: 0`). Was schwächer ist,
 steht daneben: der Zusatzartikel („… und Klopapier") kam in 6 von 8 Zügen
 mit (Qwen 8 von 8) — bei Frikadellen und Glibberschmarrn fehlte er; und
 „Käse Lauch Suppe" fand nur 1 von 7 Begriffen, wo Qwen 5 von 7 fand. Das
