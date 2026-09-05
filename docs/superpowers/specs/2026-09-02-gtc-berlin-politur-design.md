@@ -12,7 +12,7 @@ Seite: `developer.nvidia.com/gtc-golden-ticket-contest`.
 
 * **Aufgabe:** eine *open-source application built with open models* auf
   LinkedIn/X/Instagram teilen, `#NVIDIAGTC`, **den Judge taggen, von dem man
-  vom Contest erfahren hat** (acht Judges, u. a. Merve Noyan/Hugging Face,
+  vom Contest erfahren hat** (acht Judges, u. a. Chorouk Malmoum/AgentX Academy — sie ist es —, Merve Noyan/Hugging Face,
   Johnny Nunez und Asier Arranz/NVIDIA). Kein Modell vorgeschrieben, keine
   Videolänge.
 * **Frist:** 18.08.–10.09.2026, sechs Gewinner, Bekanntgabe ~14.09.
