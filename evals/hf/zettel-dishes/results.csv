@@ -319,6 +319,134 @@ run,model,dish,path,terms,catalog_hits,free_text,hit_rate,rejected,seconds,error
 2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kürbisrisotto,recipe,0,7,4,,0,13.3,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
 2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tomatensuppe,recipe,0,5,0,,0,9.6,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
 2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Nudelsalat,recipe,0,13,1,,0,17.5,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Rouladen,chefkoch,12,11,1,0.917,0,7.8,,Rinderrouladen klassisch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Frikadellen,chefkoch,15,12,3,0.800,0,10.6,,Omas beste Frikadellen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,8.2,,Grünkohl mit Pinkel nach Ammerländer Art,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Maultaschen,chefkoch,4,4,0,1.000,0,3.3,,Überbackene Maultaschen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Semmelknödel,chefkoch,6,6,0,1.000,0,4.2,,Serviettenknödel,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Königsberger Klopse,chefkoch,15,11,4,0.733,0,8.8,,Königsberger Klopse,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Sauerbraten,chefkoch,7,5,2,0.714,0,4.4,,Rindsschmorbraten mit Essig und Rahm,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Rotkohl,chefkoch,11,7,4,0.636,0,7.9,,"Blaukraut oder Rotkohl, klassisch",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Chili con Carne,chefkoch,11,9,2,0.818,0,7.0,,Chili con Carne à la Benjo,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Moussaka,chefkoch,12,11,1,0.917,0,7.3,,Moussaka,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gnocchi mit Salbeibutter,chefkoch,4,3,1,0.750,0,3.4,,Selbstgemachte Gnocchi in Salbei-Butter,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Shakshuka,chefkoch,7,6,1,0.857,0,4.4,,Shakshuka,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Paella,chefkoch,12,8,4,0.667,0,0.1,,Paella mit Meeresfrüchten,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Quiche Lorraine,chefkoch,8,8,0,1.000,0,5.1,,Majas Quiche Lorraine in verschiedenen Variationen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tortilla Espanola,chefkoch,3,3,0,1.000,0,2.4,,Tortilla Espanola,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pho Bo,chefkoch,18,13,5,0.722,0,9.6,,Pho Bo - Vietnamesische Rindfleischsuppe,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bibimbap,chefkoch,7,7,0,1.000,0,4.8,,Bibimbap nach Art des Hauses,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pad Thai,chefkoch,14,11,3,0.786,0,9.3,,Pad Thai,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ramen,chefkoch,15,12,3,0.800,0,9.6,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tom Kha Gai,chefkoch,12,7,5,0.583,0,10.2,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Massaman Curry,chefkoch,13,12,1,0.923,0,8.7,,Annas Massaman-Curry,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Okonomiyaki,chefkoch,3,3,0,1.000,0,4.8,,Okonomiyaki Osaka-Style,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gemüselasagne,chefkoch,14,13,1,0.929,0,10.6,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kichererbsencurry,chefkoch,9,7,2,0.778,0,6.3,,Kichererbsen-Curry Chana Masala,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Linsenbolognese,chefkoch,9,8,1,0.889,0,4.0,,Rote Linsen-Bolognese,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Falafel,chefkoch,5,5,0,1.000,0,4.9,,Das weltbeste Fladenbrot,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Chili sin Carne,chefkoch,13,10,3,0.769,0,7.0,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,5.8,,Mediterranes Ofengemüse,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Apfelkuchen,chefkoch,6,6,0,1.000,0,4.7,,Apfelkuchen mit Streuseln,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käsekuchen,chefkoch,9,7,2,0.778,0,5.9,,Russischer Zupfkuchen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pizzateig,chefkoch,10,10,0,1.000,0,7.5,,Knusprig dünne Pizza mit Chorizo und Mozzarella,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Waffeln,chefkoch,7,6,1,0.857,0,4.0,,Geheimes Waffelrezept,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwetschgendatschi,chefkoch,12,8,4,0.667,0,8.5,,Zwetschgendatschi mit Butterstreuseln,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Marmorkuchen,chefkoch,9,8,1,0.889,0,4.6,,Marmor-Gugelhupf,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Knoblauchsuppe,chefkoch,9,7,2,0.778,0,4.7,,Knoblauchsuppe mit Parmesan,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spargel mit Sauce Hollandaise,chefkoch,10,9,1,0.900,0,6.4,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Petersilienpesto,chefkoch,6,5,1,0.833,0,3.3,,Petersilien-Pesto,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Toast Hawaii,chefkoch,5,5,0,1.000,0,3.2,,Hawaii Toast,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gefüllte Paprika,chefkoch,10,9,1,0.900,0,5.9,,Gefüllte Paprika nach Uroma Susanne,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Lauchkuchen,chefkoch,5,5,0,1.000,0,4.4,,Lauchkuchen vom Blech,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Lasagne,chefkoch,8,7,1,0.875,0,6.3,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Risotto,chefkoch,7,7,0,1.000,0,6.2,,Risotto alla milanese,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gulasch,chefkoch,12,7,5,0.583,0,7.9,,Hirschgulasch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bratkartoffeln,chefkoch,2,2,0,1.000,0,2.5,,Knusprige Bratkartoffeln nach Muttis Rezept,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kaiserschmarrn,chefkoch,12,9,3,0.750,0,6.6,,Kaiserschmarrn - Tiroler Landgasthofrezept,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Hühnerfrikassee,chefkoch,11,10,1,0.909,0,6.9,,Hühnerfrikassee,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Auflauf,chefkoch,8,8,0,1.000,0,6.4,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Salat,chefkoch,13,12,1,0.923,0,7.2,,KFC Coleslaw,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Suppe,chefkoch,10,7,3,0.700,0,8.5,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Eintopf,chefkoch,11,8,3,0.727,0,9.1,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Salat als ganzer Satz,chefkoch,6,5,1,0.833,0,4.6,,KFC Coleslaw,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Nudeln mit Pesto,chefkoch,6,6,0,1.000,0,5.7,,Spaghetti mit Tomaten-Pesto,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käse Lauch Suppe,chefkoch,5,5,0,1.000,0,5.7,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käse-Lauch-Suppe,chefkoch,5,5,0,1.000,0,5.2,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spagetti Bolognese,chefkoch,10,10,0,1.000,0,6.4,,Die echte Sauce Bolognese,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kartoffelpürree,chefkoch,11,8,3,0.727,0,7.9,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Broccoliauflauf,chefkoch,5,5,0,1.000,0,2.0,,Brokkoliauflauf,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Cordon bleu,chefkoch,4,4,0,1.000,0,3.1,,Cordon bleu - das Original aus der Schweiz,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schrumpelfrikandel,llm,2,0,2,0.000,0,1.3,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwuckelpfanne mit Gnubbeln,llm,7,6,1,0.857,0,4.9,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Glibberschmarrn,llm,7,7,0,1.000,0,5.7,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ratatouille,recipe,0,7,0,,0,5.4,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Quesadillas,recipe,0,4,0,,0,3.7,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kartoffelsalat,recipe,0,9,3,,0,8.3,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schnitzel mit Pommes,chefkoch,9,8,1,0.889,0,6.3,,Pikante Paprikasoße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kartoffelpuffer,chefkoch,3,3,0,1.000,0,2.6,,Großmutters Reibekuchen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Linsensuppe mit Würstchen,chefkoch,13,12,1,0.923,0,7.7,,Clints Linseneintopf mit Wiener Würstchen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kohlrouladen,chefkoch,7,7,0,1.000,0,5.2,,Omas Kohlrouladen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schweinebraten,chefkoch,12,9,3,0.750,0,7.4,,"Schweinebraten, resche Kruste, leckere Soße",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spinat mit Spiegelei und Kartoffeln,chefkoch,8,7,1,0.875,0,5.8,,"Spinat, Spiegelei und Salzkartoffeln",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Hackbraten,chefkoch,14,11,3,0.786,0,9.3,,Omas beste Frikadellen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwiebelkuchen,chefkoch,9,9,0,1.000,0,7.3,,Schwäbischer Zwiebelkuchen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Carbonara,chefkoch,7,5,2,0.714,0,4.8,,Spaghetti alla carbonara,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Coq au Vin,chefkoch,8,8,0,1.000,0,6.4,,Knuspriger Coq au vin aus dem Backofen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Hähnchen Tikka Masala,chefkoch,9,8,1,0.889,0,7.0,,Indisches Chicken-Mango-Curry,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pulled Pork,chefkoch,18,16,2,0.889,0,9.4,,NT-Schweinefilet im Speckmantel mit Champignons und Spätzle,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Fajitas,chefkoch,15,13,2,0.867,0,7.9,,"Fajitas mit Tortillas, Kidneybohnen, Sauerrahm und Guacamole",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Minestrone,chefkoch,16,13,3,0.812,0,9.3,,Italienische Minestrone,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Souvlaki,chefkoch,7,6,1,0.857,0,6.4,,Souvlaki mit Tsatsiki,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Laksa,chefkoch,12,11,1,0.917,0,8.0,,Singapur Laksa,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Rendang,chefkoch,11,7,4,0.636,0,8.6,,Rendang,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Butter Chicken,chefkoch,17,13,4,0.765,0,8.9,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gyoza,chefkoch,8,6,2,0.750,0,5.8,,Gyoza,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kimchi Jjigae,chefkoch,4,4,0,1.000,0,3.6,,Kimchi-Jjigae,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tacos al Pastor,chefkoch,20,17,3,0.850,0,11.1,,Taco al Pastor & Fajitas de Casa,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ceviche,chefkoch,8,6,2,0.750,0,6.3,,Ceviche mit Mango-Avocado-Tatar à la Gabi,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kürbissuppe,chefkoch,8,7,1,0.875,0,7.4,,Kürbis-Karotten-Kokos-Ingwer Suppe,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tofu-Curry,chefkoch,17,14,3,0.824,0,10.6,,Curry-Gemüse mit Tofu,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Auberginen-Parmigiana,chefkoch,4,3,1,0.750,0,4.1,,Schnelle Auberginen-Parmigiana,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bohnen-Burger,chefkoch,5,5,0,1.000,0,4.5,,Schnelle Bohnen-Burger,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Grünkern-Bratlinge,chefkoch,9,9,0,1.000,0,8.0,,Grünkern-Patty,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spinatknödel,chefkoch,9,7,2,0.778,0,6.5,,Spinatknödel aus Südtirol,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bienenstich,chefkoch,9,8,1,0.889,0,6.7,,Schneller  Bienenstich,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Brezeln,chefkoch,6,6,0,1.000,0,5.4,,"Berliner Ballen, Apfelringe, Brezel usw.",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zimtschnecken,chefkoch,12,10,2,0.833,1,8.2,,Zimtschnecken mit Frischkäse-Glasur,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schwarzwälder Kirschtorte,chefkoch,11,7,4,0.636,0,7.2,,Schwarzwälder Kirschtorte,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Brownies,chefkoch,8,8,0,1.000,0,6.1,,American Double Choc Brownies,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Vollkornbrot,chefkoch,6,4,2,0.667,0,4.9,,Saftiges Vollkornbrot,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bruschetta,chefkoch,3,3,0,1.000,0,3.1,,Bruschetta mit Tomaten und Knoblauch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Eier in Senfsoße,chefkoch,10,9,1,0.900,0,6.2,,Eier in Senfsauce,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gefüllte Zucchini,chefkoch,13,9,4,0.692,0,6.9,,Gefüllte Zucchini mit Hackfleisch und Käse,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Blumenkohl mit Butterbröseln,chefkoch,5,5,0,1.000,0,3.7,,Blumenkohl mit Butterbröseln und Käse überbacken,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwiebelsuppe,chefkoch,9,8,1,0.889,0,6.3,,Zwiebelsuppe nach Art der legendären Pariser Marktfrauen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Lachs mit Dillsoße,chefkoch,7,7,0,1.000,0,6.4,,Gnocchi mit Räucherlachs-Dill-Soße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pfannkuchen,chefkoch,4,4,0,1.000,0,0.1,,Der perfekte Pfannkuchen - gelingt einfach immer,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schnitzel,chefkoch,9,8,1,0.889,0,5.6,,Sahniges Putengeschnetzeltes,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gulaschsuppe,chefkoch,20,16,4,0.800,0,11.9,,Gulaschsuppe im Kessel oder Topf,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Grießbrei,chefkoch,6,6,0,1.000,0,5.2,,Grießbrei von Großmutter,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Reibekuchen,chefkoch,3,3,0,1.000,0,2.1,,Großmutters Reibekuchen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tzatziki,chefkoch,3,3,0,1.000,0,3.1,,"Tzatziki, wie ich es aus Kreta mitgebracht habe",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Curry,chefkoch,16,12,4,0.750,0,9.0,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Nudeln,chefkoch,10,10,0,1.000,0,7.8,,"Spaghetti aglio, olio e peperoncino",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bowl,chefkoch,12,12,0,1.000,0,7.9,,Bulgur Buddha Bowl,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kuchen,chefkoch,9,7,2,0.778,0,7.5,,Friedas genialer Hefezopf,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pfanne,chefkoch,11,9,2,0.818,0,9.2,,Fluffy Buttermilk Pancakes,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Curry als ganzer Satz,chefkoch,16,13,3,0.812,0,8.6,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spaghetti Carbonara,chefkoch,5,4,1,0.800,0,3.3,,Carbonara wie bei der Mamma in Rom,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spagetti Carbonara,chefkoch,5,3,2,0.600,0,3.3,,Koelkasts Spaghetti Carbonara,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gnocci,chefkoch,10,10,0,1.000,0,7.8,,Saftiger Kürbis-Gnocchi-Auflauf,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Cesar Salad,chefkoch,11,10,1,0.909,0,7.8,,Cesar Salad-Wraps,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kürbisuppe,chefkoch,9,9,0,1.000,0,7.2,,Kürbissuppe mit Ingwer und Kokosmilch,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zaziki,chefkoch,3,3,0,1.000,0,2.6,,"Tzatziki, wie ich es aus Kreta mitgebracht habe",Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Knusperzwerg-Auflauf,chefkoch,11,9,2,0.818,0,6.1,,Gyros-Nudelauflauf in Metaxasoße,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Brummelbeer-Torte,chefkoch,10,10,0,1.000,0,8.0,,Der unglaublich cremige NY Cheese Cake,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Flitzepfanne Deluxe,chefkoch,8,7,1,0.875,0,5.6,,Burgerbuns Deluxe,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kürbisrisotto,recipe,0,12,0,,0,6.9,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tomatensuppe,recipe,0,6,0,,0,3.1,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
+2026-09-05-nemotron35-128,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Nudelsalat,recipe,0,11,1,,0,5.0,,,Zettel Eval Nemotron 3.5 128,2026-09-05T10:35:44
 2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Ratatouille,recipe,0,10,1,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:29
 2026-08-30-qwen-64,Qwen3.8-27B-Instruct,"Kartoffelsalat, und Spülmittel",recipe,0,5,5,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:27
 2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Quesadillas,recipe,0,3,1,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:06

@@ -86,14 +86,19 @@ through the list anyway.
 ## What it makes measurable
 
 Because rules 1–3 fix *what* is presented and *what* is counted, comparing
-two models is a re-run of the same 64 (now 128) dishes and no production
-code — see [`EVALS.md`](EVALS.md):
+two models is a re-run of the same dishes and no production code — see
+[`EVALS.md`](EVALS.md); 64 dishes first, 128 the same day:
 
 | per dish, 64 dishes, one RTX 3090 | catalog hits mean / median | dishes at 0 % | `rejected` total |
 |---|---|---|---|
 | Qwen3.8-27B (AWQ 4-bit) | 84 % / 88 % | 1 | 6 |
 | Llama-3.1-Nemotron-Nano-8B | 25 % / 0 % | 41 | 2 |
 | NVIDIA Nemotron 3.5 Lightning 30B-A3B (W4A16) | 85 % / 88 % | 0 | 2 |
+
+| per dish, 128 dishes | catalog hits mean / median | dishes below 40 % | `rejected` total |
+|---|---|---|---|
+| Qwen3.8-27B (AWQ 4-bit) | 89 % / 91 % | 0 | 1 |
+| NVIDIA Nemotron 3.5 Lightning 30B-A3B (W4A16) | 87 % / 89 % | 1 | 1 |
 
 `rejected` stayed tiny for all three: the models rarely invent ids when the
 candidates are right in front of them. The losses are elsewhere — in what

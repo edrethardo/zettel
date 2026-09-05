@@ -5,14 +5,14 @@
 > **A grocery app for a multi-person household where a 27B open model —
 > quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
 > and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
-> evaluated across 64 dishes, zero cloud, zero API keys.**
+> evaluated across 128 dishes, zero cloud, zero API keys.**
 
 She fills the cart from her phone, he buys the groceries at a physical store
 and checks them off on his. In between sits an LLM agent that is allowed to do
 exactly one thing: **choose from candidates the shop found** — never invent.
 Everything the agent does is one trace in Phoenix, every user decision becomes
-an eval label, and the whole recipe path has been measured end-to-end on 64
-dishes. This page is the tour; the German docs
+an eval label, and the whole recipe path has been measured end-to-end on 128
+dishes with three open models. This page is the tour; the German docs
 ([`DESIGN.md`](DESIGN.md), [`OBSERVABILITY.md`](OBSERVABILITY.md),
 [`EVALS.md`](EVALS.md)) carry the full detail, and
 [`CASE-STUDY.md`](CASE-STUDY.md) tells the two debugging stories in English —
@@ -185,7 +185,7 @@ because the user has to go through the list anyway.
 
 ## The numbers, honestly
 
-**Breadth: 64 dishes across 12 axes** (baking, vegan, typo'd, ambiguous,
+**Breadth: 64 dishes across 12 axes** (doubled to 128 on 2026-09-05 — the table above) (baking, vegan, typo'd, ambiguous,
 fantasy names, exotic international, …), each driven through the full path —
 sentence → ingredients → search terms → products → cart → shopping list.
 No run failed. Median 34 s per dish.
@@ -205,13 +205,14 @@ No run failed. Median 34 s per dish.
 
 ![Per-dish catalog hit rate before and after the one-line fix](docs/images/eval-vorher-nachher.svg)
 
-**Two more open models through the same harness.** Because the 64 dishes,
+**Two more open models through the same harness.** Because the dishes,
 the database-copy discipline and the per-turn attributes are fixed, judging
 another model costs an afternoon and no production code. NVIDIA's
 `Llama-3.1-Nemotron-Nano-8B` (BF16) went through on 2026-08-30, the current
 **Nemotron 3.5 Lightning 30B-A3B** (W4A16, 16.6 GiB on the same RTX 3090)
 on 2026-09-05 — same run, same conditions, traces in their own Phoenix
-projects, numbers recomputed from the spans:
+projects, numbers recomputed from the spans. First the 64-dish list, then
+the list doubled to 128 the same day:
 
 | per dish, 64 dishes | Qwen3.8-27B (AWQ 4-bit) | Nemotron-Nano-8B (BF16) | **Nemotron 3.5 Lightning (W4A16)** |
 |---|---|---|---|
@@ -223,12 +224,23 @@ projects, numbers recomputed from the spans:
 | median turn (vLLM 0.27.1; Qwen with DFlash2 speculative decoding, Nemotron without) | 7 s | — | **6 s** |
 | whole run, 64 dishes | 7.0 min (on vLLM 0.24) | — | **1.1 min** |
 
+| per dish, **128 dishes** (2026-09-05) | Qwen3.8-27B (AWQ 4-bit) | Nemotron 3.5 Lightning (W4A16) |
+|---|---|---|
+| search terms that found a catalog product | **87 %** (962 of 1,107) | 85 % (997 of 1,167) |
+| catalog hit rate per dish, mean / median | **89 % / 91 %** | 87 % / 89 % |
+| dishes below 40 % | 0 | 1 (a fictional dish, 0 of 2 guessed terms) |
+| dishes at 80–100 % | 104 | 93 |
+| extra article reaches the cart | 13 of 16 | 13 of 16 |
+| `rejected` total | 1 | 1 |
+| median turn / whole run | 20 s / 7.4 min | **6 s / 2.2 min** |
+
 The 8B Nano is faster because it produces less that the catalog can find —
 whole dishes come back empty (Ratatouille 0 of 13). The 3.5 Lightning is on
-par with the 27B reference on quality and finishes the 64 dishes in a
-minute; what is weaker is listed next to it (two of eight extra articles
-dropped, one soup at 1 of 7 terms). Which one runs the household is now a
-measured choice, not a brand preference — see [`EVALS.md`](EVALS.md).
+par with the 27B reference on 64 dishes and two points behind on 128
+(a small, consistent gap in everyday and baking dishes; equal in the exotic
+ones), at three times the speed and the same form discipline. Which one runs
+the household is now a measured choice, not a brand preference — see
+[`EVALS.md`](EVALS.md).
 
 The quantity chain was audited link by link in [`EVALS.md`](EVALS.md):
 
