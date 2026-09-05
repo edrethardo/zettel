@@ -23,65 +23,62 @@ Checkliste vor dem Absenden:
 
 ---
 
-NVIDIA's Nemotron 3.5 Lightning, 4-bit on one RTX 3090, went through 128
-German dishes in our grocery agent: 85 % of ingredients found, 6 seconds a
-dish — and it may only pick from what the shop retrieved. Invented product
-IDs: 1 in 1,167. Rejected, counted, shown.
+An open NVIDIA Nemotron 3.5 Lightning (30B total, 3B active, 4-bit) runs our household's grocery agent on one RTX 3090 under the TV: 128 German dishes, 85 % of ingredients found, 6 s a dish — and 1 invented product ID in 1,167. Rejected, counted, on the trace.
 
-Our household's shopping list: she types "everything for lasagna, and
-toilet paper" (in German), the app pulls a real top-rated recipe, computes
-pack counts, and nothing enters the cart without a per-item Yes. What the
-catalog cannot find stays visible as free text — never silently dropped.
+Not a prompt wrapper, not an orchestra either: two model calls with a database search in between, and one rule that makes them checkable.
 
-What you can copy:
-– Retrieve first (SQLite FTS5); show the model only candidate IDs.
-– An ID that was not presented is rejected, not repaired — and counted on
-  the trace.
-– The user's Yes/No on every row is the eval label. Nobody annotates.
-Works for any agent that picks rows from a database — tickets, documents,
-accounts. Three code locations: PATTERN.md in the repo.
+1. Retrieve first. The model turns "everything for lasagna, and toilet paper" into search terms and sees zero catalog rows. SQLite FTS5 does the search and presents at most 5 candidates per term.
 
-Three open models, the same 128 dishes, one RTX 3090, every turn traced in
-Arize Phoenix. Nemotron 3.5 Lightning (30B total, 3B active — the
-small-models-for-agents case, measured; W4A16, quantized by useful-quants):
-85 %, 6 s per dish. The Qwen3.8-27B reference: 87 %, 20 s. An older
-Llama-Nemotron-Nano-8B: median 0 % — that number is in the docs next to the
-wins. One run each, no repetitions; the failure cases are written up. Which
-model runs the household is now a measured choice, not a brand preference.
+2. Reject, don't repair. An ID that was never presented is thrown out — no fuzzy rescue — and the term stays visible as free text. The JSON schema enforces shape, not truth, so the check lives in code. It was silently unenforced for 4 days after a vLLM upgrade; every number stayed the same.
 
-vLLM · FastAPI + HTMX · SQLite FTS5 · OpenTelemetry → Arize Phoenix ·
-1,364 tests and a 79-check gate that blocks the network at socket level ·
-no cloud, no API keys.
+3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
+Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
+– Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
+– Qwen3.8-27B reference, AWQ 4-bit: 87 %, 20 s
+– Llama-Nemotron-Nano-8B (first 64 dishes): median 0 % per dish. That number stays in the docs next to the wins.
+The 3× speed is not tok/s — those are nearly identical. The 3B-active model generates about a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
+
+Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,364 tests and a 79-check gate that blocks the network at socket level.
+
+Works for any agent that picks rows from a database you own — tickets, documents, accounts. Three code locations:
+Pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
 Repo: https://github.com/edrethardo/zettel
 Dataset (128 dishes, 7 runs): <HF dataset link>
-The pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
+
+When a local agent is the production system — one household, one GPU — which layer would you add first before you trust it? For us it was the labels.
 
 @Chorouk Malmoum #NVIDIAGTC
 
 ---
 
 **Erster Kommentar, direkt nach dem Post** (nicht in den Post — er verwässert
-dort): der Hochkant-Trailer (44 s), das Vergleichsbild
-`docs/images/modelle-128.png`, und der Satz „Same discipline in my model-eval
-harness, where the LLM judge is checked against real test runs:
-github.com/edrethardo/llm-eval-phoenix". Dann eine Stunde antworten.
+dort), Wortlaut:
+
+> The one trace that changed how I read failures: the model picked a 4.69 €
+> artisanal salted butter for "butter". Blame the model? `zettel.rejected = 0`
+> and the RETRIEVER span show five ButterBoyz variants and no plain butter —
+> the fault was retrieval, and Phoenix showed it without opening a JSON blob.
+> Same discipline in my eval harness, where the LLM judge is checked against
+> real test runs: github.com/edrethardo/llm-eval-phoenix
+
+Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
+`docs/images/modelle-128.png`. Dann eine Stunde antworten.
+
+**Zugeschnitten auf die Jurorin (05.09.):** ihr Vokabular (prompt wrapper,
+layer, observability, production), nicht ihre Sätze; das nummerierte
+Framework, weil ihre Posts so gebaut sind; die SLM-These als Messung mit dem
+Verlust (zwei Punkte hinter der 27B-Referenz), nie als Beweis; kein
+„Level 5", kein „nothing touches an external API" (der Rezeptabruf geht
+raus). Nano-8B lief nur über die ersten 64 Gerichte — der alte Entwurf sagte
+„three models, the same 128 dishes", das war falsch.
 
 **Kürzere Variante** — nicht als zweiter LinkedIn-Post (zwei Posts teilen
 die Reichweite), sondern für X oder Instagram:
 
 ---
 
-An open NVIDIA Nemotron model, one RTX 3090, zero cloud — and a grocery
-list our household actually shops from.
-
-"Everything for lasagna, and toilet paper" → real recipe, computed pack
-counts, per-item confirmation. The model may only pick from retrieved
-candidates; invented IDs are rejected and counted. Every turn is a Phoenix
-trace, every user decision an eval label. Evaluated on 128 dishes with three
-open models, failure cases documented.
-
-Nemotron 3.5 Lightning 30B-A3B (4-bit; Qwen3.8-27B as reference) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
+Open NVIDIA Nemotron 3.5 Lightning (3B active, 4-bit) on one RTX 3090 runs the grocery agent our household shops from. 128 dishes: 85 % of ingredients found, 6 s a dish, 1 invented ID in 1,167 — rejected, counted, traced in Arize Phoenix. Every Yes/No is an eval label.
 
 Demo: <video link> · Repo: https://github.com/edrethardo/zettel
 
