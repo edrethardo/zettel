@@ -766,6 +766,70 @@ die Tiefenmessung oben (`ohne-guided`) schon sagte: bei Temperatur 0 bindet
 die Einschränkung nie. Der Agent sendet das Schema seit `6f0447b` als
 `response_format`; der Befund kam von der Box-Session, die Zahl von hier.
 
+## 128 Gerichte (2026-09-05)
+
+Die Liste in `scripts/breite_probe.py` ist am 05.09. von 64 auf **128
+Gerichte** gewachsen — dieselben elf Achsen im selben Verhältnis, je Achse
+das, was die erste Hälfte noch nicht abdeckte (Kohlrouladen und Zwiebelkuchen
+neben den Braten; Coq au Vin, Rendang, Ceviche; Grünkern-Bratlinge; Brezeln
+und Vollkornbrot; Eier in Senfsoße und ein Kopf Blumenkohl; „Curry", „Bowl",
+„Pfanne" nackt mit der Kontrolle „alles für Curry"; Spaghetti/Spagetti
+Carbonara als zweites Schreibweisen-Paar; drei neue Fantasienamen; drei neue
+gespeicherte). 16 Gerichte tragen einen Zusatzartikel statt 8, mit acht
+neuen Wörtern (Müllbeutel, Backpapier, Küchenrolle, Spülschwamm, Duschgel,
+Batterien, Kaffeefilter, noch einmal Klopapier). Die 64er-Läufe oben bleiben,
+was sie sind; ab hier gilt 128.
+
+### Lauf 4 — `Qwen3.8-27B-Instruct`, 128 Gerichte, 2026-09-05 09:41
+
+Box wie am 01.09. (syv-Container, vLLM 0.27.1, DFlash2), Schema seit
+`6f0447b` als `response_format`. Rohdaten
+`evals/breite_probe-2026-09-05-qwen-128.json` (+ `.provenienz.json`),
+Traces im Projekt `Zettel Eval Qwen 128`. Aus den Spans nachgerechnet
+(134 `chat.turn`, 128 mit Begriffen — die sechs gespeicherten laufen zweimal):
+
+```
+128 Gerichte, 128 gelaufen, 0 Fehler, 7,4 min (Phase B, sechs parallel)
+Chefkoch (Phase A)       117× ok, 8× aus dem Speicher, 3× leer (die Fantasienamen)
+Wege                     119× chefkoch, 6× recipe, 3× llm
+Katalogtreffer           962 von 1.107 Begriffen (87 %)   [Probenausgabe: 911 von 1.048, 87 %]
+Quote je Gericht         Mittel 89 %, Median 91 %, Spanne 43–100 %
+Gerichte unter 40 %      0 — kein Gericht bei null
+Gerichte 80–100 %        104 von 128
+zettel.rejected gesamt   1
+Rezeptentwurf            119 von 128 (93 %), 1.001 Zutaten
+Zusatzartikel im Korb    13 von 16 (81 %) — dreimal fehlte „Klopapier"
+Zeilen im Laden          Mengenquote Mittel 90 %, Median 100 %
+Dauer je Gericht         Median 20 s, 0 s bis 42 s
+```
+
+(Die Probenausgabe zählt Begriffe je Gericht und lässt die zweiten Züge der
+gespeicherten Gerichte weg; die Spans zählen jeden Zug. Die Quote ist in
+beiden Rechnungen 87 %.)
+
+**Nach Achse** (Katalogtreffer der Begriffe): Schreibweise/Tippfehler 93 %,
+mehrdeutig 91 %, international im Katalog 91 %, Fantasiename 91 %,
+zählbar 89 %, Backen 88 %, Alltagsküche 87 %, vegetarisch 87 %,
+Einwort 81 %, **international exotisch 78 %** — die Katalogluecke bleibt
+die exotische Küche (Ceviche 3 von 7, Tom Kha Gai 8 von 13, Pad Thai 6
+von 10).
+
+**Was gegenüber 64 anders ist:** die Quote steigt von 83 % auf 87 %, und
+das ist zuerst eine Aussage über die *zweite Hälfte*: sie ist katalognäher
+gewählt (mehr Alltag und Backen, weniger Vietnam) — die 64 alten Gerichte
+allein lägen weiter bei ihren 83 %. Zweitens tauchen die Fantasienamen
+diesmal bei 91 % auf statt bei null: ohne Rezept rät das Modell Zutaten,
+und was es rät, findet der Katalog oder nicht — das ist der Zufall eines
+einzelnen Laufs, kein Fortschritt. Beides steht hier, damit die 87 % nicht
+als „vier Punkte besser" gelesen werden.
+
+### Lauf 5 — Nemotron 3.5 Lightning, 128 Gerichte: offen
+
+Braucht das Modell noch einmal auf der Box (Fenster bei der Box-Session
+erbeten, 05.09.). Dasselbe Kommando mit
+`ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron 3.5 128"`; die Tabelle mit
+beiden Modellen kommt hierher.
+
 ## Was hier schwächer ist, als es aussieht
 
 Diese Liste gehört zum Ergebnis. Wer die Tabelle oben zitiert, muss sie
