@@ -91,7 +91,7 @@
 
 - [x] **Step 1: Klon frisch bauen** (nach dem letzten Commit): `git clone --no-local . <tmp> && git-filter-repo --replace-text ersetzungen.txt --force`, Gegenprobe `git log -S` auf Hostname/IP/Home-Pfad = 0, Privatscan grün, nach `~/code/zettel-public`.
 - [ ] **Step 2: Push (Aaron)** — `git remote add origin git@github.com:edrethardo/zettel.git && git push -u origin master`; danach die drei Links prüfen: README, SHOWCASE, Endcard-Adresse.
-- [ ] **Step 3: Post (Aaron, Montag früh)** — Video nativ hochladen, Hochkant-Clip als ersten Kommentar, Merve Noyan über den Tag-Vorschlag, `#NVIDIAGTC`, erste Stunde antworten.
+- [ ] **Step 3: Post (Aaron, Montag früh)** — Video nativ hochladen, Hochkant-Clip als ersten Kommentar, Chorouk Malmoum über den Tag-Vorschlag (von ihr hat Aaron vom Contest erfahren, nicht von Merve Noyan — korrigiert 05.09.), `#NVIDIAGTC`, erste Stunde antworten.
 
 ### Task 8: Zahlen-Sweep
 

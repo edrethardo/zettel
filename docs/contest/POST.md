@@ -6,10 +6,12 @@ machst du. Der Text behauptet nur, was das Repo belegt.
 
 Checkliste vor dem Absenden:
 
-- [ ] Judge ist **Merve Noyan** (Hugging Face) — von ihr hast du vom Contest
-      erfahren, und die Regeln verlangen genau diesen Tag. Beim Posten wirklich
-      taggen (LinkedIn: „@Merve Noyan“ tippen und den Vorschlag anklicken),
-      nicht nur schreiben
+- [ ] Judge ist **Chorouk Malmoum** (Founder, AgentX Academy) — von ihr hast
+      du vom Contest erfahren, und die Regeln verlangen genau diesen Tag. Beim
+      Posten wirklich taggen (LinkedIn: „@Chorouk Malmoum“ tippen und den
+      Vorschlag anklicken), nicht nur schreiben. Ihr Feed: Agenten, die lokal
+      laufen (DGX Spark), und NVIDIAs These „small models for agentic AI“ —
+      darum steht der 3B-active-Satz im Modellabsatz
 - [ ] `<video link>` — das 60-Sekunden-Video (Drehbuch: `VIDEO.md`)
 - [ ] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
@@ -40,7 +42,8 @@ Works for any agent that picks rows from a database — tickets, documents,
 accounts. Three code locations: PATTERN.md in the repo.
 
 Three open models, the same 128 dishes, one RTX 3090, every turn traced in
-Arize Phoenix. Nemotron 3.5 Lightning (W4A16, quantized by useful-quants):
+Arize Phoenix. Nemotron 3.5 Lightning (30B total, 3B active — the
+small-models-for-agents case, measured; W4A16, quantized by useful-quants):
 85 %, 6 s per dish. The Qwen3.8-27B reference: 87 %, 20 s. An older
 Llama-Nemotron-Nano-8B: median 0 % — that number is in the docs next to the
 wins. One run each, no repetitions; the failure cases are written up. Which
@@ -54,12 +57,12 @@ Repo: https://github.com/edrethardo/zettel
 Dataset (128 dishes, 7 runs): <HF dataset link>
 The pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
 
-@Merve Noyan #NVIDIAGTC
+@Chorouk Malmoum #NVIDIAGTC
 
 ---
 
 **Erster Kommentar, direkt nach dem Post** (nicht in den Post — er verwässert
-dort): der Hochkant-Trailer (41 s), das Vergleichsbild
+dort): der Hochkant-Trailer (44 s), das Vergleichsbild
 `docs/images/modelle-128.png`, und der Satz „Same discipline in my model-eval
 harness, where the LLM judge is checked against real test runs:
 github.com/edrethardo/llm-eval-phoenix". Dann eine Stunde antworten.
@@ -82,4 +85,4 @@ Nemotron 3.5 Lightning 30B-A3B (4-bit; Qwen3.8-27B as reference) · vLLM · Fast
 
 Demo: <video link> · Repo: https://github.com/edrethardo/zettel
 
-@Merve Noyan #NVIDIAGTC
+@Chorouk Malmoum #NVIDIAGTC
