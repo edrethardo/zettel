@@ -269,7 +269,7 @@ reason (it stopped forgetting onions and garlic), and precision 0.850 →
 0.960 — partly by **omitting** an item, which the docs flag as suspect
 rather than celebrate.
 
-**Gates: 1,346 tests and a 79-check smoke gate** (counted 2026-09-04 — the
+**Gates: 1,364 tests and a 79-check smoke gate** (counted 2026-09-05 — the
 numbers keep growing), both running without
 network, model, or Phoenix — and for the gate that is *enforced, not
 assumed*: it monkeypatches `socket.connect/bind/getaddrinfo` before the

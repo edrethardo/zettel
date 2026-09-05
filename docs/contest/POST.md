@@ -50,7 +50,7 @@ Measured, not vibed: 128 dishes end-to-end, three open models, one RTX
 catalog — median 89 % per dish — and runs all 128 dishes in 2.2 minutes, six
 seconds a dish; the 27B reference finds 87 % and takes three times as long.
 An older Nemotron-Nano-8B scored a median of 0 % on the same harness, and
-that number is in the docs next to the wins. 1,362 tests, a 79-check smoke
+that number is in the docs next to the wins. 1,364 tests, a 79-check smoke
 gate that blocks the network at socket level, and the failure cases written
 up — "Salat" once scored zero, and the docs explain exactly why.
 
