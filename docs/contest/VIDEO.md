@@ -793,6 +793,35 @@ Beutel · 250 g · 2,99 €" samt `via`, Kategorie, Preis und `vorraetig: false`
   Schlusspause nach der letzten Marke. Wer nachträgt, setzt `DAUER` in
   `aufnahme.sh` auf 300.
 
+## Stand 05.09. — der Nemotron-Take
+
+Nach Lauf 3 in `EVALS.md` (Nemotron 3.5 Lightning auf Augenhöhe mit Qwen,
+6 s je Zug) hat Aaron entschieden: das Contest-Video zeigt Nemotron. Die
+Box-Session hat das Modell 08:31 serviert und Idle-Stop wie Suspend für das
+Fenster ausgesetzt — der GPU-Streifen zeigt darum bis zur letzten Sekunde
+22,6 GiB resident statt der 0,1 GiB vom 02.09.
+
+| Datei | Was |
+|---|---|
+| `take_lang_nemotron2.*` | der lange Take, ohne Warnung (der erste Anlauf `take_lang_nemotron.*` scheiterte an der Demo-DB, s. u.) |
+| `zettel_demo_nemotron_final.mp4` | Schnitt (82,3 s) + Endcard, Untertitel eingebrannt; 87,6 s |
+| `take_handy_nemotron.*`, `zettel_linkedin_nemotron.mp4` | Hochkant-Clip, 40,8 s, 9 Tipps und 6 Radschübe gezeichnet, keiner ohne Weg |
+
+Was sich gegenüber dem 02.09. im Bild ändert: die Antwort kommt nach **7 s**
+(Untertitel 2 nennt die Zahl jetzt aus den Marken des Takes, nicht aus dem
+Text), die Rezeptkarte heisst „Lasagne" statt „Lasagne (2)", der Sammeltipp
+legt 10 Zeilen in den Korb (Nemotron nennt zu den 16 Rezeptzutaten weniger
+Suchbegriffe als Qwen, das 15 legte), Endcard und Stack nennen Nemotron.
+
+**Der erste Anlauf und sein Grund:** `pruefstand.py reset` hatte am 04.09.
+eine Regel bekommen, nummerierte Rezepte („Lasagne (2)") als Dubletten zu
+löschen — „Lasagne (2)" war aber das Chefkoch-Rezept, auf das der
+Gericht-Cache zeigt. Ohne es lief der Zug übers Modellgedächtnis: 8 Zeilen,
+keine Karte, keine Portionen, zwei Warnungen. Regel zurückgenommen, Demo-DB
+aus der Sicherung wiederhergestellt; das Rezept heisst in der Demo-DB jetzt
+„Lasagne", und die App vergibt seit `0901476` keine Nummer mehr, wenn ein
+geholtes Rezept einen Titel von seiner Quelle hat.
+
 ## Stand 04.09. — Endcard und eingebrannte Untertitel
 
 Die Takes vom 02.09. (nach beiden Review-Wellen, Seitenwechsel über die
