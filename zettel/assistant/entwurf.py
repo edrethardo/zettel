@@ -394,12 +394,22 @@ def _ziel(con: sqlite3.Connection, e: dict) -> int:
         return recipes.anlegen(con, _freier_name(con, e["name"], None))
 
     recipe_id = int(vorhanden["id"])
+    gewuenscht = " ".join((e["name"] or "").split()) or "Rezept"
     name = _freier_name(con, e["name"], recipe_id)
     if vorhanden["source_title"] and vorhanden["name"] != vorhanden["source_title"]:
         # Jemand hat dieses Rezept schon umbenannt. Sein Name gewinnt: das
         # ist die Arbeit eines Menschen, und der vorbelegte Entwurfsname
         # („Bolognese") ist bloss das Wort aus dem Satz. Dieselbe Rücksicht
         # nimmt `gerichte.speicher.merken` beim erneuten Abruf.
+        return recipe_id
+    if name != gewuenscht and vorhanden["source_title"]:
+        # Der Wunschname ist vergeben, und das Rezept hat einen Titel von
+        # seiner Quelle: dann bleibt der Titel. „Lasagne (2)" stand am
+        # 2026-09-05 auf der Rezeptkarte im Contest-Video — für ein Rezept,
+        # das Chefkoch „Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße"
+        # nennt. Eine Nummer sagt nichts, der Titel sagt, was es ist. Der
+        # Satz „alles für Lasagne" findet es weiter über den Gericht-Cache,
+        # der an der Anfrage hängt und nicht am Namen (`speicher.zeile`).
         return recipe_id
     if name != vorhanden["name"]:
         recipes.aendern(con, recipe_id, name=name)

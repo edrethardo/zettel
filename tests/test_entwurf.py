@@ -708,11 +708,18 @@ def test_die_zutaten_gehen_in_das_geholte_rezept_mit_der_zubereitung(con):
     assert rezept["n_zutaten"] == 3
 
 
-def test_ein_vorhandener_name_wird_nicht_stillschweigend_ueberschrieben(con):
-    """Statt zu überschreiben entsteht eine zweite Fassung.
+def test_ein_vergebener_name_laesst_dem_geholten_rezept_seinen_titel(con):
+    """Statt zu überschreiben — und statt zu nummerieren.
 
     Fragen kann hier niemand: gespeichert wird beim Abschicken, und da
-    schaut die Nutzerin auf die Bestellliste.
+    schaut die Nutzerin auf die Bestellliste. Bis zum 2026-09-05 wurde das
+    geholte Rezept dann „Spaghetti Bolognese (2)" — und genau so stand
+    „Lasagne (2)" auf der Rezeptkarte im Contest-Video, obwohl Chefkoch das
+    Rezept „Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße" nennt. Eine
+    Nummer sagt nichts; der Titel der Quelle sagt, was es ist. Ist der
+    Wunschname vergeben, behält das geholte Rezept darum seinen Titel. Der
+    Satz „alles für Lasagne" findet es weiter — über den Gericht-Cache, der
+    an der Anfrage hängt, nicht am Namen.
     """
     # Ein LEERES Rezept desselben Namens. Hätte es Zutaten, führe der Satz
     # gar nicht über die Quelle, sondern über den Rezeptweg — dann gäbe es
@@ -724,11 +731,15 @@ def test_ein_vorhandener_name_wird_nicht_stillschweigend_ueberschrieben(con):
     orders.abschicken(con)
 
     namen = sorted(r["name"] for r in recipes.rezepte(con))
-    assert namen == ["Spaghetti Bolognese", "Spaghetti Bolognese (2)"]
+    assert namen == ["Spaghetti Bolognese", "Spaghetti Bolognese al Forno"]
+    assert not any("(2)" in n for n in namen)
     alt = recipes.rezept(con, _rezept_id(con, "Spaghetti Bolognese"))
     assert alt["zutaten"] == []
-    neu = recipes.rezept(con, _rezept_id(con, "Spaghetti Bolognese (2)"))
+    neu = recipes.rezept(con, _rezept_id(con, "Spaghetti Bolognese al Forno"))
     assert neu["n_zutaten"] == 3
+    # Und der nächste Satz zum Gericht trifft das geholte Rezept weiter —
+    # über die Anfrage im Gericht-Cache.
+    assert speicher.zeile(con, "Spaghetti Bolognese")["recipe_id"] == neu["id"]
 
 
 def test_zweimal_speichern_legt_nicht_zweimal_an(con):
