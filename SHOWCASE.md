@@ -235,7 +235,7 @@ the list doubled to 128 the same day:
 | `rejected` total | 1 | 1 |
 | median turn / whole run | 20 s / 7.4 min | **6 s / 2.2 min** |
 
-![Three open models on the same 128 dishes: ingredients found, median hit rate per dish, seconds per dish](docs/images/modelle-128.png)
+![Three open models, one RTX 3090: ingredients found, median hit rate per dish, seconds per dish — Nemotron 3.5 and Qwen3.8-27B on 128 dishes, Nano-8B on the first 64](docs/images/modelle-128.png)
 
 The 8B Nano is faster because it produces less that the catalog can find —
 whole dishes come back empty (Ratatouille 0 of 13). The 3.5 Lightning is on
