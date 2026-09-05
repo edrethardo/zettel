@@ -25,7 +25,9 @@ versus "it was there and the model took another" without opening JSON.
 ## Rule 2 — an id that was not presented is rejected, not repaired
 
 The single most important lines in the repo, `zettel/assistant/plan.py`
-(stage 3, after the model answered):
+(stage 3, after the model answered; the code speaks German — `erlaubt` =
+allowed, `verworfen` = rejected, `begriff` = search term, `mit_kandidaten` =
+terms with their candidates):
 
 ```python
 erlaubt: dict[int, dict] = {}

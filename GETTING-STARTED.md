@@ -16,6 +16,28 @@ household manual (German) is [`ANLEITUNG.md`](ANLEITUNG.md).
 Catalog, cart, pick list and saved recipes work with none of the optional
 pieces — by design (Spec 11).
 
+## Five minutes, no GPU
+
+Three things work on any laptop, no model, no network:
+
+```bash
+git clone https://github.com/edrethardo/zettel && cd zettel
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# 1. Re-derive the 128-dish tables from the shipped raw results (~1 s)
+.venv/bin/python scripts/hf_datensatz.py out/ evals/breite_probe-2026-09-05-*.json
+head out/results.csv
+
+# 2. The whole suite and the smoke gate, network blocked at socket level (~1 min)
+.venv/bin/python -m pytest -q -n auto && .venv/bin/python checks/smoke.py
+
+# 3. The shop itself — catalog, cart, pick list, saved recipes run without a model
+.venv/bin/python -m zettel.scrapers.nachtlauf --begriff milch   # one search term of catalog
+.venv/bin/python -m zettel.web.app                              # http://127.0.0.1:8730
+```
+
+Only the chat needs the model; everything below is for running that too.
+
 ## Install and run
 
 ```bash

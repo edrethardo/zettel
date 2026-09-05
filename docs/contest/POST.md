@@ -21,55 +21,51 @@ Checkliste vor dem Absenden:
 
 ---
 
-NVIDIA's Nemotron 3.5 Lightning, 4-bit on one RTX 3090, now runs our
-household's grocery agent: 128 dishes, 85 % of the ingredients found in the
-catalog, six seconds a dish — and it may only pick from what the shop
-retrieved. I built the app for us and made the LLM inside it fully
-accountable; here is what you can take from it.
+NVIDIA's Nemotron 3.5 Lightning, 4-bit on one RTX 3090, went through 128
+German dishes in our grocery agent: 85 % of ingredients found, 6 seconds a
+dish — and it may only pick from what the shop retrieved. Invented product
+IDs: 1 in 1,167. Rejected, counted, shown.
 
-Type "everything for lasagna, and toilet paper" (in German — it's our
-household app) and it pulls a real top-rated recipe, computes pack counts
-from the ingredient quantities, and puts nothing in the cart without a
-per-item Yes. What the catalog cannot find stays on the list as visible
-free text — nothing is ever silently dropped.
+Our household's shopping list: she types "everything for lasagna, and
+toilet paper" (in German), the app pulls a real top-rated recipe, computes
+pack counts, and nothing enters the cart without a per-item Yes. What the
+catalog cannot find stays visible as free text — never silently dropped.
 
-The part I care about most: the model is only allowed to choose from
-candidates the shop retrieved. Invented product IDs are rejected, counted,
-and shown — in the UI and in the trace.
+What you can copy:
+– Retrieve first (SQLite FTS5); show the model only candidate IDs.
+– An ID that was not presented is rejected, not repaired — and counted on
+  the trace.
+– The user's Yes/No on every row is the eval label. Nobody annotates.
+Works for any agent that picks rows from a database — tickets, documents,
+accounts. Three code locations: PATTERN.md in the repo.
 
-The stack:
-- NVIDIA Nemotron 3.5 Lightning 30B-A3B (open weights, 4-bit) on vLLM —
-  16.6 GiB on a single NVIDIA RTX 3090, 6 s per dish; measured against
-  Qwen3.8-27B as the reference on the same 128 dishes. No cloud, no API keys.
-- FastAPI + HTMX + SQLite FTS5 — one process, no build step.
-- Arize Phoenix — every chat turn is one trace, and every Yes/No the user
-  taps becomes an eval label.
+Three open models, the same 128 dishes, one RTX 3090, every turn traced in
+Arize Phoenix. Nemotron 3.5 Lightning (W4A16, quantized by useful-quants):
+85 %, 6 s per dish. The Qwen3.8-27B reference: 87 %, 20 s. An older
+Llama-Nemotron-Nano-8B: median 0 % — that number is in the docs next to the
+wins. One run each, no repetitions; the failure cases are written up. Which
+model runs the household is now a measured choice, not a brand preference.
 
-Measured, not vibed: 128 dishes end-to-end, three open models, one RTX
-3090. Nemotron 3.5 Lightning (4-bit) finds 85 % of the ingredients in the
-catalog — median 89 % per dish — and runs all 128 dishes in 2.2 minutes, six
-seconds a dish; the 27B reference finds 87 % and takes three times as long.
-An older Nemotron-Nano-8B scored a median of 0 % on the same harness, and
-that number is in the docs next to the wins. 1,364 tests, a 79-check smoke
-gate that blocks the network at socket level, and the failure cases written
-up — "Salat" once scored zero, and the docs explain exactly why.
+vLLM · FastAPI + HTMX · SQLite FTS5 · OpenTelemetry → Arize Phoenix ·
+1,364 tests and a 79-check gate that blocks the network at socket level ·
+no cloud, no API keys.
 
-What you can take from it: retrieve first, present ids, reject anything
-not presented and count it, and let the user's Yes/No be the eval label.
-That works for any agent that picks rows from a database — products,
-tickets, documents. The pattern with its three code locations: PATTERN.md
-in the repo. (Same discipline in my model-eval harness, where the LLM judge
-is checked against real test runs: github.com/edrethardo/llm-eval-phoenix.)
-
-Demo: <video link>
-Repo & engineering tour: https://github.com/edrethardo/zettel
+Repo: https://github.com/edrethardo/zettel
+Dataset (128 dishes, 7 runs): <HF dataset link>
+The pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
 
 @Merve Noyan #NVIDIAGTC
 
 ---
 
-**Kürzere Variante** (falls der Feed-Algorithmus kurze Posts bevorzugt oder
-du zwei Anläufe willst):
+**Erster Kommentar, direkt nach dem Post** (nicht in den Post — er verwässert
+dort): der Hochkant-Trailer (41 s), das Vergleichsbild
+`docs/images/modelle-128.png`, und der Satz „Same discipline in my model-eval
+harness, where the LLM judge is checked against real test runs:
+github.com/edrethardo/llm-eval-phoenix". Dann eine Stunde antworten.
+
+**Kürzere Variante** — nicht als zweiter LinkedIn-Post (zwei Posts teilen
+die Reichweite), sondern für X oder Instagram:
 
 ---
 
