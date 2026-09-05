@@ -246,10 +246,91 @@ GERICHTE: list[tuple[str, str, str | None, str | None]] = [
     ("Ratatouille", GESPEICHERT, None, None),
     ("Quesadillas", GESPEICHERT, None, None),
     ("Kartoffelsalat", GESPEICHERT, None, "Spülmittel"),
+    # ======================================================================
+    # Die zweite Hälfte (2026-09-05): von 64 auf 128, dieselben elf Achsen
+    # im selben Verhältnis. Nicht mehr vom Gleichen, sondern je Achse das,
+    # was die erste Hälfte noch nicht abdeckt — bei jedem Gericht steht,
+    # wofür es dasteht. Die Zusatzartikel wechseln weiter je Gericht.
+    # ======================================================================
+    # -- Alltagsküche, zweite Runde: Beilagen und Eintöpfe statt Braten -----
+    ("Schnitzel mit Pommes", ALLTAG, None, "Müllbeutel"),   # zwei Gerichte in einem Namen
+    ("Kartoffelpuffer", ALLTAG, None, None),                # fast nur Grundzutaten
+    ("Linsensuppe mit Würstchen", ALLTAG, None, None),      # Hülsenfrucht + Wurst
+    ("Kohlrouladen", ALLTAG, None, None),                   # ganzer Kohlkopf, zählbar
+    ("Schweinebraten", ALLTAG, None, None),                 # ein Stück Fleisch nach Gewicht
+    ("Spinat mit Spiegelei und Kartoffeln", ALLTAG, None, None),  # drei Bestandteile
+    ("Hackbraten", ALLTAG, None, None),                     # Hack + Brötchen + Ei
+    ("Zwiebelkuchen", ALLTAG, None, None),                  # herzhaft gebacken
+    # -- International, zweite Runde: Klassiker, deren Zutaten der Katalog hat
+    ("Carbonara", INTERNATIONAL, None, "Backpapier"),       # Guanciale vs. Speck
+    ("Coq au Vin", INTERNATIONAL, None, None),              # Wein als Zutat
+    ("Hähnchen Tikka Masala", INTERNATIONAL, None, None),   # Gewürzmischung
+    ("Pulled Pork", INTERNATIONAL, None, None),             # englischer Name, deutscher Katalog
+    ("Fajitas", INTERNATIONAL, None, None),                 # Tortillas + Streifen
+    ("Minestrone", INTERNATIONAL, None, None),              # viele Gemüse, kleine Mengen
+    ("Souvlaki", INTERNATIONAL, None, None),                # Spiesse: zählbar
+    # -- International, exotisch, zweite Runde: andere Küchen als Thai/Vietnam
+    ("Laksa", EXOTISCH, None, None),                        # Kokos + Currypaste
+    ("Rendang", EXOTISCH, None, None),                      # Galgant, Kaffirlimette
+    ("Butter Chicken", EXOTISCH, None, "Küchenrolle"),      # indisch, englischer Name
+    ("Gyoza", EXOTISCH, None, None),                        # Teigblätter
+    ("Kimchi Jjigae", EXOTISCH, None, None),                # Kimchi, Gochugaru
+    ("Tacos al Pastor", EXOTISCH, None, None),              # Achiote, Ananas
+    ("Ceviche", EXOTISCH, None, None),                      # roher Fisch, Limette
+    # -- Vegetarisch/vegan, zweite Runde: Suppe, Bratling, Auflauf ---------
+    ("Kürbissuppe", VEGETARISCH, None, "Spülschwamm"),
+    ("Tofu-Curry", VEGETARISCH, None, None),                # Tofu im Katalog?
+    ("Auberginen-Parmigiana", VEGETARISCH, None, None),     # Bindestrich im Namen
+    ("Bohnen-Burger", VEGETARISCH, None, None),
+    ("Grünkern-Bratlinge", VEGETARISCH, None, None),        # seltenes Getreide
+    ("Spinatknödel", VEGETARISCH, None, None),
+    # -- Backen, zweite Runde: Hefe, Brot, Torte ---------------------------
+    ("Bienenstich", BACKEN, None, None),                    # Hefeteig + Creme
+    ("Brezeln", BACKEN, None, None),                        # Natron/Lauge
+    ("Zimtschnecken", BACKEN, None, None),
+    ("Schwarzwälder Kirschtorte", BACKEN, None, None),      # Kirschwasser, Sahne
+    ("Brownies", BACKEN, None, "Duschgel"),
+    ("Vollkornbrot", BACKEN, None, None),                   # Mehlsorten
+    # -- Zählbare Einheiten, zweite Runde: Scheiben, Köpfe, Bund, Stück -----
+    ("Bruschetta", ZAEHLBAR, None, None),                   # Scheiben Brot
+    ("Eier in Senfsoße", ZAEHLBAR, None, None),             # Eier in Stück
+    ("Gefüllte Zucchini", ZAEHLBAR, None, None),            # Zucchini in Stück
+    ("Blumenkohl mit Butterbröseln", ZAEHLBAR, None, None), # ein Kopf
+    ("Zwiebelsuppe", ZAEHLBAR, None, None),                 # Zwiebeln in Stück
+    ("Lachs mit Dillsoße", ZAEHLBAR, None, None),           # ein Bund Dill
+    # -- Einwort-Gerichte, zweite Runde -----------------------------------
+    ("Pfannkuchen", EINWORT, None, None),
+    ("Schnitzel", EINWORT, None, None),                     # nackt, ohne Beilage
+    ("Gulaschsuppe", EINWORT, None, "Klopapier"),
+    ("Grießbrei", EINWORT, None, None),
+    ("Reibekuchen", EINWORT, None, None),                   # Kartoffelpuffer, anderer Name
+    ("Tzatziki", EINWORT, None, None),
+    # -- Mehrdeutig, zweite Runde: wieder nackt, mit Kontrolle --------------
+    ("Curry", MEHRDEUTIG, "Curry", None),
+    ("Nudeln", MEHRDEUTIG, "Nudeln", None),
+    ("Bowl", MEHRDEUTIG, "Bowl", None),
+    ("Kuchen", MEHRDEUTIG, "Kuchen", None),
+    ("Pfanne", MEHRDEUTIG, "Pfanne", None),
+    ("Curry als ganzer Satz", MEHRDEUTIG, "alles für Curry", None, "Curry"),
+    # -- Schreibweisen und Tippfehler, zweite Runde -------------------------
+    ("Spaghetti Carbonara", SCHREIBWEISE, None, None),      # richtig — die Kontrolle
+    ("Spagetti Carbonara", SCHREIBWEISE, None, None),       # ein h zu wenig
+    ("Gnocci", SCHREIBWEISE, None, None),                   # ein h zu wenig
+    ("Cesar Salad", SCHREIBWEISE, None, None),              # Caesar, englisch
+    ("Kürbisuppe", SCHREIBWEISE, None, None),               # ein s zu wenig
+    ("Zaziki", SCHREIBWEISE, None, None),                   # Tzatziki, eingedeutscht
+    # -- Fantasienamen, zweite Runde ---------------------------------------
+    ("Knusperzwerg-Auflauf", FANTASIE, None, "Batterien"),
+    ("Brummelbeer-Torte", FANTASIE, None, None),
+    ("Flitzepfanne Deluxe", FANTASIE, None, None),
+    # -- Bereits gespeichert, zweite Runde ---------------------------------
+    ("Kürbisrisotto", GESPEICHERT, None, None),
+    ("Tomatensuppe", GESPEICHERT, None, None),
+    ("Nudelsalat", GESPEICHERT, None, "Kaffeefilter"),
 ]
 
 #: Gegen die Box parallel. Sie verträgt es (`rest_probe.py` fährt sechs), und
-#: 63 Züge nacheinander wären eine Dreiviertelstunde statt zehn Minuten.
+#: 127 Züge nacheinander wären anderthalb Stunden statt einer Viertelstunde.
 PARALLEL = 6
 
 
