@@ -6,6 +6,77 @@ Trace **live** aufbaut, unten ein schmaler GPU-Streifen, in dem die 3090
 ausschlägt. Gefilmt wird die **Demo-Instanz** (eigener Port, Kopie der
 Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 
+> **Was gilt (Stand 05.09., zweiter Schnitt):** der Abschnitt direkt hier
+> drunter. Alles ab „Alle Zeitangaben unten" ist die Geschichte des Videos —
+> 28,7-s-Züge, nvtop, Shot 0 mit Gesicht, Voice-Over, Supermarkt-Shot 6b — und
+> steht, weil jede Zahl darin einmal bezahlt wurde. Nichts davon ist mehr
+> Anleitung.
+
+## Stand 05.09., zweiter Schnitt — nach dem Juror-Review
+
+Ein frischer Fable-Juror hat beide Fassungen an 60 Einzelbildern gegen die
+vier Contest-Kriterien geprüft (Präsentation 4/10) und vor allem gefunden:
+5 s Schwarz am Anfang, Untertitel auf Feedbreite ~6 px hoch, „7 s" im
+Untertitel neben einem Phoenix-Fenster mit P50 2,8 s, Nemotron vor der Endcard
+nirgends im Bild, zwei Untertitel, die das Bild nicht belegt, und ein Trailer
+ohne ein Wort Englisch. Alles davon ging ohne neuen Dreh; die beiden Takes
+vom Morgen (`take_lang_nemotron2`, `take_handy_nemotron`) bleiben.
+
+**Der Render ist jetzt ein Skript.** Bis dahin stand der letzte Schritt
+(Einbrennen, Endcard anhängen) in keinem Skript:
+
+    python3 schnitt.py take_lang_nemotron2 github.com/edrethardo/zettel
+    #  -> take_lang_nemotron2_final.mp4 + .srt, titelkarte.png = thumbnail.png
+    python3 handy.py take_handy_nemotron zettel_linkedin_nemotron.mp4
+
+| Datei | Was |
+|---|---|
+| `zettel_demo_nemotron_final.mp4` (+ `.srt`) | lange Fassung, **90,5 s**, 1920×1230: 3 s Titelkarte, 79,2 s Shots, 8 s Endcard |
+| `zettel_linkedin_nemotron.mp4` | Hochkant, **44,3 s**: 40,8 s Clip mit drei Textkarten, 3,5 s Endcard |
+| `thumbnail.png` | = Titelkarte (Antwortmoment, GPU 100 %, Satz darüber) — als Vorschaubild hochladen |
+
+Was sich geändert hat, und warum:
+
+* **Titelkarte statt Schwarz.** `VORLAUF` ist weg; `titelkarte.py` nimmt das
+  Bild 0,2 s nach der Antwort (der GPU-Streifen steht noch auf 100 %),
+  dunkelt es ab und schreibt den Satz darüber: „Everything for lasagna — and
+  toilet paper." · One sentence in, a shopping list out · Open NVIDIA
+  Nemotron 3.5 · one RTX 3090 · no cloud. Der Juror: „Gesicht oder Schnitt,
+  aber nie Schwarz" — und ein Gesicht ohne Ton wäre im Feed derselbe
+  Scroll-Killer. Shot 0 ist damit gestrichen, nicht vertagt.
+* **Die Antwortzeit kommt aus dem Bild.** Die Marke „Antwort da" fragt den
+  Server und kam 4,4 s nach dem Bild (Antwort im Bild 2,9 s nach dem Klick,
+  Marke bei 7,0 s). `schnitt.py::antwort_im_bild()` sucht in der App-Spalte
+  den ersten Sprung nach dem Klick („Das Modell überlegt…") und den größten
+  danach und bricht ab, wenn beides nicht zur Marke passt. Untertitel 2 sagt
+  jetzt **3 s**, und der Schnitt trägt keine 4 s Standbild mehr.
+* **Untertitelband unter dem Bild.** Das Bild wird um 150 px erweitert
+  (1920×1230); die Untertitel stehen dort mittig in ~44 px statt ~32 px
+  über dem GPU-Streifen. Kein Untertitel verdeckt UI, keiner über 3,5 Wörter/s
+  (`schnitt.py` warnt sonst), keiner länger als zwei Zeilen.
+* **Nemotron im Bild.** Rechts im GPU-Streifen steht als Badge, was beim Take
+  auf der Box lief: `model  Nemotron 3.5 Lightning 30B-A3B` /
+  `quant  W4A16 · vLLM 0.27 · Arize Phoenix`. Was das Bild noch nicht
+  belegt: der Modellname im Trace selbst — das bräuchte in Shot 7 den
+  LLM-Span statt der `chat.turn`-Attribute und damit einen neuen Take.
+* **Zwei Untertitel auf das Bild zurückgeholt.** Shot 5 beginnt oben im
+  Korb, wo die Toilettenpapier-Zeile steht (gemessen: 13 bis 10,5 s vor dem
+  Bestellen, dann rollt die Seite), und springt dann ans Ende der Liste; der
+  Text behauptet keinen „gefunden über"-Hinweis mehr, den es in der Korbzeile
+  nicht gibt. Shot 7 sagt „1 in 1,167 across 128 dishes" ohne das
+  unerklärte „0 shipped"; „one line below" wurde „right below".
+* **Endcard 8 s, ~45 Wörter statt ~95**, mit Link, Name und `#NVIDIAGTC`;
+  die Prozentvergleiche gehören in den Post.
+* **Trailer mit Text.** Drei Karten im unteren Drittel des Blatts, an Marken
+  des Takes gehängt (Satz tippen · Rezeptkarte · Pick-Liste), dann 3,5 s
+  Endcard mit Link — vorher endete er hart auf Schwarz und trug kein
+  einziges Contest-Kriterium.
+
+Nicht getan, mit Grund: kein neuer Take für den Modellnamen im Trace (~20 min
+plus Box-Fenster, Nutzen: ein Beleg statt eines Badges); „gab's nicht" trifft
+weiter das Klopapier, das Untertitel 5 gerade gefunden hat — der Trailer
+trifft den Spinat, das wäre die bessere Wahl für einen Nachdreh.
+
 Alle Zeitangaben unten sind **am 29.08.2026 gemessen**, nicht geschätzt:
 
 | Messwert | Wert |
@@ -804,12 +875,12 @@ Fenster ausgesetzt — der GPU-Streifen zeigt darum bis zur letzten Sekunde
 | Datei | Was |
 |---|---|
 | `take_lang_nemotron2.*` | der lange Take, ohne Warnung (der erste Anlauf `take_lang_nemotron.*` scheiterte an der Demo-DB, s. u.) |
-| `zettel_demo_nemotron_final.mp4` | Schnitt (82,3 s) + Endcard, Untertitel eingebrannt; 87,6 s |
-| `take_handy_nemotron.*`, `zettel_linkedin_nemotron.mp4` | Hochkant-Clip, 40,8 s, 9 Tipps und 6 Radschübe gezeichnet, keiner ohne Weg |
+| `zettel_demo_nemotron_final.mp4` | erster Schnitt (82,3 s) + Endcard, 87,6 s — **überholt vom zweiten Schnitt oben** |
+| `take_handy_nemotron.*`, `zettel_linkedin_nemotron.mp4` | Hochkant-Clip, 40,8 s, 9 Tipps und 6 Radschübe gezeichnet, keiner ohne Weg — seit dem zweiten Schnitt mit Textkarten und Endcard, 44,3 s |
 
-Was sich gegenüber dem 02.09. im Bild ändert: die Antwort kommt nach **7 s**
-(Untertitel 2 nennt die Zahl jetzt aus den Marken des Takes, nicht aus dem
-Text), die Rezeptkarte heisst „Lasagne" statt „Lasagne (2)", der Sammeltipp
+Was sich gegenüber dem 02.09. im Bild ändert: die Antwort kommt nach **3 s**
+(Untertitel 2 nannte zuerst „7 s“ aus der Marke des Takes — die kam 4,4 s
+nach dem Bild, siehe oben), die Rezeptkarte heisst „Lasagne" statt „Lasagne (2)", der Sammeltipp
 legt 10 Zeilen in den Korb (Nemotron nennt zu den 16 Rezeptzutaten weniger
 Suchbegriffe als Qwen, das 15 legte), Endcard und Stack nennen Nemotron.
 
