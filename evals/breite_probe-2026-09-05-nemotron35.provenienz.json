@@ -1,0 +1,12 @@
+{
+  "stack": "vllm 0.27.1 (venv), useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16",
+  "endpunkt": "http://vllm-box.local:8000/v1",
+  "modell": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B",
+  "max_model_len": 32768,
+  "created": 1788595500,
+  "created_lesbar": "2026-09-05T08:05:00",
+  "parallel": 6,
+  "guided": "Code sendete noch guided_json in extra_body — auf 0.27.1 wirkungslos; Lauf also unbeschraenkt wie der Qwen-Lauf vom 01.09.",
+  "commit": "60ebea0",
+  "phoenix_projekt": "Zettel Eval Nemotron 3.5"
+}

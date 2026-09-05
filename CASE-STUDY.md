@@ -237,9 +237,10 @@ The butter case, the span contract, and the label design:
 probe, and the before/after tables: [`EVALS.md`](EVALS.md). The one-line fix:
 commit `6e5e144` ("WB-386: Stufe 3 sieht auf dem Rezeptweg den Satz nicht
 mehr — 76 % -> 83 %"). All measurements dated 2026-08-28/29, model
-`Qwen3.8-27B-Instruct`, single RTX 3090. The same harness has already
-judged a second open model in an afternoon (`Llama-3.1-Nemotron-Nano-8B`:
-median 0 % catalog hits against Qwen's 89 % — recorded in `EVALS.md` as
-plainly as the wins). The repo's gates — 1,346 tests and
+`Qwen3.8-27B-Instruct`, single RTX 3090. The same harness has since judged
+two more open models, each in under an afternoon: `Llama-3.1-Nemotron-Nano-8B`
+(median 0 % catalog hits against Qwen's 89 % — recorded in `EVALS.md` as
+plainly as the wins) and NVIDIA's Nemotron 3.5 Lightning 30B-A3B, which
+matched the reference (85 % / 88 %) at six seconds a dish. The repo's gates — 1,346 tests and
 a 79-check smoke gate at the time of writing — run without network, model,
 or Phoenix.
