@@ -285,7 +285,7 @@ class Modellzugang:
         """Ein Chat-Completion-Aufruf im OpenAI-Format.
 
         `weitere` geht unverändert ans SDK — `temperature`, `max_tokens`,
-        `extra_body` mit `guided_json` und was der Agent sonst braucht. Hier
+        `response_format`, `extra_body` und was der Agent sonst braucht. Hier
         wird nichts davon vorgegeben, damit die Prompt-Varianten aus Spec 8.3
         nicht gegen dieses Modul argumentieren müssen.
         """

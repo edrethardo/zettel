@@ -120,9 +120,15 @@ The same rule guards four different surfaces: product IDs, category names
 (a typed "Aufschnitt" fans out into the catalog's own categories, and the
 model may only map to one that was offered), recipe choices (only the twelve
 recipes the search returned can be picked), and the term→ingredient mapping.
-vLLM's `guided_json` is on, but it enforces the *shape*, not the truth — a
-well-formed integer can still be a hallucinated one, so the check against the
-presented candidates lives in code.
+Structured output (`response_format: json_schema`) is on, but it enforces
+the *shape*, not the truth — a well-formed integer can still be a
+hallucinated one, so the check against the presented candidates lives in
+code. That placement paid for itself on 2026-09-05: the box had moved to
+vLLM 0.27.1 four days earlier, where the older `guided_json` extra-body field
+is silently ignored (HTTP 200, prose instead of JSON, no warning). Stages 1
+and 3 ran unconstrained for four days and every number stayed the same —
+measured, not assumed: the 0.27.1 run of 2026-09-01 scores 84 % / 88 %, like
+the constrained one. The agent now sends the standard `response_format`.
 
 **Four "obviously LLM" tasks turned out not to need an LLM.** Retrieval is
 FTS5, not the model. Fanning "Aufschnitt" out into its sorts is a `GROUP BY`

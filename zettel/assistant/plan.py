@@ -17,7 +17,7 @@ Deshalb sind die zwei Aufrufe hier streng getrennt:
   `Auswahl.verworfen`.
 
 **Guided Decoding erzwingt die Form, nicht die Wahrheit.** vLLM kann die
-Antwort per `guided_json` in ein Schema zwingen; damit ist sie sicher gültiges
+Antwort per `response_format` in ein Schema zwingen; damit ist sie sicher gültiges
 JSON mit ganzzahliger `produkt_id`. Eine gültige Ganzzahl kann trotzdem eine
 frei erfundene sein. Die Prüfung gegen die vorgelegten Kandidaten bleibt
 deshalb im Code und wird nicht ans Schema abgetreten — sonst wanderte die
@@ -1032,17 +1032,29 @@ def _frage(zugang, system: str, benutzer: str, schema: dict, wurzel: str,
            denken: bool = DENKEN) -> str:
     """Ein Aufruf ans Modell. Gibt `content` zurück, roh.
 
-    `guided_json` und `chat_template_kwargs` gehen über `extra_body` — vLLM
-    erwartet sie dort, und der Client reicht `weitere` unverändert ans SDK
-    durch. Ist Guided Decoding abgeschaltet, bleibt nur der Prompt und das
-    nachsichtige Parsen unten; beides muss auch allein tragen, denn ein
+    Das Schema geht als `response_format` mit — `{"type": "json_schema",
+    "json_schema": {"name": wurzel, "schema": …}}`, das OpenAI-Wire-Format,
+    das vLLM seit 0.6 versteht. **Nicht mehr als `guided_json` in
+    `extra_body`:** gemessen am 2026-09-05 gegen vLLM 0.27.1 wird das dort
+    stillschweigend ignoriert — HTTP 200, Prosa statt JSON, keine Warnung.
+    Die Box lief seit dem 01.09. auf 0.27.1; Stufe 1 und 3 waren dort also
+    vier Tage lang unbeschränkt, und keine Messung hat es gezeigt, weil das
+    Modell bei Temperatur 0 das Schema ohnehin trifft (EVALS.md: „turning
+    guided_json off moved none of the three scores"). Genau deshalb steht die
+    Prüfung gegen die Kandidaten im Code und nicht in der Serveroption.
+
+    `chat_template_kwargs` geht weiter über `extra_body` — dafür gibt es kein
+    Standardfeld. Ist Guided Decoding abgeschaltet, bleibt nur der Prompt und
+    das nachsichtige Parsen unten; beides muss auch allein tragen, denn ein
     anderer Server (Spec 8.3: „lokales Qwen gegen ein grösseres Modell")
-    kennt `guided_json` möglicherweise nicht.
+    kennt auch `response_format` möglicherweise nicht.
     """
     weitere = {"temperature": temperatur, "max_tokens": max_tokens}
     extra = {}
     if guided:
-        extra["guided_json"] = schema
+        weitere["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {"name": wurzel, "schema": schema}}
     if not denken:
         extra["chat_template_kwargs"] = {"enable_thinking": False}
     if extra:

@@ -552,18 +552,32 @@ def test_ohne_kandidaten_wird_stufe_drei_gar_nicht_gefragt(con):
     assert len(llm.aufrufe) == 1
 
 
-def test_guided_json_geht_als_extra_body_mit(con):
-    """Guided Decoding erzwingt die FORM. Die Prüfung bleibt trotzdem im Code."""
+def test_das_schema_geht_als_response_format_mit(con):
+    """Guided Decoding erzwingt die FORM. Die Prüfung bleibt trotzdem im Code.
+
+    Über `response_format` (OpenAI-Wire, `json_schema`) und NICHT mehr über
+    `guided_json` in `extra_body`: gemessen am 2026-09-05 gegen vLLM 0.27.1
+    wird `guided_json` dort stillschweigend ignoriert — HTTP 200, Prosa statt
+    JSON, keine Warnung —, `response_format` bindet. Die Box lief seit dem
+    01.09. auf 0.27.1; bis zu diesem Test waren Stufe 1 und 3 dort also
+    unbeschränkt, ohne dass es jemand gemerkt hätte.
+    """
     agent, llm = _chat(con, _extract(("Milch", 1)), _choose())
     agent.turn(con, "Milch")
-    assert llm.aufrufe[0]["extra_body"]["guided_json"] == plan.SCHEMA_EXTRACT
-    assert llm.aufrufe[1]["extra_body"]["guided_json"] == plan.SCHEMA_CHOOSE
+    assert llm.aufrufe[0]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {"name": "begriffe", "schema": plan.SCHEMA_EXTRACT}}
+    assert llm.aufrufe[1]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {"name": "auswahl", "schema": plan.SCHEMA_CHOOSE}}
+    assert "guided_json" not in llm.aufrufe[0].get("extra_body", {})
 
 
-def test_ohne_guided_geht_kein_guided_json_mit(con):
-    """Ein anderer Server kennt `guided_json` womöglich nicht (Spec 8.3)."""
+def test_ohne_guided_geht_kein_response_format_mit(con):
+    """Ein anderer Server kennt Guided Decoding womöglich nicht (Spec 8.3)."""
     agent, llm = _chat(con, _extract(("Milch", 1)), _choose(), guided=False)
     agent.turn(con, "Milch")
+    assert "response_format" not in llm.aufrufe[0]
     assert "guided_json" not in llm.aufrufe[0].get("extra_body", {})
 
 
@@ -585,7 +599,7 @@ def test_denken_ist_aus_und_zwar_je_anfrage(con):
 def test_denken_laesst_sich_wieder_einschalten(con):
     agent, llm = _chat(con, _extract(("Milch", 1)), _choose(), denken=True)
     agent.turn(con, "Milch")
-    assert "chat_template_kwargs" not in llm.aufrufe[0]["extra_body"]
+    assert "chat_template_kwargs" not in llm.aufrufe[0].get("extra_body", {})
 
 
 def test_abgeschnittene_antwort_wird_als_solche_gemeldet(con):
