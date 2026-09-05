@@ -43,10 +43,13 @@ The stack:
 
 Measured, not vibed: 64 dishes end-to-end (83 % of search terms found a
 catalog product, median 89 % per dish), 1,346 tests, a 79-check smoke gate
-that blocks the network at socket level. The same harness judged a second
-open model in an afternoon — NVIDIA's Nemotron-Nano-8B scored a median of
-0 %, and that number is in the docs next to the wins. The write-up includes
-the failure cases — "Salat" scores zero, and the docs explain exactly why.
+that blocks the network at socket level. The same harness judged two more
+open models, each in under an afternoon: Nemotron-Nano-8B scored a median of
+0 % — and that number is in the docs next to the wins — while NVIDIA's new
+Nemotron 3.5 Lightning 30B-A3B (4-bit, same RTX 3090) matched the 27B
+reference at 85 % / 88 % and ran all 64 dishes in 1.1 minutes. The write-up
+includes the failure cases — "Salat" scores zero, and the docs explain
+exactly why.
 
 60-second demo: <video link>
 Repo & engineering tour: https://github.com/edrethardo/zettel

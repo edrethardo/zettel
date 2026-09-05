@@ -682,17 +682,75 @@ die Auswahl selbst, nicht das Format. Beide Läufe unter identischen
 Bedingungen (ein gedrosselter Download lief bei beiden durch), 0 Fehler.
 
 **Was dieser Lauf NICHT sagt:** nichts über NVIDIAs aktuelle Generation.
-Das 8B-Nano ist ein Llama-3.1-Abkömmling von Anfang 2025; das
-`Nemotron 3.5 Lightning 30B-A3B` vom 10.08.2026 ist eine andere Klasse
-(hybrides MoE, 3B aktiv), und für die RTX 3090 gibt es seit August eine
-W4A16-Fassung (`useful-quants/…-W4A16`, 16,6 GiB, auf genau dieser Box- und
-vLLM-Kombination validiert). Dieser Lauf 3 ist der offene Posten dieser
-Tabelle — der Harness ist derselbe, der Handgriff ist der Modellwechsel auf
-der Box.
+Das 8B-Nano ist ein Llama-3.1-Abkömmling von Anfang 2025. Dafür gibt es
+Lauf 3.
+
+### Lauf 3 — `NVIDIA-Nemotron-3.5-Lightning-30B-A3B` (W4A16), 2026-09-05
+
+Die aktuelle Generation: hybrides MoE, 30B gesamt, 3B aktiv, erschienen am
+10.08.2026; als `useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16`
+(compressed-tensors, 16,6 GiB) auf der RTX 3090 serviert, vLLM 0.27.1,
+32k Kontext, `--reasoning-parser nemotron_v3`, Denken je Anfrage aus. Die
+Box-Session hat das Modell über Nacht geladen und um 08:02 serviert, den
+Idle-Stop fürs Fenster ausgesetzt; gemessen 08:05–08:09 vom Laptop aus,
+dasselbe Kommando wie oben mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval
+Nemotron 3.5"`. Rohdaten: `evals/breite_probe-2026-09-05-nemotron35.json`
+(+ `.provenienz.json`).
+
+```
+                                   Qwen3.8-27B (AWQ)   Nemotron-Nano-8B   Nemotron 3.5 Lightning
+                                       30.08. / 01.09.        30.08.              05.09.
+Katalogtreffer der Begriffe           83 % / 84 %            11 %                 82 %  (457 von 557)
+Katalogtreffer, Mittel je Gericht     84 % / 84 %            25 %                 85 %
+Katalogtreffer, Median je Gericht     88 % / 88 %             0 %                 88 %
+Gerichte bei 0 %                       1 / 1                 41                    0   (eins bei 14 %: der Fantasiename)
+Gerichte im Band 80–100 %             43 / 43                10                   42
+Rezeptentwurf entstanden              58 von 64             —                    58 von 64
+Zusatzartikel im Korb                  8 von 8              —                     6 von 8
+Zeilen im Laden mit Menge             92 %                  —                    91 % (Median 100 %)
+zettel.rejected gesamt                 6 / —                  2                    2
+Dauer je Zug, Median                  37 s / 7 s            21 s                  6 s  (0–12 s)
+ganzer Lauf, Phase B                   7,0 min / —           —                    1,1 min
+```
+
+(Qwen zweimal: 30.08. auf vLLM 0.24 mit wirksamem Guided Decoding, 01.09.
+auf 0.27.1 ohne — siehe den Nachtrag unten. Nemotron 3.5 lief unter den
+Bedingungen des 01.09.)
+
+**Der Befund:** Nemotron 3.5 Lightning ist auf diesem Weg **auf Augenhöhe
+mit dem 27B-Referenzmodell** — 85 % / 88 % gegen 84 % / 88 %, dieselbe
+Zahl der Gerichte über 80 %, kein Gericht bei null — und **fünf- bis
+sechsmal schneller** je Zug als Qwen auf derselben vLLM-Version (Median 6 s
+gegen 7 s beim 01.09.-Lauf mit DFlash; gegen 37 s ohne). Was schwächer ist,
+steht daneben: der Zusatzartikel („… und Klopapier") kam in 6 von 8 Zügen
+mit (Qwen 8 von 8) — bei Frikadellen und Glibberschmarrn fehlte er; und
+„Käse Lauch Suppe" fand nur 1 von 7 Begriffen, wo Qwen 5 von 7 fand. Das
+sind zwei Gerichte von 64 und keine Aussage über das Modell; eine
+Wiederholung würde sie einordnen (siehe „Was diese Messung NICHT sagt").
+
+**Guided JSON:** der Lauf ist mit dem alten `guided_json`-Feld gefahren,
+das vLLM 0.27.1 ignoriert (Nachtrag unten) — unbeschränkt also, wie der
+Qwen-Lauf vom 01.09., und mit `rejected = 2` genauso formtreu. Denken war
+je Anfrage aus; mit Denken landet Nemotrons Überlegung im Feld `reasoning`
+und schneidet bei kleinem `max_tokens` die Antwort ab (`content: null`,
+`finish_reason=length`) — gemessen, nicht vermutet.
 
 Die Antwort auf die Eingangsfrage bleibt: ein zweites Modell zu beurteilen
 kostet einen Nachmittag und keine Zeile Produktionscode — und das Ergebnis
-kann eine Absage sein, die genauso hier steht wie ein Erfolg.
+kann eine Absage sein (Lauf 2) oder ein gleichwertiger, schnellerer Ersatz
+(Lauf 3), und beides steht hier gleich.
+
+### Nachtrag 2026-09-05 — `guided_json` war auf 0.27.1 vier Tage lang aus
+
+Gemessen gegen die Box mit einem Prompt, der Prosa verlangt: ohne Zwang
+Prosa, mit `guided_json` in `extra_body` **ebenfalls Prosa** (HTTP 200,
+keine Warnung), mit `response_format: json_schema` JSON nach Schema. Die Box
+lief seit dem 01.09. auf 0.27.1; Stufe 1 und 3 waren dort also unbeschränkt,
+und der Lauf vom 01.09. zeigt es: 84 % / 88 %, ein Gericht bei null —
+dieselben Zahlen wie beschränkt. Das ist die Breitenbestätigung dessen, was
+die Tiefenmessung oben (`ohne-guided`) schon sagte: bei Temperatur 0 bindet
+die Einschränkung nie. Der Agent sendet das Schema seit `6f0447b` als
+`response_format`; der Befund kam von der Box-Session, die Zahl von hier.
 
 ## Was hier schwächer ist, als es aussieht
 
