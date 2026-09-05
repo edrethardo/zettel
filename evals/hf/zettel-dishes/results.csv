@@ -1,0 +1,455 @@
+run,model,dish,path,terms,catalog_hits,free_text,hit_rate,rejected,seconds,error,source_recipe,phoenix_project,measured_at
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Rouladen,chefkoch,11,11,0,1.000,0,16.6,,Rinderrouladen klassisch,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Frikadellen,chefkoch,13,8,5,0.615,0,17.4,,Omas beste Frikadellen,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,13.6,,Grünkohl mit Pinkel nach Ammerländer Art,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Maultaschen,chefkoch,5,5,0,1.000,0,7.1,,Überbackene Maultaschen,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Semmelknödel,chefkoch,6,6,0,1.000,0,10.1,,Serviettenknödel,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Königsberger Klopse,chefkoch,14,11,3,0.786,0,18.1,,Königsberger Klopse,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Sauerbraten,chefkoch,7,4,3,0.571,0,6.0,,Rindsschmorbraten mit Essig und Rahm,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Rotkohl,chefkoch,7,6,1,0.857,0,12.6,,"Blaukraut oder Rotkohl, klassisch",,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Chili con Carne,chefkoch,11,8,3,0.727,0,10.9,,Chili con Carne à la Benjo,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Moussaka,chefkoch,12,12,0,1.000,0,17.3,,Moussaka,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Gnocchi mit Salbeibutter,chefkoch,6,6,0,1.000,0,9.8,,Selbstgemachte Gnocchi in Salbei-Butter,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Shakshuka,chefkoch,6,6,0,1.000,0,8.9,,Shakshuka,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Paella,chefkoch,12,8,4,0.667,0,0.1,,Paella mit Meeresfrüchten,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Quiche Lorraine,chefkoch,6,6,0,1.000,0,9.2,,Majas Quiche Lorraine in verschiedenen Variationen,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Tortilla Espanola,chefkoch,2,2,0,1.000,0,4.3,,Tortilla Espanola,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Pho Bo,chefkoch,19,11,7,0.579,0,22.2,,Pho Bo - Vietnamesische Rindfleischsuppe,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Bibimbap,chefkoch,8,7,1,0.875,0,9.4,,Bibimbap nach Art des Hauses,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Pad Thai,chefkoch,10,6,4,0.600,0,16.0,,Pad Thai,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Ramen,chefkoch,15,11,4,0.733,0,17.9,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Tom Kha Gai,chefkoch,13,8,5,0.615,0,20.1,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Massaman Curry,chefkoch,11,10,1,0.909,0,21.4,,Annas Massaman-Curry,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Okonomiyaki,chefkoch,6,4,2,0.667,0,12.5,,Okonomiyaki Osaka-Style,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Gemüselasagne,chefkoch,13,13,0,1.000,0,17.0,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Kichererbsencurry,chefkoch,6,5,1,0.833,0,7.6,,Kichererbsen-Curry Chana Masala,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Linsenbolognese,chefkoch,9,8,1,0.889,0,11.4,,Rote Linsen-Bolognese,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Falafel,chefkoch,8,7,1,0.875,0,13.2,,Hummus bi Tahina,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Chili sin Carne,chefkoch,14,11,3,0.786,0,15.4,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,16.2,,Mediterranes Ofengemüse,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Apfelkuchen,chefkoch,6,6,0,1.000,0,8.4,,Apfelkuchen mit Streuseln,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Käsekuchen,chefkoch,10,9,1,0.900,0,15.0,,Russischer Zupfkuchen,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Pizzateig,chefkoch,6,5,1,0.833,0,11.7,,Knusprig dünne Pizza mit Chorizo und Mozzarella,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Waffeln,chefkoch,7,7,0,1.000,0,8.0,,Geheimes Waffelrezept,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Zwetschgendatschi,chefkoch,5,4,1,0.800,0,7.9,,Zwetschgendatschi mit Butterstreuseln,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Marmorkuchen,chefkoch,10,10,0,1.000,0,11.2,,Marmor-Gugelhupf,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Knoblauchsuppe,chefkoch,8,6,2,0.750,0,8.7,,Knoblauchsuppe mit Parmesan,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Spargel mit Sauce Hollandaise,chefkoch,12,9,3,0.750,0,13.5,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Petersilienpesto,chefkoch,6,5,1,0.833,0,7.7,,Petersilien-Pesto,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Toast Hawaii,chefkoch,5,5,0,1.000,0,9.9,,Hawaii Toast,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Gefüllte Paprika,chefkoch,9,9,0,1.000,0,12.5,,Gefüllte Paprika nach Uroma Susanne,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Lauchkuchen,chefkoch,5,5,0,1.000,0,10.5,,Lauchkuchen vom Blech,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Lasagne,chefkoch,13,13,0,1.000,0,18.3,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Risotto,chefkoch,7,4,3,0.571,0,11.6,,Risotto alla milanese,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Gulasch,chefkoch,14,7,7,0.500,0,18.3,,Hirschgulasch,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Bratkartoffeln,chefkoch,2,2,0,1.000,0,3.4,,Knusprige Bratkartoffeln nach Muttis Rezept,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Kaiserschmarrn,chefkoch,8,8,0,1.000,0,7.8,,Kaiserschmarrn - Tiroler Landgasthofrezept,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Hühnerfrikassee,chefkoch,11,9,2,0.818,0,16.9,,Hühnerfrikassee,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Auflauf,chefkoch,10,8,2,0.800,0,11.4,,Gyros-Nudelauflauf in Metaxasoße,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Salat,chefkoch,9,8,1,0.889,0,9.8,,KFC Coleslaw,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Suppe,chefkoch,11,9,2,0.818,0,16.3,,Erbseneintopf nach Bundeswehrrezept,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Eintopf,chefkoch,11,9,2,0.818,0,19.2,,Erbseneintopf nach Bundeswehrrezept,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Salat als ganzer Satz,chefkoch,9,8,1,0.889,0,12.4,,KFC Coleslaw,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Nudeln mit Pesto,chefkoch,7,5,2,0.714,0,11.9,,Spaghetti mit Tomaten-Pesto,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Käse Lauch Suppe,chefkoch,6,6,0,1.000,0,12.4,,Käse-Lauch-Suppe mit Hackfleisch,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Käse-Lauch-Suppe,chefkoch,6,6,0,1.000,0,10.1,,Käse-Lauch-Suppe mit Hackfleisch,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Spagetti Bolognese,chefkoch,11,10,1,0.909,0,12.5,,Die echte Sauce Bolognese,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Kartoffelpürree,chefkoch,10,9,1,0.900,0,14.8,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Broccoliauflauf,chefkoch,5,5,0,1.000,0,4.9,,Brokkoliauflauf,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Cordon bleu,chefkoch,7,7,0,1.000,0,14.0,,Cordon bleu - das Original aus der Schweiz,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Schrumpelfrikandel,llm,1,0,1,0.000,0,1.8,,,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Zwuckelpfanne mit Gnubbeln,llm,5,4,1,0.800,0,12.1,,,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Glibberschmarrn,llm,1,1,0,1.000,0,3.3,,,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Ratatouille,recipe,0,10,1,,0,17.0,,,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Quesadillas,recipe,0,4,0,,0,5.6,,,,2026-08-31T17:01:01
+2026-08-31-mtp,Qwen3.8-27B-Instruct,Kartoffelsalat,recipe,0,6,2,,0,14.6,,,,2026-08-31T17:01:01
+2026-09-01-syv,qwen3.8-27b,Rouladen,chefkoch,10,10,0,1.000,0,7.8,,Rinderrouladen klassisch,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Frikadellen,chefkoch,13,8,5,0.615,0,7.9,,Omas beste Frikadellen,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,8.4,,Grünkohl mit Pinkel nach Ammerländer Art,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Maultaschen,chefkoch,5,5,0,1.000,0,4.0,,Überbackene Maultaschen,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Semmelknödel,chefkoch,6,6,0,1.000,0,6.8,,Serviettenknödel,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Königsberger Klopse,chefkoch,17,15,1,0.882,0,14.4,,Königsberger Klopse,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Sauerbraten,chefkoch,6,5,1,0.833,0,2.6,,Rindsschmorbraten mit Essig und Rahm,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Rotkohl,chefkoch,7,6,1,0.857,0,10.3,,"Blaukraut oder Rotkohl, klassisch",,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Chili con Carne,chefkoch,11,9,2,0.818,1,8.5,,Chili con Carne à la Benjo,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Moussaka,chefkoch,12,12,0,1.000,0,8.3,,Moussaka,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Gnocchi mit Salbeibutter,chefkoch,6,6,0,1.000,0,4.8,,Selbstgemachte Gnocchi in Salbei-Butter,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Shakshuka,chefkoch,7,7,0,1.000,0,4.0,,Shakshuka,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Paella,chefkoch,12,8,4,0.667,0,0.1,,Paella mit Meeresfrüchten,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Quiche Lorraine,chefkoch,6,6,0,1.000,0,5.7,,Majas Quiche Lorraine in verschiedenen Variationen,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Tortilla Espanola,chefkoch,2,2,0,1.000,0,2.3,,Tortilla Espanola,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Pho Bo,chefkoch,18,11,6,0.611,0,14.6,,Pho Bo - Vietnamesische Rindfleischsuppe,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Bibimbap,chefkoch,8,7,1,0.875,0,4.7,,Bibimbap nach Art des Hauses,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Pad Thai,chefkoch,11,7,4,0.636,0,11.3,,Pad Thai,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Ramen,chefkoch,15,11,4,0.733,0,10.3,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Tom Kha Gai,chefkoch,13,8,5,0.615,0,14.0,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Massaman Curry,chefkoch,11,10,1,0.909,0,15.5,,Annas Massaman-Curry,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Okonomiyaki,chefkoch,5,4,1,0.800,0,9.8,,Okonomiyaki Osaka-Style,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Gemüselasagne,chefkoch,13,12,1,0.923,0,11.6,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Kichererbsencurry,chefkoch,11,8,3,0.727,0,8.8,,Kichererbsen-Curry Chana Masala,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Linsenbolognese,chefkoch,9,8,1,0.889,0,5.9,,Rote Linsen-Bolognese,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Falafel,chefkoch,8,7,1,0.875,0,7.4,,Hummus bi Tahina,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Chili sin Carne,chefkoch,14,11,3,0.786,0,9.3,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,9.0,,Mediterranes Ofengemüse,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Apfelkuchen,chefkoch,5,5,0,1.000,0,3.2,,Apfelkuchen mit Streuseln,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Käsekuchen,chefkoch,9,8,1,0.889,0,8.1,,Russischer Zupfkuchen,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Pizzateig,chefkoch,6,5,1,0.833,0,7.1,,Knusprig dünne Pizza mit Chorizo und Mozzarella,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Waffeln,chefkoch,7,7,0,1.000,0,3.4,,Geheimes Waffelrezept,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Zwetschgendatschi,chefkoch,8,5,3,0.625,0,5.7,,Zwetschgendatschi mit Butterstreuseln,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Marmorkuchen,chefkoch,10,9,1,0.900,0,5.2,,Marmor-Gugelhupf,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Knoblauchsuppe,chefkoch,8,7,1,0.875,0,5.0,,Knoblauchsuppe mit Parmesan,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Spargel mit Sauce Hollandaise,chefkoch,12,9,3,0.750,0,8.1,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Petersilienpesto,chefkoch,5,4,1,0.800,0,5.3,,Petersilien-Pesto,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Toast Hawaii,chefkoch,5,5,0,1.000,0,5.3,,Hawaii Toast,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Gefüllte Paprika,chefkoch,9,9,0,1.000,0,6.0,,Gefüllte Paprika nach Uroma Susanne,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Lauchkuchen,chefkoch,5,5,0,1.000,0,4.7,,Lauchkuchen vom Blech,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Lasagne,chefkoch,13,12,1,0.923,0,10.9,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Risotto,chefkoch,7,4,3,0.571,0,7.8,,Risotto alla milanese,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Gulasch,chefkoch,14,8,6,0.571,0,11.4,,Hirschgulasch,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Bratkartoffeln,chefkoch,2,2,0,1.000,0,1.8,,Knusprige Bratkartoffeln nach Muttis Rezept,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Kaiserschmarrn,chefkoch,8,8,0,1.000,0,1.9,,Kaiserschmarrn - Tiroler Landgasthofrezept,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Hühnerfrikassee,chefkoch,11,9,2,0.818,0,12.7,,Hühnerfrikassee,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Auflauf,chefkoch,10,8,2,0.800,0,6.8,,Gyros-Nudelauflauf in Metaxasoße,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Salat,chefkoch,7,6,1,0.857,0,4.2,,KFC Coleslaw,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Suppe,chefkoch,11,8,3,0.727,0,9.2,,Erbseneintopf nach Bundeswehrrezept,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Eintopf,chefkoch,10,8,2,0.800,0,10.6,,Erbseneintopf nach Bundeswehrrezept,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Salat als ganzer Satz,chefkoch,7,6,1,0.857,0,7.3,,KFC Coleslaw,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Nudeln mit Pesto,chefkoch,7,5,2,0.714,0,6.0,,Spaghetti mit Tomaten-Pesto,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Käse Lauch Suppe,chefkoch,6,6,0,1.000,0,7.4,,Käse-Lauch-Suppe mit Hackfleisch,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Käse-Lauch-Suppe,chefkoch,6,6,0,1.000,0,6.3,,Käse-Lauch-Suppe mit Hackfleisch,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Spagetti Bolognese,chefkoch,11,10,1,0.909,0,10.7,,Die echte Sauce Bolognese,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Kartoffelpürree,chefkoch,10,9,1,0.900,0,12.5,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Broccoliauflauf,chefkoch,5,5,0,1.000,0,4.2,,Brokkoliauflauf,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Cordon bleu,chefkoch,4,4,0,1.000,0,5.6,,Cordon bleu - das Original aus der Schweiz,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Schrumpelfrikandel,llm,2,0,2,0.000,0,4.2,,,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Zwuckelpfanne mit Gnubbeln,llm,5,4,1,0.800,0,5.3,,,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Glibberschmarrn,llm,1,1,0,1.000,0,1.0,,,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Ratatouille,recipe,0,10,1,,0,11.0,,,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Quesadillas,recipe,0,3,1,,0,2.5,,,,2026-09-01T06:57:07
+2026-09-01-syv,qwen3.8-27b,Kartoffelsalat,recipe,0,5,5,,0,10.4,,,,2026-09-01T06:57:07
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Rouladen,chefkoch,13,12,1,0.923,0,8.3,,Rinderrouladen klassisch,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Frikadellen,chefkoch,15,12,3,0.800,0,10.7,,Omas beste Frikadellen,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,8.2,,Grünkohl mit Pinkel nach Ammerländer Art,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Maultaschen,chefkoch,4,4,0,1.000,0,3.1,,Überbackene Maultaschen,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Semmelknödel,chefkoch,4,4,0,1.000,0,3.7,,Serviettenknödel,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Königsberger Klopse,chefkoch,15,10,5,0.667,1,9.0,,Königsberger Klopse,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Sauerbraten,chefkoch,7,5,2,0.714,0,3.8,,Rindsschmorbraten mit Essig und Rahm,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Rotkohl,chefkoch,11,7,4,0.636,0,7.1,,"Blaukraut oder Rotkohl, klassisch",Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Chili con Carne,chefkoch,11,9,2,0.818,0,7.1,,Chili con Carne à la Benjo,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Moussaka,chefkoch,12,11,1,0.917,0,7.0,,Moussaka,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gnocchi mit Salbeibutter,chefkoch,4,3,1,0.750,0,3.4,,Selbstgemachte Gnocchi in Salbei-Butter,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Shakshuka,chefkoch,7,6,1,0.857,0,4.1,,Shakshuka,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Paella,chefkoch,12,8,4,0.667,0,0.1,,Paella mit Meeresfrüchten,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Quiche Lorraine,chefkoch,8,8,0,1.000,0,5.2,,Majas Quiche Lorraine in verschiedenen Variationen,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tortilla Espanola,chefkoch,2,2,0,1.000,0,1.9,,Tortilla Espanola,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pho Bo,chefkoch,18,12,6,0.667,0,9.4,,Pho Bo - Vietnamesische Rindfleischsuppe,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bibimbap,chefkoch,7,7,0,1.000,0,4.8,,Bibimbap nach Art des Hauses,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pad Thai,chefkoch,14,11,3,0.786,0,8.0,,Pad Thai,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ramen,chefkoch,15,12,3,0.800,0,8.7,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Tom Kha Gai,chefkoch,13,9,4,0.692,0,6.2,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Massaman Curry,chefkoch,13,12,1,0.923,0,8.3,,Annas Massaman-Curry,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Okonomiyaki,chefkoch,3,3,0,1.000,0,5.6,,Okonomiyaki Osaka-Style,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gemüselasagne,chefkoch,14,13,1,0.929,0,11.7,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kichererbsencurry,chefkoch,9,7,2,0.778,0,7.9,,Kichererbsen-Curry Chana Masala,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Linsenbolognese,chefkoch,8,7,1,0.875,0,6.2,,Rote Linsen-Bolognese,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Falafel,chefkoch,5,5,0,1.000,0,5.2,,Das weltbeste Fladenbrot,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Chili sin Carne,chefkoch,13,9,4,0.692,0,7.2,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,5.7,,Mediterranes Ofengemüse,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Apfelkuchen,chefkoch,6,6,0,1.000,0,4.5,,Apfelkuchen mit Streuseln,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käsekuchen,chefkoch,9,7,2,0.778,0,6.2,,Russischer Zupfkuchen,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Pizzateig,chefkoch,10,9,1,0.900,0,7.8,,Knusprig dünne Pizza mit Chorizo und Mozzarella,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Waffeln,chefkoch,6,5,1,0.833,0,3.0,,Geheimes Waffelrezept,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwetschgendatschi,chefkoch,12,8,4,0.667,0,8.1,,Zwetschgendatschi mit Butterstreuseln,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Marmorkuchen,chefkoch,9,8,1,0.889,0,4.7,,Marmor-Gugelhupf,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Knoblauchsuppe,chefkoch,9,7,2,0.778,0,4.7,,Knoblauchsuppe mit Parmesan,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spargel mit Sauce Hollandaise,chefkoch,12,9,3,0.750,0,6.9,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Petersilienpesto,chefkoch,6,5,1,0.833,0,4.2,,Petersilien-Pesto,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Toast Hawaii,chefkoch,5,5,0,1.000,0,4.6,,Hawaii Toast,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gefüllte Paprika,chefkoch,10,9,1,0.900,0,4.6,,Gefüllte Paprika nach Uroma Susanne,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Lauchkuchen,chefkoch,5,5,0,1.000,0,4.6,,Lauchkuchen vom Blech,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Lasagne,chefkoch,8,7,1,0.875,0,6.1,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Risotto,chefkoch,7,7,0,1.000,0,6.1,,Risotto alla milanese,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Gulasch,chefkoch,13,9,4,0.692,0,8.2,,Hirschgulasch,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Bratkartoffeln,chefkoch,2,2,0,1.000,0,2.4,,Knusprige Bratkartoffeln nach Muttis Rezept,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kaiserschmarrn,chefkoch,11,9,2,0.818,0,6.3,,Kaiserschmarrn - Tiroler Landgasthofrezept,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Hühnerfrikassee,chefkoch,11,8,3,0.727,0,5.7,,Hühnerfrikassee,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Auflauf,chefkoch,14,13,1,0.929,0,9.3,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Salat,chefkoch,12,11,1,0.917,0,8.2,,KFC Coleslaw,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Suppe,chefkoch,10,7,3,0.700,0,7.2,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Eintopf,chefkoch,11,8,3,0.727,0,9.7,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Salat als ganzer Satz,chefkoch,13,12,1,0.923,0,7.8,,KFC Coleslaw,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Nudeln mit Pesto,chefkoch,6,6,0,1.000,0,4.7,,Spaghetti mit Tomaten-Pesto,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käse Lauch Suppe,chefkoch,7,1,6,0.143,0,4.7,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Käse-Lauch-Suppe,chefkoch,5,5,0,1.000,0,5.7,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Spagetti Bolognese,chefkoch,11,11,0,1.000,0,7.2,,Die echte Sauce Bolognese,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kartoffelpürree,chefkoch,11,8,3,0.727,0,7.8,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Broccoliauflauf,chefkoch,5,5,0,1.000,0,2.9,,Brokkoliauflauf,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Cordon bleu,chefkoch,4,4,0,1.000,0,3.1,,Cordon bleu - das Original aus der Schweiz,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Schrumpelfrikandel,llm,7,5,2,0.714,0,4.0,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Zwuckelpfanne mit Gnubbeln,llm,8,7,1,0.875,0,5.2,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Glibberschmarrn,llm,8,7,1,0.875,1,6.1,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Ratatouille,recipe,0,7,0,,0,5.0,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Quesadillas,recipe,0,4,0,,0,3.4,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-nemotron35,NVIDIA-Nemotron-3.5-Lightning-30B-A3B,Kartoffelsalat,recipe,0,9,3,,0,4.6,,,Zettel Eval Nemotron 3.5,2026-09-05T08:05:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Rouladen,chefkoch,10,10,0,1.000,0,26.6,,Rinderrouladen klassisch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Frikadellen,chefkoch,14,10,4,0.714,0,30.6,,Omas beste Frikadellen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,17.8,,Grünkohl mit Pinkel nach Ammerländer Art,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Maultaschen,chefkoch,4,4,0,1.000,0,9.2,,Überbackene Maultaschen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Semmelknödel,chefkoch,6,6,0,1.000,0,10.0,,Serviettenknödel,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Königsberger Klopse,chefkoch,18,16,1,0.889,0,35.5,,Königsberger Klopse,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Sauerbraten,chefkoch,6,5,1,0.833,0,21.4,,Rindsschmorbraten mit Essig und Rahm,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Rotkohl,chefkoch,5,5,0,1.000,0,19.2,,"Blaukraut oder Rotkohl, klassisch",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Chili con Carne,chefkoch,11,9,2,0.818,0,23.6,,Chili con Carne à la Benjo,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Moussaka,chefkoch,12,12,0,1.000,0,21.8,,Moussaka,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gnocchi mit Salbeibutter,chefkoch,6,6,0,1.000,0,17.8,,Selbstgemachte Gnocchi in Salbei-Butter,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Shakshuka,chefkoch,7,7,0,1.000,0,14.3,,Shakshuka,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Paella,chefkoch,12,8,4,0.667,0,0.1,,Paella mit Meeresfrüchten,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Quiche Lorraine,chefkoch,6,6,0,1.000,0,18.7,,Majas Quiche Lorraine in verschiedenen Variationen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tortilla Espanola,chefkoch,3,3,0,1.000,0,6.0,,Tortilla Espanola,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pho Bo,chefkoch,18,12,5,0.667,0,31.8,,Pho Bo - Vietnamesische Rindfleischsuppe,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bibimbap,chefkoch,8,7,1,0.875,0,14.7,,Bibimbap nach Art des Hauses,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pad Thai,chefkoch,10,6,4,0.600,0,14.7,,Pad Thai,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Ramen,chefkoch,15,12,3,0.800,0,36.9,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tom Kha Gai,chefkoch,13,8,5,0.615,0,38.2,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Massaman Curry,chefkoch,11,10,1,0.909,0,28.6,,Annas Massaman-Curry,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Okonomiyaki,chefkoch,6,4,2,0.667,0,21.3,,Okonomiyaki Osaka-Style,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gemüselasagne,chefkoch,14,14,0,1.000,0,38.5,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kichererbsencurry,chefkoch,11,8,3,0.727,0,34.2,,Kichererbsen-Curry Chana Masala,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Linsenbolognese,chefkoch,9,8,1,0.889,0,20.3,,Rote Linsen-Bolognese,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Falafel,chefkoch,4,3,1,0.750,0,14.3,,Das weltbeste Fladenbrot,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Chili sin Carne,chefkoch,14,11,3,0.786,0,28.3,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,20.7,,Mediterranes Ofengemüse,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Apfelkuchen,chefkoch,6,6,0,1.000,0,9.3,,Apfelkuchen mit Streuseln,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Käsekuchen,chefkoch,9,8,1,0.889,0,18.8,,Russischer Zupfkuchen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pizzateig,chefkoch,6,5,1,0.833,0,11.4,,Knusprig dünne Pizza mit Chorizo und Mozzarella,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Waffeln,chefkoch,7,7,0,1.000,0,13.2,,Geheimes Waffelrezept,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zwetschgendatschi,chefkoch,7,6,1,0.857,0,10.8,,Zwetschgendatschi mit Butterstreuseln,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Marmorkuchen,chefkoch,10,10,0,1.000,0,13.2,,Marmor-Gugelhupf,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Knoblauchsuppe,chefkoch,8,7,1,0.875,0,11.8,,Knoblauchsuppe mit Parmesan,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spargel mit Sauce Hollandaise,chefkoch,13,8,5,0.615,0,25.7,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Petersilienpesto,chefkoch,5,4,1,0.800,0,10.9,,Petersilien-Pesto,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Toast Hawaii,chefkoch,5,5,0,1.000,0,10.4,,Hawaii Toast,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gefüllte Paprika,chefkoch,10,10,0,1.000,0,15.4,,Gefüllte Paprika nach Uroma Susanne,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Lauchkuchen,chefkoch,5,5,0,1.000,0,14.3,,Lauchkuchen vom Blech,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Lasagne,chefkoch,14,14,0,1.000,0,27.3,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Risotto,chefkoch,7,4,3,0.571,0,15.0,,Risotto alla milanese,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gulasch,chefkoch,15,8,7,0.533,0,32.9,,Hirschgulasch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bratkartoffeln,chefkoch,2,2,0,1.000,0,11.1,,Knusprige Bratkartoffeln nach Muttis Rezept,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kaiserschmarrn,chefkoch,8,8,0,1.000,0,13.7,,Kaiserschmarrn - Tiroler Landgasthofrezept,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Hühnerfrikassee,chefkoch,11,9,2,0.818,0,24.2,,Hühnerfrikassee,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Auflauf,chefkoch,14,14,0,1.000,0,32.1,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Salat,chefkoch,7,6,1,0.857,0,16.5,,KFC Coleslaw,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Suppe,chefkoch,11,9,2,0.818,0,29.3,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Eintopf,chefkoch,11,9,2,0.818,0,34.6,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Salat als ganzer Satz,chefkoch,9,8,1,0.889,0,21.0,,KFC Coleslaw,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Nudeln mit Pesto,chefkoch,7,5,2,0.714,0,18.5,,Spaghetti mit Tomaten-Pesto,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Käse Lauch Suppe,chefkoch,6,6,0,1.000,0,22.1,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Käse-Lauch-Suppe,chefkoch,6,6,0,1.000,0,20.7,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spagetti Bolognese,chefkoch,11,10,1,0.909,0,29.3,,Die echte Sauce Bolognese,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kartoffelpürree,chefkoch,9,8,1,0.889,0,25.0,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Broccoliauflauf,chefkoch,5,5,0,1.000,0,9.1,,Brokkoliauflauf,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Cordon bleu,chefkoch,4,4,0,1.000,0,8.7,,Cordon bleu - das Original aus der Schweiz,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Schrumpelfrikandel,llm,6,6,0,1.000,0,15.5,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zwuckelpfanne mit Gnubbeln,llm,5,4,1,0.800,0,18.6,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Glibberschmarrn,llm,1,1,0,1.000,0,4.5,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Ratatouille,recipe,0,10,1,,0,28.4,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Quesadillas,recipe,0,4,0,,0,15.3,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kartoffelsalat,recipe,0,7,4,,0,29.2,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Schnitzel mit Pommes,chefkoch,6,4,2,0.667,0,9.5,,Pikante Paprikasoße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kartoffelpuffer,chefkoch,4,4,0,1.000,0,8.3,,Großmutters Reibekuchen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Linsensuppe mit Würstchen,chefkoch,9,9,0,1.000,0,24.2,,Clints Linseneintopf mit Wiener Würstchen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kohlrouladen,chefkoch,7,6,1,0.857,0,19.8,,Omas Kohlrouladen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Schweinebraten,chefkoch,11,10,1,0.909,0,26.1,,"Schweinebraten, resche Kruste, leckere Soße",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spinat mit Spiegelei und Kartoffeln,chefkoch,7,7,0,1.000,0,20.4,,"Spinat, Spiegelei und Salzkartoffeln",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Hackbraten,chefkoch,13,9,4,0.692,0,22.1,,Omas beste Frikadellen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zwiebelkuchen,chefkoch,8,8,0,1.000,0,16.0,,Schwäbischer Zwiebelkuchen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Carbonara,chefkoch,6,6,0,1.000,0,14.4,,Spaghetti alla carbonara,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Coq au Vin,chefkoch,12,12,0,1.000,0,30.1,,Knuspriger Coq au vin aus dem Backofen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Hähnchen Tikka Masala,chefkoch,9,9,0,1.000,0,22.6,,Indisches Chicken-Mango-Curry,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pulled Pork,chefkoch,14,12,2,0.857,0,38.6,,NT-Schweinefilet im Speckmantel mit Champignons und Spätzle,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Fajitas,chefkoch,11,11,0,1.000,0,27.3,,"Fajitas mit Tortillas, Kidneybohnen, Sauerrahm und Guacamole",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Minestrone,chefkoch,17,14,3,0.824,0,36.7,,Italienische Minestrone,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Souvlaki,chefkoch,3,3,0,1.000,0,14.3,,Souvlaki mit Tsatsiki,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Laksa,chefkoch,9,8,1,0.889,0,28.4,,Singapur Laksa,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Rendang,chefkoch,12,10,2,0.833,0,31.5,,Rendang,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Butter Chicken,chefkoch,12,12,0,1.000,0,36.1,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gyoza,chefkoch,9,6,3,0.667,0,33.7,,Gyoza,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kimchi Jjigae,chefkoch,7,6,1,0.857,0,26.3,,Kimchi-Jjigae,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tacos al Pastor,chefkoch,16,15,1,0.938,0,40.7,,Taco al Pastor & Fajitas de Casa,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Ceviche,chefkoch,7,3,4,0.429,0,22.7,,Ceviche mit Mango-Avocado-Tatar à la Gabi,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kürbissuppe,chefkoch,9,8,1,0.889,0,29.0,,Kürbis-Karotten-Kokos-Ingwer Suppe,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tofu-Curry,chefkoch,12,10,2,0.833,0,31.7,,Curry-Gemüse mit Tofu,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Auberginen-Parmigiana,chefkoch,4,3,1,0.750,0,21.8,,Schnelle Auberginen-Parmigiana,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bohnen-Burger,chefkoch,5,5,0,1.000,0,20.7,,Schnelle Bohnen-Burger,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Grünkern-Bratlinge,chefkoch,8,8,0,1.000,0,25.6,,Grünkern-Patty,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spinatknödel,chefkoch,10,8,2,0.800,0,16.4,,Spinatknödel aus Südtirol,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bienenstich,chefkoch,10,9,1,0.900,0,26.3,,Schneller  Bienenstich,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Brezeln,chefkoch,5,5,0,1.000,0,11.5,,"Berliner Ballen, Apfelringe, Brezel usw.",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zimtschnecken,chefkoch,10,8,2,0.800,0,29.2,,Zimtschnecken mit Frischkäse-Glasur,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Schwarzwälder Kirschtorte,chefkoch,12,8,4,0.667,1,23.9,,Schwarzwälder Kirschtorte,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Brownies,chefkoch,8,7,1,0.875,0,17.7,,American Double Choc Brownies,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Vollkornbrot,chefkoch,3,3,0,1.000,0,14.8,,Saftiges Vollkornbrot,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bruschetta,chefkoch,3,3,0,1.000,0,14.1,,Bruschetta mit Tomaten und Knoblauch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Eier in Senfsoße,chefkoch,11,10,1,0.909,0,18.5,,Eier in Senfsauce,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gefüllte Zucchini,chefkoch,8,8,0,1.000,0,10.6,,Gefüllte Zucchini mit Hackfleisch und Käse,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Blumenkohl mit Butterbröseln,chefkoch,4,4,0,1.000,0,9.0,,Blumenkohl mit Butterbröseln und Käse überbacken,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zwiebelsuppe,chefkoch,8,7,1,0.875,0,15.2,,Zwiebelsuppe nach Art der legendären Pariser Marktfrauen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Lachs mit Dillsoße,chefkoch,7,6,1,0.857,0,16.7,,Gnocchi mit Räucherlachs-Dill-Soße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pfannkuchen,chefkoch,4,4,0,1.000,0,0.1,,Der perfekte Pfannkuchen - gelingt einfach immer,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Schnitzel,chefkoch,8,8,0,1.000,0,17.1,,Sahniges Putengeschnetzeltes,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gulaschsuppe,chefkoch,21,15,6,0.714,0,41.8,,Gulaschsuppe im Kessel oder Topf,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Grießbrei,chefkoch,5,4,1,0.800,0,11.2,,Grießbrei von Großmutter,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Reibekuchen,chefkoch,4,4,0,1.000,0,9.1,,Großmutters Reibekuchen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tzatziki,chefkoch,3,3,0,1.000,0,9.1,,"Tzatziki, wie ich es aus Kreta mitgebracht habe",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Curry,chefkoch,11,11,0,1.000,0,20.8,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Nudeln,chefkoch,10,10,0,1.000,0,29.6,,"Spaghetti aglio, olio e peperoncino",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Bowl,chefkoch,13,12,1,0.923,0,25.2,,Bulgur Buddha Bowl,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kuchen,chefkoch,7,7,0,1.000,0,16.4,,Friedas genialer Hefezopf,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Pfanne,chefkoch,9,7,2,0.778,0,25.6,,Fluffy Buttermilk Pancakes,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Curry als ganzer Satz,chefkoch,11,11,0,1.000,0,30.1,,Indisches Butter Chicken aus dem Ofen,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spaghetti Carbonara,chefkoch,5,4,1,0.800,0,17.6,,Carbonara wie bei der Mamma in Rom,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Spagetti Carbonara,chefkoch,5,4,1,0.800,0,10.2,,Koelkasts Spaghetti Carbonara,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Gnocci,chefkoch,10,10,0,1.000,0,21.8,,Saftiger Kürbis-Gnocchi-Auflauf,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Cesar Salad,chefkoch,11,9,2,0.818,0,21.8,,Cesar Salad-Wraps,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kürbisuppe,chefkoch,10,10,0,1.000,0,24.0,,Kürbissuppe mit Ingwer und Kokosmilch,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Zaziki,chefkoch,3,3,0,1.000,0,15.0,,"Tzatziki, wie ich es aus Kreta mitgebracht habe",Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Knusperzwerg-Auflauf,chefkoch,11,9,2,0.818,0,21.6,,Gyros-Nudelauflauf in Metaxasoße,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Brummelbeer-Torte,chefkoch,6,6,0,1.000,0,12.5,,Der unglaublich cremige NY Cheese Cake,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Flitzepfanne Deluxe,chefkoch,5,5,0,1.000,0,10.4,,Burgerbuns Deluxe,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Kürbisrisotto,recipe,0,7,4,,0,13.3,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Tomatensuppe,recipe,0,5,0,,0,9.6,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-09-05-qwen-128,Qwen3.8-27B-Instruct,Nudelsalat,recipe,0,13,1,,0,17.5,,,Zettel Eval Qwen 128,2026-09-05T09:41:00
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Ratatouille,recipe,0,10,1,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:29
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,"Kartoffelsalat, und Spülmittel",recipe,0,5,5,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:27
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Quesadillas,recipe,0,3,1,,0,0.1,,,Zettel Eval Qwen,2026-08-30 00:03:06
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Kartoffelsalat,chefkoch,11,7,4,0.636,0,27.5,,Omas echter Berliner Kartoffelsalat,Zettel Eval Qwen,2026-08-30 00:02:59
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Quesadillas,chefkoch,4,3,1,0.750,0,12.4,,Spinat-Quesadillas,Zettel Eval Qwen,2026-08-30 00:02:53
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Ratatouille,chefkoch,13,11,2,0.846,1,45.9,,Ratatouille,Zettel Eval Qwen,2026-08-30 00:02:43
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Glibberschmarrn,llm,7,7,0,1.000,0,36.1,,,Zettel Eval Qwen,2026-08-30 00:02:30
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Zwuckelpfanne mit Gnubbeln,llm,5,5,0,1.000,0,30.1,,,Zettel Eval Qwen,2026-08-30 00:02:29
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Schrumpelfrikandel,llm,1,0,1,0.000,0,2.5,,,Zettel Eval Qwen,2026-08-30 00:02:26
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Cordon bleu,chefkoch,7,7,0,1.000,0,30.0,,Cordon bleu - das Original aus der Schweiz,Zettel Eval Qwen,2026-08-30 00:02:23
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Broccoliauflauf,chefkoch,5,5,0,1.000,0,20.1,,Brokkoliauflauf,Zettel Eval Qwen,2026-08-30 00:02:23
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Kartoffelpürree,chefkoch,11,10,1,0.909,0,45.8,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,Zettel Eval Qwen,2026-08-30 00:02:21
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Spagetti Bolognese,chefkoch,11,10,1,0.909,0,47.1,,Die echte Sauce Bolognese,Zettel Eval Qwen,2026-08-30 00:02:21
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Käse-Lauch-Suppe,chefkoch,6,5,1,0.833,0,31.3,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Qwen,2026-08-30 00:01:49
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Käse Lauch Suppe,chefkoch,6,5,1,0.833,0,31.6,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Qwen,2026-08-30 00:01:49
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Nudeln mit Pesto,chefkoch,7,5,2,0.714,0,34.2,,Spaghetti mit Tomaten-Pesto,Zettel Eval Qwen,2026-08-30 00:01:48
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Salat,chefkoch,9,8,1,0.889,0,38.6,,KFC Coleslaw,Zettel Eval Qwen,2026-08-30 00:01:44
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Eintopf,chefkoch,11,10,1,0.909,0,45.9,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Qwen,2026-08-30 00:01:44
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Suppe,chefkoch,11,10,1,0.909,0,45.7,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Qwen,2026-08-30 00:01:40
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Salat,chefkoch,9,8,1,0.889,0,40.4,,KFC Coleslaw,Zettel Eval Qwen,2026-08-30 00:01:08
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Auflauf,chefkoch,10,8,2,0.800,0,42.0,,Gyros-Nudelauflauf in Metaxasoße,Zettel Eval Qwen,2026-08-30 00:01:07
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Hühnerfrikassee,chefkoch,11,8,3,0.727,0,43.1,,Hühnerfrikassee,Zettel Eval Qwen,2026-08-30 00:01:05
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Kaiserschmarrn,chefkoch,8,8,0,1.000,0,41.9,,Kaiserschmarrn - Tiroler Landgasthofrezept,Zettel Eval Qwen,2026-08-30 00:00:58
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Bratkartoffeln,chefkoch,2,2,0,1.000,0,8.5,,Knusprige Bratkartoffeln nach Muttis Rezept,Zettel Eval Qwen,2026-08-30 00:00:56
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Gulasch,chefkoch,15,8,7,0.533,0,57.3,,Hirschgulasch,Zettel Eval Qwen,2026-08-30 00:00:46
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Risotto,chefkoch,7,4,3,0.571,0,23.7,,Risotto alla milanese,Zettel Eval Qwen,2026-08-30 00:00:44
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Lasagne,chefkoch,13,13,0,1.000,0,60.4,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Qwen,2026-08-30 00:00:44
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Lauchkuchen,chefkoch,5,5,0,1.000,0,21.4,,Lauchkuchen vom Blech,Zettel Eval Qwen,2026-08-30 00:00:36
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Gefüllte Paprika,chefkoch,9,9,0,1.000,0,38.0,,Gefüllte Paprika nach Uroma Susanne,Zettel Eval Qwen,2026-08-30 00:00:28
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Toast Hawaii,chefkoch,5,5,0,1.000,0,24.5,,Hawaii Toast,Zettel Eval Qwen,2026-08-30 00:00:19
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Petersilienpesto,chefkoch,6,5,1,0.833,0,26.9,,Petersilien-Pesto,Zettel Eval Qwen,2026-08-30 00:00:19
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Spargel mit Sauce Hollandaise,chefkoch,12,8,4,0.667,0,41.1,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",Zettel Eval Qwen,2026-08-30 00:00:15
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Knoblauchsuppe,chefkoch,8,5,3,0.625,0,26.8,,Knoblauchsuppe mit Parmesan,Zettel Eval Qwen,2026-08-30 00:00:09
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Marmorkuchen,chefkoch,10,10,0,1.000,0,40.7,,Marmor-Gugelhupf,Zettel Eval Qwen,2026-08-30 00:00:03
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Zwetschgendatschi,chefkoch,6,5,1,0.833,0,26.3,,Zwetschgendatschi mit Butterstreuseln,Zettel Eval Qwen,2026-08-29 23:59:52
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Waffeln,chefkoch,7,7,0,1.000,0,28.0,,Geheimes Waffelrezept,Zettel Eval Qwen,2026-08-29 23:59:51
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Pizzateig,chefkoch,6,5,1,0.833,0,26.6,,Knusprig dünne Pizza mit Chorizo und Mozzarella,Zettel Eval Qwen,2026-08-29 23:59:48
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Käsekuchen,chefkoch,10,9,1,0.900,0,40.5,,Russischer Zupfkuchen,Zettel Eval Qwen,2026-08-29 23:59:48
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Apfelkuchen,chefkoch,6,6,0,1.000,0,24.8,,Apfelkuchen mit Streuseln,Zettel Eval Qwen,2026-08-29 23:59:44
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Ofengemüse mit Feta,chefkoch,7,7,0,1.000,0,37.4,,Mediterranes Ofengemüse,Zettel Eval Qwen,2026-08-29 23:59:13
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Chili sin Carne,chefkoch,14,10,4,0.714,1,52.5,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",Zettel Eval Qwen,2026-08-29 23:59:10
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Falafel,chefkoch,8,7,1,0.875,0,37.0,,Hummus bi Tahina,Zettel Eval Qwen,2026-08-29 23:59:07
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Linsenbolognese,chefkoch,9,8,1,0.889,0,40.0,,Rote Linsen-Bolognese,Zettel Eval Qwen,2026-08-29 23:59:07
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Kichererbsencurry,chefkoch,11,9,2,0.818,0,45.0,,Kichererbsen-Curry Chana Masala,Zettel Eval Qwen,2026-08-29 23:59:07
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Gemüselasagne,chefkoch,13,13,0,1.000,0,61.2,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Qwen,2026-08-29 23:58:47
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Okonomiyaki,chefkoch,8,6,2,0.750,0,35.2,,Okonomiyaki Osaka-Style,Zettel Eval Qwen,2026-08-29 23:58:32
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Massaman Curry,chefkoch,11,9,2,0.818,0,49.9,,Annas Massaman-Curry,Zettel Eval Qwen,2026-08-29 23:58:17
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Tom Kha Gai,chefkoch,13,8,5,0.615,0,53.2,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,Zettel Eval Qwen,2026-08-29 23:58:16
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Ramen,chefkoch,15,11,4,0.733,1,58.8,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,Zettel Eval Qwen,2026-08-29 23:58:14
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Pad Thai,chefkoch,10,6,4,0.600,0,34.0,,Pad Thai,Zettel Eval Qwen,2026-08-29 23:58:12
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Bibimbap,chefkoch,8,7,1,0.875,0,23.5,,Bibimbap nach Art des Hauses,Zettel Eval Qwen,2026-08-29 23:58:08
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Pho Bo,chefkoch,19,11,8,0.579,1,69.0,,Pho Bo - Vietnamesische Rindfleischsuppe,Zettel Eval Qwen,2026-08-29 23:57:57
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Tortilla Espanola,chefkoch,2,2,0,1.000,0,15.5,,Tortilla Espanola,Zettel Eval Qwen,2026-08-29 23:57:52
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Quiche Lorraine,chefkoch,6,6,0,1.000,0,28.1,,Majas Quiche Lorraine in verschiedenen Variationen,Zettel Eval Qwen,2026-08-29 23:57:46
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Paella,chefkoch,12,8,4,0.667,0,40.0,,Paella mit Meeresfrüchten,Zettel Eval Qwen,2026-08-29 23:57:36
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Shakshuka,chefkoch,6,6,0,1.000,0,23.3,,Shakshuka,Zettel Eval Qwen,2026-08-29 23:57:34
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Gnocchi mit Salbeibutter,chefkoch,6,5,1,0.833,0,20.7,,Selbstgemachte Gnocchi in Salbei-Butter,Zettel Eval Qwen,2026-08-29 23:57:31
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Moussaka,chefkoch,12,11,1,0.917,0,45.1,,Moussaka,Zettel Eval Qwen,2026-08-29 23:57:31
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Chili con Carne,chefkoch,12,9,3,0.750,2,43.1,,Chili con Carne à la Benjo,Zettel Eval Qwen,2026-08-29 23:57:29
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Rotkohl,chefkoch,6,6,0,1.000,0,26.0,,"Blaukraut oder Rotkohl, klassisch",Zettel Eval Qwen,2026-08-29 23:57:08
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Sauerbraten,chefkoch,6,4,2,0.667,0,28.8,,Rindsschmorbraten mit Essig und Rahm,Zettel Eval Qwen,2026-08-29 23:57:02
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Königsberger Klopse,chefkoch,16,12,4,0.750,0,58.9,,Königsberger Klopse,Zettel Eval Qwen,2026-08-29 23:56:47
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Semmelknödel,chefkoch,5,5,0,1.000,0,21.1,,Serviettenknödel,Zettel Eval Qwen,2026-08-29 23:56:47
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Maultaschen,chefkoch,5,5,0,1.000,0,15.8,,Überbackene Maultaschen,Zettel Eval Qwen,2026-08-29 23:56:47
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Grünkohl mit Pinkel,chefkoch,10,7,3,0.700,0,42.1,,Grünkohl mit Pinkel nach Ammerländer Art,Zettel Eval Qwen,2026-08-29 23:56:47
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Frikadellen,chefkoch,13,8,5,0.615,0,44.4,,Omas beste Frikadellen,Zettel Eval Qwen,2026-08-29 23:56:46
+2026-08-30-qwen-64,Qwen3.8-27B-Instruct,Rouladen,chefkoch,11,11,0,1.000,0,49.1,,Rinderrouladen klassisch,Zettel Eval Qwen,2026-08-29 23:56:46
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Ratatouille,recipe,0,0,12,,0,0.1,,,Zettel Eval Nemotron,2026-08-30 00:15:31
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Quesadillas,recipe,0,2,2,,0,0.1,,,Zettel Eval Nemotron,2026-08-30 00:15:30
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,"Kartoffelsalat, und Spülmittel",recipe,0,0,5,,0,0.1,,,Zettel Eval Nemotron,2026-08-30 00:15:29
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Kartoffelsalat,chefkoch,5,0,5,0.000,0,19.6,,Omas echter Berliner Kartoffelsalat,Zettel Eval Nemotron,2026-08-30 00:15:09
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Quesadillas,chefkoch,4,2,2,0.500,0,21.3,,Spinat-Quesadillas,Zettel Eval Nemotron,2026-08-30 00:15:09
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Ratatouille,chefkoch,13,0,13,0.000,0,23.3,,Ratatouille,Zettel Eval Nemotron,2026-08-30 00:15:07
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,"Glibberschmarrn, und Klopapier",llm,2,0,2,0.000,0,6.5,,,Zettel Eval Nemotron,2026-08-30 00:15:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Zwuckelpfanne mit Gnubbeln,llm,2,0,2,0.000,0,6.6,,,Zettel Eval Nemotron,2026-08-30 00:15:03
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Schrumpelfrikandel,llm,0,0,0,,0,3.5,,,Zettel Eval Nemotron,2026-08-30 00:14:59
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Cordon bleu,chefkoch,2,2,0,1.000,0,11.3,,Cordon bleu - das Original aus der Schweiz,Zettel Eval Nemotron,2026-08-30 00:14:57
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Broccoliauflauf,chefkoch,4,0,4,0.000,0,14.6,,Brokkoliauflauf,Zettel Eval Nemotron,2026-08-30 00:14:52
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Kartoffelpürree,chefkoch,3,2,1,0.667,0,21.9,,Schweinefilet auf Süßkartoffelpüree mit Lebkuchenjus und Rosenkohl,Zettel Eval Nemotron,2026-08-30 00:14:50
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Spagetti Bolognese,chefkoch,6,0,6,0.000,0,13.1,,Die echte Sauce Bolognese,Zettel Eval Nemotron,2026-08-30 00:14:44
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Käse-Lauch-Suppe,chefkoch,8,0,8,0.000,0,29.6,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron,2026-08-30 00:14:36
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Käse Lauch Suppe,chefkoch,7,0,7,0.000,0,53.4,,Käse-Lauch-Suppe mit Hackfleisch,Zettel Eval Nemotron,2026-08-30 00:14:34
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Nudeln mit Pesto,chefkoch,4,1,3,0.250,0,19.4,,Spaghetti mit Tomaten-Pesto,Zettel Eval Nemotron,2026-08-30 00:14:32
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Salat,chefkoch,4,1,3,0.250,0,27.7,,KFC Coleslaw,Zettel Eval Nemotron,2026-08-30 00:14:31
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Eintopf,chefkoch,12,0,12,0.000,0,24.9,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron,2026-08-30 00:14:25
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Suppe,chefkoch,12,0,12,0.000,0,21.9,,Erbseneintopf nach Bundeswehrrezept,Zettel Eval Nemotron,2026-08-30 00:14:22
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Salat,chefkoch,8,0,8,0.000,0,19.8,,KFC Coleslaw,Zettel Eval Nemotron,2026-08-30 00:14:16
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Auflauf,chefkoch,5,3,2,0.600,0,18.0,,Gyros-Nudelauflauf in Metaxasoße,Zettel Eval Nemotron,2026-08-30 00:14:16
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Hühnerfrikassee,chefkoch,13,0,13,0.000,0,12.0,,Hühnerfrikassee,Zettel Eval Nemotron,2026-08-30 00:14:10
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Kaiserschmarrn,chefkoch,10,0,10,0.000,0,29.2,,Kaiserschmarrn - Tiroler Landgasthofrezept,Zettel Eval Nemotron,2026-08-30 00:14:03
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Bratkartoffeln,chefkoch,3,2,1,0.667,0,26.2,,Knusprige Bratkartoffeln nach Muttis Rezept,Zettel Eval Nemotron,2026-08-30 00:13:59
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Gulasch,chefkoch,12,0,12,0.000,0,19.5,,Hirschgulasch,Zettel Eval Nemotron,2026-08-30 00:13:56
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Risotto,chefkoch,7,2,5,0.286,0,27.8,,Risotto alla milanese,Zettel Eval Nemotron,2026-08-30 00:13:47
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Lasagne,chefkoch,7,0,7,0.000,0,24.7,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron,2026-08-30 00:13:45
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Lauchkuchen,chefkoch,6,0,6,0.000,0,18.4,,Lauchkuchen vom Blech,Zettel Eval Nemotron,2026-08-30 00:13:40
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Gefüllte Paprika,chefkoch,3,2,1,0.667,0,17.4,,Gefüllte Paprika nach Uroma Susanne,Zettel Eval Nemotron,2026-08-30 00:13:38
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Toast Hawaii,chefkoch,4,0,4,0.000,0,60.5,,Hawaii Toast,Zettel Eval Nemotron,2026-08-30 00:13:31
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Petersilienpesto,chefkoch,7,0,7,0.000,0,16.3,,Petersilien-Pesto,Zettel Eval Nemotron,2026-08-30 00:13:28
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Spargel mit Sauce Hollandaise,chefkoch,12,0,12,0.000,0,43.1,,"Spargel mit Sauce Hollandaise, gebratenem Schweinefilet und Kartoffelgratin",Zettel Eval Nemotron,2026-08-30 00:13:20
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Knoblauchsuppe,chefkoch,6,0,6,0.000,0,12.7,,Knoblauchsuppe mit Parmesan,Zettel Eval Nemotron,2026-08-30 00:13:15
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Marmorkuchen,chefkoch,5,0,5,0.000,0,39.9,,Marmor-Gugelhupf,Zettel Eval Nemotron,2026-08-30 00:13:07
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Zwetschgendatschi,chefkoch,12,0,12,0.000,0,17.6,,Zwetschgendatschi mit Butterstreuseln,Zettel Eval Nemotron,2026-08-30 00:12:57
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Waffeln,chefkoch,4,0,4,0.000,0,23.5,,Geheimes Waffelrezept,Zettel Eval Nemotron,2026-08-30 00:12:56
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Pizzateig,chefkoch,7,0,7,0.000,0,13.9,,Knusprig dünne Pizza mit Chorizo und Mozzarella,Zettel Eval Nemotron,2026-08-30 00:12:53
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Käsekuchen,chefkoch,1,1,0,1.000,0,43.7,,Russischer Zupfkuchen,Zettel Eval Nemotron,2026-08-30 00:12:47
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Apfelkuchen,chefkoch,6,0,6,0.000,0,54.2,,Apfelkuchen mit Streuseln,Zettel Eval Nemotron,2026-08-30 00:12:44
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Ofengemüse mit Feta,chefkoch,2,2,0,1.000,0,18.0,,Mediterranes Ofengemüse,Zettel Eval Nemotron,2026-08-30 00:12:39
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Chili sin Carne,chefkoch,8,0,8,0.000,0,60.9,,"Vegetarisch-veganes Chili sin Carne ""SuperNova""",Zettel Eval Nemotron,2026-08-30 00:12:39
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Falafel,chefkoch,3,3,0,1.000,0,19.2,,Hummus bi Tahina,Zettel Eval Nemotron,2026-08-30 00:12:34
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Linsenbolognese,chefkoch,7,0,7,0.000,0,17.2,,Rote Linsen-Bolognese,Zettel Eval Nemotron,2026-08-30 00:12:27
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Kichererbsencurry,chefkoch,1,1,0,1.000,0,23.9,,Kichererbsen-Curry Chana Masala,Zettel Eval Nemotron,2026-08-30 00:12:23
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Gemüselasagne,chefkoch,10,0,10,0.000,0,23.6,,Vegetarische Spinat-Gemüse-Lasagne mit Tomatensoße,Zettel Eval Nemotron,2026-08-30 00:12:15
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Okonomiyaki,chefkoch,6,0,6,0.000,0,41.2,,Okonomiyaki Osaka-Style,Zettel Eval Nemotron,2026-08-30 00:12:15
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Massaman Curry,chefkoch,7,0,7,0.000,0,14.0,,Annas Massaman-Curry,Zettel Eval Nemotron,2026-08-30 00:12:09
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Tom Kha Gai,chefkoch,9,4,5,0.444,0,22.7,,Tom Kha Gai - die berühmte Hühnersuppe mit Kokosmilch und Galgant,Zettel Eval Nemotron,2026-08-30 00:12:04
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Ramen,chefkoch,15,0,15,0.000,0,31.5,,Ramen – Japanische Nudelsuppe mit Hühnerbrühe und Schweinefilet,Zettel Eval Nemotron,2026-08-30 00:12:02
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Pad Thai,chefkoch,12,0,12,0.000,0,16.7,,Pad Thai,Zettel Eval Nemotron,2026-08-30 00:11:58
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Bibimbap,chefkoch,3,3,0,1.000,0,18.7,,Bibimbap nach Art des Hauses,Zettel Eval Nemotron,2026-08-30 00:11:56
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Pho Bo,chefkoch,19,0,19,0.000,0,46.1,,Pho Bo - Vietnamesische Rindfleischsuppe,Zettel Eval Nemotron,2026-08-30 00:11:53
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Tortilla Espanola,chefkoch,4,0,4,0.000,1,12.4,,Tortilla Espanola,Zettel Eval Nemotron,2026-08-30 00:11:50
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Quiche Lorraine,chefkoch,2,2,0,1.000,0,17.6,,Majas Quiche Lorraine in verschiedenen Variationen,Zettel Eval Nemotron,2026-08-30 00:11:46
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Paella,chefkoch,1,1,0,1.000,0,23.7,,Paella mit Meeresfrüchten,Zettel Eval Nemotron,2026-08-30 00:11:45
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Shakshuka,chefkoch,7,0,7,0.000,0,20.1,,Shakshuka,Zettel Eval Nemotron,2026-08-30 00:11:32
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Gnocchi mit Salbeibutter,chefkoch,5,0,5,0.000,0,29.1,,Selbstgemachte Gnocchi in Salbei-Butter,Zettel Eval Nemotron,2026-08-30 00:11:29
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Moussaka,chefkoch,8,0,8,0.000,0,26.9,,Moussaka,Zettel Eval Nemotron,2026-08-30 00:11:29
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Chili con Carne,chefkoch,2,2,0,1.000,0,18.1,,Chili con Carne à la Benjo,Zettel Eval Nemotron,2026-08-30 00:11:27
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Rotkohl,chefkoch,11,0,11,0.000,0,21.6,,"Blaukraut oder Rotkohl, klassisch",Zettel Eval Nemotron,2026-08-30 00:11:24
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Sauerbraten,chefkoch,1,1,0,1.000,0,13.8,,Rindsschmorbraten mit Essig und Rahm,Zettel Eval Nemotron,2026-08-30 00:11:18
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Königsberger Klopse,chefkoch,6,0,6,0.000,0,22.6,,Königsberger Klopse,Zettel Eval Nemotron,2026-08-30 00:11:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Semmelknödel,chefkoch,3,0,3,0.000,0,12.5,,Serviettenknödel,Zettel Eval Nemotron,2026-08-30 00:11:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Maultaschen,chefkoch,3,2,1,0.667,0,18.1,,Überbackene Maultaschen,Zettel Eval Nemotron,2026-08-30 00:11:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Grünkohl mit Pinkel,chefkoch,5,0,5,0.000,0,20.7,,Grünkohl mit Pinkel nach Ammerländer Art,Zettel Eval Nemotron,2026-08-30 00:11:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Frikadellen,chefkoch,9,1,8,0.111,0,23.0,,Omas beste Frikadellen,Zettel Eval Nemotron,2026-08-30 00:11:06
+2026-08-30-nemotron-nano-8b,Llama-3.1-Nemotron-Nano-8B,Rouladen,chefkoch,4,2,2,0.500,1,43.7,,Rinderrouladen klassisch,Zettel Eval Nemotron,2026-08-30 00:11:06
