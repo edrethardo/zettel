@@ -105,8 +105,9 @@ Measured throughput on this box (single RTX 3090, re-measured 2026-09-04 on vLLM
 
 ## The guarantees that make it interesting
 
-**The model chooses only from what it was shown.** The agent has three
-stages, and the middle one is not a model call:
+**The model chooses only from what it was shown.** (The pattern, extracted
+with its three code locations: [`PATTERN.md`](PATTERN.md).) The agent has
+three stages, and the middle one is not a model call:
 
 1. `plan.extract` — the model turns the sentence into *search terms with
    quantities*. It sees zero catalog entries.
