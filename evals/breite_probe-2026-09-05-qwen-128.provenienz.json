@@ -1,0 +1,13 @@
+{
+  "stack": "syv-ai/qwen38-27b-rtx3090 (Docker, vLLM 0.27.1, DFlash2)",
+  "endpunkt": "http://vllm-box.local:8000/v1",
+  "modell": "Qwen3.8-27B-Instruct",
+  "max_model_len": 65536,
+  "created": 1788601260,
+  "created_lesbar": "2026-09-05T09:41:00",
+  "parallel": 6,
+  "guided": "response_format json_schema (seit 6f0447b)",
+  "commit": "8ec07d9",
+  "gerichte": 128,
+  "phoenix_projekt": "Zettel Eval Qwen 128"
+}
