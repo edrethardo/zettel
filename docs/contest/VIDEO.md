@@ -277,14 +277,18 @@ zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 
 **Endcard** (Standbild, 5 s):
 
-> *A grocery app for a multi-person household where a 27B open model —
-> quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
-> and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
-> evaluated across 64 dishes, zero cloud, zero API keys.*
+> *A grocery app for a multi-person household where an open NVIDIA Nemotron
+> 3.5 Lightning model — 4-bit on a single RTX 3090 — turns "everything for
+> lasagna, and toilet paper" into a real shopping list: fully traced in Arize
+> Phoenix, evaluated across 64 dishes, zero cloud, zero API keys.*
 >
-> FastAPI · SQLite · vLLM (Qwen, open weights) · OpenTelemetry → Arize Phoenix
-> Recipe eval **83 %** across 64 dishes (up from 76 %) · 1,150 tests · 76 checks
+> FastAPI · SQLite FTS5 · vLLM (Nemotron 3.5 Lightning 30B-A3B, W4A16 · Qwen3.8-27B as reference) · OpenTelemetry → Arize Phoenix
+> 64 dishes: **85 % / 88 %** catalog hits per dish, on par with the 27B reference · 6 s per dish · 1,362 tests · 79 checks
 > Repo: `github.com/edrethardo/zettel`
+
+(Seit 05.09.: das Video zeigt Nemotron 3.5 — Aarons Entscheidung nach Lauf 3
+in EVALS.md; Qwen bleibt das Alltagsmodell der Box. `endcard.py` trägt
+denselben Text.)
 
 Die Zahlen der Endcard vor dem Dreh gegen `SHOWCASE.md`/`EVALS.md` abgleichen
 — sie wachsen mit jedem Ticket.

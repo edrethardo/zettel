@@ -35,8 +35,9 @@ candidates the shop retrieved. Invented product IDs are rejected, counted,
 and shown — in the UI and in the trace.
 
 The stack:
-- Qwen3.8-27B-Instruct (open weights, AWQ 4-bit) on vLLM — ~17.4 GiB VRAM
-  on a single NVIDIA RTX 3090. No cloud, no API keys.
+- NVIDIA Nemotron 3.5 Lightning 30B-A3B (open weights, 4-bit) on vLLM —
+  16.6 GiB on a single NVIDIA RTX 3090, 6 s per dish; measured against
+  Qwen3.8-27B as the reference on the same 64 dishes. No cloud, no API keys.
 - FastAPI + HTMX + SQLite FTS5 — one process, no build step.
 - Arize Phoenix — every chat turn is one trace, and every Yes/No the user
   taps becomes an eval label.
@@ -63,8 +64,8 @@ du zwei Anläufe willst):
 
 ---
 
-An open 27B model, one RTX 3090, zero cloud — and a grocery list our
-household actually shops from.
+An open NVIDIA Nemotron model, one RTX 3090, zero cloud — and a grocery
+list our household actually shops from.
 
 "Everything for lasagna, and toilet paper" → real recipe, computed pack
 counts, per-item confirmation. The model may only pick from retrieved
@@ -72,7 +73,7 @@ candidates; invented IDs are rejected and counted. Every turn is a Phoenix
 trace, every user decision an eval label. Evaluated on 64 dishes, failure
 cases documented.
 
-Qwen3.8-27B (AWQ 4-bit) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
+Nemotron 3.5 Lightning 30B-A3B (4-bit; Qwen3.8-27B as reference) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
 
 Demo: <video link> · Repo: https://github.com/edrethardo/zettel
 
