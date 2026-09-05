@@ -283,7 +283,7 @@ zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 > Phoenix, evaluated across 64 dishes, zero cloud, zero API keys.*
 >
 > FastAPI · SQLite FTS5 · vLLM (Nemotron 3.5 Lightning 30B-A3B, W4A16 · Qwen3.8-27B as reference) · OpenTelemetry → Arize Phoenix
-> 64 dishes: **85 % / 88 %** catalog hits per dish, on par with the 27B reference · 6 s per dish · 1,362 tests · 79 checks
+> 128 dishes: **85 %** of ingredients found, 87 % / 89 % per dish · 6 s per dish · the 27B reference: 87 %, three times slower · 1,364 tests · 79 checks
 > Repo: `github.com/edrethardo/zettel`
 
 (Seit 05.09.: das Video zeigt Nemotron 3.5 — Aarons Entscheidung nach Lauf 3

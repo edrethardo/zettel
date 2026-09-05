@@ -4,21 +4,18 @@
 > a grocery agent for a multi-person household that is allowed to do exactly
 > one thing: **choose from the products the shop retrieved** — never invent.
 > An invented product id is rejected and counted; every Yes/No the household
-> taps becomes an eval label; every turn is one trace in Arize Phoenix. The
-> pattern is extracted in [`PATTERN.md`](PATTERN.md) and applies to any agent
-> that picks rows from a database. Measured on 128 German dishes with three
-> open models on one NVIDIA RTX 3090 — NVIDIA's Nemotron 3.5 Lightning finds
-> 85 % of the ingredients at six seconds a dish, the Qwen3.8-27B reference
-> 87 % ([`EVALS.md`](EVALS.md)). No cloud, no API keys: vLLM, FastAPI + HTMX,
-> SQLite with FTS5; she fills the cart on her phone, he checks it off in the
-> store. The engineering tour in English —
-> screenshots, real traces, evals — is [`SHOWCASE.md`](SHOWCASE.md);
-> [`CASE-STUDY.md`](CASE-STUDY.md) is the English deep-dive on how a trace
-> acquitted the model and how one measured line took the eval from 76 % to
-> 83 %; [`PATTERN.md`](PATTERN.md) extracts the part worth copying — retrieve,
-> present ids, reject anything not presented, count it, let the user's Yes/No
-> be the label; [`GETTING-STARTED.md`](GETTING-STARTED.md) gets it running on
-> your machine. The rest of this README is in German, the household's language.
+> taps becomes an eval label; every turn is one trace in Arize Phoenix. No
+> cloud, no API keys: one open model on one NVIDIA RTX 3090.
+
+![One sentence becomes a recipe card with computed pack counts](docs/images/chat-recipe-card.gif)
+
+| 128 German dishes, one RTX 3090 (2026-09-05) | ingredients found in the catalog | per dish | seconds per dish |
+|---|---|---|---|
+| **NVIDIA Nemotron 3.5 Lightning 30B-A3B** (W4A16) | 85 % | 87 % / 89 % | **6** |
+| Qwen3.8-27B-Instruct (AWQ 4-bit), the reference | **87 %** | 89 % / 91 % | 20 |
+| Llama-3.1-Nemotron-Nano-8B (64 dishes, 2026-08-30) | 11 % | 25 % / 0 % | 21 |
+
+**English tour: [`SHOWCASE.md`](SHOWCASE.md) · the copyable pattern: [`PATTERN.md`](PATTERN.md) · run it: [`GETTING-STARTED.md`](GETTING-STARTED.md) · the numbers: [`EVALS.md`](EVALS.md) · two debugging stories: [`CASE-STUDY.md`](CASE-STUDY.md).** The rest of this README is in German, the household's language.
 
 Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
@@ -92,9 +89,9 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 ## Prüfen
 
 ```bash
-.venv/bin/python checks/smoke.py     # das Gate: 67 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 870 Tests, rund 34 s
-.venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 14 s
+.venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
+.venv/bin/python -m pytest -q        # 1.364 Tests, rund 45 s
+.venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 20 s
 ```
 
 Beides ohne Netz, ohne Modell, ohne Phoenix — und im Fall des Gates ist das

@@ -14,7 +14,7 @@ Modell und Projekt kommen aus der `.provenienz.json` neben dem Roh-JSON —
 nicht aus dem Dateinamen. Fehlt sie, steht der Dateiname im Feld `run` und
 das Modell bleibt leer; geraten wird nichts.
 
-    .venv/bin/python scripts/hf_datensatz.py evals/hf/zettel-dishes evals/breite_probe-2026-09-05-*.json
+    .venv/bin/python scripts/hf_datensatz.py evals/hf/zettel-128-dishes evals/breite_probe-2026-09-05-*.json
 """
 import csv
 import json

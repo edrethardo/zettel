@@ -89,7 +89,8 @@ Confirmed ingredients become a **saved recipe** on submit — the next
 
 | Piece | Why this one |
 |---|---|
-| **Qwen3.8-27B-Instruct** (dense, open weights) | AWQ 4-bit (W4A16, repo `philbert440/Qwen3.8-27B-W4A16-AWQ`), KV cache FP8 (fp8_e4m3) — **~17.4 GiB VRAM on a single NVIDIA RTX 3090 (24 GB)**. A consumer GPU, not a datacenter. |
+| **Qwen3.8-27B-Instruct** (dense, open weights) — the reference model | AWQ 4-bit (W4A16, repo `philbert440/Qwen3.8-27B-W4A16-AWQ`, quantized by philbert440, not by me), KV cache FP8 (fp8_e4m3) — **~17.4 GiB VRAM on a single NVIDIA RTX 3090 (24 GB)**. A consumer GPU, not a datacenter. |
+| **NVIDIA Nemotron 3.5 Lightning 30B-A3B** (hybrid MoE, 3B active, open weights) — the model in the demo video | W4A16 via compressed-tensors, repo `useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16` (quantized by useful-quants, not by me), 16.6 GiB, validated by them on exactly this GPU. Nothing in the code is model-specific — the shop speaks the OpenAI wire format and asks `/v1/models` which model answers. |
 | **vLLM 0.27.1** | Self-hosted on the LAN, systemd unit, `--max-num-seqs 32`, DFlash speculative decoding since 2026-09-01. Context length 65,536 tokens — the box reports it on `/v1/models`, and the docs quote what it reports. |
 | **FastAPI + Jinja2 + HTMX** | One process, server-rendered, no build step. HTMX is a vendored file, not a CDN — the tailnet is not necessarily online. Every form also works without JavaScript. |
 | **SQLite + FTS5** | Catalog (10,361 products), orders, chat, recipes, eval labels — one file, WAL mode, idempotent SQL migrations, no ORM. |
@@ -233,6 +234,8 @@ the list doubled to 128 the same day:
 | extra article reaches the cart | 13 of 16 | 13 of 16 |
 | `rejected` total | 1 | 1 |
 | median turn / whole run | 20 s / 7.4 min | **6 s / 2.2 min** |
+
+![Three open models on the same 128 dishes: ingredients found, median hit rate per dish, seconds per dish](docs/images/modelle-128.png)
 
 The 8B Nano is faster because it produces less that the catalog can find —
 whole dishes come back empty (Ratatouille 0 of 13). The 3.5 Lightning is on
