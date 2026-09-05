@@ -17,7 +17,7 @@ Checkliste vor dem Absenden:
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
 - [ ] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      die 1,346/79 sind vom 2026-09-04 und wachsen weiter
+      die 1,364/79 sind vom 2026-09-04 und wachsen weiter
 
 ---
 
