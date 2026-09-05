@@ -95,9 +95,9 @@
 
 ### Task 8: Zahlen-Sweep
 
-- [ ] **Step 1:** `grep -n "64 dishes\|64 Gerichte\|1,3[0-9][0-9] tests\|79 checks" README.md SHOWCASE.md CASE-STUDY.md EVALS.md PATTERN.md GETTING-STARTED.md docs/contest/*.md` — jede Zahl entweder als Historie datiert oder auf den neuen Stand.
-- [ ] **Step 2:** `pytest -q -n auto` und `checks/smoke.py` — die Zahlen in SHOWCASE/GETTING-STARTED/Endcard sind die aus diesem Lauf.
-- [ ] **Step 3:** Memory und `docs/contest/VIDEO.md` auf den Endstand; Commit.
+- [x] **Step 1:** `grep -n "64 dishes\|64 Gerichte\|1,3[0-9][0-9] tests\|79 checks" README.md SHOWCASE.md CASE-STUDY.md EVALS.md PATTERN.md GETTING-STARTED.md docs/contest/*.md` — jede Zahl entweder als Historie datiert oder auf den neuen Stand.
+- [x] **Step 2:** `pytest -q -n auto` und `checks/smoke.py` — die Zahlen in SHOWCASE/GETTING-STARTED/Endcard sind die aus diesem Lauf.
+- [x] **Step 3:** Memory und `docs/contest/VIDEO.md` auf den Endstand; Commit.
 
 ## Reihenfolge und Zeit
 
