@@ -97,7 +97,7 @@ enforced, not assumed (`GATES.md`).
 
 ## Evaluate a model
 
-The 64-dish breadth run drives the whole path — sentence → recipe → search
+The 128-dish breadth run drives the whole path — sentence → recipe → search
 terms → products → cart → shopping list — against a **copy** of the
 database and the live model, and traces into a Phoenix project of its own:
 

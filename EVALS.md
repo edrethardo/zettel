@@ -823,12 +823,49 @@ und was es rät, findet der Katalog oder nicht — das ist der Zufall eines
 einzelnen Laufs, kein Fortschritt. Beides steht hier, damit die 87 % nicht
 als „vier Punkte besser" gelesen werden.
 
-### Lauf 5 — Nemotron 3.5 Lightning, 128 Gerichte: offen
+### Lauf 5 — Nemotron 3.5 Lightning, 128 Gerichte, 2026-09-05 10:35
 
-Braucht das Modell noch einmal auf der Box (Fenster bei der Box-Session
-erbeten, 05.09.). Dasselbe Kommando mit
-`ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron 3.5 128"`; die Tabelle mit
-beiden Modellen kommt hierher.
+Box-Session: Nemotron serviert seit 10:35 (W4A16, `vllm-model serve
+--runtime 027`, vLLM 0.27.1, 32k, ohne Spekulation), Wächter aus seit
+10:34. Dasselbe Kommando, Projekt `Zettel Eval Nemotron 3.5 128`, Rohdaten
+`evals/breite_probe-2026-09-05-nemotron35-128.json` (+ `.provenienz.json`).
+Aus den Spans nachgerechnet (134 `chat.turn`, 128 mit Begriffen):
+
+```
+                               Qwen3.8-27B (AWQ)     Nemotron 3.5 Lightning (W4A16)
+                               Lauf 4, 09:41         Lauf 5, 10:35
+Gerichte / Fehler                  128 / 0                128 / 0
+Katalogtreffer der Begriffe   962 von 1.107 (87 %)   997 von 1.167 (85 %)
+Quote je Gericht, Mittel           89 %                   87 %
+Quote je Gericht, Median           91 %                   89 %
+Gerichte unter 40 %                 0                      1  (Schrumpelfrikandel, 0 von 2 geratenen Begriffen)
+Gerichte 80–100 %                 104                     93
+zettel.rejected gesamt              1                      1
+Rezeptentwurf                 119 von 128            119 von 128
+Zusatzartikel im Korb          13 von 16              13 von 16
+Zeilen im Laden mit Menge      Mittel 90 %             Mittel 92 %
+Dauer je Zug, Median          20 s (0–42)             6 s (0–12)
+Phase B gesamt                 7,4 min                 2,2 min
+```
+
+**Der Befund auf 128:** Qwen liegt zwei Punkte vorn (87 % gegen 85 % der
+Begriffe, 104 gegen 93 Gerichte über 80 %), Nemotron ist dreimal so schnell
+je Zug — bei gleicher Formtreue (`rejected` je 1) und gleichem
+Zusatzartikel-Ergebnis. Auf 64 waren beide gleichauf; auf 128 zeigt sich
+ein kleiner, konsistenter Vorsprung des dichten 27B beim Finden von
+Katalogbegriffen, vor allem in der Alltagsküche (87 % gegen 83 %) und beim
+Backen (88 % gegen 84 %); bei der exotischen Küche sind beide gleich schwach
+(78 % gegen 80 %). Nemotrons einziger Ausfall ist ein Fantasiegericht ohne
+Rezept, bei dem es zwei Begriffe riet, die es nicht gibt — Qwen riet dort
+mehr und traf. Ein Lauf je Modell; die Differenz von zwei Punkten liegt in
+der Grössenordnung dessen, was ein Fantasiename allein verschiebt.
+
+Zur Dauer: die reine Generierungsrate beider Fassungen ist laut Box-Session
+praktisch gleich (Nemotron 219–222 tok/s ohne Spekulation, Qwen 226 mit
+DFlash2). Dass Qwen je Zug dreimal so lange braucht, heisst bei gleicher
+Rate: es erzeugt dreimal so viele Token — eine Aussage über Wortknappheit,
+nicht über Geschwindigkeit. Nemotron sagt weniger und trifft dabei zwei
+Punkte weniger.
 
 ## Was hier schwächer ist, als es aussieht
 

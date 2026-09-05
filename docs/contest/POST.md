@@ -37,20 +37,19 @@ and shown — in the UI and in the trace.
 The stack:
 - NVIDIA Nemotron 3.5 Lightning 30B-A3B (open weights, 4-bit) on vLLM —
   16.6 GiB on a single NVIDIA RTX 3090, 6 s per dish; measured against
-  Qwen3.8-27B as the reference on the same 64 dishes. No cloud, no API keys.
+  Qwen3.8-27B as the reference on the same 128 dishes. No cloud, no API keys.
 - FastAPI + HTMX + SQLite FTS5 — one process, no build step.
 - Arize Phoenix — every chat turn is one trace, and every Yes/No the user
   taps becomes an eval label.
 
-Measured, not vibed: 64 dishes end-to-end (83 % of search terms found a
-catalog product, median 89 % per dish), 1,346 tests, a 79-check smoke gate
-that blocks the network at socket level. The same harness judged two more
-open models, each in under an afternoon: Nemotron-Nano-8B scored a median of
-0 % — and that number is in the docs next to the wins — while NVIDIA's new
-Nemotron 3.5 Lightning 30B-A3B (4-bit, same RTX 3090) matched the 27B
-reference at 85 % / 88 % and ran all 64 dishes in 1.1 minutes. The write-up
-includes the failure cases — "Salat" scores zero, and the docs explain
-exactly why.
+Measured, not vibed: 128 dishes end-to-end, three open models, one RTX
+3090. Nemotron 3.5 Lightning (4-bit) finds 85 % of the ingredients in the
+catalog — median 89 % per dish — and runs all 128 dishes in 2.2 minutes, six
+seconds a dish; the 27B reference finds 87 % and takes three times as long.
+An older Nemotron-Nano-8B scored a median of 0 % on the same harness, and
+that number is in the docs next to the wins. 1,362 tests, a 79-check smoke
+gate that blocks the network at socket level, and the failure cases written
+up — "Salat" once scored zero, and the docs explain exactly why.
 
 60-second demo: <video link>
 Repo & engineering tour: https://github.com/edrethardo/zettel
@@ -70,8 +69,8 @@ list our household actually shops from.
 "Everything for lasagna, and toilet paper" → real recipe, computed pack
 counts, per-item confirmation. The model may only pick from retrieved
 candidates; invented IDs are rejected and counted. Every turn is a Phoenix
-trace, every user decision an eval label. Evaluated on 64 dishes, failure
-cases documented.
+trace, every user decision an eval label. Evaluated on 128 dishes with three
+open models, failure cases documented.
 
 Nemotron 3.5 Lightning 30B-A3B (4-bit; Qwen3.8-27B as reference) · vLLM · FastAPI + HTMX + SQLite · Arize Phoenix
 

@@ -30,15 +30,15 @@
 - Create: `evals/breite_probe-2026-09-05-qwen-128.json` + `.provenienz.json`, `evals/breite_probe-2026-09-0X-nemotron35-128.json` + `.provenienz.json`
 - Modify: `EVALS.md` (Abschnitt „128 Gerichte"), `SHOWCASE.md` (Zahlen), `docs/contest/POST.md`, `~/picknick-video/endcard.py`
 
-- [ ] **Step 1: 64 neue Gerichte eintragen** — je Achse im selben Verhältnis wie die erste Hälfte, jedes mit einem Kommentar, wofür es dasteht; acht davon mit wechselndem Zusatzartikel (Müllbeutel, Backpapier, Küchenrolle, Spülschwamm, Duschgel, Klopapier, Batterien, Kaffeefilter). Zweite Schreibweisen-Paare (Spaghetti/Spagetti Carbonara), zweite Kontrolle bei den Mehrdeutigen („Curry als ganzer Satz").
-- [ ] **Step 2: Liste prüfen** — `.venv/bin/python scripts/breite_probe.py --achsen` zeigt 128 Gerichte, keine Dublette (`GERICHTE`-Namen eindeutig).
-- [ ] **Step 3: Qwen-Lauf (Box steht auf Qwen)** — DB-Kopie frisch aus `data/picknick.db`, dann
+- [x] **Step 1: 64 neue Gerichte eintragen** — je Achse im selben Verhältnis wie die erste Hälfte, jedes mit einem Kommentar, wofür es dasteht; acht davon mit wechselndem Zusatzartikel (Müllbeutel, Backpapier, Küchenrolle, Spülschwamm, Duschgel, Klopapier, Batterien, Kaffeefilter). Zweite Schreibweisen-Paare (Spaghetti/Spagetti Carbonara), zweite Kontrolle bei den Mehrdeutigen („Curry als ganzer Satz").
+- [x] **Step 2: Liste prüfen** — `.venv/bin/python scripts/breite_probe.py --achsen` zeigt 128 Gerichte, keine Dublette (`GERICHTE`-Namen eindeutig).
+- [x] **Step 3: Qwen-Lauf (Box steht auf Qwen)** — DB-Kopie frisch aus `data/picknick.db`, dann
   `ZETTEL_PHOENIX_PROJECT="Zettel Eval Qwen 128" .venv/bin/python scripts/breite_probe.py --messen --db <Kopie> --json evals/breite_probe-2026-09-05-qwen-128.json --trace`. Erwartung: 128 gelaufen, 0 Fehler, ~5 min (Phase A holt 64 neue Rezepte bei Chefkoch mit 1,5 s Pause).
-- [ ] **Step 4: Nemotron-Lauf** — Fenster bei der Box-Session anfragen („Nemotron wie am 05.09., Wächter aus, ~20 min"), dann dasselbe Kommando mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron 3.5 128"`; danach „Messung abgeschlossen" melden.
-- [ ] **Step 5: Aus den Spans nachrechnen** (wie bei Lauf 1–3: `attributes.zettel`/`picknick`, `terms`/`products` je `chat.turn`), Tabelle 64 vs 128 je Modell — steigt oder fällt die Quote mit der Breite? Die zehn schlechtesten neu benennen.
-- [ ] **Step 6: Provenienz-Dateien** wie `evals/breite_probe-2026-09-05-nemotron35.provenienz.json` (Stack, Endpunkt `vllm-box.local`, Modell, Kontext, Commit, Phoenix-Projekt, guided = response_format).
-- [ ] **Step 7: EVALS.md** — neuer Abschnitt „128 Gerichte (05.09.)": Kommando, Tabelle beider Modelle, was sich gegenüber 64 änderte, „Was diese Messung NICHT sagt" (ein Lauf, keine Wiederholung). SHOWCASE: Leitsatz und Tabelle auf 128 („evaluated across 128 dishes"), die 64er-Läufe bleiben als Historie benannt. POST, CASE-STUDY, Endcard: Zahl nachziehen.
-- [ ] **Step 8: Privatscan und Commit** — `.venv/bin/python -m pytest -q tests/test_betrieb.py`, dann Commit je Lauf.
+- [x] **Step 4: Nemotron-Lauf** — Fenster bei der Box-Session anfragen („Nemotron wie am 05.09., Wächter aus, ~20 min"), dann dasselbe Kommando mit `ZETTEL_PHOENIX_PROJECT="Zettel Eval Nemotron 3.5 128"`; danach „Messung abgeschlossen" melden.
+- [x] **Step 5: Aus den Spans nachrechnen** (wie bei Lauf 1–3: `attributes.zettel`/`picknick`, `terms`/`products` je `chat.turn`), Tabelle 64 vs 128 je Modell — steigt oder fällt die Quote mit der Breite? Die zehn schlechtesten neu benennen.
+- [x] **Step 6: Provenienz-Dateien** wie `evals/breite_probe-2026-09-05-nemotron35.provenienz.json` (Stack, Endpunkt `vllm-box.local`, Modell, Kontext, Commit, Phoenix-Projekt, guided = response_format).
+- [x] **Step 7: EVALS.md** — neuer Abschnitt „128 Gerichte (05.09.)": Kommando, Tabelle beider Modelle, was sich gegenüber 64 änderte, „Was diese Messung NICHT sagt" (ein Lauf, keine Wiederholung). SHOWCASE: Leitsatz und Tabelle auf 128 („evaluated across 128 dishes"), die 64er-Läufe bleiben als Historie benannt. POST, CASE-STUDY, Endcard: Zahl nachziehen.
+- [x] **Step 8: Privatscan und Commit** — `.venv/bin/python -m pytest -q tests/test_betrieb.py`, dann Commit je Lauf.
 
 ### Task 2: PATTERN.md — das Muster für Entwickler
 
@@ -46,10 +46,10 @@
 - Create: `PATTERN.md` (Englisch, ~1 Seite)
 - Modify: `README.md` (Dokumententabelle + englischer Kopf), `SHOWCASE.md` (Link in „The guarantees")
 
-- [ ] **Step 1: Drei Codestellen herausschneiden**, je ≤ 15 Zeilen, wörtlich aus dem Repo mit `file:line`: (1) die Kandidatenprüfung in `zettel/assistant/plan.py` (`Auswahl.verworfen`, ID nicht vorgelegt → verworfen, gezählt), (2) das `zettel.rejected`-Attribut in `zettel/assistant/chat.py` (`_span_abschluss`), (3) die Labels beim Abschicken in `zettel/obs/` (`kept`/`removed`/`correction`).
-- [ ] **Step 2: Seite schreiben** — Titel „Accountable choice: let the model pick only from what you retrieved". Struktur: das Problem (ein Satz), die drei Regeln, die drei Codestellen, was es messbar macht (Zahlen aus EVALS mit Link), „applies to any agent that selects from a database: products, tickets, documents". Kein Marketing, jede Zahl mit Quelle.
-- [ ] **Step 3: Verlinken** — README-Tabelle (eine Zeile), README-Englischkopf (Halbsatz), SHOWCASE unter „The guarantees" („the pattern, extracted: PATTERN.md").
-- [ ] **Step 4: Privatscan, Commit.**
+- [x] **Step 1: Drei Codestellen herausschneiden**, je ≤ 15 Zeilen, wörtlich aus dem Repo mit `file:line`: (1) die Kandidatenprüfung in `zettel/assistant/plan.py` (`Auswahl.verworfen`, ID nicht vorgelegt → verworfen, gezählt), (2) das `zettel.rejected`-Attribut in `zettel/assistant/chat.py` (`_span_abschluss`), (3) die Labels beim Abschicken in `zettel/obs/` (`kept`/`removed`/`correction`).
+- [x] **Step 2: Seite schreiben** — Titel „Accountable choice: let the model pick only from what you retrieved". Struktur: das Problem (ein Satz), die drei Regeln, die drei Codestellen, was es messbar macht (Zahlen aus EVALS mit Link), „applies to any agent that selects from a database: products, tickets, documents". Kein Marketing, jede Zahl mit Quelle.
+- [x] **Step 3: Verlinken** — README-Tabelle (eine Zeile), README-Englischkopf (Halbsatz), SHOWCASE unter „The guarantees" („the pattern, extracted: PATTERN.md").
+- [x] **Step 4: Privatscan, Commit.**
 
 ### Task 3: Post und README-Kopf auf den Entwickler-Nutzen
 
@@ -67,9 +67,9 @@
 - Modify: `~/picknick-video/schnitt.py` (UNTERTITEL 7), `~/picknick-video/endcard.py`
 - Regenerate: `~/picknick-video/zettel_demo_nemotron_final.mp4`
 
-- [ ] **Step 1: Untertitel Shot 7** — „Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted: 2 of 581 across 64 dishes, 0 shipped." (Zahl aus Task 1 auf 128 nachziehen, sobald da.)
-- [ ] **Step 2: Endcard-Zahlenzeile** — „Nemotron 3.5 on one RTX 3090: 85 % of ingredients found, 128 dishes, 6 s per dish · 1,362 tests · 79 checks".
-- [ ] **Step 3: Neu rendern** — `python3 endcard.py github.com/edrethardo/zettel`, dann der Concat-Aufruf aus VIDEO.md „Stand 05.09."; Einzelbild bei Shot 7 und Endcard prüfen.
+- [x] **Step 1: Untertitel Shot 7** — „Every turn is one trace. The model may only pick from retrieved documents — invented IDs are rejected and counted: 2 of 581 across 64 dishes, 0 shipped." (Zahl aus Task 1 auf 128 nachziehen, sobald da.)
+- [x] **Step 2: Endcard-Zahlenzeile** — „Nemotron 3.5 on one RTX 3090: 85 % of ingredients found, 128 dishes, 6 s per dish · 1,362 tests · 79 checks".
+- [x] **Step 3: Neu rendern** — `python3 endcard.py github.com/edrethardo/zettel`, dann der Concat-Aufruf aus VIDEO.md „Stand 05.09."; Einzelbild bei Shot 7 und Endcard prüfen.
 
 ### Task 5: Der Datensatz auf Hugging Face
 
@@ -77,8 +77,8 @@
 - Create: `evals/hf/zettel-128-dishes/README.md` (Dataset-Card), `evals/hf/zettel-128-dishes/dishes.csv`, `results.csv`
 - Create: `scripts/hf_datensatz.py` (baut CSVs aus den `evals/*.json`)
 
-- [ ] **Step 1: `scripts/hf_datensatz.py`** — liest die Roh-JSONs der Läufe, schreibt `dishes.csv` (Name, Achse, Satz, Zusatzartikel) und `results.csv` (Lauf, Modell, Gericht, Begriffe, Katalogtreffer, Freitext, Dauer, rejected, Phoenix-Projekt). Test: `tests/test_hf_datensatz.py` gegen einen Mini-JSON (drei Gerichte) — Spaltennamen und Zeilenzahl.
-- [ ] **Step 2: Dataset-Card** — Titel, was gemessen wurde, wie (Link auf EVALS/GETTING-STARTED), Lizenz MIT, `language: de`, `task_categories: other`, Tabelle der Modelle mit Mittel/Median, „limitations" (ein Lauf, Katalog eines Händlers, deutsch).
+- [x] **Step 1: `scripts/hf_datensatz.py`** — liest die Roh-JSONs der Läufe, schreibt `dishes.csv` (Name, Achse, Satz, Zusatzartikel) und `results.csv` (Lauf, Modell, Gericht, Begriffe, Katalogtreffer, Freitext, Dauer, rejected, Phoenix-Projekt). Test: `tests/test_hf_datensatz.py` gegen einen Mini-JSON (drei Gerichte) — Spaltennamen und Zeilenzahl.
+- [x] **Step 2: Dataset-Card** — Titel, was gemessen wurde, wie (Link auf EVALS/GETTING-STARTED), Lizenz MIT, `language: de`, `task_categories: other`, Tabelle der Modelle mit Mittel/Median, „limitations" (ein Lauf, Katalog eines Händlers, deutsch).
 - [ ] **Step 3: Aaron lädt hoch** — `hf upload edrethardo/zettel-128-dishes evals/hf/zettel-128-dishes --repo-type dataset`; Link in SHOWCASE und Post.
 
 ### Task 6: Gesicht und Stimme (nur Aaron)

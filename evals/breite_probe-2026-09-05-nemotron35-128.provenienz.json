@@ -1,0 +1,14 @@
+{
+  "stack": "vllm-model serve --runtime 027 (vLLM 0.27.1 venv), useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16, ohne Spekulation",
+  "endpunkt": "http://vllm-box.local:8000/v1",
+  "modell": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B",
+  "max_model_len": 32768,
+  "created": 1788604544,
+  "created_lesbar": "2026-09-05T10:35:44",
+  "parallel": 6,
+  "guided": "response_format json_schema (seit 6f0447b)",
+  "commit": "8ec07d9",
+  "gerichte": 128,
+  "phoenix_projekt": "Zettel Eval Nemotron 3.5 128",
+  "fenster": "Box-Session: serviert seit 10:35, Wächter aus seit 10:34:09"
+}
