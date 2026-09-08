@@ -15,7 +15,20 @@
 | Qwen3.8-27B-Instruct (AWQ 4-bit), the reference | **87 %** | 89 % / 91 % | 20 |
 | Llama-3.1-Nemotron-Nano-8B (64 dishes, 2026-08-30) | 11 % | 25 % / 0 % | 21 |
 
-**English tour: [`SHOWCASE.md`](SHOWCASE.md) · the copyable pattern: [`PATTERN.md`](PATTERN.md) · run it: [`GETTING-STARTED.md`](GETTING-STARTED.md) · the numbers: [`EVALS.md`](EVALS.md) · two debugging stories: [`CASE-STUDY.md`](CASE-STUDY.md).** The rest of this README is in German, the household's language.
+**English tour: [`SHOWCASE.md`](SHOWCASE.md) · the copyable pattern: [`PATTERN.md`](PATTERN.md) · run it: [`GETTING-STARTED.md`](GETTING-STARTED.md) · the numbers: [`EVALS.md`](EVALS.md) · two debugging stories: [`CASE-STUDY.md`](CASE-STUDY.md) · contribute: [`CONTRIBUTING.md`](CONTRIBUTING.md).** The rest of this README is in German, the household's language.
+
+> **Using this outside Germany.** The interface speaks German and English —
+> switch it under *More → Language*; screen text lives in
+> `zettel/web/texte/*.json` and a partial translation is welcome, because
+> anything missing falls back to German. The catalogue source is one German
+> shop, and everything above it does not care where products came from:
+> `product` carries a `source` column. Adding your own supermarket is one
+> crawler and one parser, and the method — how to check `robots.txt` first,
+> how to find the endpoint the shop's own front-end uses, and the five guards
+> that keep a bad night from erasing your catalogue — is written down in
+> [`.claude/skills/grocery-catalog-source/`](.claude/skills/grocery-catalog-source/SKILL.md).
+> The code itself stays German; `CONTRIBUTING.md` explains why, and why that
+> does not have to stop you.
 
 Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
