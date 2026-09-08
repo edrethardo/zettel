@@ -1,0 +1,546 @@
+[
+ {
+  "productId": 10002,
+  "card": {
+   "productId": 10002,
+   "image": {
+    "path": "https://cdn.knuspr.de/images/grocery/products/10002/10002-1658828760279.jpg",
+    "backgroundColor": "#F6F6F6"
+   },
+   "name": "Alnatura Bio Knabber Eulen",
+   "slug": "alnatura-bio-knabber-eulen",
+   "brand": null,
+   "countryOfOriginFlagIconPath": null,
+   "favorites": {
+    "canBeFavorite": true,
+    "favorite": false
+   },
+   "unit": "kg",
+   "textualAmount": "100 g",
+   "weightedItem": false,
+   "badges": [
+    {
+     "position": "PRICE",
+     "type": null,
+     "slug": null,
+     "text": "-10 % für dich",
+     "textColor": "#1C2529",
+     "backgroundColor": "#FFE9D6",
+     "link": null,
+     "icon": null,
+     "trailingIcon": null,
+     "secondaryText": null
+    },
+    {
+     "position": "PRODUCT",
+     "type": "TAG_BASED_BADGE",
+     "slug": "bio",
+     "text": "BIO",
+     "textColor": "#185729",
+     "backgroundColor": "#DDF4DE",
+     "link": null,
+     "icon": null,
+     "trailingIcon": null,
+     "secondaryText": null
+    }
+   ],
+   "prices": {
+    "originalPrice": 1.59,
+    "salePrice": 1.43,
+    "unitPrice": 14.3,
+    "saleId": 16681339,
+    "salePriceStyle": {
+     "textColor": "#1C2529",
+     "backgroundColor": "#FFE9D6"
+    },
+    "saleValidTill": null,
+    "saleText": "-10 % für dich",
+    "currency": "EUR"
+   },
+   "stock": {
+    "maxAvailableAmount": 50,
+    "availabilityStatus": "AVAILABLE",
+    "availabilityReason": null,
+    "maxBasketAmountReason": "ALLOWED"
+   },
+   "tooltips": [],
+   "ratings": [],
+   "type": "PRODUCT"
+  },
+  "product": {
+   "id": 10002,
+   "name": "Alnatura Bio Knabber Eulen",
+   "slug": "alnatura-bio-knabber-eulen",
+   "mainCategoryId": 4720,
+   "unit": "kg",
+   "textualAmount": "100 g",
+   "badges": [
+    {
+     "type": "bio",
+     "title": "BIO",
+     "subtitle": null,
+     "tooltip": ""
+    }
+   ],
+   "archived": false,
+   "premiumOnly": false,
+   "brand": "Alnatura",
+   "brandPageLink": null,
+   "brandPageDeeplink": null,
+   "images": [
+    "https://cdn.knuspr.de/images/grocery/products/10002/10002-1658828760279.jpg"
+   ],
+   "countries": [
+    {
+     "name": "Schweiz",
+     "nameId": "schweiz",
+     "code": "CH"
+    }
+   ],
+   "canBeFavorite": true,
+   "canBeRated": true,
+   "information": [],
+   "image3dData": null,
+   "adviceForSafeUse": null,
+   "countryOfOriginFlagIcon": null,
+   "productStory": null,
+   "filters": [
+    {
+     "type": "BRAND",
+     "slug": "marke",
+     "values": [
+      {
+       "name": "Alnatura",
+       "slug": "alnatura"
+      }
+     ]
+    }
+   ],
+   "type": "PRODUCT",
+   "weightedItem": false,
+   "packageRatio": null,
+   "sellerId": 1,
+   "flag": null,
+   "attachments": []
+  },
+  "composition": {
+   "productId": 10002,
+   "nutritionalValues": [
+    {
+     "productId": 10002,
+     "portion": "100 g",
+     "values": {
+      "energyKJ": {
+       "amount": 1859.0,
+       "unit": "kJ"
+      },
+      "energyKCal": {
+       "amount": 442.0,
+       "unit": "kCal"
+      },
+      "fats": {
+       "amount": 15.0,
+       "unit": "g"
+      },
+      "saturatedFats": {
+       "amount": 7.1,
+       "unit": "g"
+      },
+      "carbohydrates": {
+       "amount": 66.0,
+       "unit": "g"
+      },
+      "sugars": {
+       "amount": 2.5,
+       "unit": "g"
+      },
+      "protein": {
+       "amount": 8.9,
+       "unit": "g"
+      },
+      "salt": {
+       "amount": 2.8,
+       "unit": "g"
+      },
+      "fiber": {
+       "amount": 3.8,
+       "unit": "g"
+      }
+     }
+    }
+   ],
+   "ingredients": [],
+   "plainIngredients": "WEIZENMEHL*, Palmöl*, Rübenzucker*, Meersalz, Hefe*, GERSTENMALZEXTRAKT*, Backtriebmittel: Natriumhydrogencarbonat, Säureregulator: Natriumhydroxid *aus biologischer Landwirtschaft. Kann Spuren von Ei, Milch, Mandel, Haselnuss und Sesam enthalten.",
+   "allergens": {
+    "contained": [
+     "Glutenhaltiges Getreide"
+    ],
+    "possiblyContained": [
+     "Eier",
+     "Milch",
+     "Nüsse",
+     "Sesamsamen"
+    ]
+   },
+   "ean": "4104420256873"
+  },
+  "categories": {
+   "productId": 10002,
+   "categories": [
+    {
+     "id": 4668,
+     "type": "normal",
+     "name": "Süßes & Salziges",
+     "slug": "suesses-salziges",
+     "level": 0
+    },
+    {
+     "id": 4719,
+     "type": "normal",
+     "name": "Laugen- & Salzgebäck",
+     "slug": "laugen-salzgebaeck",
+     "level": 1
+    },
+    {
+     "id": 4720,
+     "type": "normal",
+     "name": "Cracker & Salzgebäck",
+     "slug": "cracker-salzgebaeck",
+     "level": 2
+    }
+   ]
+  }
+ },
+ {
+  "productId": 100032,
+  "card": {
+   "productId": 100032,
+   "image": {
+    "path": "https://cdn.knuspr.de/images/grocery/products/100032/100032-1742887530731.jpg",
+    "backgroundColor": "#F6F6F6"
+   },
+   "name": "3Bears X Harry Kane's Oat Cinnamon Loops",
+   "slug": "3bears-x-harry-kane-s-oat-cinnamon-loops",
+   "brand": null,
+   "countryOfOriginFlagIconPath": null,
+   "favorites": {
+    "canBeFavorite": true,
+    "favorite": false
+   },
+   "unit": "kg",
+   "textualAmount": "250 g",
+   "weightedItem": false,
+   "badges": [
+    {
+     "position": "PRICE",
+     "type": null,
+     "slug": null,
+     "text": "-20 % bis 7. 9.",
+     "textColor": "#1C2529",
+     "backgroundColor": "#FFF6C8",
+     "link": null,
+     "icon": null,
+     "trailingIcon": null,
+     "secondaryText": null
+    },
+    {
+     "position": "CTA_BUTTON",
+     "type": "FIND_SIMILAR",
+     "slug": "find-similar",
+     "text": "Ähnliches finden",
+     "textColor": "#FFFFFF",
+     "backgroundColor": "#2F7D3B",
+     "link": "/c97",
+     "icon": null,
+     "trailingIcon": null,
+     "secondaryText": null
+    }
+   ],
+   "prices": {
+    "originalPrice": 4.19,
+    "salePrice": 3.35,
+    "unitPrice": 13.4,
+    "saleId": 20381095,
+    "salePriceStyle": {
+     "textColor": "#1C2529",
+     "backgroundColor": "#FFE55A"
+    },
+    "saleValidTill": "2026-09-07T23:59:00+02:00",
+    "saleText": "-20 %",
+    "currency": "EUR"
+   },
+   "stock": {
+    "maxAvailableAmount": 0,
+    "availabilityStatus": "UNAVAILABLE",
+    "availabilityReason": "Wsl. wieder verfügbar am Do.",
+    "maxBasketAmountReason": "AVAILABLE"
+   },
+   "tooltips": [],
+   "ratings": [],
+   "type": "PRODUCT"
+  },
+  "product": {
+   "id": 100032,
+   "name": "3Bears X Harry Kane's Oat Cinnamon Loops",
+   "slug": "3bears-x-harry-kane-s-oat-cinnamon-loops",
+   "mainCategoryId": 97,
+   "unit": "kg",
+   "textualAmount": "250 g",
+   "badges": [],
+   "archived": false,
+   "premiumOnly": false,
+   "brand": "3Bears",
+   "brandPageLink": null,
+   "brandPageDeeplink": null,
+   "images": [
+    "https://cdn.knuspr.de/images/grocery/products/100032/100032-1742887530731.jpg"
+   ],
+   "countries": [
+    {
+     "name": "Deutschland",
+     "nameId": "deutschland",
+     "code": "DE"
+    }
+   ],
+   "canBeFavorite": true,
+   "canBeRated": true,
+   "information": [],
+   "image3dData": null,
+   "adviceForSafeUse": null,
+   "countryOfOriginFlagIcon": null,
+   "productStory": null,
+   "filters": [
+    {
+     "type": "BRAND",
+     "slug": "marke",
+     "values": [
+      {
+       "name": "3Bears",
+       "slug": "3bears"
+      }
+     ]
+    }
+   ],
+   "type": "PRODUCT",
+   "weightedItem": false,
+   "packageRatio": null,
+   "sellerId": 1,
+   "flag": null,
+   "attachments": []
+  },
+  "composition": {
+   "productId": 100032,
+   "nutritionalValues": [
+    {
+     "productId": 100032,
+     "portion": "100 g",
+     "values": {
+      "energyKJ": {
+       "amount": 1664.0,
+       "unit": "kJ"
+      },
+      "energyKCal": {
+       "amount": 394.0,
+       "unit": "kCal"
+      },
+      "fats": {
+       "amount": 4.7,
+       "unit": "g"
+      },
+      "saturatedFats": {
+       "amount": 0.9,
+       "unit": "g"
+      },
+      "carbohydrates": {
+       "amount": 73.0,
+       "unit": "g"
+      },
+      "sugars": {
+       "amount": 15.0,
+       "unit": "g"
+      },
+      "protein": {
+       "amount": 11.0,
+       "unit": "g"
+      },
+      "salt": {
+       "amount": 0.39,
+       "unit": "g"
+      },
+      "fiber": {
+       "amount": 7.8,
+       "unit": "g"
+      }
+     }
+    }
+   ],
+   "ingredients": [],
+   "plainIngredients": "Zutaten: 52% Vollkorn-HAFERmehl, 17 % Maisgrieß, Agavendicksaft, 11% DINKELweizenmehl, 0,5 % Zimt, \nfettarmes Kakaopulver, Salz.",
+   "allergens": {
+    "contained": [
+     "Glutenhaltiges Getreide"
+    ],
+    "possiblyContained": [
+     "Erdnüsse",
+     "Sojabohnen",
+     "Milch",
+     "Nüsse",
+     "Senf",
+     "Sesamsamen",
+     "Lupine"
+    ]
+   },
+   "ean": "4260462987011"
+  },
+  "categories": {
+   "productId": 100032,
+   "categories": [
+    {
+     "id": 29,
+     "type": "normal",
+     "name": "Kochen & Backen",
+     "slug": "kochen-backen",
+     "level": 0
+    },
+    {
+     "id": 36,
+     "type": "normal",
+     "name": "Müsli, Porridge & Cerealien",
+     "slug": "muesli-porridge-cerealien",
+     "level": 1
+    },
+    {
+     "id": 97,
+     "type": "normal",
+     "name": "Cornflakes & Cerealien",
+     "slug": "cornflakes-cerealien",
+     "level": 2
+    }
+   ]
+  }
+ },
+ {
+  "productId": 100072,
+  "card": {
+   "productId": 100072,
+   "image": {
+    "path": "https://cdn.knuspr.de/images/grocery/products/100072/100072-1744181382767.jpg",
+    "backgroundColor": "#F6F6F6"
+   },
+   "name": "Naïf Care Plastikfreie Feuchttücher Wasserbasis für Baby & Kind, 3er Pack",
+   "slug": "naif-care-plastikfreie-feuchttuecher-wasserbasis-fuer-baby-kind-3er-pack",
+   "brand": null,
+   "countryOfOriginFlagIconPath": null,
+   "favorites": {
+    "canBeFavorite": true,
+    "favorite": false
+   },
+   "unit": "Stk",
+   "textualAmount": "162 Stk",
+   "weightedItem": false,
+   "badges": [],
+   "prices": {
+    "originalPrice": 7.79,
+    "salePrice": null,
+    "unitPrice": 0.05,
+    "saleId": null,
+    "salePriceStyle": null,
+    "saleValidTill": null,
+    "saleText": null,
+    "currency": "EUR"
+   },
+   "stock": {
+    "maxAvailableAmount": 28,
+    "availabilityStatus": "AVAILABLE",
+    "availabilityReason": null,
+    "maxBasketAmountReason": "AVAILABLE"
+   },
+   "tooltips": [],
+   "ratings": [],
+   "type": "PRODUCT"
+  },
+  "product": {
+   "id": 100072,
+   "name": "Naïf Care Plastikfreie Feuchttücher Wasserbasis für Baby & Kind, 3er Pack",
+   "slug": "naif-care-plastikfreie-feuchttuecher-wasserbasis-fuer-baby-kind-3er-pack",
+   "mainCategoryId": 843,
+   "unit": "Stk",
+   "textualAmount": "162 Stk",
+   "badges": [],
+   "archived": false,
+   "premiumOnly": false,
+   "brand": "Naif Care",
+   "brandPageLink": null,
+   "brandPageDeeplink": null,
+   "images": [
+    "https://cdn.knuspr.de/images/grocery/products/100072/100072-1744181382767.jpg"
+   ],
+   "countries": [
+    {
+     "name": "Niederlande",
+     "nameId": "holland",
+     "code": "NL"
+    }
+   ],
+   "canBeFavorite": true,
+   "canBeRated": true,
+   "information": [],
+   "image3dData": null,
+   "adviceForSafeUse": null,
+   "countryOfOriginFlagIcon": null,
+   "productStory": null,
+   "filters": [
+    {
+     "type": "BRAND",
+     "slug": "marke",
+     "values": [
+      {
+       "name": "Naif Care",
+       "slug": "naif-care"
+      }
+     ]
+    }
+   ],
+   "type": "PRODUCT",
+   "weightedItem": false,
+   "packageRatio": null,
+   "sellerId": 1,
+   "flag": null,
+   "attachments": []
+  },
+  "composition": {
+   "productId": 100072,
+   "nutritionalValues": [],
+   "ingredients": [],
+   "plainIngredients": "Zutaten: Aqua/ Water, Sodium Cocoyl Glutamate, Levulinic Acid, Sodium Benzoate, Citric Acid",
+   "allergens": null,
+   "ean": "8721082818063"
+  },
+  "categories": {
+   "productId": 100072,
+   "categories": [
+    {
+     "id": 833,
+     "type": "normal",
+     "name": "Baby & Kinder",
+     "slug": "baby-kinder",
+     "level": 0
+    },
+    {
+     "id": 842,
+     "type": "normal",
+     "name": "Baby- & Kinderpflege",
+     "slug": "baby-kinderpflege",
+     "level": 1
+    },
+    {
+     "id": 843,
+     "type": "normal",
+     "name": "Pflege & Feuchttücher",
+     "slug": "pflege-feuchttuecher",
+     "level": 2
+    }
+   ]
+  }
+ }
+]

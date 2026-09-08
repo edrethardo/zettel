@@ -343,3 +343,244 @@ def test_repariere_einheiten_belegt_die_grosse_einheit_mit_dem_grundpreis(con):
     assert con.execute("SELECT unit_text FROM product WHERE name = 'Reiniger'"
                        ).fetchone()["unit_text"] == "1,5 l"
     assert knuspr.repariere_einheiten(con) == 0     # idempotent
+
+
+# --------------------------------------------------------------------------
+# Nährwerte (2026-09-06): sie lagen immer schon in der Nutzlast
+
+def _mit_naehrwert(pid, name, **werte):
+    roh = _roh(pid, name)
+    roh["composition"] = {
+        "additiveScoreMax": 6, "withoutAdditives": True,
+        "nutritionalValues": {"dose": "100 g", "energyValueKJ": 192.0,
+                              "energyValueKcal": 46.0, "fats": 1.5,
+                              "saturatedFattyAcids": 0.2,
+                              "carbohydrates": 6.6, "sugars": 3.3,
+                              "proteins": 0.8, "salt": 0.08, "fiber": 1.4,
+                              **werte}}
+    return roh
+
+
+def test_die_fixture_von_anfang_an_traegt_naehrwerte(payload):
+    # Der Punkt dieses Tests: die Daten sind nicht neu, nur der Parser ist es.
+    zeilen = knuspr.parse_naehrwerte(payload)
+    assert len(zeilen) > 10
+    eine = zeilen[0]
+    assert eine["kcal"] is not None and eine["protein"] is not None
+    assert eine["dose"] == "100 g"
+
+
+def test_produkt_ohne_composition_bekommt_keine_zeile():
+    # Keine Angabe ist etwas anderes als eine Angabe voller NULL — Klopapier
+    # hat keine Kalorien, und eine leere Zeile behauptete, es hätte welche.
+    assert knuspr.parse_naehrwerte(_seite([_roh(1, "Klopapier")], 1)) == []
+
+
+def test_leerer_naehrwertblock_ist_keine_angabe():
+    roh = _roh(1, "Etwas")
+    roh["composition"] = {"nutritionalValues": {"dose": "100 g"}}
+    assert knuspr.parse_naehrwerte(_seite([roh], 1)) == []
+
+
+def test_null_kalorien_sind_eine_angabe():
+    # Mineralwasser hat 0 kcal. Das ist ein Wert und kein fehlender Wert.
+    roh = _roh(1, "Mineralwasser")
+    roh["composition"] = {"nutritionalValues": {"dose": "100 ml",
+                                                "energyValueKcal": 0.0}}
+    zeilen = knuspr.parse_naehrwerte(_seite([roh], 1))
+    assert len(zeilen) == 1 and zeilen[0]["kcal"] == 0.0
+
+
+def test_naehrwerte_landen_nach_dem_lauf_am_produkt(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_mit_naehrwert(1, "Milch"),
+                                        _roh(2, "Klopapier")], 2)]),
+                 ["milch"], pause_s=0)
+    zeilen = con.execute("""
+        SELECT p.name, n.kcal, n.protein, n.dose
+          FROM product p JOIN product_naehrwert n ON n.product_id = p.id
+    """).fetchall()
+    assert len(zeilen) == 1, "Klopapier hat eine Nährwertzeile bekommen"
+    assert zeilen[0]["name"] == "Milch"
+    assert zeilen[0]["kcal"] == 46.0 and zeilen[0]["protein"] == 0.8
+
+
+def test_ein_verworfener_lauf_hinterlaesst_keine_naehrwerte(con):
+    voll = [_mit_naehrwert(i, f"P{i}") for i in range(1, 11)]
+    knuspr.crawl(con, FakeHTTP([_seite(voll, 10)]), ["milch"], pause_s=0)
+    # Ein zweiter Lauf mit geänderten Werten, der an der Schwelle scheitert.
+    kaputt = [_mit_naehrwert(i, f"P{i}", energyValueKcal=999.0) for i in range(1, 5)]
+    ergebnis = knuspr.crawl(con, FakeHTTP([_seite(kaputt, 4)]), ["milch"], pause_s=0)
+    assert ergebnis["status"] == "rejected"
+    assert con.execute(
+        "SELECT count(*) AS n FROM product_naehrwert WHERE kcal = 999.0"
+    ).fetchone()["n"] == 0
+
+
+# --------------------------------------------------------------------------
+# Der additive Lauf: ein Nachtrag darf nichts abmelden
+
+def test_additiver_lauf_meldet_nichts_ab(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Butter")], 2)]),
+                 ["milch"], pause_s=0)
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(3, "Weisskohl")], 1)]),
+                 ["weisskohl"], pause_s=0, additiv=True)
+
+    aktiv = {r["external_id"] for r in con.execute(
+        "SELECT external_id FROM product WHERE active = 1")}
+    assert aktiv == {"1", "2", "3"}
+
+
+def test_additiver_lauf_wird_nicht_an_der_schwelle_verworfen(con):
+    voll = [_roh(i, f"P{i}") for i in range(1, 11)]
+    knuspr.crawl(con, FakeHTTP([_seite(voll, 10)]), ["milch"], pause_s=0)
+    # Ein Nachtrag liefert IMMER weniger als der Vollcrawl. Genau deshalb
+    # gilt die Schwelle für ihn nicht.
+    ergebnis = knuspr.crawl(con, FakeHTTP([_seite([_roh(99, "Safran")], 1)]),
+                            ["safran"], pause_s=0, additiv=True)
+    assert ergebnis["status"] == "ok"
+    assert con.execute(
+        "SELECT count(*) AS n FROM product WHERE active = 1").fetchone()["n"] == 11
+
+
+def test_vollcrawl_meldet_weiterhin_ab(con):
+    # Die Gegenprobe zum additiven Lauf: das alte Verhalten bleibt.
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(i, f"P{i}") for i in range(1, 11)], 10)]),
+                 ["milch"], pause_s=0)
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(i, f"P{i}") for i in range(1, 9)], 8)]),
+                 ["milch"], pause_s=0)
+    assert con.execute(
+        "SELECT active FROM product WHERE external_id = '10'").fetchone()["active"] == 0
+
+
+# --------------------------------------------------------------------------
+# Die Produkt-Sitemap sagt, was FEHLT
+
+SITEMAP = """<?xml version="1.0"?><urlset>
+ <url><loc>https://www.knuspr.de/269-weisskohl-1-stk</loc></url>
+ <url><loc>https://www.knuspr.de/2197-weihenstephan-butter</loc></url>
+ <url><loc>https://www.knuspr.de/c533-milch-molkerei-butter</loc></url>
+</urlset>"""
+
+
+def test_sitemap_liefert_id_und_slug():
+    assert knuspr.parse_sitemap(SITEMAP) == {
+        "269": "weisskohl-1-stk", "2197": "weihenstephan-butter"}
+
+
+def test_sitemap_ueberspringt_was_kein_produkt_ist():
+    # `/c533-…` ist eine Kategorie und hat in der Produktliste nichts zu suchen.
+    assert "c533" not in "".join(knuspr.parse_sitemap(SITEMAP))
+
+
+def test_fehlende_ids_sind_die_differenz(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(2197, "Butter")], 1)]),
+                 ["butter"], pause_s=0)
+    assert knuspr.fehlende_ids(con, knuspr.parse_sitemap(SITEMAP)) == ["269"]
+
+
+def test_ausgelistetes_produkt_gilt_nicht_als_luecke(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(269, "Weisskohl"),
+                                        _roh(2197, "Butter")], 2)]),
+                 ["kohl"], pause_s=0)
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(2197, "Butter")], 1)]),
+                 ["butter"], pause_s=0)
+    assert con.execute(
+        "SELECT active FROM product WHERE external_id = '269'").fetchone()["active"] == 0
+    # Bekannt und ausgelistet ist nicht dasselbe wie unbekannt: sonst holte
+    # jeder Nachtrag dieselben verschwundenen Produkte wieder herein.
+    assert knuspr.fehlende_ids(con, knuspr.parse_sitemap(SITEMAP)) == []
+
+
+def test_zusatzstoffbewertung_allein_ist_keine_naehrwertangabe():
+    # Sonst hiesse eine Zeile in `product_naehrwert` mal das eine und mal das
+    # andere — und „wie viele Produkte haben Nährwerte" wäre nicht mehr
+    # beantwortbar.
+    roh = _roh(1, "Etwas")
+    roh["composition"] = {"withoutAdditives": True, "additiveScoreMax": 6}
+    assert knuspr.parse_naehrwerte(_seite([roh], 1)) == []
+
+
+# --------------------------------------------------------------------------
+# Was der Händler laut Sitemap noch führt, überlebt einen Vollcrawl
+
+def test_vollcrawl_meldet_nicht_ab_was_die_sitemap_noch_fuehrt(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Butter")], 2)]),
+                 ["milch"], pause_s=0)
+    # Ein Nachtrag holt ein Produkt, nach dem kein Begriff fragt.
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(269, "Weisskohl")], 1)]),
+                 ["weisskohl"], pause_s=0, additiv=True)
+    # Der nächste Vollcrawl findet es nicht — die Sitemap kennt es aber.
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Butter")], 2)]),
+                 ["milch"], pause_s=0, gefuehrt={"1", "2", "269"})
+    assert con.execute(
+        "SELECT active FROM product WHERE external_id = '269'"
+    ).fetchone()["active"] == 1, "der Nachtrag wäre eine Nacht später weg"
+
+
+def test_was_die_sitemap_nicht_mehr_fuehrt_wird_abgemeldet(con):
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch"), _roh(2, "Butter")], 2)]),
+                 ["milch"], pause_s=0)
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch")], 1)]),
+                 ["milch"], pause_s=0, gefuehrt={"1"})
+    assert con.execute(
+        "SELECT active FROM product WHERE external_id = '2'").fetchone()["active"] == 0
+
+
+def test_eine_leere_sitemap_wird_nicht_geglaubt(con):
+    # Der gefährlichste Fall des ganzen Moduls: eine leere Menge „geführter"
+    # Produkte meldet in `uebernehmen` den KOMPLETTEN Katalog ab.
+    knuspr.crawl(con, FakeHTTP([_seite([_roh(i, f"P{i}") for i in range(1, 11)], 10)]),
+                 ["milch"], pause_s=0)
+    assert knuspr.sitemap_glaubwuerdig(con, set()) is False
+    assert knuspr.sitemap_glaubwuerdig(con, {"1", "2"}) is False
+    assert knuspr.sitemap_glaubwuerdig(con, {str(i) for i in range(1, 11)}) is True
+
+
+def test_erste_sitemap_ohne_katalog_gilt_wenn_etwas_drinsteht(con):
+    assert knuspr.sitemap_glaubwuerdig(con, {"1"}) is True
+    assert knuspr.sitemap_glaubwuerdig(con, set()) is False
+
+
+def test_alte_staging_tabelle_haelt_einen_lauf_nicht_auf(con):
+    # Genau der Abbruch vom 06.09.: die Zwischenablage stammte aus einem Lauf
+    # vor der Spalte `ean` und der nächste Lauf brach mit „has no column" ab.
+    con.execute("CREATE TABLE product_staging (source TEXT, external_id TEXT)")
+    ergebnis = knuspr.crawl(con, FakeHTTP([_seite([_roh(1, "Milch")], 1)]),
+                            ["milch"], pause_s=0)
+    assert ergebnis["status"] == "ok"
+    assert con.execute(
+        "SELECT count(*) AS n FROM product").fetchone()["n"] == 1
+
+
+def test_unmoegliche_kcal_werden_verworfen():
+    # 1.935 kcal je 100 g gibt es nicht — dort stehen die Kilojoule.
+    zeile = {"dose": "100 g", "kcal": 1935.0, "kj": 462.0}
+    assert knuspr.verwirf_unmoegliche_kcal(zeile)["kcal"] is None
+
+
+def test_die_kilojoule_bleiben_stehen():
+    # Verworfen wird nur der unmögliche Wert, nicht die ganze Zeile: der
+    # kJ-Wert ist in allen gemessenen Fällen plausibel.
+    zeile = knuspr.verwirf_unmoegliche_kcal({"dose": "100 g", "kcal": 1935.0,
+                                             "kj": 462.0})
+    assert zeile["kj"] == 462.0
+
+
+def test_vertauschte_werte_werden_nicht_repariert():
+    # Das Tauschen sähe richtig aus und wäre doch eine Vermutung über den
+    # Fehler des Händlers. Verworfen und gezählt, nicht geraten.
+    zeile = knuspr.verwirf_unmoegliche_kcal({"dose": "100 g", "kcal": 1935.0,
+                                             "kj": 462.0})
+    assert zeile["kcal"] != 462.0
+
+
+def test_hohe_kcal_bei_anderer_bezugsmenge_bleiben():
+    # 1.200 kcal je Portion sind möglich; die Schranke gilt nur je 100 g.
+    zeile = {"dose": "1 Portion", "kcal": 1200.0}
+    assert knuspr.verwirf_unmoegliche_kcal(zeile)["kcal"] == 1200.0
+
+
+def test_butter_bleibt_unangetastet():
+    # 747 kcal je 100 g sind Butter und kein Fehler.
+    assert knuspr.verwirf_unmoegliche_kcal(
+        {"dose": "100 g", "kcal": 747.0})["kcal"] == 747.0

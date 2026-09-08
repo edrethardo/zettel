@@ -794,6 +794,46 @@ SCHEMA = [
         decided_at  TEXT
     )
     """,
+    # Die Nährwerte je 100 g, wie sie der Händler ausliefert (LMIV: auf jeder
+    # verpackten Ware steht die Tabelle, deshalb hat er sie in den Stammdaten).
+    # Knuspr schickt sie seit jeher im Feld `composition` mit — die Fixture von
+    # 2026-08-28 trägt sie bereits; der Parser hat sie nur nie gelesen.
+    #
+    # EIGENE TABELLE und keine Spalten an `product`. Zwei Gründe:
+    #
+    # 1. Die meisten Produkte haben keine. Klopapier hat keine Kalorien, und
+    #    zwölf leere Spalten an jeder Zeile des Katalogs wären der Preis dafür,
+    #    dass ein Drittel der Zeilen sie füllt.
+    # 2. „kein Wert" und „Wert 0" müssen unterscheidbar bleiben. Ein Produkt
+    #    ohne Zeile hier hat KEINE Angabe; eine Zeile mit `kcal = 0` ist eine
+    #    Angabe (Mineralwasser). An `product` mit NULL wäre das dieselbe
+    #    Unterscheidung, nur ohne den Zwang, sie zu treffen.
+    #
+    # `dose` ist die Bezugsmenge, wie sie dasteht („100 g"). Sie wird NICHT
+    # weginterpretiert: was sich nicht auf 100 g bezieht, darf nicht
+    # stillschweigend so gerechnet werden.
+    """
+    CREATE TABLE IF NOT EXISTS product_naehrwert (
+        product_id        INTEGER PRIMARY KEY
+                              REFERENCES product(id) ON DELETE CASCADE,
+        dose              TEXT,
+        kj                REAL,
+        kcal              REAL,
+        fett              REAL,
+        gesaettigt        REAL,
+        kohlenhydrate     REAL,
+        zucker            REAL,
+        protein           REAL,
+        salz              REAL,
+        ballaststoffe     REAL,
+        -- `withoutAdditives` und `additiveScoreMax` des Händlers. Übernommen,
+        -- weil sie in derselben Nutzlast stehen und nichts kosten; sie sind
+        -- SEINE Bewertung und werden nirgends als unsere ausgegeben.
+        ohne_zusatzstoffe INTEGER,
+        zusatzstoff_score INTEGER,
+        gesehen_at        TEXT
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS scrape_run (
         id          INTEGER PRIMARY KEY,
@@ -971,6 +1011,14 @@ def _norm_spalten_nachziehen(con: sqlite3.Connection) -> None:
 #: eine Datenbank aus der Zeit vor dem Ticket bekäme die Spalte sonst nie und
 #: fiele erst im Betrieb mit „no such column" auf.
 NACHGETRAGENE_SPALTEN = (
+    # 2026-09-06: die EAN. Der Sammelabruf `/api/v1/products/composition`
+    # liefert sie, die Suche nicht — deshalb hat sie ein Teil des Katalogs und
+    # ein Teil nicht, und deshalb darf ein Lauf ohne EAN eine vorhandene nie
+    # überschreiben (`COALESCE` in `knuspr.uebernehmen`). Sie ist die einzige
+    # Kennung, die dieses Produkt mit etwas ausserhalb dieses Shops verbindet:
+    # mit einer Bonzeile, mit Open Food Facts, mit demselben Artikel bei einem
+    # anderen Händler.
+    ("product", "ean", "TEXT"),
     # WB-359: die Korrektur und der Hinweis, dass nur der allgemeinste
     # Kettenbegriff etwas gefunden hat.
     ("chat_suggestion", "corrected_from",

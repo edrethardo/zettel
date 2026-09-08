@@ -27,19 +27,32 @@ MILCH = "Miil Frische Landmilch 3,8% Vollmilch"
 
 
 class FakeHTTP:
-    """Liefert die aufgezeichnete Antwort als erste Seite, danach nichts."""
+    """Liefert die aufgezeichnete Antwort als erste Seite, danach nichts.
 
-    def __init__(self, seiten):
+    Seit 2026-09-06 fragt der Nachtlauf VOR dem Crawl die Produkt-Sitemap ab
+    (`knuspr.hole_sitemap`). Der Doppelgänger muss diese Anfrage deshalb an
+    der URL erkennen und darf ihr keine Katalogseite geben — sonst verbraucht
+    sie die aufgezeichnete Antwort, und der Crawl liefe ins Leere.
+    `sitemap` ist die Menge der Produkt-IDs, die er als geführt meldet.
+    """
+
+    def __init__(self, seiten, sitemap=()):
         self.seiten = list(seiten)
+        self.sitemap = list(sitemap)
 
     def get(self, url):
+        if url.endswith("sitemap_products.xml"):
+            return _Antwort({}, text="".join(
+                f"<url><loc>https://www.knuspr.de/{i}-x</loc></url>"
+                for i in self.sitemap))
         return _Antwort(self.seiten.pop(0) if self.seiten else {"data": {}})
 
 
 class _Antwort:
-    def __init__(self, payload):
+    def __init__(self, payload, text=""):
         self._payload = payload
         self.content = b""
+        self.text = text
 
     def json(self):
         return self._payload

@@ -75,9 +75,30 @@ def lauf(db_path: str, *, begriffe, image_dir: str | None,
             http = httpx.Client(timeout=TIMEOUT_S,
                                 headers={"User-Agent": USER_AGENT})
         schreib(f"Crawl: {len(begriffe)} Begriffe, Datenbank {db_path}")
+        # EINE Anfrage, bevor der Crawl beginnt: was der Händler laut seiner
+        # Produkt-Sitemap führt. Sie entscheidet nicht, was geholt wird —
+        # sondern was am Ende NICHT abgemeldet werden darf (`knuspr.uebernehmen`).
+        # Ohne sie verliert der Katalog jede Nacht alles, was ein Nachtrag
+        # geholt hat und wonach kein Begriff fragt.
+        #
+        # Scheitert sie, läuft der Crawl trotzdem — dann eben mit dem alten,
+        # strengeren Verhalten. Ein fehlender Katalog wäre schlimmer als ein
+        # paar zu Unrecht abgemeldete Zeilen, die der nächste Lauf zurückholt.
+        try:
+            gefuehrt = set(knuspr.hole_sitemap(http))
+            if not knuspr.sitemap_glaubwuerdig(con, gefuehrt):
+                schreib(f"Sitemap nennt nur {len(gefuehrt)} Produkte —"
+                        f" nicht glaubwürdig, es wird abgemeldet wie bisher")
+                gefuehrt = None
+            else:
+                schreib(f"Sitemap: {len(gefuehrt)} Produkte werden geführt")
+        except Exception as e:                  # noqa: BLE001
+            gefuehrt = None
+            schreib(f"Sitemap nicht gelesen ({type(e).__name__}) —"
+                    f" es wird abgemeldet wie bisher")
         try:
             bericht = knuspr.crawl(con, http, begriffe, image_dir=image_dir,
-                                   pause_s=pause_s)
+                                   pause_s=pause_s, gefuehrt=gefuehrt)
         finally:
             if eigener_client:
                 http.close()
