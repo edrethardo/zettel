@@ -27,6 +27,15 @@ Katalogprodukte abgebildet und als Vorschlag vorgelegt.
 Zweiter, gleichrangiger Zweck: Der Chat-Agent ist in Arize Phoenix vollständig
 beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
+Seit dem 06.09. eine Ebene darüber: der **Wochenplan** (unter „Mehr"). Vier
+Zahlen und ein Satz („500 g Kartoffeln, 6 Eier, Nudeln"), und das Modell
+belegt die Tage — nur mit Gerichten, die der Haushalt schon hat; erfundene
+werden verworfen und gezählt. Jede Zahl am Plan rechnet der Code, der
+Bestand ist ein erklärter Rahmen für diesen Plan und kein Lagerstand, und
+der Bon von gestern darf vorschlagen, aber nicht entscheiden. Entwurf:
+`docs/superpowers/specs/2026-09-06-wochenplan-design.md`, Messung in
+[`EVALS.md`](EVALS.md).
+
 ## Wozu die Observability gut ist — in einem Fall
 
 Auf „…dazu brauche ich noch Zahnpasta und Butter" wählte das Modell eine

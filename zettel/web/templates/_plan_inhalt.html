@@ -1,0 +1,210 @@
+{# Tage, Bestand, Einkaufsliste — alles, was sich nach einem Tipp ändert,
+   in EINEM Tauschziel. Ein „Ja" an einem Tag ändert die Einkaufsliste
+   darunter (der Tag zählt oder nicht), ein „Nein" am Bestand die Deckung;
+   die Seite ist klein genug, dass ein Tausch des ganzen Blocks billiger ist
+   als vier Out-of-band-Stücke, die auseinanderlaufen können. #}
+<div id="plan-inhalt">
+{# Meldungen stehen IM Tauschziel: ein Fehler aus einem htmx-Tipp muss in
+   der Antwort auf genau diesen Tipp ankommen, nicht auf der nächsten
+   Vollseite. #}
+{% if fehler %}
+<p class="fehler" role="alert">{{ fehler }}</p>
+{% endif %}
+{% if meldung %}
+<p class="fertig" role="status">{{ meldung }}</p>
+{% endif %}
+<section class="plantage">
+  <h2>{{ t('plan.tage_titel') }}</h2>
+  <ul class="tage">
+    {% for tag in plan.tage_liste %}
+    <li class="zeile tag {{ 'entschieden' if not tag.offen }} {{ 'auswaerts' if tag.auswaerts }}">
+      <span class="text">
+        <span class="datum">{{ t('plan.wochentag.' ~ tag.wochentag) }} {{ tag.datum | datum }}</span>
+        {% if tag.auswaerts %}
+          <span class="name">{{ t('plan.auswaerts') }}</span>
+        {% elif tag.rezept %}
+          <a class="name" href="/rezepte/{{ tag.rezept.id }}">{{ tag.rezept.name }}</a>
+          <span class="menge">
+            {% if tag.rezept.zeitsatz %}{{ tag.rezept.zeitsatz }}{% else %}{{ t('plan.zeit_unbekannt') }}{% endif %}
+            {%- if plan.max_minuten and tag.rezept.minuten and tag.rezept.minuten > plan.max_minuten %} · <span class="ausgemustert">{{ t('plan.ueber_zeit') }}</span>{% endif %}
+            {%- if tag.portionen %} · {{ t('allgemein.fuer_portionen', n=tag.portionen) }}{% endif %}
+            {%- if tag.rezept.n_zutaten %} · {{ tag.rezept.n_zutaten }} {% if tag.rezept.n_zutaten == 1 %}{{ t('allgemein.zutat_eins') }}{% else %}{{ t('allgemein.zutat_mehrere') }}{% endif %}{% endif %}
+          </span>
+          {% if tag.grund %}
+          {# Der EINE Satz des Modells zu seiner Wahl. Text, keine Zahl. #}
+          <span class="woher">{{ tag.grund }}</span>
+          {% endif %}
+          {% if tag.naehrwert %}
+          {# kcal und Eiweiss je Portion — aus den Packungen gerechnet, nie
+             geschätzt. Die Zahl sagt immer dazu, aus wie vielen Zutaten sie
+             entstand; was fehlt, ist gezählt, nicht mit Null gefüllt. #}
+          <span class="hinweis naehrwert">
+            {% if tag.naehrwert.kcal is not none %}
+              {{ t('plan.naehrwert', kcal=tag.naehrwert.kcal_je_portion, protein=tag.naehrwert.protein_je_portion | menge) }}
+              {%- if plan.kcal_ziel and tag.naehrwert.kcal_je_portion > plan.kcal_ziel %} · <span class="ausgemustert">{{ t('plan.kcal_ueber', n=tag.naehrwert.kcal_je_portion - plan.kcal_ziel) }}</span>{% endif %}
+              · <span class="hinweistext">{{ t('plan.naehrwert_gerechnet', n=tag.naehrwert.gerechnet, gesamt=tag.naehrwert.n) }}</span>
+            {% else %}
+              <span class="hinweistext">{{ t('plan.naehrwert_keine') }}</span>
+            {% endif %}
+          </span>
+          {% endif %}
+        {% else %}
+          <span class="name still">{{ t('plan.noch_nichts') }}</span>
+        {% endif %}
+        {# Von Hand belegen — dieselbe Liste, aus der auch das Modell wählt
+           (`wochenplan.vorlage`). Ein Wechsel setzt den Tag auf „offen". #}
+        <form method="post" action="/plan/{{ plan.id }}/tag/{{ tag.id }}" class="tagwahl"
+              hx-post="/plan/{{ plan.id }}/tag/{{ tag.id }}" hx-target="#plan-inhalt" hx-swap="outerHTML">
+          <select name="recipe_id" aria-label="{{ t('plan.rezept_waehlen') }}">
+            <option value="">{{ t('plan.rezept_waehlen') }}</option>
+            {% for g in gerichte %}
+            <option value="{{ g.id }}" {% if tag.recipe_id == g.id %}selected{% endif %}>
+              {{ g.name }}{% if g.zeitsatz %} · {{ g.zeitsatz }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <input type="number" name="portionen" min="1" max="24" inputmode="numeric"
+                 value="{{ tag.portionen or '' }}" aria-label="{{ t('plan.portionen') }}" class="portionen">
+          <button type="submit" class="mini">{{ t('plan.setzen') }}</button>
+        </form>
+      </span>
+      <span class="stellen">
+        {% if tag.recipe_id and tag.offen %}
+          <form method="post" action="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=kept"
+                hx-post="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=kept"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini ja" type="submit" aria-label="{{ t('plan.ja_label', name=tag.rezept.name) }}">{{ t('allgemein.ja') }}</button>
+          </form>
+          <form method="post" action="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=removed"
+                hx-post="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=removed"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini nein" type="submit" aria-label="{{ t('plan.nein_label', name=tag.rezept.name) }}">{{ t('allgemein.nein') }}</button>
+          </form>
+        {% elif tag.recipe_id or tag.auswaerts %}
+          {% if tag.behalten %}<span class="marke ja">{{ t('plan.passt') }}</span>
+          {% else %}<span class="marke nein">{{ t('allgemein.verworfen') }}</span>{% endif %}
+          <form method="post" action="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=offen"
+                hx-post="/plan/{{ plan.id }}/tag/{{ tag.id }}/entscheiden?decision=offen"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini still" type="submit">{{ t('allgemein.rueckgaengig') }}</button>
+          </form>
+        {% endif %}
+        {% if not tag.auswaerts %}
+          <form method="post" action="/plan/{{ plan.id }}/tag/{{ tag.id }}?auswaerts=1"
+                hx-post="/plan/{{ plan.id }}/tag/{{ tag.id }}?auswaerts=1"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini still" type="submit">{{ t('plan.auswaerts_knopf') }}</button>
+          </form>
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="fussnote">
+    {{ t('plan.tage_belegt', belegt=zusammenfassung.belegt, tage=zusammenfassung.tage) }}
+    {%- if zusammenfassung.kochzeit_satz %} · {{ t('plan.kochzeit_gesamt', zeit=zusammenfassung.kochzeit_satz) }}{% endif %}
+    {%- if zusammenfassung.zeit_unbekannt %} · {{ t('plan.zeit_unbekannt_n', n=zusammenfassung.zeit_unbekannt) }}{% endif %}
+    {%- if zusammenfassung.ueber_zeit %} · <span class="ausgemustert">{{ t('plan.ueber_zeit_n', n=zusammenfassung.ueber_zeit) }}</span>{% endif %}
+  </p>
+  {% if zusammenfassung.kcal_je_portion is not none %}
+  <p class="fussnote naehrwert-woche">
+    {{ t('plan.naehrwert_woche', kcal=zusammenfassung.kcal_je_portion, protein=zusammenfassung.protein_je_portion | menge, tage=zusammenfassung.naehrwert_tage) }}
+    {%- if zusammenfassung.kcal_abstand is not none %} · {% if zusammenfassung.kcal_abstand > 0 %}<span class="ausgemustert">{{ t('plan.kcal_ueber', n=zusammenfassung.kcal_abstand) }}</span>{% else %}{{ t('plan.kcal_unter', n=-zusammenfassung.kcal_abstand) }}{% endif %}{% endif %}
+    · {{ t('plan.naehrwert_hinweis') }}
+  </p>
+  {% endif %}
+</section>
+
+<section class="planbestand">
+  <h2>{{ t('plan.bestand_titel') }}</h2>
+  <p class="hinweistext">{{ t('plan.bestand_hinweis') }}</p>
+  {% if plan.bestand %}
+  <ul class="bestand">
+    {% for b in plan.bestand %}
+    <li class="zeile bestandzeile {{ 'entschieden' if not b.offen }}">
+      <span class="text">
+        <span class="name">{% if b.menge is not none %}{{ b.menge | menge }} {{ b.einheit | einheit }} {% endif %}{{ b.produkt_name or b.name }}</span>
+        <span class="woher">
+          {% if b.herkunft == 'aus_bon' %}{{ t('plan.aus_bon', wann=(b.gekauft_am | datum) if b.gekauft_am else '') }}{% else %}{{ t('plan.erklaert') }}{% endif %}
+        </span>
+      </span>
+      <span class="stellen">
+        {% if b.offen %}
+          <form method="post" action="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=kept"
+                hx-post="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=kept"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini ja" type="submit" aria-label="{{ t('plan.bestand_ja_label', name=b.name) }}">{{ t('plan.noch_da') }}</button>
+          </form>
+          <form method="post" action="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=removed"
+                hx-post="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=removed"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini nein" type="submit" aria-label="{{ t('plan.bestand_nein_label', name=b.name) }}">{{ t('plan.weg') }}</button>
+          </form>
+        {% else %}
+          {% if b.behalten %}<span class="marke ja">{{ t('plan.noch_da') }}</span>
+          {% else %}<span class="marke nein">{{ t('plan.weg') }}</span>{% endif %}
+          <form method="post" action="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=offen"
+                hx-post="/plan/{{ plan.id }}/bestand/{{ b.id }}/entscheiden?decision=offen"
+                hx-target="#plan-inhalt" hx-swap="outerHTML">
+            <button class="mini still" type="submit">{{ t('allgemein.rueckgaengig') }}</button>
+          </form>
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form method="post" action="/plan/{{ plan.id }}/bestand" class="freitext"
+        hx-post="/plan/{{ plan.id }}/bestand" hx-target="#plan-inhalt" hx-swap="outerHTML">
+    <input type="text" name="text" autocomplete="off" placeholder="{{ t('plan.bestand_platzhalter') }}"
+           aria-label="{{ t('plan.bestand_titel') }}">
+    <button type="submit">{{ t('plan.bestand_hinzu') }}</button>
+  </form>
+  {# Der Zubringer (Entwurf, Abschnitt 3c): der Bon füllt den Vorschlag vor,
+     gilt aber erst nach einem Ja. Kein Modell dahinter — ein Blick in die
+     bestätigten Käufe der letzten Tage. #}
+  <form method="post" action="/plan/{{ plan.id }}/bestand/aus_bons" class="sammel"
+        hx-post="/plan/{{ plan.id }}/bestand/aus_bons" hx-target="#plan-inhalt" hx-swap="outerHTML">
+    <button type="submit" class="knopf still">{{ t('plan.bon_pruefen') }}</button>
+  </form>
+</section>
+
+<section class="planliste">
+  <h2>{{ t('plan.liste_titel') }}</h2>
+  {% if not liste.zeilen %}
+    <p class="leer">{{ t('plan.liste_leer') }}</p>
+  {% else %}
+  <ul class="einkauf">
+    {% for z in liste.zeilen %}
+    <li class="zeile {{ 'gedeckt' if z.gedeckt }}">
+      <span class="text">
+        <span class="name">{{ z.name }}</span>
+        {% if z.mengensatz %}<span class="hinweis gebraucht">{{ t('plan.gebraucht', menge=z.mengensatz) }}</span>{% endif %}
+        {% if z.grund %}<span class="hinweis">{{ z.grund }}</span>{% endif %}
+        {% if z.bestand_hinweis %}<span class="hinweis {{ 'eben' if z.gedeckt }}">{{ z.bestand_hinweis }}</span>{% endif %}
+        <span class="menge">
+          {% if z.product_id %}{{ z.unit_text or '' }}{% if z.packungen %} · {{ z.packungen }} ×{% endif %}{% if z.preis_cents is not none %} · {{ z.preis_cents | euro }}{% endif %}
+          {% else %}{{ t('vorschlag.freitext') }}{% endif %}
+          {% if z.rezepte %} · {{ z.rezepte | join(', ') }}{% endif %}
+        </span>
+        {% if z.nicht_im_katalog %}<span class="ausgemustert">{{ t('allgemein.nicht_mehr_im_katalog') }}</span>{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="fussnote">
+    {{ t('plan.liste_bilanz', n=liste.zu_kaufen, gedeckt=liste.gedeckt) }}
+    {%- if liste.ohne_produkt %} · {{ t('plan.ohne_produkt', n=liste.ohne_produkt) }}{% endif %}
+    {%- if liste.n_rest %} · {{ t('plan.rest', n=liste.n_rest) }}{% endif %}
+  </p>
+  <p class="summe">
+    {{ t('plan.preisvorschau', betrag=liste.preis_cents | euro) }}
+    {%- if liste.ohne_preis %} <span class="hinweistext">{{ t('allgemein.posten_ohne_preis', n=liste.ohne_preis) }}</span>{% endif %}
+    {% if liste.budget_ueber %}<span class="ausgemustert">{{ t('plan.ueber_budget', betrag=liste.budget_ueber | euro) }}</span>
+    {% elif liste.budget_cents %}<span class="hinweistext">{{ t('plan.im_budget', betrag=liste.budget_cents | euro) }}</span>{% endif %}
+  </p>
+  <form method="post" action="/plan/{{ plan.id }}/korb" class="sammel">
+    <button type="submit" class="knopf">{{ t('plan.in_den_korb') }}</button>
+  </form>
+  {% endif %}
+</section>
+</div>

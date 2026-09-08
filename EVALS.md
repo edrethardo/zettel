@@ -867,6 +867,97 @@ Rate: es erzeugt dreimal so viele Token — eine Aussage über Wortknappheit,
 nicht über Geschwindigkeit. Nemotron sagt weniger und trifft dabei zwei
 Punkte weniger.
 
+## Der Wochenplaner (2026-09-06)
+
+Eine Ebene über dem Chat-Zug: nicht ein Satz -> eine Liste, sondern **eine
+Woche -> eine Liste, abzüglich dessen, was da ist.** Die vierte Modellstufe
+`plan.woche` bekommt die Gerichte des Haushalts vorgelegt (eigene Rezepte
+und geholte Gerichte, ein Rezept je Gericht) und ordnet sie offenen Tagen
+zu; alles andere — Portionen, Summen über die Tage, Bestand abziehen,
+Packungen, Preis, Rest — rechnet der Code. Design:
+`docs/superpowers/specs/2026-09-06-wochenplan-design.md`; Harness:
+`scripts/plan_probe.py`.
+
+```bash
+sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"
+ZETTEL_PHOENIX_PROJECT="Zettel Eval Wochenplan" \
+.venv/bin/python scripts/plan_probe.py --db kopie.db --trace \
+    --json evals/plan_probe-2026-09-06-qwen.json
+```
+
+### Lauf 1 und 2 — `Qwen3.8-27B-Instruct`, 5 Szenarien, 2026-09-06
+
+Echte Datenbank (Kopie): 16.746 Produkte, 57 Rezepte, davon **19 in der
+Vorlage** (ein Rezept je Gericht, nur mit Zutaten). Je Szenario ein Plan,
+ein Zug, dann „Ja" auf jeden belegten Tag, die Liste in den Korb, Labels.
+Rohdaten und Provenienz: `evals/plan_probe-2026-09-06-qwen.*`.
+
+| Sz | Frage | Tage offen | vorgelegt | belegt | verworfen | Rest | Zeilen | gedeckt | Freitext | Preis | Dauer |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | ≤ 40 min, Bestand „500 g Kartoffeln, 6 Eier" | 3 | 3 | **3** | 0 | 12 | 11 | 1 | 1 | 36,05 € | 7,3 s |
+| B | 5 Tage, 4 Personen, Budget 60 € | 5 | 19 | **5** | 0 | 34 | 43 | 0 | 10 | 133,14 € (**73 € über Budget**) | 12,2 s |
+| C | Tag 2 auswärts, Bestand „Nudeln, 200 g Parmesan" | 3 | 19 | **3** | 0 | 18 | 22 | 0 | 6 | 75,61 € | 5,3 s |
+| D | wie A, dann Tag 1 „Nein" → Neuplanung | 3 → 1 | 3 → 2 | 3 → **0** | 0 | 7 | 7 | 0 | 0 | 21,18 € | 7,3 s + 0,5 s |
+| E | 7 Tage, ≤ 30 min (ein Gericht in der Vorlage) | 7 | 1 | **1** | 0 | 5 | 5 | 0 | 1 | 17,36 € | 3,6 s |
+
+„Dauer" ist der ganze Zug inklusive Vorwärmen der Zuordnung für Rezepte
+ohne gemerkte (`recipe.zuordnung` unter dem Plan-Span, zwei Modellstufen je
+Rezept: A und B je zwei, C und E je eines). Der Planungsaufruf selbst liegt
+bei 3–5 s (Prompt ~400 Token, Antwort ~60).
+
+**Was die Zahlen sagen:**
+
+* **`rejected = 0` in allen sechs Zügen.** Keine erfundene Gericht-id, kein
+  nicht offener Tag, keine Dublette. Die Prüfung im Code hat nichts zu tun
+  gehabt — sie steht trotzdem, aus demselben Grund wie in Stufe 3.
+* **Der Prompt entscheidet, wie viele Tage belegt werden — und das war ein
+  Fehler des ersten Laufs.** Lauf 1 stand mit „passt zu einem Tag nichts,
+  lässt du ihn weg. Rate nicht." — das Modell las das als Erlaubnis zur
+  Sparsamkeit: A **1 von 3**, D **1 von 3**, obwohl drei Gerichte passten.
+  Lauf 2 mit „belege so viele offene Tage wie möglich; leer nur, wenn kein
+  Gericht mehr übrig ist": A 3/3, C 3/3, D 3/3. Die Zusicherung (keine
+  fremde ID) hängt nicht am Prompt; die Zahl der belegten Tage schon.
+* **Die Neuplanung (D) ist ehrlich leer.** Nach „Nein" zu Carbonara an Tag
+  1 standen die zwei übrigen Gerichte schon an Tag 2 und 3 — das Modell
+  belegte nichts und nannte auch das abgelehnte nicht wieder. 0,5 s.
+* **E zeigt die Grenze der Vorlage, nicht des Modells.** Unter 30 Minuten
+  hat die Datenbank genau ein Gericht; sechs Tage bleiben leer, und die
+  Seite sagt es. Die Antwort auf „7 Tage, 30 Minuten" ist ein grösserer
+  Rezeptbestand, kein anderer Prompt.
+* **Das Budget wird gerechnet, nicht eingehalten** (B: 133 € bei 60 €). Der
+  Planer zeigt die Überschreitung; er plant nicht um. Ein Modell, das
+  „billiger" planen soll, bräuchte Preise in der Vorlage — und die sind
+  Katalogzahlen, keine Wochenkosten (43 Zeilen, davon 10 ohne Produkt).
+* **Der Bestand zieht ab, wo er rechnen kann.** A: „6 Eier" deckt die Eier
+  der Carbonara („gedeckt 1"); „500 g Kartoffeln" trifft keine Zeile, weil
+  kein gewähltes Gericht Kartoffeln braucht — das steht so auf der Seite.
+  C: „Nudeln" ohne Menge deckt nichts und steht als Hinweis; „200 g
+  Parmesan" gegen 40 g + 50 g ergibt „gedeckt" — im Lauf 2 nicht, weil die
+  Zuordnung „Parmesan" auf „Pecorino" zeigte (Modellwahl aus Stufe 3, nicht
+  aus dem Planer).
+* **Die Begründungen sind Sätze, keine Zahlen** — und nicht immer klug:
+  „Spanische Churros ohne Ei" als Abendessen an Tag 3 (A, D), begründet mit
+  „Ei-freies Gericht … als Dessert/Beilage". Die Vorlage kennt keinen
+  Unterschied zwischen Hauptgericht und Nachtisch; ein Kennzeichen am
+  Rezept wäre die Antwort, kein Prompt.
+
+**Phoenix:** 169 Spans im Projekt, 6 `plan.woche`-Chains mit `zettel.plan.*`
+(days, presented, assigned, rejected, rest, lines, covered, prewarmed), je
+ein LLM-Span `plan.woche` mit Modellname und Tokenzahlen, 8
+`recipe.zuordnung` mit 51 `catalog.search`-Retrievern darunter; je Plan
+`plan_precision` und `plan_day`-Annotationen (`annotator_kind = HUMAN`, aus
+dem „Ja auf alles" der Probe — im Betrieb aus dem echten Tippen).
+
+### Was diese Messung NICHT sagt
+
+Ein Lauf je Szenario, ein Modell, eine Datenbank mit 19 Gerichten zur Wahl.
+Ob ein Plan **gut** ist, sagt keine dieser Zahlen — das sagt nur ein
+Mensch über die Labels, und die Probe hat sie mit „Ja auf alles" bewusst
+nicht geliefert. `rest` (Zutaten nur an einem Tag) ist zählbar, aber bei 19
+Gerichten kaum zu drücken. Und die Vorlage trägt keinen Unterschied
+zwischen Hauptgericht und Nachtisch; ein Planer, der Churros zum Abendessen
+setzt, hat aus seiner Sicht nichts falsch gemacht.
+
 ## Was hier schwächer ist, als es aussieht
 
 Diese Liste gehört zum Ergebnis. Wer die Tabelle oben zitiert, muss sie

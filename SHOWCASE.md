@@ -85,6 +85,30 @@ Right: the pick list in the store — two items checked off, one marked
 Confirmed ingredients become a **saved recipe** on submit — the next
 "lasagna" answers from it with **zero model calls**.
 
+## A week in, one list out — minus what is already there
+
+Since 2026-09-06 the same three rules run one level up. Under *More →
+Weekly plan* you enter four numbers (days, people, minutes at most, budget)
+and one sentence — what is still in the fridge: *"500 g Kartoffeln, 6 Eier,
+Nudeln"*. A fourth model stage, `plan.woche`, assigns dishes to the open
+days — **only from the dishes this household already has** (its own
+recipes and the Chefkoch dishes it has asked for before; never a catalog,
+never a price). An id that was not presented is rejected and counted, like
+everywhere else. The model returns one sentence per day and no number at
+all: servings, sums across the week, what the declared stock covers, packs,
+price and leftovers are computed in code.
+
+Stock is deliberately **not** a tracked inventory: the shop knows purchases,
+not consumption, so a maintained stock would be silently wrong after a few
+days. It is a declaration for *this* plan — and yesterday's confirmed
+receipt may *suggest* ("10 eggs — still there?"), but nothing counts until
+you say yes. "No" on a day re-plans that day only; the rest stays fixed and
+the rejected dish does not come back. The finished list goes into the same
+basket as the chat, and each Yes/No on a day is written back to the
+`plan.woche` span as a label. Measured on 2026-09-06 against the real
+database (5 scenarios, `EVALS.md`, "Der Wochenplaner"): rejected 0 in all
+six turns, 3–14 s per week including the ingredient mapping of new recipes.
+
 ## The stack, and why
 
 | Piece | Why this one |

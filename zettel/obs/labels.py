@@ -518,6 +518,82 @@ def _im_hintergrund(annos: list[dict], client) -> None:
     t.start()
 
 
+# --------------------------------------------------------------------------
+# Der Wochenplan (2026-09-06-wochenplan-design.md, Abschnitt 7)
+#
+# Dieselbe Bauart wie oben: je Tag ein Label aus dem Ja/Nein, je Plan ein
+# Score „behaltene Tage / entschiedene Tage" — und `offen` zählt nicht.
+# Geschrieben beim Übergeben der Liste in den Korb, dem Moment, in dem die
+# Entscheidungen feststehen (wie `orders.abschicken` für den Chat).
+
+NAME_PLAN_QUOTE = "plan_precision"
+NAME_PLAN_TAG = "plan_day"
+
+
+def plan_annotationen(con, plan_id: int) -> list[dict]:
+    """Die Annotationen zu einem Plan. Rein rechnend, schreibt nichts.
+
+    Ohne `span_id` am Plan gibt es nichts zu annotieren — der Plan wurde von
+    Hand belegt oder lief, während Phoenix aus war.
+    """
+    plan = con.execute("SELECT id, span_id FROM plan WHERE id = ?",
+                       (int(plan_id),)).fetchone()
+    if plan is None or not plan["span_id"]:
+        return []
+    span_id = plan["span_id"]
+    tage = con.execute(
+        "SELECT t.id, t.pos, t.datum, t.recipe_id, t.decision, t.grund,"
+        "       t.auswaerts, r.name AS rezept"
+        "  FROM plan_tag t LEFT JOIN recipe r ON r.id = t.recipe_id"
+        " WHERE t.plan_id = ? ORDER BY t.pos", (int(plan_id),)).fetchall()
+    raus: list[dict] = []
+    behalten = verworfen = 0
+    for t in tage:
+        if t["auswaerts"] or t["recipe_id"] is None:
+            continue
+        if t["decision"] == "kept":
+            behalten += 1
+        elif t["decision"] == "removed":
+            verworfen += 1
+        else:
+            continue
+        satz = f"Tag {int(t['pos']) + 1} ({t['datum']}): {t['rezept']}"
+        if t["grund"]:
+            satz += f" — {t['grund']}"
+        raus.append(_anno(
+            span_id, NAME_PLAN_TAG, label=t["decision"], explanation=satz,
+            identifier=f"zettel-plan-day-{int(t['id'])}",
+            metadata={"plan_id": int(plan_id), "plan_tag_id": int(t["id"]),
+                      "day": int(t["pos"]) + 1, "date": t["datum"],
+                      "recipe_id": t["recipe_id"], "recipe": t["rezept"]}))
+    entschieden = behalten + verworfen
+    if entschieden:
+        raus.insert(0, _anno(
+            span_id, NAME_PLAN_QUOTE, score=behalten / entschieden,
+            explanation=(f"{behalten} von {entschieden} entschiedenen Tagen "
+                         "behalten."),
+            identifier=f"zettel-plan-{int(plan_id)}",
+            metadata={"plan_id": int(plan_id), "kept": behalten,
+                      "removed": verworfen}))
+    return raus
+
+
+def plan_schreiben(con, plan_id: int, *, client=None) -> list[dict]:
+    """Schreibt die Tagesentscheidungen eines Plans nach Phoenix. Wirft nie."""
+    try:
+        if client is None and not otel.an():
+            return []
+        annos = plan_annotationen(con, plan_id)
+    except Exception as e:  # noqa: BLE001 — wie `schreiben()`
+        log.warning("Plan-Annotationen nicht ermittelt (%s: %s).",
+                    e.__class__.__name__, e)
+        return []
+    if not annos:
+        return []
+    _im_hintergrund(annos, client)
+    return annos
+
+
 def abwarten(frist_s: float = FRIST_S) -> bool:
     """Wartet, bis die Hintergrund-Threads durch sind. Für Skripte und Tests.
 

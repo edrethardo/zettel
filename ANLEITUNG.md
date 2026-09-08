@@ -143,6 +143,29 @@ Unter **Mehr → Bestellungen** steht, was abgeschickt wurde, mit dem Stand
 („15 von 15 noch zu holen"). **„Daraus ein Rezept machen"** an einer
 erledigten Bestellung legt sie als Rezept in die Sammlung.
 
+## Wochenplan
+
+Unter **Mehr → Wochenplan**. Oben vier Zahlen — Tage, Personen, höchstens
+Minuten am Herd, Budget — und ein Satz: was noch da ist („500 g Kartoffeln,
+6 Eier, Nudeln"). **Plan anlegen**, dann **Woche planen**: das Modell
+belegt die Tage mit Gerichten aus deinen Rezepten und aus dem, was du im
+Chat schon einmal gefragt hast. Es erfindet nichts; zu jedem Tag steht ein
+Satz, warum.
+
+* **Ja / Nein** an jedem Tag. „Nein" heisst: nicht das — **Offene Tage neu
+  planen** belegt nur diesen Tag neu, die anderen bleiben. **auswärts** für
+  Tage ohne Kochen. Ein Tag lässt sich auch von Hand belegen (Liste am Tag,
+  Portionen daneben, **Setzen**).
+* **Was noch da ist**: gilt nur für diesen Plan. Was du hinschreibst, zählt
+  sofort; was der Bon der letzten Tage vorschlägt („noch da?"), zählt erst
+  nach deinem Ja. **Was sagt der Bon?** fragt die bestätigten Käufe der
+  letzten sieben Tage ab.
+* **Einkaufsliste**: alle Zutaten der Woche zusammengezählt, abzüglich
+  Bestand — gedeckte Zeilen sind durchgestrichen, „noch 300 g" steht dran,
+  darunter Vorschau-Preis, Budget und wie viele Zutaten nur an einem Tag
+  gebraucht werden. **Einkaufsliste in den Korb** legt sie in den Korb;
+  ab da ist alles wie beim Bestellen.
+
 ## Rezepte
 
 **Mehr → Rezepte** ist die Sammlung: was der Chat beim Abschicken angelegt

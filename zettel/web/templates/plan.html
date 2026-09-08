@@ -1,0 +1,47 @@
+{% extends "basis.html" %}
+{% block titel %}{{ t('plan.titel') }} — Zettel{% endblock %}
+{% block inhalt %}
+{# Der Wochenplan (2026-09-06-wochenplan-design.md). EINE Seite für den
+   ganzen Zug: Rahmen eingeben, Tage sehen und bestätigen, Bestand erklären,
+   Einkaufsliste in den Korb. Jede Zahl auf dieser Seite ist gerechnet — die
+   Kochzeit summiert, der Preis eine Vorschau aus Packungszahl × Katalogpreis,
+   der Rest gezählt. Das Modell (Phase 2) ordnet Gerichte Tagen zu und sonst
+   nichts. #}
+<h1>{{ t('plan.titel') }}</h1>
+
+{% if plan %}
+<section class="plankopf">
+  <p class="rahmen">
+    {{ t('plan.zeitraum', von=plan.von | datum, bis=plan.bis | datum) }}
+    {%- if plan.personen %} · {{ t('plan.fuer_personen', n=plan.personen) }}{% endif %}
+    {%- if plan.max_minuten %} · {{ t('plan.hoechstens_minuten', n=plan.max_minuten) }}{% endif %}
+    {%- if plan.budget_cents %} · {{ t('plan.bis_budget', betrag=plan.budget_cents | euro) }}{% endif %}
+    {%- if plan.kcal_ziel %} · {{ t('plan.kcal_ziel_satz', n=plan.kcal_ziel) }}{% endif %}
+  </p>
+  {% if plan.status == 'im_korb' %}
+  <p class="hinweistext">{{ t('plan.schon_im_korb') }} <a href="/warenkorb">{{ t('plan.zum_korb') }}</a></p>
+  {% endif %}
+  {% if planer %}
+  {# Der Zug (Phase 2): das Modell belegt die offenen Tage — nur aus den
+     Gerichten, die der Haushalt hat. Steht schon etwas, plant es nur die
+     Tage nach, die nicht „Ja" sind. #}
+  <form method="post" action="/plan/{{ plan.id }}/planen" class="planen"
+        hx-post="/plan/{{ plan.id }}/planen" hx-target="#plan-inhalt"
+        hx-swap="outerHTML" hx-indicator="#plan-laeuft"
+        hx-disabled-elt="find button">
+    <button type="submit" class="knopf">
+      {% if zusammenfassung.belegt %}{{ t('plan.neu_planen') }}{% else %}{{ t('plan.planen') }}{% endif %}
+    </button>
+    <span id="plan-laeuft" class="htmx-indicator">{{ t('plan.modell_ueberlegt') }}</span>
+  </form>
+  {% endif %}
+</section>
+
+{% include "_plan_inhalt.html" %}
+
+<p class="hinweistext"><a href="/plan/neu">{{ t('plan.neuer_plan') }}</a></p>
+
+{% else %}
+{% include "_plan_formular.html" %}
+{% endif %}
+{% endblock %}

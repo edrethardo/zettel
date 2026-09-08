@@ -1027,6 +1027,201 @@ def _choose_prompt(satz: str, aufgaben: list[dict],
 # --------------------------------------------------------------------------
 # Modellaufruf und Auspacken
 
+# --------------------------------------------------------------------------
+# Stufe 4 — plan.woche (2026-09-06-wochenplan-design.md, Abschnitt 4)
+#
+# Dieselbe tragende Regel wie in Stufe 3, nur eine Ebene höher: das Modell
+# ORDNET Gerichte Tagen zu, und zwar nur Gerichte, die ihm vorgelegt wurden —
+# die eigene Rezeptsammlung und die schon geholten Gerichte des Haushalts
+# (`wochenplan.vorlage`). Keinen Katalog, keine Preise, keine Nährwerte.
+#
+# **Was es nicht macht: rechnen.** Portionen, Mengen, Packungen, Preis und
+# Kochzeit summiert der Code (`wochenplan.liste`, `mengen`). Was hier
+# zurückkommt, ist je Tag eine id und EIN Satz Begründung — Text, keine Zahl.
+# Eine nicht vorgelegte id wird verworfen und gezählt, nie repariert.
+
+SYSTEM_WOCHE = """\
+Du planst die Abendessen eines Haushalts für einige Tage.
+
+Du bekommst die Tage und eine Liste von Gerichten mit ID, Zeit, Portionen \
+und Zutaten. Manche Tage sind schon festgelegt; du belegst nur die offenen.
+
+Regeln:
+- Du darfst AUSSCHLIESSLICH IDs verwenden, die in der Liste stehen. Eine \
+ID, die dort nicht steht, wird verworfen.
+- Belege so viele offene Tage wie möglich — je Tag genau ein Gericht, und \
+kein Gericht zweimal in der Woche. Ein Tag bleibt nur leer, wenn kein \
+Gericht der Liste mehr übrig ist, das an ihn passt.
+- Bevorzuge Gerichte, die Zutaten teilen (weniger Reste), und solche, die \
+den genannten Bestand aufbrauchen. Sorge für Abwechslung.
+- Nenne keine ID, die nicht in der Liste steht. Rate nicht.
+- „grund" ist EIN kurzer Satz, warum dieses Gericht an diesen Tag passt.
+
+Antworte ausschliesslich als JSON:
+{"tage": [{"tag": 1, "gericht_id": 12, "grund": "nutzt die Kartoffeln und teilt Zwiebeln mit Tag 3"}]}"""
+
+#: **Gemessen am 06.09.** (Qwen3.8-27B, echte Datenbank, `scripts/plan_probe.py`):
+#: mit „passt zu einem Tag nichts, lässt du ihn weg" belegte das Modell bei
+#: drei vorgelegten Gerichten EINEN von drei Tagen und liess die anderen
+#: leer — es las die Regel als Erlaubnis, sparsam zu sein. Seither steht die
+#: Regel andersherum: so viele Tage wie möglich, leer nur, wenn nichts mehr
+#: übrig ist. Die Zusicherung (keine fremde ID) hängt nicht daran; sie steht
+#: im Code.
+
+#: Länger als das ist keine Begründung, sondern ein Aufsatz — und auf einem
+#: Telefon eine Zeile, die die Tagesliste sprengt.
+MAX_GRUND = 160
+
+#: Höchstens so viele Tage plant ein Zug (`wochenplan.rahmen.MAX_TAGE`).
+MAX_TAGE = 14
+
+#: Ein Tag ist eine Zeile von rund 30 Token; 14 Tage plus Verpackung passen
+#: vielfach hinein. Deutlich kleiner als `MAX_TOKENS`, weil die Antwort hier
+#: nicht mit den Zutaten wächst.
+MAX_TOKENS_WOCHE = 800
+
+SCHEMA_WOCHE = {
+    "type": "object",
+    "properties": {
+        "tage": {
+            "type": "array",
+            "maxItems": MAX_TAGE,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "tag": {"type": "integer", "minimum": 1,
+                            "maximum": MAX_TAGE},
+                    "gericht_id": {"type": "integer"},
+                    "grund": {"type": "string", "maxLength": MAX_GRUND},
+                },
+                "required": ["tag", "gericht_id"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["tage"],
+    "additionalProperties": False,
+}
+
+
+@dataclass(frozen=True)
+class Wochenwahl:
+    """Was Stufe 4 ergeben hat — samt dem, was verworfen wurde.
+
+    `verworfen` ist hier dieselbe Zahl mit derselben Bedeutung wie in
+    `Auswahl`: wie oft das Modell etwas nannte, das ihm nie vorgelegt wurde,
+    oder einen Tag belegen wollte, der nicht offen war.
+    """
+    gewaehlt: list[dict] = field(default_factory=list)
+    verworfen: list[dict] = field(default_factory=list)
+    roh: str = ""
+
+
+def _zeitwort(minuten) -> str:
+    if not minuten:
+        return "Zeit unbekannt"
+    return f"{int(minuten)} Min."
+
+
+def wochenvorlage(tage: list[dict], gerichte: list[dict], *,
+                  personen=None, max_minuten=None,
+                  bestand: list[str] | None = None) -> str:
+    """Der Benutzerteil von Stufe 4 — deterministisch, ohne Modell prüfbar.
+
+    `tage` ist `[{"tag": 1, "name": "Mo 07.09.", "offen": True,
+    "festgelegt": "Lasagne" | None}]`, `gerichte` die Vorlage aus
+    `wochenplan.vorlage.gerichte` (id, name, minuten, servings, zutaten).
+    """
+    zeilen = []
+    rahmen = []
+    if personen:
+        rahmen.append(f"{personen} Personen")
+    if max_minuten:
+        rahmen.append(f"höchstens {max_minuten} Minuten am Herd je Tag")
+    if rahmen:
+        zeilen.append("Rahmen: " + ", ".join(rahmen))
+    if bestand:
+        zeilen.append("Noch da (soll aufgebraucht werden): " + ", ".join(bestand))
+    zeilen.append("Tage:")
+    for t in tage:
+        if t.get("offen"):
+            zeilen.append(f"- Tag {t['tag']} ({t['name']}): offen")
+        else:
+            was = t.get("festgelegt") or "auswärts, nichts kochen"
+            zeilen.append(f"- Tag {t['tag']} ({t['name']}): festgelegt — {was}")
+    zeilen.append("Gerichte zur Wahl:")
+    for g in gerichte:
+        zutaten = ", ".join(str(z) for z in (g.get("zutaten") or [])[:20])
+        kopf = (f"- ID {int(g['id'])}: {g['name']} — {_zeitwort(g.get('minuten'))}"
+                + (f", für {g['servings']} Portionen" if g.get("servings") else ""))
+        zeilen.append(kopf + (f"; Zutaten: {zutaten}" if zutaten else ""))
+    return "\n".join(zeilen)
+
+
+def woche(zugang, tage: list[dict], gerichte: list[dict], *,
+          personen=None, max_minuten=None, bestand: list[str] | None = None,
+          guided: bool = True, system: str = SYSTEM_WOCHE,
+          temperatur: float = TEMPERATUR,
+          max_tokens: int = MAX_TOKENS_WOCHE,
+          denken: bool = DENKEN) -> Wochenwahl:
+    """Ordnet offenen Tagen je ein vorgelegtes Gericht zu.
+
+    Die Prüfung dahinter ist der Kern: gewählt werden kann nur, was in
+    `gerichte` steht, belegt nur ein Tag, der `offen` ist, und jedes Gericht
+    nur einmal. Alles andere landet in `verworfen` mit Grund — und wird nicht
+    durch das nächstbeste ersetzt.
+
+    Ohne offenen Tag oder ohne Gericht wird gar nicht gefragt: das Modell zu
+    fragen wäre eine Einladung zum Erfinden.
+    """
+    offen = {int(t["tag"]) for t in tage if t.get("offen")}
+    erlaubt = {int(g["id"]): g for g in gerichte}
+    if not offen or not erlaubt:
+        return Wochenwahl()
+    schon = {int(t["festgelegt_id"]) for t in tage
+             if t.get("festgelegt_id") is not None}
+
+    antwort = _frage(zugang, system,
+                     wochenvorlage(tage, gerichte, personen=personen,
+                                   max_minuten=max_minuten, bestand=bestand),
+                     SCHEMA_WOCHE, "wochenplan", guided, temperatur,
+                     max_tokens, denken)
+    roh = _eintraege(antwort, ("tage", "plan", "wochenplan", "days"))
+
+    gewaehlt: list[dict] = []
+    verworfen: list[dict] = []
+    belegt: set[int] = set()
+    benutzt: set[int] = set(schon)
+    for eintrag in roh:
+        tag = _id(eintrag, ("tag", "day", "pos"))
+        rid = _id(eintrag, ("gericht_id", "recipe_id", "rezept_id", "id"))
+        grund = _text(eintrag, ("grund", "reason", "warum"))[:MAX_GRUND]
+        if rid is None or rid not in erlaubt:
+            # HIER endet der Halluzinationsweg — wie in `choose()`.
+            verworfen.append({"tag": tag, "recipe_id": rid,
+                              "grund": ("nicht vorgelegt" if rid is not None
+                                        else "keine brauchbare Gericht-id")})
+            continue
+        if tag is None or tag not in offen:
+            verworfen.append({"tag": tag, "recipe_id": rid,
+                              "grund": "Tag nicht offen"})
+            continue
+        if tag in belegt:
+            verworfen.append({"tag": tag, "recipe_id": rid,
+                              "grund": "zweites Gericht für denselben Tag"})
+            continue
+        if rid in benutzt:
+            verworfen.append({"tag": tag, "recipe_id": rid,
+                              "grund": "Gericht steht schon im Plan"})
+            continue
+        belegt.add(tag)
+        benutzt.add(rid)
+        gewaehlt.append({"tag": tag, "recipe_id": rid, "grund": grund or None,
+                         "name": erlaubt[rid].get("name")})
+    gewaehlt.sort(key=lambda w: w["tag"])
+    return Wochenwahl(gewaehlt=gewaehlt, verworfen=verworfen, roh=antwort)
+
+
 def _frage(zugang, system: str, benutzer: str, schema: dict, wurzel: str,
            guided: bool, temperatur: float, max_tokens: int,
            denken: bool = DENKEN) -> str:
