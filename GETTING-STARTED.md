@@ -109,8 +109,8 @@ box and retries by itself; everything else keeps working meanwhile.
 ## Verify
 
 ```bash
-.venv/bin/python -m pytest -q             # 1,364 tests, ~20 s on all cores, no network
-.venv/bin/python -m pytest -q -n auto     # same on all cores
+.venv/bin/python -m pytest -q             # 1,480 tests, ~95 s, no network
+.venv/bin/python -m pytest -q -n auto     # same on all cores, ~45 s
 .venv/bin/python checks/smoke.py          # 79 checks; the network is blocked at socket level
 ```
 
