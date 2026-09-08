@@ -6,11 +6,300 @@ Trace **live** aufbaut, unten ein schmaler GPU-Streifen, in dem die 3090
 ausschlägt. Gefilmt wird die **Demo-Instanz** (eigener Port, Kopie der
 Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 
-> **Was gilt (Stand 05.09., zweiter Schnitt):** der Abschnitt direkt hier
-> drunter. Alles ab „Alle Zeitangaben unten" ist die Geschichte des Videos —
-> 28,7-s-Züge, nvtop, Shot 0 mit Gesicht, Voice-Over, Supermarkt-Shot 6b — und
-> steht, weil jede Zahl darin einmal bezahlt wurde. Nichts davon ist mehr
-> Anleitung.
+> **Was gilt (Stand 08.09.):** für die lange Fassung der Abschnitt „Stand
+> 05.09., zweiter Schnitt" (fertig geschnitten, 90,9 s). Für den zweiten Film
+> — den Wochenplan — der Abschnitt direkt hier drunter: Drehbuch, Prep,
+> vier Takes und der Schnitt `take_plan_2026-09-06d_final.mp4`; den
+> Hochkant-Clip dazu gibt es seit dem 08.09. in zwei Sprachen. Alles ab „Alle Zeitangaben
+> unten" ist die Geschichte des ersten Videos — 28,7-s-Züge, nvtop, Shot 0 mit
+> Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
+> einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
+
+## Stand 06.09. abends — v3.1: der Wochenplan, gedreht
+
+Der Chat-Zug zeigt „ein Satz -> eine Liste". Der zweite Film zeigt die
+nächste Ebene: **eine Woche -> eine Liste, abzüglich dessen, was schon da
+ist — und je Tag kcal und Eiweiss, aus den Packungen gerechnet.** Gebaut
+mit denselben drei Mitteln, die das erste Video erzählt: das Modell wählt
+nur aus dem, was der Haushalt hat (`zettel.plan.rejected`), jede Zahl
+rechnet der Code (Portionen, Summen, Bestand, Packungen, Preis, Rest, kcal),
+und jedes Ja wird ein Label. Design:
+`docs/superpowers/specs/2026-09-06-wochenplan-design.md`; Messung: `EVALS.md`,
+„Der Wochenplaner".
+
+**Vier Takes liegen** (`take_plan_2026-09-06a…d.*`), alle auf der
+Xvfb-Bühne der Basisstation gegen Qwen3.8-27B (die Box lief an dem Abend
+mit Qwen, nicht mit Nemotron — Titelkarte, Badge und Endcard nennen das
+Modell, das im Take lief, gelesen aus `/v1/models`). Der Schnitt ist
+`schnitt_plan.py`; die Zahlen im Untertitel kommen aus den Marken des Takes
+und dem `plan.woche`-Span in Phoenix, nicht aus dem Kopf. Die alten Takes
+und die lange Fassung vom 05.09. bleiben unangetastet — das hier ist ein
+zweiter Film, kein Ersatz.
+
+| Datei | Was |
+|---|---|
+| `take_plan_2026-09-06a.mkv` | 200 s, ohne Warnung — aber P6 ging ins Leere (s. u.), brauchbar für P1–P5, P7 |
+| `take_plan_2026-09-06b.mkv` | 195 s, ohne Warnung, dieselbe P6-Falle (lief noch mit dem alten Skript) |
+| `take_plan_2026-09-06c.mkv` | **unbrauchbar**: „Das Modell wacht auf" — der Wecker im Shop hielt die Box für schlafend, fünf Warnungen |
+| `take_plan_2026-09-06d.mkv` (+ `.zeitmarken.txt`, `.ffmpeg_start.txt`) | **der Take**: 197 s, ohne Warnung, P6 geprüft („die Trace-Tafel steht") |
+| `take_plan_2026-09-06d_final.mp4` (+ `.srt`, `thumbnail_plan.png`) | der Schnitt: Titelkarte 3 s, Shots P1–P7 (93 s), Endcard 8 s — **101 s** |
+
+### Was den Mehrwert trägt — und warum jeder Shot eine Zahl hat
+
+Der erste Film hat eine Pointe: *das Modell darf nur wählen, was der Laden
+gefunden hat.* Der zweite hat vier, und jede ist im Bild belegt:
+
+1. **Vier Zahlen und ein Satz** statt eines Prompts (P1). Die Zahlen liest
+   niemand aus einem Satz — sie kommen aus Feldern, damit kein Modell sie
+   erfinden kann. Der einzige Freitext ist der Kühlschrank.
+2. **Das Modell ordnet nur zu** (P2/P3): 5 Tage in 5,8 s aus 9 vorgelegten
+   Gerichten, `rejected 0`, ≈ 524 kcal je Portion im Schnitt, und je Tag ein
+   Satz, warum. „Nein" zu Dienstag
+   plant nur Dienstag neu (1,2 s), das abgelehnte Gericht kommt nicht wieder.
+3. **kcal und Eiweiss je Portion, gerechnet** (P3): „≈ 719 kcal · 32,1 g
+   Eiweiss je Portion · 19 kcal über dem Ziel · 3 von 5 Zutaten gerechnet".
+   Die letzte Zahl ist die ehrliche: was keine Grammangabe oder kein
+   Produkt hat, fehlt — und steht als fehlend da, nicht als Null.
+4. **Der Bon fragt, der Mensch antwortet** (P4/P5): „10 Stk Eier vom Bon
+   05.09. — noch da?" Ein Ja, und die Eier stehen in der Einkaufsliste
+   durchgestrichen: „1 durch den Bestand gedeckt". Kein Lagerstand.
+
+Dann der Trace (P6) mit `presented · assigned · rejected · kcal_per_serving`
+und zum Schluss die Liste in den Korb (P7) — die Korbzahl im Kopf springt
+von 0 auf 20.
+
+### Prep v3 — die Demo-DB für den Plan
+
+Die Demo-DB wird **neu aus der echten Datenbank** gezogen (sie braucht
+`product_naehrwert`, das die alte Kopie nicht hatte) und ohne
+Haushaltsdaten: Chat, Bestellungen, Bons, Pläne und eigene Rezepte
+(`source IS NULL`) werden gelöscht; die Chefkoch-Rezepte, Gerichte und die
+gemerkten Zuordnungen bleiben — sie sind öffentlich und der Gericht-Cache,
+den der Planer braucht.
+
+```bash
+cd ~/code/picknick_klon
+.venv/bin/python - <<'EOF'
+import sqlite3, os
+from zettel import db
+ziel = os.path.expanduser("~/picknick-demo/demo.db")
+sqlite3.connect("data/picknick.db").execute("VACUUM INTO ?", (ziel,))
+d = db.connect(ziel); db.migrate(d)
+for t in ["chat_kandidat","chat_sorte","chat_entwurf","chat_rezept","chat_suggestion",
+          "chat_message","order_item","orders","recipe_item","receipt_item","receipt",
+          "plan_bestand","plan_tag","plan"]:
+    d.execute(f"DELETE FROM {t}")
+d.execute("DELETE FROM recipe WHERE source IS NULL")
+d.commit(); d.execute("VACUUM")
+EOF
+# Zehn schnelle Gerichte (Chefkoch, mit Pause) — die Zeitgrenze im Take ist
+# 40 Minuten, und die echte Datenbank hatte darunter nur drei:
+.venv/bin/python -m zettel.gerichte.lauf --db ~/picknick-demo/demo.db \
+  --gericht Kartoffelgratin --gericht Omelett --gericht Shakshuka \
+  --gericht Bratkartoffeln --gericht Gemüsepfanne --gericht Tortilla \
+  --gericht Linsensuppe --gericht "Spaghetti Aglio e Olio" \
+  --gericht Kartoffelsuppe --gericht Rührei
+# Die Zuordnung je Rezept vorwärmen (Modell, 1–11 s je Gericht, gemessen):
+ZETTEL_PHOENIX_PROJECT="Zettel Demo Aufwaermen" .venv/bin/python - <<'EOF'
+import os
+from zettel import db
+from zettel.assistant import chat as chatmodul, zuordnung
+from zettel.gerichte import speicher
+con = db.connect(os.path.expanduser("~/picknick-demo/demo.db"))
+agent = chatmodul.Chat()
+for g in speicher.bereit(con):
+    if zuordnung.lesen(con, g["recipe_id"]) is None:
+        print(g["query"], agent.zuordnung_vorwaermen(con, g["recipe_id"]))
+EOF
+# Ein bestätigter Bon von GESTERN — nachgebaut, keine Haushaltsdaten:
+.venv/bin/python - <<'EOF'
+import os
+from datetime import date, timedelta
+from zettel import db
+from zettel.bons import kaeufe, zerlegen
+con = db.connect(os.path.expanduser("~/picknick-demo/demo.db"))
+bon = zerlegen.Bon(laden="rewe", datum=(date.today() - timedelta(days=1)).isoformat(),
+                   posten=[zerlegen.Posten(text="EIER 10ER", gesamt_cents=299, zeile=1),
+                           zerlegen.Posten(text="PARMESAN", gesamt_cents=349, zeile=2),
+                           zerlegen.Posten(text="KARTOFFELN 2KG", gesamt_cents=249, zeile=3)])
+rid = kaeufe.anlegen(con, bon, datei="demo-bon.pdf")
+# Die Produkte von Hand nachsehen — „%Parmigiano%" trifft auch Ravioli:
+for item, pid in zip(kaeufe.posten(con, rid), (
+        con.execute("SELECT id FROM product WHERE name LIKE '%Eier%Bodenhaltung%' AND active=1 ORDER BY id LIMIT 1").fetchone()[0],
+        1367,   # MIIL Parmigiano Reggiano DOP 24 gereift, 200 g
+        con.execute("SELECT id FROM product WHERE name LIKE 'Kartoffeln festkochend%' AND active=1 ORDER BY id LIMIT 1").fetchone()[0])):
+    kaeufe.zuordnung_setzen(con, item["id"], product_id=pid)
+    kaeufe.entscheiden(con, item["id"], "kept")
+EOF
+```
+
+Bühne: `BUEHNE_SCHIRM=xvfb PHX_PROJEKT="Zettel Demo Plan" PHX_ID=<id> bash buehne.sh`
+(das Projekt vorher über `POST /v1/projects` anlegen), Fensternummern in
+`fenster.txt`, dann `PHX_ID=<id> bash bereit_plan.sh` — das leert Chat,
+Korb und Pläne, **lässt das Gedächtnis stehen** (anders als `bereit.sh`) und
+fährt den Browser auf `/mehr`. **Vor dem ersten Take einmal planen** (ein
+`POST /plan` + `/plan/<id>/planen` gegen 8747): das Phoenix-Fenster zeigt
+für ein leeres Projekt eine Einrichtungsseite, die sich nicht von selbst in
+die Trace-Liste verwandelt; mit einem ersten Trace steht die Tabelle und
+streamt.
+
+### Take P — der Durchlauf (`dreh_plan.py`), gemessen an Take d
+
+`T` = Sekunden ab dem Klick auf **Woche planen**.
+
+| Realzeit | Marke | Tun / was im Bild steht |
+|---|---|---|
+| T−31 | Wochenplan geöffnet | Über die Leiste zu „Mehr", erster Eintrag „Wochenplan". |
+| T−14 | Rahmen getippt | Die vier Zahlenfelder über ihre Form gefunden (2×2-Raster); **höchstens 40 Minuten**, **Budget 60 €**, per Tab **700 kcal**, per Tab der Bestand `500 g Kartoffeln, 6 Eier, Nudeln`. |
+| T−5 | Plan angelegt | **Plan anlegen** — fünf leere Tage, Kopfzeile „06.09. bis 10.09. · für 2 Personen · höchstens 40 Minuten · bis 60,00 € · Ziel 700 kcal". |
+| T+0 | GEPLANT-ABGESCHICKT | **Woche planen.** Hände weg, Blick nach rechts. |
+| T+5,8 | Plan da | 5 Tage belegt. Rechts steht `plan.woche`, unten war die 3090 kurz auf Last. |
+| T+18 | Tage gezeigt | Zwei Rollschübe: Wochentag, Rezept, Zeit, der Satz des Modells, die kcal-Zeile. |
+| T+25 | Nein an Tag 2 | **Nein** am zweiten Tag, oben **Offene Tage neu planen**. |
+| T+31 | Neu geplant | **1,2 s** — Tag 2 ist ein anderes Gericht, die anderen vier stehen. |
+| T+91 | noch da | Ans Ende und hoch bis zur breiten „noch da"-Pille: „10 Stk Berliner Eisbären Eier, vom Bon 05.09." — **noch da**. (Die 60 s Rollweg schneidet der Schnitt weg.) |
+| T+101 | Einkaufsliste gezeigt | Gedeckte Zeile durchgestrichen, „1 durch den Bestand gedeckt", Preisvorschau, Budget, Rest. |
+| T+106…126 | plan.woche geöffnet · gefiltert | Phoenix: oberster Wurzelzug (die Neuplanung: `days 1 · fixed 4 · assigned 1 · rejected 0 · kcal_per_serving 345`), geprüft, ob die Tafel steht; Attributes, Suche „plan.". |
+| T+146 | in den Korb | **Einkaufsliste in den Korb** — 20 Posten, Korbzahl 0 → 20. |
+
+### Der Schnitt — Shots P1–P7 (`schnitt_plan.py`)
+
+Titelkarte 3 s (Bild bei „Plan da" + 0,2 s, abgedunkelt), Band 170 px unter
+dem Bild, Untertitel ≤ 3,5 Wörter/s, Endcard. Untertitel P2/P5 nehmen die
+Zahlen aus den Marken.
+
+| # | Bild (Marken) | Untertitel |
+|---|---|---|
+| P1 | Wochenplan geöffnet +1 → Plan angelegt +1,5 | Days, people, minutes, budget, kcal — and one sentence: "500 g potatoes, 6 eggs, pasta". Nothing is guessed. |
+| P2 | GEPLANT −1 → Plan da +3 (das Warten ungeschnitten) | The model may only pick from dishes this household has. 9 presented · 5 assigned · rejected 0. |
+| P3 | Tage gezeigt −6 → +1; Nein −1,5 → Neu geplant +3 | kcal and protein per serving, computed from the packages — "3 of 5 ingredients", never a guess. "No" re-plans that day only. |
+| P4 | noch da −4 → +2 | Yesterday's receipt: "10 eggs — still there?" A Yes, never a tracked stock. |
+| P5 | Liste −5 → +1 | Summed across the week, minus what is there: "eggs — covered". Packs, price, leftovers — computed. |
+| P6 | plan.woche geöffnet −1 → gefiltert +5 | One trace per plan: presented, assigned, rejected, kcal per serving — and every Yes on a day becomes a label. |
+| P7 | Korb −2 → +3 | 20 lines to the basket. The cart is the order. |
+
+Voice-Over (optional, wortwörtlich): *Four numbers and one sentence — what's
+in the fridge. · The model only assigns dishes to days, from our own recipes.
+Say no to Tuesday: only Tuesday is re-planned. · Calories and protein per
+serving, computed from the packages — and it tells you which ingredients it
+couldn't count. · Yesterday's receipt remembers the eggs. I confirm. · The
+list: summed, minus what's there. · One trace per week. · To the basket.*
+
+### Was der Dreh gekostet hat — vier neue Fallen, alle bezahlt
+
+* **Snap-Firefox liest keine Profile ausserhalb von `$HOME`.** Seit
+  `~/picknick-demo` ein Symlink nach `/data/projects` ist, meldete jedes
+  Fenster „Profile Missing" — auch ein frisches Profil unter `/tmp`. Die
+  Profile liegen jetzt kopiert unter `~/picknick-ff/`, `buehne.sh` zeigt
+  dorthin.
+* **Kein ImageMagick, kein numpy, kein scipy auf der Basisstation.**
+  `finde.bild` greift jetzt mit ffmpeg (`x11grab`, ~200 ms je Bild), wenn
+  `import` fehlt; `aufnahme.sh` startet die Choreografie mit dem venv des
+  Projekts (`PY=`), und scipy ist ins venv gekommen — `finde.flecken`
+  braucht es für die Zusammenhangsanalyse.
+* **Die Hauptknöpfe des Plans waren nicht gefüllt.** `.knopf` allein ist
+  im Blatt umrandet; die Akzentfüllung tragen nur bestimmte Formulare. Ohne
+  Füllung fand `akzentflaechen` „Plan anlegen" nicht — Take-Trockenlauf 1
+  legte keinen Plan an. `stil.css` gibt den drei Hauptknöpfen des Plans
+  jetzt dieselbe Füllung wie „Fragen".
+* **„noch da" ist eine breite Ja-Pille.** Der Griff auf die Bestandszeile
+  landete auf dem „Ja" des ersten Tages (68 px); „noch da" hat 96 px. Die
+  Pille wird seither über die Breite getrennt und von unten her gesucht
+  (28 Radklicks von oben reichten bei fünf Tagen nicht).
+* **Die fünfte, aus Take a und b:** der Klick auf `plan.woche` in der
+  Phoenix-Liste ging ins Leere (die Tabelle zeichnet sich alle 2 s neu), und
+  die folgenden zwei Klicks landeten im Verkehrsdiagramm — Phoenix stellte
+  einen Zeitbereich ein, in dem nichts stand. Seit Take d prüft P6 nach dem
+  Klick, ob rechts die Trace-Tafel steht (Tinte im Kopf der Tafel), versucht
+  es sonst noch einmal, und fasst Reiter und Suche nur an, wenn sie steht.
+  Ausserdem hängen die `korb.menge`-Spans unter EINEM `plan.korb`-Span — als
+  zwanzig Wurzelzüge hatten sie den Plan-Zug in der Liste verdeckt.
+* **Die sechste, aus Take c:** „Das Modell wacht auf" beim Klick auf „Woche
+  planen", obwohl die Box bediente — der Wecker im Shop hatte sie zwischen
+  dem Warmlauf (der an ihm vorbei direkt an die Box geht) und dem Klick für
+  schlafend erklärt. Der Plan blieb 180 s leer, fünf Warnungen. Seither
+  fragt `bereit_plan.sh` nach dem Warmlauf `/chat/zustand` des Shops ab, und
+  `dreh_plan.py` tippt „Woche planen" nach 25 s ohne Plan noch einmal (bis
+  zu dreimal, mit Marke) — so, wie ein Mensch es täte.
+* **Die siebte, aus dem ersten Schnitt:** Titelkarte und Endcard trugen den
+  Text und das Modell des Chat-Films. `titelkarte_plan.py` und
+  `endcard_plan.py` sind eigene Karten; der Modellname kommt aus `/v1/models`.
+
+### v3.2 — die Anpassungen nach dem ersten Sehen (07.09., noch nicht neu gedreht)
+
+Aus den Einzelbildern beider Schnitte, alles umgesetzt, was ohne Box geht;
+der nächste Take (mit Nemotron, sobald die GPU frei ist) nimmt sie mit:
+
+* **Der richtige Trace.** `dreh_plan.py` öffnet in P6 die ZWEITE Zeile der
+  Liste — den ersten Zug mit fünf Tagen (`presented 9 · assigned 5 ·
+  rejected 0`) statt der Neuplanung (`days 1`), die Take d zeigte.
+* **Titelkarte und Hochkant-Karte** sagen „Five numbers": das Formular hat
+  seit kcal fünf Felder.
+* **Die zwei Belege grösser.** kcal je Portion am Tag und „gedeckt" in der
+  Liste stehen jetzt in 15 px statt 13 (`stil.css`); dazu zoomt
+  `schnitt_plan.py` in P3 und P5 auf die App-Spalte (520×740 ab y=150 auf
+  Bildhöhe, 1,46-fach, mittig) — Phoenix ist in diesen zwei Shots bewusst
+  nicht im Bild.
+* **Phoenix ohne Altlast.** `bereit_plan.sh` legt je Take ein frisches
+  Projekt an (`Zettel Demo Plan HHMM`), startet die Demo-App darauf neu,
+  schickt einen Aufwärm-Zug hindurch (die Tabelle steht und streamt, das
+  Diagramm sagt nicht „No data") und leert die Plantabellen danach.
+* **Kürzer.** P1 beginnt beim Budget (17,7 s statt 24,8), P6 hat einen
+  Sprung zwischen Tafel-auf und gefilterten Attributen (13 s statt 19,8),
+  der Untertitel zu P3 ist an der Marke „Nein an Tag" in zwei geteilt. Der
+  Schnitt von Take d liegt damit bei **87 s** statt 101 (die ersten drei
+  Punkte sieht man darin noch nicht — sie brauchen den neuen Take).
+
+Was offen bleibt und nur Aaron kann: Stimme und Gesicht, und die
+Entscheidung, ob Chat-Film und Plan-Film zu EINEM Zwei-Minuten-Film werden.
+
+### Der Hochkant-Clip des Plans (`dreh_plan_handy.py`, `handy_plan.py`)
+
+`zettel_linkedin_plan_2026-09-06.mp4` — **72,6 s**, 1080×1920, ohne Ton,
+aus `take_plan_handy_2026-09-06c` (109 s Durchlauf, ohne Warnung; Take a
+hatte im Bild ein Autovervollständigen-Menü über dem Budgetfeld, seither
+`autocomplete="off"` am Formular; Take b lief in „wacht auf" und wurde von
+der Wiederholung gerettet, war aber länger als das Band). Zwei Segmente
+(Formular bis Neuplanung, Bon-Bestand bis Korb), vier Textkarten an Marken,
+Endcard 3,5 s. Gesten aus dem Protokoll: 10 Tipps, 8 im Clip; 29
+Radschübe, 27 gezeichnet. Der Trace ist nicht im Clip — er gehört der
+langen Fassung.
+
+    PHX_ID=<id> bash bereit_plan.sh
+    MAUS=0 SKRIPT=dreh_plan_handy.py STAMM=take_plan_handy_<datum> bash aufnahme.sh 210
+    .venv/bin/python handy_plan.py take_plan_handy_<datum> zettel_linkedin_plan_<datum>.mp4
+
+#### Zwei Sprachen, eine Choreografie (08.09.)
+
+Derselbe Take, zweimal geschnitten: `SPRACHE=de` tauscht die vier Textkarten
+und die Endcard, sonst nichts. Die Marken, die Segmente, die gemalten Tipps
+und Radschübe sind dieselben — deshalb sind beide Fassungen **72,6 s** lang
+und unterscheiden sich nur in dem, was auf den Karten steht.
+
+| Datei | Karten und Endcard |
+|---|---|
+| `zettel_linkedin_plan_2026-09-06.mp4` | englisch (Vorgabe, `SPRACHE=en`) — „A week of dinners — minus what's in the fridge", Endcard „a week of dinners, planned at home · open Qwen3.8-27B · one RTX 3090 · no cloud" |
+| `zettel_linkedin_plan_2026-09-06_de.mp4` | deutsch — „Eine Woche Abendessen — minus das, was im Kühlschrank liegt", Endcard „eine Woche Abendessen, zu Hause geplant · offenes Qwen3.8-27B · eine RTX 3090 · keine Cloud" |
+
+    SPRACHE=de .venv/bin/python handy_plan.py take_plan_handy_2026-09-06c \
+        zettel_linkedin_plan_2026-09-06_de.mp4
+
+**Die App im Bild bleibt in beiden Fassungen deutsch.** Sie zu übersetzen
+hiesse neu drehen, und der Take ist der gute; für ein Publikum, das den Post
+auf Englisch liest, tragen die Karten die Bedeutung. Wer die Oberfläche
+englisch im Bild will, dreht nach dem Sprach-Commit mit `zettel_sprache=en`
+im Cookie neu — dann stimmen Karten und Blatt überein.
+
+Die Endcard heisst seither `handy_endcard_plan_<sprache>.png`.
+`handy_endcard_plan.png` ohne Sprachkürzel liegt noch daneben: sie stammt
+aus dem englischen Lauf, der vor dem Schalter gerendert wurde, und wird von
+keinem Aufruf mehr geschrieben.
+
+### Was bleibt
+
+* Die 60 s Rollweg zwischen Neuplanung und „noch da" sind im Schnitt weg,
+  im Band aber drin. Wer den Take kürzer will, sucht die Pille per
+  `End`-Taste statt per Rad.
 
 ## Stand 05.09., zweiter Schnitt — nach dem Juror-Review
 
