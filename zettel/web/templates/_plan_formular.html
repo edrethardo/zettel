@@ -1,0 +1,23 @@
+{# Der Rahmen — vier Zahlen und ein Freitext. Zahlen aus Feldern und nicht aus
+   einem Satz: eine Zahl, die ein Modell aus einem Satz liest, kann es
+   erfunden haben (`wochenplan.rahmen`). Der Bestand ist der einzige
+   Freitext und wird im Code zerlegt, nicht vom Modell. #}
+<form method="post" action="/plan" class="planformular" autocomplete="off">
+  <p class="hinweistext">{{ t('plan.formular_hinweis') }}</p>
+  <div class="felder">
+    <label>{{ t('plan.tage') }}
+      <input type="number" name="tage" min="1" max="14" inputmode="numeric" value="{{ werte.tage or 5 }}"></label>
+    <label>{{ t('plan.personen') }}
+      <input type="number" name="personen" min="1" max="12" inputmode="numeric" value="{{ werte.personen or 2 }}"></label>
+    <label>{{ t('plan.max_minuten') }}
+      <input type="number" name="max_minuten" min="5" inputmode="numeric" value="{{ werte.max_minuten or '' }}" placeholder="{{ t('plan.egal') }}"></label>
+    <label>{{ t('plan.budget') }}
+      <input type="text" name="budget" inputmode="decimal" value="{{ werte.budget or '' }}" placeholder="{{ t('plan.egal') }}"></label>
+    <label>{{ t('plan.kcal_ziel') }}
+      <input type="number" name="kcal" min="500" max="10000" step="50" inputmode="numeric" value="{{ werte.kcal or '' }}" placeholder="{{ t('plan.egal') }}"></label>
+  </div>
+  <label class="bestandfeld">{{ t('plan.bestand_frage') }}
+    <input type="text" name="bestand" autocomplete="off" value="{{ werte.bestand or '' }}"
+           placeholder="{{ t('plan.bestand_platzhalter') }}"></label>
+  <button type="submit" class="knopf">{{ t('plan.anlegen') }}</button>
+</form>

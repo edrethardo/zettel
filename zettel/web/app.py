@@ -17,7 +17,7 @@ import os
 import socket
 import sqlite3
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, urlsplit
 
@@ -28,7 +28,7 @@ from fastapi.templating import Jinja2Templates
 
 from zettel import (betrieb, bons as bonmodul, db, gerichte, mengen,
                     miniaturen, obs, orders, recipes)
-from zettel import sprache
+from zettel import sprache, wochenplan
 from zettel import umgebung as umg
 from zettel.assistant import chat as chatmodul
 from zettel.assistant import entwurf as entwuerfe
@@ -337,6 +337,20 @@ def menge(wert) -> str:
         return str(int(zahl))
     return f"{zahl:g}".replace(".", ",")
 
+
+
+def datum(wert) -> str:
+    """'2026-09-07' -> '07.09.' — das Datum eines Plantags, ohne Jahr.
+
+    Ein Wochenplan reicht selten über einen Jahreswechsel, und am Wochentag
+    daneben hängt ohnehin die Orientierung; das Jahr wäre vier Zeichen, die
+    auf 375 px die Zeile umbrechen.
+    """
+    try:
+        d = date.fromisoformat(str(wert)[:10])
+    except (TypeError, ValueError):
+        return str(wert or "")
+    return f"{d.day:02d}.{d.month:02d}."
 
 def zeit(wert, jetzt: datetime | None = None) -> str:
     """'2026-08-28 17:32:47' -> 'gestern um 17:32'. Auch die Form mit `T`.
@@ -648,7 +662,8 @@ async def _lifespan(app: FastAPI):
 def create_app(db_path: str | Path | None = None,
                image_dir: str | Path | None = None,
                bon_dir: str | Path | None = None,
-               chat=None, zuordner=None, bonlaeufe=None) -> FastAPI:
+               chat=None, zuordner=None, bonlaeufe=None,
+               planer=None) -> FastAPI:
     """Baut die Anwendung. Pfade als Argument, damit Tests sie umlenken können.
 
     `chat` ist der Agent aus Spec 6. Er wird hier nur GEBAUT und nicht
@@ -671,6 +686,10 @@ def create_app(db_path: str | Path | None = None,
     app.state.bon_dir = Path(bon_dir or umg.wert(ENV_BON_DIR)
                              or DEFAULT_BON_DIR)
     app.state.chat = chat if chat is not None else chatmodul.Chat()
+    # Der Wochenplaner benutzt den Chat (Modellzugang, Wecker, Vorwärmen)
+    # und fasst ihn nicht an. Wie `chat`: hier nur gebaut.
+    app.state.planer = (planer if planer is not None
+                        else wochenplan.Planer(app.state.chat))
     # Beide wie `chat`: hier nur GEBAUT, nicht benutzt. `Zuordner()` legt keine
     # Verbindung an und fragt die Box nicht, `Laeufe()` startet keinen Thread.
     # Tests schieben einen Zuordner mit Fake-LLM unter und ein `Laeufe`, das
@@ -701,6 +720,7 @@ def create_app(db_path: str | Path | None = None,
     vorlagen.env.filters["euro"] = euro
     vorlagen.env.filters["menge"] = menge
     vorlagen.env.filters["zeit"] = zeit
+    vorlagen.env.filters["datum"] = datum
     # Die gefaltete Einheit ist ein Speicherformat, kein Satz: „el" steht so
     # in der Spalte, gelesen wird „EL" (Fund 16). Als Filter und nicht in der
     # Vorlage nachgebaut, damit Feld und Fliesstext dieselbe Regel benutzen.
@@ -2989,6 +3009,221 @@ def create_app(db_path: str | Path | None = None,
             return RedirectResponse(f"/rezepte/{neu}", status_code=303)
         finally:
             c.close()
+
+
+    # ----------------------------------------------------------------------
+    # Der Wochenplan (2026-09-06-wochenplan-design.md)
+
+    _WEGE_PLAN = [{"url": "/plan", "text": "Zum Wochenplan"},
+                  {"url": "/rezepte", "text": "Alle Rezepte"}]
+
+    def _plan_kontext(c: sqlite3.Connection, plan_id: int,
+                      fehler: str | None = None,
+                      meldung: str | None = None) -> dict:
+        """Plan, Vorlage, Einkaufsliste — alles gerechnet, nichts gemerkt."""
+        plan = wochenplan.naehrwerte(c, wochenplan.laden(c, plan_id))
+        rahmen = wochenplan.speicher.rahmen_von(plan)
+        return {"plan": plan,
+                "zusammenfassung": plan["zusammenfassung"],
+                "gerichte": wochenplan.gerichte(c, rahmen),
+                "liste": wochenplan.einkaufsliste(c, plan),
+                "planer": getattr(app.state, "planer", None) is not None,
+                "fehler": fehler, "meldung": meldung}
+
+    def _plan_antwort(request: Request, c: sqlite3.Connection, plan_id: int,
+                      fehler: str | None = None, meldung: str | None = None):
+        """HTMX bekommt den Inhalt, ein Formular ohne JavaScript die Seite."""
+        try:
+            kontext = _plan_kontext(c, plan_id, fehler, meldung)
+        except wochenplan.WochenplanFehler as e:
+            return _nicht_gefunden(request, str(e), _WEGE_PLAN)
+        if ist_htmx(request):
+            return vorlagen.TemplateResponse(request, "_plan_inhalt.html",
+                                             kontext)
+        return vorlagen.TemplateResponse(request, "plan.html",
+                                         {**_rahmen(request, c), **kontext})
+
+    @app.get("/plan")
+    def plan_seite(request: Request):
+        """Der jüngste Plan — oder das Formular für den ersten."""
+        c = con()
+        try:
+            aktuell = wochenplan.aktuell(c)
+            if aktuell is None:
+                return vorlagen.TemplateResponse(request, "plan.html", {
+                    **_rahmen(request, c), "plan": None, "werte": {}})
+            return _plan_antwort(request, c, int(aktuell["id"]))
+        finally:
+            c.close()
+
+    @app.get("/plan/neu")
+    def plan_neu(request: Request):
+        c = con()
+        try:
+            return vorlagen.TemplateResponse(request, "plan.html", {
+                **_rahmen(request, c), "plan": None,
+                "werte": dict(request.query_params)})
+        finally:
+            c.close()
+
+    @app.post("/plan")
+    async def plan_anlegen(request: Request):
+        """Rahmen -> Plan mit leeren Tagen. Zahlen nachsichtig gelesen."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            pid = wochenplan.anlegen(c, wochenplan.aus_formular(werte))
+            return RedirectResponse(f"/plan/{pid}", status_code=303)
+        finally:
+            c.close()
+
+    @app.get("/plan/{plan_id}")
+    def plan_ansehen(request: Request, plan_id: int):
+        c = con()
+        try:
+            return _plan_antwort(request, c, plan_id)
+        finally:
+            c.close()
+
+    @app.post("/plan/{plan_id}/tag/{tag_id}")
+    async def plan_tag_setzen(request: Request, plan_id: int, tag_id: int):
+        """Ein Rezept an einen Tag — oder „auswärts"."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            try:
+                if werte.get("auswaerts"):
+                    wochenplan.auswaerts_setzen(c, tag_id)
+                else:
+                    wochenplan.tag_setzen(c, tag_id, werte.get("recipe_id"),
+                                          werte.get("portionen"))
+            except wochenplan.WochenplanFehler as e:
+                return _plan_antwort(request, c, plan_id, fehler=str(e))
+            return _plan_antwort(request, c, plan_id)
+        finally:
+            c.close()
+
+    @app.post("/plan/{plan_id}/tag/{tag_id}/entscheiden")
+    def plan_tag_entscheiden(request: Request, plan_id: int, tag_id: int,
+                             decision: str = ""):
+        c = con()
+        try:
+            try:
+                wochenplan.tag_entscheiden(c, tag_id, decision)
+            except wochenplan.WochenplanFehler as e:
+                return _plan_antwort(request, c, plan_id, fehler=str(e))
+            return _plan_antwort(request, c, plan_id)
+        finally:
+            c.close()
+
+    @app.post("/plan/{plan_id}/bestand")
+    async def plan_bestand(request: Request, plan_id: int):
+        """„500 g Kartoffeln, 6 Eier" -> erklärte Bestandszeilen."""
+        werte = await eingaben(request)
+        c = con()
+        try:
+            zeilen = wochenplan.bestand_aus_text(werte.get("text"))
+            if not zeilen:
+                return _plan_antwort(request, c, plan_id,
+                                     fehler=wochenplan_texte(request)(
+                                         "plan.bestand_leer"))
+            for z in zeilen:
+                wochenplan.bestand_hinzufuegen(c, plan_id, z["name"],
+                                               z["menge"], z["einheit"])
+            return _plan_antwort(request, c, plan_id)
+        finally:
+            c.close()
+
+
+    @app.post("/plan/{plan_id}/bestand/aus_bons")
+    def plan_bestand_aus_bons(request: Request, plan_id: int):
+        """Der Bon schlägt vor: bestätigte Käufe der letzten Tage, die eine
+        Zeile der Liste treffen — als offene Zeilen, die ein Ja brauchen."""
+        c = con()
+        try:
+            t = wochenplan_texte(request)
+            try:
+                n = wochenplan.bestand_vorschlagen(c, plan_id)
+            except wochenplan.WochenplanFehler as e:
+                return _nicht_gefunden(request, str(e), _WEGE_PLAN)
+            if n:
+                return _plan_antwort(request, c, plan_id,
+                                     meldung=t("plan.bon_vorgeschlagen", n=n))
+            return _plan_antwort(request, c, plan_id,
+                                 fehler=t("plan.bon_nichts"))
+        finally:
+            c.close()
+
+    @app.post("/plan/{plan_id}/bestand/{bestand_id}/entscheiden")
+    def plan_bestand_entscheiden(request: Request, plan_id: int,
+                                 bestand_id: int, decision: str = ""):
+        c = con()
+        try:
+            try:
+                wochenplan.bestand_entscheiden(c, bestand_id, decision)
+            except wochenplan.WochenplanFehler as e:
+                return _plan_antwort(request, c, plan_id, fehler=str(e))
+            return _plan_antwort(request, c, plan_id)
+        finally:
+            c.close()
+
+    @app.post("/plan/{plan_id}/korb")
+    def plan_in_den_korb(request: Request, plan_id: int):
+        """Die Einkaufsliste in den gemeinsamen Korb — mit Bericht."""
+        c = con()
+        try:
+            try:
+                bericht = wochenplan.in_den_korb(c, plan_id)
+            except wochenplan.WochenplanFehler as e:
+                return _plan_antwort(request, c, plan_id, fehler=str(e))
+            t = wochenplan_texte(request)
+            meldung = t("plan.korb_meldung", n=bericht["n_eingelegt"],
+                        gedeckt=bericht["gedeckt"],
+                        ohne_produkt=bericht["ohne_produkt"])
+            return _plan_antwort(request, c, plan_id, meldung=meldung)
+        finally:
+            c.close()
+
+
+    @app.post("/plan/{plan_id}/planen")
+    def plan_planen(request: Request, plan_id: int):
+        """Der Zug `plan.woche`: das Modell belegt die offenen Tage.
+
+        Nur aus der Vorlage — erfundene Gerichte werden verworfen und
+        gezählt. Schläft die Box, steht hier derselbe Satz wie im Chat; der
+        Plan bleibt, wie er war.
+        """
+        c = con()
+        try:
+            t = wochenplan_texte(request)
+            try:
+                bericht = app.state.planer.planen(c, plan_id)
+            except wochenplan.WochenplanFehler as e:
+                return _nicht_gefunden(request, str(e), _WEGE_PLAN)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                return _plan_antwort(request, c, plan_id,
+                                     fehler=_nicht_verfuegbar(e))
+            if bericht["meldung"] == "modell_kaputt":
+                return _plan_antwort(request, c, plan_id,
+                                     fehler=t("plan.modell_kaputt",
+                                              grund=bericht["fehler"]))
+            if bericht["meldung"] in ("kein_offener_tag", "nichts_zur_wahl"):
+                return _plan_antwort(request, c, plan_id,
+                                     fehler=t("plan." + bericht["meldung"]))
+            meldung = t("plan.geplant", n=bericht["belegt"],
+                        offen=bericht["offen"], vorgelegt=bericht["vorgelegt"])
+            if bericht["verworfen"]:
+                meldung += " " + t("plan.verworfen_n", n=bericht["verworfen"])
+            if bericht.get("bestand_vorgeschlagen"):
+                meldung += " " + t("plan.bon_vorgeschlagen",
+                                   n=bericht["bestand_vorgeschlagen"])
+            return _plan_antwort(request, c, plan_id, meldung=meldung)
+        finally:
+            c.close()
+
+    def wochenplan_texte(request: Request):
+        """`t()` ausserhalb einer Vorlage — für Meldungen aus einer Route."""
+        return sprache.uebersetzer(sprache.aus_request(request))
 
     @app.get("/status")
     def status(request: Request):

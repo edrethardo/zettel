@@ -326,7 +326,8 @@ button, .knopf { overflow-wrap: normal; }
 .suche button, .freitext button { flex: 0 0 auto; }
 .suche button:active, .freitext button:active, .knopf:active,
 .rollen button:active { transform: scale(0.96); }
-.abschicken .gross, .chatform button, .bonupload button {
+.abschicken .gross, .chatform button, .bonupload button,
+.planformular .knopf, .plankopf .planen .knopf, .planliste .sammel .knopf {
   min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 700;
   border: none; border-radius: var(--radius-knopf);
   background: var(--akzent); color: var(--auf-akzent);
@@ -334,7 +335,8 @@ button, .knopf { overflow-wrap: normal; }
   transition: transform 0.12s ease; white-space: nowrap;
 }
 .chatform button { flex: 0 0 auto; }
-.abschicken .gross, .bonupload button { width: 100%; min-height: 54px; }
+.abschicken .gross, .bonupload button, .planformular .knopf,
+.planliste .sammel .knopf { width: 100%; min-height: 54px; }
 .abschicken .gross:active, .chatform button:active,
 .bonupload button:active { transform: scale(0.98); }
 /* Die Sprachwahl steht auf der Mehr-Seite und benutzt die Knöpfe der
@@ -1688,3 +1690,33 @@ a.mini {
 /* Die Wege zurück auf der 404-Seite: nebeneinander, mittig unter dem Satz. */
 .wege { display: flex; flex-wrap: wrap; gap: var(--v3); justify-content: center;
         margin-top: var(--v3); }
+
+/* Wochenplan (2026-09-06-wochenplan-design.md). Die Tage sind `.zeile`n wie
+   im Korb, mit derselben Ja/Nein-Stellung; das Formular ist ein Raster aus
+   vier kleinen Zahlenfeldern, weil vier Zahlen auf einem Telefon schneller
+   getippt sind als ein Satz gelesen wird. */
+.planformular .felder { display: grid; grid-template-columns: 1fr 1fr; gap: var(--v3); margin: var(--v3) 0; }
+.planformular label { display: flex; flex-direction: column; gap: var(--v1); font-size: var(--t-klein); color: var(--gedaempft); }
+.planformular input { min-height: var(--tap); padding: 0 var(--v3); border: 1px solid var(--linie); border-radius: var(--radius); background: var(--karte); color: var(--tinte); font: inherit; }
+.planformular .bestandfeld { margin: var(--v3) 0 var(--v4); }
+.planformular .knopf { width: 100%; }
+.plankopf .rahmen { margin: 0 0 var(--v3); color: var(--tinte); font-weight: 600; }
+.plankopf .planen { display: flex; align-items: center; gap: var(--v3); margin: 0 0 var(--v3); }
+.plankopf .htmx-indicator { color: var(--gedaempft); font-size: var(--t-klein); }
+.tage .datum { font-size: var(--t-fein); color: var(--gedaempft); text-transform: uppercase; letter-spacing: .04em; }
+.tage .name.still { color: var(--gedaempft); font-weight: 500; }
+.tage .tagwahl { display: flex; gap: var(--v2); margin-top: var(--v2); flex-wrap: wrap; }
+.tage .tagwahl select { flex: 1 1 12ch; min-width: 0; min-height: var(--tap); padding: 0 var(--v2); border: 1px solid var(--linie); border-radius: var(--radius); background: var(--karte); color: var(--tinte); font: inherit; font-size: var(--t-klein); }
+.tage .tagwahl .portionen { width: 5ch; min-height: var(--tap); padding: 0 var(--v2); border: 1px solid var(--linie); border-radius: var(--radius); background: var(--karte); color: var(--tinte); font: inherit; }
+.tage .zeile.auswaerts .name { color: var(--gedaempft); font-style: italic; }
+.tage .zeile > .stellen { flex-wrap: wrap; justify-content: flex-end; }
+.einkauf .zeile.gedeckt .name { color: var(--gedaempft); text-decoration: line-through; }
+.planliste .summe { text-align: left; }
+.planliste .sammel { margin-top: var(--v3); }
+
+/* Die zwei Belege des Plans — kcal je Portion und „gedeckt" — sind das, worum
+   es geht, und standen in Fein-Schrift (13 px): im Video auf Feedbreite nicht
+   zu lesen (06.09., Einzelbilder des Schnitts). Eine Stufe grösser. */
+.tage .hinweis.naehrwert { font-size: var(--t-klein); color: var(--tinte); }
+.einkauf .zeile .hinweis.eben, .einkauf .zeile .hinweis.gebraucht { font-size: var(--t-klein); }
+.naehrwert-woche { margin-top: var(--v2); }

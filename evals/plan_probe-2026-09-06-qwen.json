@@ -1,0 +1,462 @@
+[
+ {
+  "szenario": "A",
+  "rahmen": {
+   "tage": "3",
+   "personen": "2",
+   "max_minuten": "40",
+   "bestand": "500 g Kartoffeln, 6 Eier"
+  },
+  "fehler": null,
+  "dauer_s": 7.3,
+  "offen": 3,
+  "vorgelegt": 3,
+  "belegt": 3,
+  "verworfen": 0,
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-07",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "Verbraucht die Eier und passt zeitlich in die 40-Minuten-Grenze.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-08",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "Bietet Abwechslung zum Pasta-Gericht und nutzt den Hackfleisch-Bestand.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-09",
+    "rezept": "Spanische Churros ohne Ei",
+    "minuten": 40,
+    "grund": "Ei-freies Gericht, das die verbleibenden Kartoffeln nicht benötigt, aber als Dessert/Beilage Abwechslung schafft.",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Kartoffeln",
+    "menge": 500.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Eier",
+    "menge": 6.0,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 11,
+   "gedeckt": 1,
+   "ohne_produkt": 1,
+   "n_rest": 12,
+   "preis_cents": 3605,
+   "ohne_preis": 1,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 3,
+   "belegt": 3,
+   "auswaerts": 0,
+   "offen": 3,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 100,
+   "kochzeit_satz": "1 Stunde 40 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 11,
+   "gedeckt": 1,
+   "ohne_produkt": 1
+  },
+  "labels": 4,
+  "span_id": "97ce6632691bac2c",
+  "modell": "Qwen3.8-27B-Instruct"
+ },
+ {
+  "szenario": "B",
+  "rahmen": {
+   "tage": "5",
+   "personen": "4",
+   "budget": "60"
+  },
+  "fehler": null,
+  "dauer_s": 12.2,
+  "offen": 5,
+  "vorgelegt": 19,
+  "belegt": 5,
+  "verworfen": 0,
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-07",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "Passt als Suppe für 4 Personen und nutzt Hackfleisch, das auch in ID 16 vorkommt.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-08",
+    "rezept": "Mama Marias Lasagne alla Bolognese",
+    "minuten": 150,
+    "grund": "Hauptgericht für 6 Portionen (reicht für 4), teilt Zwiebeln und Hackfleisch mit ID 3.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-09",
+    "rezept": "Paella mit Meeresfrüchten",
+    "minuten": 55,
+    "grund": "Abwechslungsreiches Gericht für 4 Personen, teilt Zwiebeln und Paprika mit ID 4.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-10",
+    "rezept": "Ratatouille",
+    "minuten": 65,
+    "grund": "Vegetarisches Gericht für 4 Personen, teilt Paprika und Zwiebeln mit ID 32.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-11",
+    "rezept": "Caesar's Salad mit Parmesan - Croûtons",
+    "minuten": 45,
+    "grund": "Leichtes Salatgericht für 4 Personen, nutzt Parmesan, das auch in ID 16 vorkommt.",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [],
+  "liste": {
+   "zu_kaufen": 43,
+   "gedeckt": 0,
+   "ohne_produkt": 10,
+   "n_rest": 34,
+   "preis_cents": 13314,
+   "ohne_preis": 10,
+   "budget_ueber": 7314
+  },
+  "zusammenfassung": {
+   "tage": 5,
+   "belegt": 5,
+   "auswaerts": 0,
+   "offen": 5,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 350,
+   "kochzeit_satz": "5 Stunden 50 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 43,
+   "gedeckt": 0,
+   "ohne_produkt": 10
+  },
+  "labels": 6,
+  "span_id": "2b3fa75869384060",
+  "modell": "Qwen3.8-27B-Instruct"
+ },
+ {
+  "szenario": "C",
+  "rahmen": {
+   "tage": "4",
+   "personen": "2",
+   "bestand": "Nudeln, 200 g Parmesan",
+   "auswaerts": 1
+  },
+  "fehler": null,
+  "dauer_s": 5.3,
+  "offen": 3,
+  "vorgelegt": 19,
+  "belegt": 3,
+  "verworfen": 0,
+  "vorgewaermt": 1,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-07",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "Verbraucht die Nudeln und den Parmesan und ist exakt für 2 Personen ausgelegt.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-08",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": true
+   },
+   {
+    "datum": "2026-09-09",
+    "rezept": "Caesar's Salad mit Parmesan - Croûtons",
+    "minuten": 45,
+    "grund": "Verbraucht den restlichen Parmesan und bietet eine leichte Abwechslung nach dem Pasta-Gericht.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-10",
+    "rezept": "Spaghetti del Mare",
+    "minuten": 53,
+    "grund": "Bietet Abwechslung mit Meeresfrüchten und nutzt Spaghetti, was zur Pasta-Präferenz passt.",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Nudeln",
+    "menge": null,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Parmesan",
+    "menge": 200.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 22,
+   "gedeckt": 0,
+   "ohne_produkt": 6,
+   "n_rest": 18,
+   "preis_cents": 7561,
+   "ohne_preis": 6,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 4,
+   "belegt": 3,
+   "auswaerts": 1,
+   "offen": 3,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 123,
+   "kochzeit_satz": "2 Stunden 3 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 22,
+   "gedeckt": 0,
+   "ohne_produkt": 6
+  },
+  "labels": 4,
+  "span_id": "640b5fb08e69ab76",
+  "modell": "Qwen3.8-27B-Instruct"
+ },
+ {
+  "szenario": "D",
+  "rahmen": {
+   "tage": "3",
+   "personen": "2",
+   "max_minuten": "40",
+   "bestand": "500 g Kartoffeln, 6 Eier",
+   "neuplanung": 0
+  },
+  "fehler": null,
+  "dauer_s": 7.3,
+  "offen": 3,
+  "vorgelegt": 3,
+  "belegt": 3,
+  "verworfen": 0,
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "neuplanung": {
+   "dauer_s": 0.5,
+   "offen": 1,
+   "belegt": 0,
+   "verworfen": 0,
+   "abgelehnt_wieder_gewaehlt": false
+  },
+  "tage": [
+   {
+    "datum": "2026-09-07",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "Verbraucht die Eier und passt zeitlich in die 40-Minuten-Grenze.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-08",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "Bietet Abwechslung zum Pasta-Gericht und nutzt den Hackfleisch-Bestand.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-09",
+    "rezept": "Spanische Churros ohne Ei",
+    "minuten": 40,
+    "grund": "Ei-freies Gericht, das die verbleibenden Kartoffeln nicht benötigt, aber als Dessert/Beilage Abwechslung schafft.",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Kartoffeln",
+    "menge": 500.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Eier",
+    "menge": 6.0,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 7,
+   "gedeckt": 0,
+   "ohne_produkt": 0,
+   "n_rest": 7,
+   "preis_cents": 2118,
+   "ohne_preis": 0,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 3,
+   "belegt": 3,
+   "auswaerts": 0,
+   "offen": 0,
+   "behalten": 2,
+   "verworfen": 1,
+   "kochzeit": 100,
+   "kochzeit_satz": "1 Stunde 40 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 7,
+   "gedeckt": 0,
+   "ohne_produkt": 0
+  },
+  "labels": 4,
+  "span_id": "a543fdfff517b84b",
+  "modell": "Qwen3.8-27B-Instruct"
+ },
+ {
+  "szenario": "E",
+  "rahmen": {
+   "tage": "7",
+   "personen": "2",
+   "max_minuten": "30"
+  },
+  "fehler": null,
+  "dauer_s": 3.6,
+  "offen": 7,
+  "vorgelegt": 1,
+  "belegt": 1,
+  "verworfen": 0,
+  "vorgewaermt": 1,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-07",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "Einziges verfügbares Gericht, das die Zeitvorgabe einhält und für 2 Personen reicht.",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-08",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-09",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-10",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-11",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   }
+  ],
+  "bestand": [],
+  "liste": {
+   "zu_kaufen": 5,
+   "gedeckt": 0,
+   "ohne_produkt": 1,
+   "n_rest": 5,
+   "preis_cents": 1736,
+   "ohne_preis": 1,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 7,
+   "belegt": 1,
+   "auswaerts": 0,
+   "offen": 1,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 25,
+   "kochzeit_satz": "25 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 5,
+   "gedeckt": 0,
+   "ohne_produkt": 1
+  },
+  "labels": 2,
+  "span_id": "d3ad2409bbe8faeb",
+  "modell": "Qwen3.8-27B-Instruct"
+ }
+]

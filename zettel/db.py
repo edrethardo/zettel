@@ -834,6 +834,77 @@ SCHEMA = [
         gesehen_at        TEXT
     )
     """,
+    # Der Wochenplan (2026-09-06-wochenplan-design.md, Abschnitt 6). Drei
+    # Tabellen, so klein wie möglich — und KEINE, in der ein Vorrat über den
+    # Plan hinaus lebt: der Bestand hängt am Plan (ON DELETE CASCADE) und ist
+    # ein erklärter Rahmen zu diesem Zug, kein geführter Lagerstand. Was der
+    # Bon vorschlägt (`herkunft = 'aus_bon'`), gilt erst mit `kept`.
+    #
+    # `status` ist `entwurf` oder `im_korb` — nicht „bestellt": bestellt ist
+    # der Korb, und den kennt `orders`. Der Plan sagt nur, dass seine Liste
+    # übergeben wurde; `order_id` sagt, wohin.
+    """
+    CREATE TABLE IF NOT EXISTS plan (
+        id           INTEGER PRIMARY KEY,
+        created_at   TEXT NOT NULL,
+        -- Das Datum von Tag 1 (ISO). Die Tage hängen mit `pos` daran.
+        von          TEXT NOT NULL,
+        tage         INTEGER NOT NULL,
+        personen     INTEGER,
+        max_minuten  INTEGER,
+        budget_cents INTEGER,
+        -- kcal je Person und Tag als Ziel — verglichen, nie verrechnet.
+        kcal_ziel    INTEGER,
+        -- Was eingegeben wurde, wörtlich — daneben die gelesenen Zahlen.
+        rahmen_text  TEXT,
+        status       TEXT NOT NULL DEFAULT 'entwurf'
+                         CHECK (status IN ('entwurf', 'im_korb')),
+        span_id      TEXT,
+        order_id     INTEGER REFERENCES orders(id) ON DELETE SET NULL
+    )
+    """,
+    # Ein Tag des Plans. `recipe_id` ist nullable: leer heisst „noch nichts",
+    # `auswaerts = 1` heisst „an diesem Tag wird nicht gekocht". `grund` ist
+    # der EINE Satz des Modells zu seiner Wahl — Text, keine Zahl; jede Zahl
+    # am Plan ist gerechnet. `decision` wie überall: `offen`/`kept`/`removed`,
+    # und je Tag ist das zugleich das Eval-Label.
+    """
+    CREATE TABLE IF NOT EXISTS plan_tag (
+        id         INTEGER PRIMARY KEY,
+        plan_id    INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+        pos        INTEGER NOT NULL,
+        datum      TEXT NOT NULL,
+        recipe_id  INTEGER REFERENCES recipe(id) ON DELETE SET NULL,
+        portionen  INTEGER,
+        auswaerts  INTEGER NOT NULL DEFAULT 0,
+        grund      TEXT,
+        decision   TEXT NOT NULL DEFAULT 'offen'
+                       CHECK (decision IN ('offen', 'kept', 'removed')),
+        decided_at TEXT,
+        UNIQUE (plan_id, pos)
+    )
+    """,
+    # Der erklärte Bestand zu EINEM Plan. `herkunft = 'erklaert'` hat ein
+    # Mensch hingeschrieben (und ist damit `kept`); `aus_bon` hat der Bon
+    # vorgeschlagen und wartet auf ein Ja. `receipt_item_id` sagt, welcher
+    # Kauf das war — ON DELETE SET NULL, denn die Zeile hier ist die Aussage
+    # „ist noch da", nicht der Kauf.
+    """
+    CREATE TABLE IF NOT EXISTS plan_bestand (
+        id              INTEGER PRIMARY KEY,
+        plan_id         INTEGER NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+        product_id      INTEGER REFERENCES product(id) ON DELETE SET NULL,
+        name            TEXT NOT NULL,
+        menge           REAL,
+        einheit         TEXT,
+        herkunft        TEXT NOT NULL
+                            CHECK (herkunft IN ('erklaert', 'aus_bon')),
+        receipt_item_id INTEGER REFERENCES receipt_item(id) ON DELETE SET NULL,
+        decision        TEXT NOT NULL DEFAULT 'offen'
+                            CHECK (decision IN ('offen', 'kept', 'removed')),
+        decided_at      TEXT
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS scrape_run (
         id          INTEGER PRIMARY KEY,
@@ -938,6 +1009,7 @@ TABLES = (
     "chat_message", "chat_suggestion", "chat_kandidat", "chat_sorte",
     "chat_entwurf", "chat_rezept",
     "receipt", "receipt_item",
+    "plan", "plan_tag", "plan_bestand",
     "scrape_run", "product_fts",
 )
 
@@ -1019,6 +1091,10 @@ NACHGETRAGENE_SPALTEN = (
     # mit einer Bonzeile, mit Open Food Facts, mit demselben Artikel bei einem
     # anderen Händler.
     ("product", "ean", "TEXT"),
+    # 2026-09-06 (Abend): das Kalorienziel am Wochenplan. Die Tabelle war
+    # am selben Tag entstanden; eine Datenbank vom Nachmittag hat sie ohne
+    # die Spalte.
+    ("plan", "kcal_ziel", "INTEGER"),
     # WB-359: die Korrektur und der Hinweis, dass nur der allgemeinste
     # Kettenbegriff etwas gefunden hat.
     ("chat_suggestion", "corrected_from",

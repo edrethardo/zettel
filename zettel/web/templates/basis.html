@@ -57,7 +57,7 @@
      dieser Seiten ist „Mehr" der markierte Reiter; ein Reiter, der auf
      /rezepte nirgends leuchtet, sagt „du bist nirgends". #}
   {%- set ns = namespace(mehr=false) %}
-  {%- for p in ["/mehr", "/rezepte", "/bestellungen", "/bons", "/status", "/rolle"] %}
+  {%- for p in ["/mehr", "/plan", "/rezepte", "/bestellungen", "/bons", "/status", "/rolle"] %}
   {%- if hier == p or hier.startswith(p ~ "/") %}{% set ns.mehr = true %}{% endif %}
   {%- endfor %}
   <header class="kopf">

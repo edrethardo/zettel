@@ -216,12 +216,12 @@ def test_die_leiste_hat_fuenf_reiter_und_liegt_unter_dem_blatt(client):
 
 
 def test_mehr_sammelt_was_keinen_reiter_hat(client):
-    """Rezepte, Bestellungen, Bons — und darunter, leiser, Rolle und Status:
-    die Fusszeile aus Welle 1 geht in dieser Seite auf."""
+    """Wochenplan, Rezepte, Bestellungen, Bons — und darunter, leiser, Rolle
+    und Status: die Fusszeile aus Welle 1 geht in dieser Seite auf."""
     text = client.get("/mehr").text
     seite = text.split("<main>", 1)[1].split("</main>", 1)[0]
     assert re.findall(r'<a href="([^"]+)"', seite) == [
-        "/rezepte", "/bestellungen", "/bons", "/rolle", "/status"]
+        "/plan", "/rezepte", "/bestellungen", "/bons", "/rolle", "/status"]
 
 
 def test_eine_seite_unter_mehr_markiert_den_reiter_mehr(client):
@@ -583,7 +583,14 @@ def test_der_primaere_knopf_ist_genau_eine_regel():
     gefuellt = sorted(sel.strip() for sel, dekl in _bloecke(stil)
                       if ("button" in sel or ".gross" in sel or ".knopf" in sel)
                       and re.search(r"background: var\(--akzent\)\s*;", dekl))
-    assert gefuellt == [".abschicken .gross, .chatform button, .bonupload button"]
+    # Seit dem Wochenplan (06.09.) stehen drei weitere Selektoren in
+    # DERSELBEN Regel — Plan anlegen, Woche planen, Einkaufsliste in den
+    # Korb: je Seite die eine Handlung, für die sie da ist. Eine Regel
+    # bleibt es; der Trockenlauf des Drehs hatte „Plan anlegen" ohne die
+    # Füllung nicht gefunden.
+    assert gefuellt == [".abschicken .gross, .chatform button, .bonupload button,\n"
+                        ".planformular .knopf, .plankopf .planen .knopf, "
+                        ".planliste .sammel .knopf"]
 
 
 def test_der_sekundaere_knopf_ist_genau_eine_regel():
