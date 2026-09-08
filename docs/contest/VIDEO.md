@@ -324,6 +324,13 @@ vom Morgen (`take_lang_nemotron2`, `take_handy_nemotron`) bleiben.
 | `zettel_linkedin_nemotron.mp4` | Hochkant, **44,3 s**: 40,8 s Clip mit drei Textkarten, 3,5 s Endcard |
 | `thumbnail.png` | = Titelkarte (Antwortmoment, GPU 100 %, Satz darüber) — als Vorschaubild hochladen |
 
+**Neu gerendert am 08.09.**, weil die Endcard „1,364 tests" sagte und Sprache
+und Wochenplan die Testzahl auf **1.480** gehoben haben. Nur die eine Zeile in
+`endcard.py` geändert, dann `schnitt.py take_lang_nemotron2
+github.com/edrethardo/zettel` — derselbe Take, dieselben 90,9 s, dieselben
+Untertitel (`.srt` byteweise gleich). Wer die Zahl wieder anfasst, muss den
+Schnitt neu laufen lassen, sonst widersprechen sich Video und Doku.
+
 Was sich geändert hat, und warum:
 
 * **Titelkarte statt Schwarz.** `VORLAUF` ist weg; `titelkarte.py` nimmt das
@@ -656,7 +663,7 @@ zeigt, und die Alternativen stehen im Bild auch ohne eigenes Verweilen.
 > Phoenix, evaluated across 64 dishes, zero cloud, zero API keys.*
 >
 > FastAPI · SQLite FTS5 · vLLM (Nemotron 3.5 Lightning 30B-A3B, W4A16 · Qwen3.8-27B as reference) · OpenTelemetry → Arize Phoenix
-> 128 dishes: **85 %** of ingredients found, 87 % / 89 % per dish · 6 s per dish · the 27B reference: 87 %, three times slower · 1,364 tests · 79 checks
+> 128 dishes: **85 %** of ingredients found, 87 % / 89 % per dish · 6 s per dish · the 27B reference: 87 %, three times slower · 1,480 tests · 79 checks
 > Repo: `github.com/edrethardo/zettel`
 
 (Seit 05.09.: das Video zeigt Nemotron 3.5 — Aarons Entscheidung nach Lauf 3

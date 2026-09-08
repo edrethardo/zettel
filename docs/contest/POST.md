@@ -18,8 +18,11 @@ Checkliste vor dem Absenden:
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
-- [ ] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      die 1,364/79 sind vom 2026-09-04 und wachsen weiter
+- [ ] Wochenplan-Film als **zweiter** Kommentar (Wortlaut unten) — der native
+      Upload gehört dem Chat-Zug, LinkedIn zeigt nur einen nativen Film je Post
+- [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
+      1.480 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-08; sie
+      wachsen weiter, also vor dem Absenden noch einmal
 
 ---
 
@@ -33,13 +36,15 @@ Not a prompt wrapper, not an orchestra either: two model calls with a database s
 
 3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
+The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured 2026-09-06 against the real database, 5 scenarios: rejected 0 in all six turns, 3–14 s per week. Every Yes/No on a day goes back to the `plan.woche` span as a label.
+
 Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
 – Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
 – Qwen3.8-27B reference, AWQ 4-bit: 87 %, 20 s
 – Llama-Nemotron-Nano-8B (first 64 dishes): median 0 % per dish. That number stays in the docs next to the wins.
 The 3× speed is not tok/s — those are nearly identical. The 3B-active model generates about a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
 
-Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,364 tests and a 79-check gate that blocks the network at socket level.
+Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,480 tests and a 79-check gate that blocks the network at socket level.
 
 Works for any agent that picks rows from a database you own — tickets, documents, accounts. Three code locations:
 Pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
@@ -64,6 +69,18 @@ dort), Wortlaut:
 
 Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
 `docs/images/modelle-128.png`. Dann eine Stunde antworten.
+
+**Zweiter Kommentar — der Wochenplan-Film (08.09.).** Der Absatz über die
+Woche steht im Post; der Film dazu gehört in einen eigenen Kommentar, damit
+der native Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film
+je Post). `take_plan_2026-09-06d_final.mp4` — 101 s, quer, Titelkarte, P1–P7,
+Endcard. Wer lieber hochkant kommentiert: `zettel_linkedin_plan_2026-09-06.mp4`
+(72,6 s, englische Karten) — die deutsche Fassung `…_de.mp4` liegt daneben und
+ist nur für einen deutschsprachigen Kanal gedacht. Ein Satz dazu, Vorschlag:
+
+> One level up, same three rules: a week of dinners in, one shopping list out,
+> minus what the receipt says is still there. The model assigns dishes to
+> days and writes one sentence per day; every number on the plan is computed.
 
 **Zugeschnitten auf die Jurorin (05.09.):** ihr Vokabular (prompt wrapper,
 layer, observability, production), nicht ihre Sätze; das nummerierte

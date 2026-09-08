@@ -112,8 +112,8 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.364 Tests, rund 45 s
-.venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 20 s
+.venv/bin/python -m pytest -q        # 1.480 Tests, rund 95 s
+.venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
 ```
 
 Beides ohne Netz, ohne Modell, ohne Phoenix — und im Fall des Gates ist das
