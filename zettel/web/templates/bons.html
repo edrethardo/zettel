@@ -1,7 +1,7 @@
 {% extends "basis.html" %}
-{% block titel %}Bons — Zettel{% endblock %}
+{% block titel %}{{ t('bons.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Kassenbons</h1>
+<h1>{{ t('bons.ueberschrift') }}</h1>
 
 {# Kein hx-post: ein Datei-Upload über HTMX braucht JavaScript-Konfiguration
    und bringt hier nichts — das Formular schickt eine Datei und lädt danach
@@ -12,11 +12,11 @@
      ausdrücklich KEINE Prüfung — die passiert am Inhalt, im Server. #}
   <input type="file" name="datei" id="bondatei"
          accept="image/png,image/jpeg,image/heic,image/heif,application/pdf,image/*"
-         aria-label="Bon auswählen">
-  <button type="submit">Hochladen</button>
+         aria-label="{{ t('bons.datei_label') }}">
+  <button type="submit">{{ t('bons.hochladen') }}</button>
 </form>
 
-<p class="fussnote">{{ erlaubt }}, bis {{ max_mb }} MB.</p>
+<p class="fussnote">{{ t('bons.grenzen', erlaubt=erlaubt, mb=max_mb) }}</p>
 
 {% if not ocr_da %}
 {# Keine Fehlermeldung, sondern eine Auskunft: ein Bild-Bon ist nicht kaputt,
@@ -30,19 +30,18 @@
 {% endif %}
 
 {% if neu %}
-<p class="fertig" role="status">Gespeichert als {{ neu }}.</p>
+<p class="fertig" role="status">{{ t('bons.gespeichert', name=neu) }}</p>
 {% endif %}
 
 {% if weg %}
 {# Die Meldung nach dem Löschen (WB-376). Eine Liste, die einfach kürzer
    geworden ist, sagt nicht, ob der richtige Bon getroffen wurde — und der
    Löschknopf sitzt am Telefon direkt neben dem harmlosen. #}
-<p class="fertig" role="status">{{ weg }} ist gelöscht. Die ausgelesenen
-  Käufe stehen weiter in der Historie.</p>
+<p class="fertig" role="status">{{ t('bons.geloescht', name=weg) }}</p>
 {% endif %}
 
 {% if not bons %}
-  <p class="leer">Noch kein Bon hochgeladen.</p>
+  <p class="leer">{{ t('bons.leer') }}</p>
 {% else %}
 <ul class="bons">
   {% for b in bons %}
@@ -55,17 +54,17 @@
       <span class="menge">{{ b.datum_text }} · {{ b.groesse_text }}</span>
       <span class="woher">
         {% if b.lauf and b.lauf.laeuft %}
-          wird ausgelesen — {{ b.lauf.schritt }}
+          {{ t('bons.wird_ausgelesen', schritt=b.lauf.schritt) }}
         {% elif b.lauf and b.lauf.fehler %}
-          nicht gelesen: {{ b.lauf.meldung }}
+          {{ t('bons.nicht_gelesen', meldung=b.lauf.meldung) }}
         {% elif b.beleg %}
-          {{ laden_titel[b.beleg.store] }} · {{ b.beleg.bought_on or "ohne Datum" }} ·
-          {{ b.beleg.n_posten }} Posten, {{ b.beleg.n_bestaetigt }} bestätigt,
-          {{ b.beleg.n_offen }} offen
+          {{ laden_titel[b.beleg.store] }} · {{ b.beleg.bought_on or t('bons.ohne_datum') }} ·
+          {{ t('bons.beleg_zahlen', posten=b.beleg.n_posten, bestaetigt=b.beleg.n_bestaetigt,
+              offen=b.beleg.n_offen) }}
         {% elif not b.lesbar %}
-          Bild — dafür fehlt OCR auf dieser Maschine
+          {{ t('bons.ocr_fehlt') }}
         {% else %}
-          noch nicht ausgelesen
+          {{ t('bons.noch_nicht') }}
         {% endif %}
       </span>
     </span>
@@ -83,14 +82,15 @@
            Rückfrage, die die Zahl nennt — ein Link, kein Formular: der GET
            liest nur. #}
         <a class="mini" href="/bons/{{ b.name | urlencode }}/auslesen"
-           aria-label="{{ b.name }} neu lesen — fragt vorher nach">neu lesen</a>
+           aria-label="{{ t('bons.neu_lesen_label', name=b.name) }}">{{ t('allgemein.neu_lesen') }}</a>
         {% else %}
         {# Beim ersten Lesen geht nichts verloren, also auch keine Rückfrage.
            Eigenes Formular je Zeile, damit ohne JavaScript genau der eine Bon
            gemeint ist, dessen Knopf getroffen wurde. #}
         <form method="post" action="/bons/{{ b.name | urlencode }}/auslesen">
           <button type="submit" class="mini"
-                  aria-label="{{ b.name }} auslesen">Auslesen</button>
+                  aria-label="{{ t('bons.auslesen_label',
+                      name=b.name) }}">{{ t('allgemein.auslesen') }}</button>
         </form>
         {% endif %}
       {% else %}
@@ -99,14 +99,12 @@
       {# Löschen ist endgültig — es gibt keine zweite Kopie der Datei. Der
          Link führt auf die Rückfrage, gelöscht wird erst dort per POST. #}
       <a class="mini loeschen" href="/bons/{{ b.name | urlencode }}/loeschen"
-         aria-label="{{ b.name }} löschen — fragt vorher nach">×</a>
+         aria-label="{{ t('bons.loeschen_label', name=b.name) }}">×</a>
     </span>
   </li>
   {% endfor %}
 </ul>
 {% endif %}
 
-<p class="fussnote">
-  Ausgelesen werden Laden, Datum, Artikel, Menge und Preis — und sonst nichts.
-</p>
+<p class="fussnote">{{ t('bons.was_ausgelesen') }}</p>
 {% endblock %}

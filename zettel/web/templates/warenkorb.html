@@ -1,10 +1,10 @@
 {% extends "basis.html" %}
-{% block titel %}Warenkorb — Zettel{% endblock %}
+{% block titel %}{{ t('warenkorb.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Warenkorb</h1>
+<h1>{{ t('warenkorb.titel') }}</h1>
 {# Ein Korb für beide (Spec 4). Der Satz steht hier, weil sonst jemand nach
    „seinem" Korb sucht und ihn nicht findet. #}
-<p class="fussnote">Ein gemeinsamer Korb — was hier steht, sieht auch der andere.</p>
+<p class="fussnote">{{ t('warenkorb.gemeinsam') }}</p>
 
 {# Seit WB-382 steht hier der KORB und nicht mehr der Chatverlauf dazu. Die
    alte Fassung von Spec 9 sagte „Chat — gehört zum Warenkorb, kein eigener
@@ -22,7 +22,7 @@
 
 {% if posten %}
 <p class="korbbruecke unten">
-  <a class="knopf mini" href="/chat">Noch etwas? Sag es im Chat</a>
+  <a class="knopf mini" href="/chat">{{ t('warenkorb.noch_etwas') }}</a>
 </p>
 {% endif %}
 {% endblock %}

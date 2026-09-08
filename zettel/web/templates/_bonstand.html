@@ -20,7 +20,7 @@
    hx-get="/bons/{{ name | urlencode }}/stand"
    hx-trigger="load delay:{{ nachfrage_s }}s"
    hx-target="#beleg" hx-swap="innerHTML">
-  Wird ausgelesen — {{ lauf.schritt }} … ({{ "%.0f" | format(lauf.seit_s) }} s)
+  {{ t('bonstand.laeuft', schritt=lauf.schritt, s="%.0f" | format(lauf.seit_s)) }}
 </p>
 {% elif lauf and lauf.fehler %}
 <p class="fehler" role="status">{{ lauf.meldung }}</p>
@@ -32,9 +32,9 @@
   {% if not (lauf and lauf.laeuft) %}
   {# Ein `div` und kein `p`: ein Formular in einem Absatz schliesst den Absatz
      im Browser vorzeitig, und der Knopf stand danach ausserhalb der Karte. #}
-  <div class="leer">Dieser Bon ist noch nicht ausgelesen.
+  <div class="leer">{{ t('bonstand.nicht_ausgelesen') }}
     <form method="post" action="/bons/{{ name | urlencode }}/auslesen">
-      <button type="submit" class="mini">Auslesen</button>
+      <button type="submit" class="mini">{{ t('allgemein.auslesen') }}</button>
     </form>
   </div>
   {% endif %}
@@ -42,16 +42,15 @@
 
 <p class="fussnote">
   {{ laden_titel[beleg.store] or beleg.store }}
-  · Einkauf am {{ beleg.bought_on or "unbekannt" }}
-  · Bon-Summe {{ beleg.total_cents | euro }}
-  · erkannte Posten {{ bilanz.summe_posten_cents | euro }}
+  · {{ t('bonstand.einkauf_am', datum=beleg.bought_on or t('bonstand.unbekannt')) }}
+  · {{ t('bonstand.bon_summe', summe=beleg.total_cents | euro) }}
+  · {{ t('bonstand.erkannte_posten', summe=bilanz.summe_posten_cents | euro) }}
   {# Die Differenz ist Pfand und alles, was die Zerlegung übersehen hat. Sie
      wird gezeigt und nicht weggerechnet: eine einzelne Zahl könnte nicht
      sagen, welches von beidem es war. #}
 </p>
 <p class="fussnote">
-  {{ bilanz.bestaetigt }} bestätigt · {{ bilanz.verworfen }} verworfen ·
-  {{ bilanz.offen }} offen
+  {{ t('bonstand.bilanz', bestaetigt=bilanz.bestaetigt, verworfen=bilanz.verworfen, offen=bilanz.offen) }}
 </p>
 
 {# „Neu lesen" gehört auch hierher und nicht nur in die Liste: hier sieht man,
@@ -60,7 +59,7 @@
    startet kein Lauf mit einem Tipp. #}
 <p class="fussnote">
   <a class="mini" href="/bons/{{ name | urlencode }}/auslesen"
-     aria-label="{{ name }} neu lesen — fragt vorher nach">neu lesen</a>
+     aria-label="{{ t('bons.neu_lesen_label', name=name) }}">{{ t('allgemein.neu_lesen') }}</a>
 </p>
 
 <ul class="vorschlaege">
@@ -77,25 +76,24 @@
       {# Der Bon-Text steht oben und wird NICHT durch den Produktnamen
          ersetzt: bestätigt wird die Verbindung zwischen beiden, und dafür
          muss man beide sehen. #}
-      <span class="name">{{ z.qty }} × {{ z.bon_text }}
-        — {{ z.total_cents | euro }}</span>
+      <span class="name">{{ t('bonstand.zeile_name', n=z.qty, text=z.bon_text,
+          preis=z.total_cents | euro) }}</span>
       <span class="menge">
         {% if z.produkt_fehlt %}
-          keinem Katalogprodukt zugeordnet
+          {{ t('bonstand.ohne_produkt') }}
         {% else %}
           → {{ z.produkt_name }}{% if z.unit_text %} · {{ z.unit_text }}{% endif %}
-          · Katalogpreis {{ z.price_cents | euro }}
+          · {{ t('bonstand.katalogpreis', preis=z.price_cents | euro) }}
         {% endif %}
-        {% if z.unit_cents %} · Einzelpreis {{ z.unit_cents | euro }}{% endif %}
+        {% if z.unit_cents %} · {{ t('bonstand.einzelpreis', preis=z.unit_cents | euro) }}{% endif %}
       </span>
       <span class="woher">
         {{ z.note or "—" }}
-        {%- if z.search_term %} · gesucht „{{ z.search_term }}“{% endif %}
-        {%- if z.rang is not none %} · Rang {{ "%.1f" | format(z.rang) }}{% endif %}
+        {%- if z.search_term %} · {{ t('bonstand.gesucht', begriff=z.search_term) }}{% endif %}
+        {%- if z.rang is not none %} · {{ t('bonstand.rang', rang="%.1f" | format(z.rang)) }}{% endif %}
       </span>
       {% if z.nicht_im_katalog %}
-      <span class="ausgemustert">Nicht mehr im Katalog — der Kauf gilt
-        trotzdem.</span>
+      <span class="ausgemustert">{{ t('bonstand.ausgemustert') }}</span>
       {% endif %}
     </span>
     <span class="stellen">
@@ -105,19 +103,20 @@
               hx-post="/bons/posten/{{ z.id }}/entscheiden?decision=kept"
               hx-target="#beleg" hx-swap="innerHTML">
           <button class="mini ja" type="submit"
-                  aria-label="{{ z.bon_text }} bestätigen">Ja</button>
+                  aria-label="{{ t('bonstand.ja_label', text=z.bon_text) }}">{{ t('allgemein.ja') }}</button>
         </form>
         {% endif %}
         <form method="post" action="/bons/posten/{{ z.id }}/entscheiden?decision=removed"
               hx-post="/bons/posten/{{ z.id }}/entscheiden?decision=removed"
               hx-target="#beleg" hx-swap="innerHTML">
           <button class="mini nein" type="submit"
-                  aria-label="{{ z.bon_text }} verwerfen">Nein</button>
+                  aria-label="{{ t('bonstand.nein_label',
+                      text=z.bon_text) }}">{{ t('allgemein.nein') }}</button>
         </form>
       {% elif z.bestaetigt %}
-        <span class="marke ja">bestätigt</span>
+        <span class="marke ja">{{ t('bonstand.bestaetigt') }}</span>
       {% else %}
-        <span class="marke nein">verworfen</span>
+        <span class="marke nein">{{ t('allgemein.verworfen') }}</span>
       {% endif %}
       {# „Anders zuordnen" steht auch an einer entschiedenen Zeile: eine
          Korrektur muss möglich bleiben, nachdem man zu schnell „Ja" getippt
@@ -125,7 +124,8 @@
       <button class="mini" type="button"
               hx-get="/bons/posten/{{ z.id }}/suche"
               hx-target="#korrektur-{{ z.id }}" hx-swap="innerHTML"
-              aria-label="{{ z.bon_text }} anders zuordnen">anders</button>
+              aria-label="{{ t('bonstand.anders_label',
+                  text=z.bon_text) }}">{{ t('bonstand.anders') }}</button>
     </span>
     <div class="korrektur" id="korrektur-{{ z.id }}"></div>
   </li>

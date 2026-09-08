@@ -21,8 +21,5 @@
    mit dem alten Halbsatz über einer offenen Zeile. #}
 {%- set offen_drin = m.vorschlaege | selectattr("offen") | list %}
 <p class="band zugband" id="quittungsband-{{ m.id }}" role="status"
-   {%- if oob %} hx-swap-oob="true"{% endif %}>Vom vorigen Rezept bleibt,
-  was du entschieden hattest — und was schon einmal im Korb lag.
-  <span class="fussnote">Der Vorschlag selbst ist ersetzt{% if not offen_drin %},
-    seine unberührten Zeilen sind weg{% endif %}. Was du bestätigt hast,
-    liegt im Korb.</span></p>
+   {%- if oob %} hx-swap-oob="true"{% endif %}>{{ t('quittungsband.satz') }}
+  <span class="fussnote">{%- if offen_drin %}{{ t('quittungsband.fussnote_offen') }}{%- else %}{{ t('quittungsband.fussnote_weg') }}{% endif %}</span></p>

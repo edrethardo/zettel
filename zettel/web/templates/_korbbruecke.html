@@ -15,11 +15,10 @@
    Der leere Korb bekommt keinen Knopf, sondern einen Satz: ein Link auf eine
    leere Liste ist eine Sackgasse mit Einladung. #}
 {% if korb_anzahl %}
-{%- set was = "Sache" if korb_anzahl == 1 else "Sachen" %}
 <p class="korbbruecke" role="status">
-  <a class="knopf mini" href="/warenkorb">{{ korb_anzahl }} {{ was }} im Korb — ansehen</a>
+  <a class="knopf mini" href="/warenkorb">{%- if korb_anzahl == 1 %}{{ t('korbbruecke.eins',
+      n=korb_anzahl) }}{%- else %}{{ t('korbbruecke.mehrere', n=korb_anzahl) }}{% endif %}</a>
 </p>
 {% else %}
-<p class="korbbruecke leer-still">Noch nichts im Korb. Was du hier mit „Ja"
-  bestätigst, landet dort.</p>
+<p class="korbbruecke leer-still">{{ t('korbbruecke.leer') | safe }}</p>
 {% endif %}

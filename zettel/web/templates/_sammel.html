@@ -25,7 +25,7 @@
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}"
         hx-disabled-elt="find button">
-    <button class="mini" type="submit">Alles übernehmen</button>
+    <button class="mini" type="submit">{{ t('sammel.alles_uebernehmen') }}</button>
   </form>
   <form method="post" action="/chat/{{ m.id }}/alle?decision=removed"
         hx-post="/chat/{{ m.id }}/alle?decision=removed"
@@ -39,7 +39,7 @@
        Zeilen in den Korb legt und der andere fünfzehn wegwirft. Nur die
        Schriftfarbe, keine Füllung: die Füllung gehört dem Zustand, und der
        Knopf steht an jedem noch offenen Zug. #}
-    <button class="mini loeschen" type="submit">Alles verwerfen</button>
+    <button class="mini loeschen" type="submit">{{ t('sammel.alles_verwerfen') }}</button>
   </form>
 </div>
 {% endif %}
@@ -57,9 +57,12 @@
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}"
         hx-disabled-elt="find button">
+    {%- set zurueck_label = t('sammel.zurueck_label_eins', n=sammel_zurueck | length)
+                            if sammel_zurueck | length == 1
+                            else t('sammel.zurueck_label_mehrere', n=sammel_zurueck | length) %}
     <button class="mini zurueck" type="submit"
-            aria-label="Den letzten Sammeltipp zurücknehmen — {{ sammel_zurueck | length }} Zeile{{ "n" if sammel_zurueck | length != 1 }}; einzeln Entschiedenes bleibt stehen{% if sammel_zurueck | selectattr("im_korb") | list %}, und was im Korb liegt, bleibt liegen{% endif %}"
-            >Doch nicht alles ({{ sammel_zurueck | length }})</button>
+            aria-label="{{ zurueck_label }}{%- if sammel_zurueck | selectattr("im_korb") | list %}{{ t('sammel.zurueck_label_korb') }}{% endif %}"
+            >{{ t('sammel.doch_nicht_alles', n=sammel_zurueck | length) }}</button>
   </form>
 </div>
 {# Der Korb wird beim Zurücknehmen nicht angerührt — wie überall seit WB-361
@@ -67,6 +70,5 @@
    längst eine sein, die sie selbst aufgestockt hat). Bei elf Zeilen auf
    einmal muss das VOR dem Tipp dastehen und nicht erst als Hinweis an jeder
    einzelnen Zeile danach. #}
-<p class="fussnote">Nimmt nur diesen einen Sammeltipp zurück — einzeln
-  Entschiedenes bleibt stehen{% if sammel_zurueck | selectattr("im_korb") | list %}, und der Korb auch{% endif %}.</p>
+<p class="fussnote">{%- if sammel_zurueck | selectattr("im_korb") | list %}{{ t('sammel.hinweis_korb') }}{% else %}{{ t('sammel.hinweis') }}{% endif %}</p>
 {% endif %}

@@ -46,10 +46,9 @@
 
    Das Band steht ÜBER dem neuen Zug, weil es ihn ankündigt — es ist keine
    Zeile des Verlaufs, sondern die Auskunft über den Wechsel. #}
-<p class="band zugband" id="gewechselt-{{ mid }}" role="status">Das Rezept ist
-  jetzt „{{ gewechselt }}“ — dieser Zug ist neu.
-  <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im Korb;
-    offene Vorschläge zum alten Rezept sind weg.</span></p>
+<p class="band zugband" id="gewechselt-{{ mid }}" role="status">{{ t('zugwechsel_fertig.band',
+    name=gewechselt) }}
+  <span class="fussnote">{{ t('allgemein.wechsel_korb') }}</span></p>
 {% for m in neue %}{% include "_zug.html" %}{% endfor %}
 {% if rest %}{% with m = rest %}{% include "_zug.html" %}{% endwith %}{% endif %}
 {% include "_nachtrag.html" %}

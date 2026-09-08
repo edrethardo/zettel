@@ -17,11 +17,16 @@
      Die Teilzeiten bleiben als Pillen darunter stehen: am Herd zählt, WELCHE
      Stunde Ruhezeit ist. #}
   {% if rezept.zeitsatz %}<span class="gesamtzeit">{{ rezept.zeitsatz }}</span>{% endif %}
-  {%- if rezept.prep_minutes %}<span class="zeit">{{ rezept.prep_minutes }} Min. Zubereitung</span>{% endif %}
-  {%- if rezept.cook_minutes %}<span class="zeit">{{ rezept.cook_minutes }} Min. Kochzeit</span>{% endif %}
-  {%- if rezept.rest_minutes %}<span class="zeit">{{ rezept.rest_minutes }} Min. Ruhezeit</span>{% endif %}
-  {%- if rezept.difficulty %}<span class="zeit">Schwierigkeit {{ rezept.difficulty }} von 3</span>{% endif %}
-  {%- if rezept.source_rating %}<span class="zeit">{{ "%.2f"|format(rezept.source_rating) }} aus {{ rezept.source_votes or 0 }} Stimmen</span>{% endif %}
+  {%- if rezept.prep_minutes %}<span class="zeit">{{ t('rezept.min_zubereitung',
+      n=rezept.prep_minutes) }}</span>{% endif %}
+  {%- if rezept.cook_minutes %}<span class="zeit">{{ t('rezept.min_kochzeit',
+      n=rezept.cook_minutes) }}</span>{% endif %}
+  {%- if rezept.rest_minutes %}<span class="zeit">{{ t('rezept.min_ruhezeit',
+      n=rezept.rest_minutes) }}</span>{% endif %}
+  {%- if rezept.difficulty %}<span class="zeit">{{ t('allgemein.schwierigkeit',
+      n=rezept.difficulty) }}</span>{% endif %}
+  {%- if rezept.source_rating %}<span class="zeit">{{ t('allgemein.stimmen',
+      note="%.2f"|format(rezept.source_rating), n=rezept.source_votes or 0) }}</span>{% endif %}
   {%- if rezept.source_url %}
   {# Die Herkunft SICHTBAR und nicht bloss gespeichert: das ist fremde Arbeit.
      Wer das Rezept wirklich kocht, will die Originalseite mit ihren Bildern
@@ -30,7 +35,7 @@
      im Chat „Original auf Chefkoch", hier den Quelltitel, der bei einem
      umbenannten Rezept über zwei Zeilen lief und wie ein zweites Rezept
      aussah. #}
-  <a class="quelle" href="{{ rezept.source_url }}" target="_blank" rel="noopener noreferrer">Original auf {{ rezept.source | capitalize if rezept.source else "der Quellseite" }}</a>
+  <a class="quelle" href="{{ rezept.source_url }}" target="_blank" rel="noopener noreferrer">{{ t('allgemein.original_auf', quelle=rezept.source | capitalize if rezept.source else t('allgemein.quellseite')) }}</a>
   {%- endif %}
 </p>
 {% endif %}
@@ -46,7 +51,8 @@
    mit (`recipes.aendern`). Vorher stand hier „für 8 Portionen" über
    Chefkochs Mengen für 4 — direkt über einem Link auf die Quellseite, auf
    der „für 4" steht. #}
-<h2>Zutaten laut Rezept{% if rezept.servings %} (für {{ rezept.servings }} Portionen){% endif %}</h2>
+<h2>{% if rezept.servings %}{{ t('rezept.zutaten_laut_portionen',
+    n=rezept.servings) }}{% else %}{{ t('rezept.zutaten_laut') }}{% endif %}</h2>
 <ul class="rezeptzutaten">
   {% for z in rezept.rezeptzutaten %}
   {% if z.gruppe and (loop.first or z.gruppe != rezept.rezeptzutaten[loop.index0 - 1].gruppe) %}
@@ -72,7 +78,7 @@
 {% if rezept.zubereitung %}
 {# Nummerierte Schritte statt einer Wand aus 3.924 Zeichen: gelesen wird das
    am Herd, auf einem Telefon, mit einer Hand. #}
-<h2>Zubereitung</h2>
+<h2>{{ t('rezept.zubereitung') }}</h2>
 <ol class="zubereitung">
   {% for schritt in rezept.zubereitung %}
   <li>{{ schritt }}</li>
@@ -83,16 +89,16 @@
 {# Zutat aus dem Katalog: dieselbe Suche wie im Katalog, nur legt das „+“ hier
    ins Rezept statt in den Korb. Ohne HTMX schickt dasselbe Formular ein GET
    auf diese Seite und die Trefferliste steht danach ebenso da. #}
-<h2>Zutat aus dem Katalog</h2>
+<h2>{{ t('rezept.zutat_aus_katalog') }}</h2>
 {% if amount %}
 {# Es wurde von einer Rezeptzutat aus gesucht: die Menge hängt an der Suche
    und geht mit dem „+“ ins Rezept. Sie STEHT hier, statt still mitzureisen —
    was gleich mitgespeichert wird, soll vorher zu lesen sein. #}
-<p class="fussnote" role="status">Menge aus dem Rezept:
-  {{ amount | menge }} {{ unit or "Stk" }} — geht beim „+“ mit.</p>
+<p class="fussnote" role="status">{{ t('rezept.menge_aus_rezept', menge=amount | menge,
+    einheit=unit or t('rezept.einheit_platzhalter')) }}</p>
 {% endif %}
 <form class="suche" action="/rezepte/{{ rezept.id }}" method="get" role="search">
-  <input type="search" name="q" value="{{ q or '' }}" placeholder="Produkt suchen…"
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="{{ t('rezept.suche_platzhalter') }}"
          autocomplete="off"
          hx-get="/rezepte/{{ rezept.id }}/suche"
          hx-trigger="input changed delay:300ms, search"
@@ -100,13 +106,13 @@
          hx-include="closest form">
   <input type="hidden" name="amount" value="{{ amount or '' }}">
   <input type="hidden" name="unit" value="{{ unit or '' }}">
-  <button type="submit">Suchen</button>
+  <button type="submit">{{ t('allgemein.suchen') }}</button>
 </form>
 <div id="rezept-treffer">{% include "_rezept_treffer.html" %}</div>
 
-<h2>Kopfdaten</h2>
+<h2>{{ t('rezept.kopfdaten') }}</h2>
 <form class="rezeptkopf" method="post" action="/rezepte/{{ rezept.id }}/bearbeiten">
-  <label>Name
+  <label>{{ t('rezept.feld_name') }}
     <input type="text" name="name" value="{{ rezept.name }}" autocomplete="off"></label>
   {# **Das zweite Feld, das „Portionen" hiess** (WB-384). Zwei Felder mit
      demselben Wort bedeuteten Verschiedenes, und der Unterschied stand nur in
@@ -117,7 +123,7 @@
      Der Satz darunter ist kein Schmuck: er ist die Zusage, die das Feld bis
      zu diesem Ticket gebrochen hat. Wer die Zahl ändert, ändert die Mengen
      mit. #}
-  <label>Für wie viele Portionen das Rezept gilt
+  <label>{{ t('rezept.servings_label') }}
     <input type="text" inputmode="numeric" name="servings"
            value="{{ rezept.servings if rezept.servings is not none else '' }}"
            aria-describedby="portionen-hinweis"></label>
@@ -127,12 +133,12 @@
      rechnen mit" zu versprechen, wo nichts rechnet, ist genau die Lüge aus
      WB-384. #}
   <p class="fussnote" id="portionen-hinweis">
-    {%- if rezept.servings %}Dauerhaft, und alle Mengen rechnen mit.
-    {%- else %}Dauerhaft — ohne Zahl im Rezept gibt es keinen Faktor.
+    {%- if rezept.servings %}{{ t('rezept.dauerhaft_mit') }}
+    {%- else %}{{ t('rezept.dauerhaft_ohne') }}
     {%- endif %}</p>
-  <label>Notiz
+  <label>{{ t('rezept.notiz') }}
     <textarea name="note" rows="3">{{ rezept.note or '' }}</textarea></label>
-  <button class="knopf" type="submit">Speichern</button>
+  <button class="knopf" type="submit">{{ t('allgemein.speichern') }}</button>
 </form>
 
 {# Der teuerste Knopf des Shops (WB-376): `DELETE FROM recipe` nimmt per
@@ -141,6 +147,6 @@
    unter „Speichern". Er führt deshalb auf eine Rückfrage, die aufzählt, was
    verschwindet — gelöscht wird erst dort, per POST. #}
 <div class="rezeptloeschen">
-  <a class="knopf loeschen" href="/rezepte/{{ rezept.id }}/loeschen">Rezept löschen</a>
+  <a class="knopf loeschen" href="/rezepte/{{ rezept.id }}/loeschen">{{ t('rezept.loeschen') }}</a>
 </div>
 {% endblock %}

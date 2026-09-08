@@ -12,15 +12,15 @@
    Oben und nicht unten: der Satz soll die Liste einordnen, bevor jemand sie
    für vollständig hält — nicht erst, wenn er unten angekommen ist. #}
 <p class="gekappt" role="status">
-  {{ produkte | length }} von {{ gesamt }}{% if q %} Treffern zu „{{ q }}"{% endif %} —
-  {% if q %}tipp genauer, dann wird die Liste kürzer und besser{%
-    else %}such nach dem Produkt oder steig eine Ebene tiefer{% endif %}.
+  {% if q %}{{ t('produkte.gekappt_suche', n=produkte | length, gesamt=gesamt,
+      q=q | e) | safe }}{% else %}{{ t('produkte.gekappt_kategorie', n=produkte | length,
+          gesamt=gesamt) }}{% endif %}
 </p>
 {% endif %}
 
 {% if not produkte %}
   <p class="leer">
-    {% if q %}Nichts gefunden zu „{{ q }}".{% else %}Hier steht noch nichts.{% endif %}
+    {% if q %}{{ t('produkte.nichts_gefunden', q=q | e) | safe }}{% else %}{{ t('produkte.leer') }}{% endif %}
   </p>
 {% else %}
 <ul class="kacheln">
@@ -46,7 +46,7 @@
           hx-post="/katalog/einlegen?product_id={{ p.id }}"
           hx-target="#rm-{{ p.id }}" hx-swap="innerHTML">
       <button class="plus" type="submit"
-              aria-label="{{ p.name }} in den Warenkorb">+</button>
+              aria-label="{{ t('produkte.plus', name=p.name) }}">+</button>
     </form>
     <span class="rueckmeldung" id="rm-{{ p.id }}" role="status"></span>
   </li>

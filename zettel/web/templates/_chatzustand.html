@@ -28,18 +28,18 @@
 {% if chat_zustand and not chat_zustand.bedient %}
   <p class="band chatband" role="status">
     {% if laeuft %}
-      Modell wacht auf …
-      {%- if chat_zustand.rest_s is not none %} noch ~{{ chat_zustand.rest_s | round | int }} s
-      {%- elif chat_zustand.ueberfaellig %} — es dauert länger als sonst, es läuft aber weiter
+      {{ t('chatzustand.wacht_auf') }}
+      {%- if chat_zustand.rest_s is not none %} {{ t('chat.warten_rest',
+          n=chat_zustand.rest_s | round | int) }}
+      {%- elif chat_zustand.ueberfaellig %} {{ t('chatzustand.ueberfaellig') }}
       {%- endif %}
     {% else %}
-      Das Modell antwortet gerade nicht. Ich sehe weiter nach.
+      {{ t('chatzustand.nicht_erreichbar') }}
     {% endif %}
     {% if chat_zustand.grund %}<span class="fussnote">{{ chat_zustand.grund }}</span>{% endif %}
     {# Der Rezeptweg braucht kein Modell (Spec 6). Das gehört hierhin, sonst
        hält die Nutzerin den ganzen Chat für tot. #}
-    <span class="fussnote">Ein gespeichertes Rezept beim Namen zu nennen,
-      funktioniert auch ohne Modell.</span>
+    <span class="fussnote">{{ t('chatzustand.ohne_modell') }}</span>
   </p>
   {% if not laeuft %}
   {# Der Weg aus der Sackgasse von Hand. Ohne JavaScript lädt derselbe Knopf
@@ -48,7 +48,7 @@
         hx-get="/chat/zustand"
         hx-target="#chat-zustand" hx-swap="outerHTML"
         hx-disabled-elt="find button">
-    <button class="mini" type="submit">Jetzt nachsehen</button>
+    <button class="mini" type="submit">{{ t('chatzustand.nachsehen') }}</button>
   </form>
   {% endif %}
 {% endif %}

@@ -1,8 +1,8 @@
 {% extends "basis.html" %}
 {% block titel %}{{ name }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Bon {{ name }}</h1>
-<p class="fussnote"><a href="/bons">← alle Bons</a></p>
+<h1>{{ t('bon.titel', name=name) }}</h1>
+<p class="fussnote"><a href="/bons">{{ t('bon.alle') }}</a></p>
 
 {# Das gesamte Innenleben steckt im Bruchstück, damit HTMX genau dieses Stück
    austauschen kann — beim Nachfragen während des Laufs und nach jedem „Ja".

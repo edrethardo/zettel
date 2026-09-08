@@ -1,7 +1,7 @@
 {% extends "basis.html" %}
-{% block titel %}Chat — Zettel{% endblock %}
+{% block titel %}{{ t('chat.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Chat</h1>
+<h1>{{ t('chat.titel') }}</h1>
 {# Der Zustand der Box wird nachgeladen: das Rendern dieser Seite fragt die
    vLLM-Box nicht an — sonst wartete jeder Blick in den Chat am
    health-Timeout. Er steht NUR hier, weil nur hier jemand das Modell
@@ -63,10 +63,10 @@
     var rest = parseInt(z.getAttribute('data-warten-bis'), 10) - 1;
     if (rest >= 1) {
       z.setAttribute('data-warten-bis', rest);
-      z.textContent = 'noch ~' + rest + ' s';
+      z.textContent = {{ t('chat.warten_rest') | tojson }}.replace('{n}', rest);
     } else {
       z.removeAttribute('data-warten-bis');
-      z.textContent = 'es dauert länger als sonst';
+      z.textContent = {{ t('chat.warten_ueberfaellig') | tojson }};
     }
   }, 1000);
 })();

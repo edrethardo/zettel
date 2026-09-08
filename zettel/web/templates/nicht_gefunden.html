@@ -1,5 +1,5 @@
 {% extends "basis.html" %}
-{% block titel %}Gibt es nicht — Zettel{% endblock %}
+{% block titel %}{{ t('nicht_gefunden.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
 
 {# EINE Seite für jede Adresse, die ins Leere zeigt (WB-376).
@@ -18,11 +18,11 @@
    Startseite wäre ein Rückweg, der die Nutzerin ganz von vorn anfangen
    lässt. #}
 
-<h1>Das gibt es nicht</h1>
+<h1>{{ t('nicht_gefunden.ueberschrift') }}</h1>
 
 <p class="leer">
   {{ satz }}<br>
-  Vielleicht ist es gelöscht worden, vielleicht ist die Adresse alt.
+  {{ t('nicht_gefunden.vielleicht') }}
   <span class="wege">
     {% for w in wege %}
     <a class="knopf" href="{{ w.url }}">{{ w.text }}</a>

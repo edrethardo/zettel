@@ -7,14 +7,12 @@
 <form class="bonsuche" hx-get="/bons/posten/{{ zeile.id }}/suche"
       hx-target="#korrektur-{{ zeile.id }}" hx-swap="innerHTML">
   <input type="text" name="q" value="{{ q }}" autocomplete="off"
-         aria-label="Produkt suchen für {{ zeile.bon_text }}">
-  <button type="submit" class="mini">Suchen</button>
+         aria-label="{{ t('bonsuche.feld', was=zeile.bon_text) }}">
+  <button type="submit" class="mini">{{ t('allgemein.suchen') }}</button>
 </form>
 
 {% if not treffer %}
-  <p class="leer">Nichts gefunden zu „{{ q }}“. Das ist eine Lücke im
-    Katalog — die Zeile darf offen bleiben, der Kauf steht trotzdem mit
-    Preis und Datum da.</p>
+  <p class="leer">{{ t('bonsuche.nichts_gefunden', q=q) }}</p>
 {% else %}
 <ul class="vorschlaege">
   {% for p in treffer %}
@@ -35,7 +33,8 @@
             hx-post="/bons/posten/{{ zeile.id }}/korrigieren?produkt_id={{ p.id }}"
             hx-target="#beleg" hx-swap="innerHTML">
         <button class="mini ja" type="submit"
-                aria-label="{{ zeile.bon_text }} ist {{ p.name }}">Das</button>
+                aria-label="{{ t('bonsuche.das', bon=zeile.bon_text,
+                    produkt=p.name) }}">{{ t('allgemein.das') }}</button>
       </form>
     </span>
   </li>

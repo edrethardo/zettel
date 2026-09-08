@@ -48,7 +48,7 @@
     {% endif %}
     <span class="menge">
       {% if v.ist_freitext %}
-        Freitext — im Katalog nicht gefunden
+        {{ t('vorschlag.freitext') }}
       {% else %}
         {{ v.unit_text or "" }} · {{ v.price_cents | euro }}
       {% endif %}
@@ -58,18 +58,17 @@
        (OBSERVABILITY.md) und steht dort weiterhin. #}
     <span class="woher">
       {{ v.search_term or "—" }}
-      {%- if v.ist_korrektur %} · statt „{{ v.statt_name }}“{% endif %}
+      {%- if v.ist_korrektur %} · {{ t('vorschlag.statt', name=v.statt_name) }}{% endif %}
     </span>
     {% if v.fallback_term %}
     {# Der Befund aus WB-358: findet kein genauer Begriff etwas, greift der
        allgemeinste — und der findet immer irgendetwas („OLD AMSTERDAM" ->
        „Bier" -> Singha Bier). Ein solcher Treffer ist kein sicherer, und die
        Zeile sagt es, statt es zu verschweigen. #}
-    <span class="schwach">Nur über den allgemeinen Begriff
-      „{{ v.fallback_term }}“ gefunden — sieh die Alternativen an.</span>
+    <span class="schwach">{{ t('vorschlag.fallback', begriff=v.fallback_term) }}</span>
     {% endif %}
     {% if v.nicht_im_katalog %}
-    <span class="ausgemustert">Nicht mehr im Katalog.</span>
+    <span class="ausgemustert">{{ t('vorschlag.ausgemustert') }}</span>
     {% endif %}
     {% if gerade == v.id and v.behalten %}
     {# Die Rückmeldung an der ZEILE (WB-382). Sie steht nur in der Antwort auf
@@ -80,8 +79,8 @@
        ZUSTAND und sieht auf einer entschiedenen Zeile aus wie jede andere.
        Was hier fehlte, seit der Korb nicht mehr daneben steht, ist das
        EREIGNIS — und mit ihm die Zahl, die sagt, wohin es gegangen ist. #}
-    {%- set was = "Sache" if korb_anzahl == 1 else "Sachen" %}
-    <span class="hinweis eben" role="status">Liegt jetzt im Korb — {{ korb_anzahl }} {{ was }} drin.</span>
+    <span class="hinweis eben" role="status">{%- if korb_anzahl == 1 %}{{ t('vorschlag.eben_eins',
+        n=korb_anzahl) }}{%- else %}{{ t('vorschlag.eben_mehrere', n=korb_anzahl) }}{% endif %}</span>
     {% endif %}
     {% if v.offen and v.im_korb %}
     {# Zurückgenommenes „Ja" (WB-361): der Korb wird dabei bewusst NICHT
@@ -89,8 +88,7 @@
        Korbzeile kann also längst eine sein, die sie selbst aufgestockt hat.
        Das darf die Oberfläche nicht verschweigen, sonst sucht sie die Zeile
        im Korb und findet sie doch. #}
-    <span class="hinweis">Zurückgenommen —
-      die Zeile bleibt im Korb; dort steht ein Löschknopf.</span>
+    <span class="hinweis">{{ t('vorschlag.zurueckgenommen') }}</span>
     {% endif %}
   </span>
   <span class="stellen">
@@ -102,7 +100,7 @@
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
         <button class="mini ja" type="submit"
-                aria-label="{{ v.name }} in den Korb">Ja</button>
+                aria-label="{{ t('vorschlag.ja_label', name=v.name) }}">{{ t('allgemein.ja') }}</button>
       </form>
       <form method="post"
             action="/chat/vorschlag/{{ v.id }}/entscheiden?decision=removed"
@@ -111,15 +109,15 @@
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
         <button class="mini nein" type="submit"
-                aria-label="{{ v.name }} verwerfen">Nein</button>
+                aria-label="{{ t('vorschlag.nein_label', name=v.name) }}">{{ t('allgemein.nein') }}</button>
       </form>
     {% else %}
       {% if v.behalten %}
         {# Der Korb hat einen Löschknopf; von hier aus wird er nicht angerührt
            (siehe vorschlaege.entscheiden). #}
-        <span class="marke ja">im Korb</span>
+        <span class="marke ja">{{ t('vorschlag.marke_korb') }}</span>
       {% else %}
-        <span class="marke nein">verworfen</span>
+        <span class="marke nein">{{ t('allgemein.verworfen') }}</span>
       {% endif %}
       {# Der Rückweg (WB-361): eine Entscheidung ist ein Tipp und kein Urteil.
          Er führt auf `offen` — den Zustand VOR dem Fehltipp — und nicht auf
@@ -142,8 +140,9 @@
             hx-indicator="#vorschlag-{{ v.id }}"
             hx-disabled-elt="find button">
         <button class="mini zurueck" type="submit"
-                aria-label="Entscheidung zu {{ v.name }} zurücknehmen{% if v.behalten %} — die Zeile bleibt im Korb{% endif %}"
-                >rückgängig</button>
+                aria-label="{{ t('vorschlag.rueckgaengig_label',
+                    name=v.name) }}{%- if v.behalten %}{{ t('vorschlag.rueckgaengig_korb') }}{% endif %}"
+                >{{ t('allgemein.rueckgaengig') }}</button>
       </form>
       {% endif %}
     {% endif %}
@@ -160,10 +159,11 @@
   <details class="alternativen" {{ "open" if aufklappen == v.id }}>
     <summary>
       {% if v.alternativen %}
-        {{ v.alternativen | length }} Alternative{{ "n" if v.alternativen | length != 1 }}
-        aus derselben Suche
+        {% if v.alternativen | length == 1 %}{{ t('vorschlag.alternativen_eins',
+            n=v.alternativen | length) }}{% else %}{{ t('vorschlag.alternativen_mehrere',
+                n=v.alternativen | length) }}{% endif %}
       {% else %}
-        Nichts gefunden — selbst schreiben
+        {{ t('vorschlag.nichts_gefunden') }}
       {% endif %}
     </summary>
 
@@ -193,7 +193,8 @@
                 hx-indicator="#zug-{{ v.chat_message_id }}"
                 hx-disabled-elt="find button">
             <button class="mini ja" type="submit"
-                    aria-label="{{ a.name }} statt {{ v.name }} in den Korb">Das</button>
+                    aria-label="{{ t('vorschlag.alt_label', alt=a.name,
+                        name=v.name) }}">{{ t('allgemein.das') }}</button>
           </form>
         </span>
       </li>
@@ -203,13 +204,10 @@
     {# Gibt der Katalog weniger her, wird das gesagt statt verschwiegen: bei
        „Sellerie" sind es zwei, und mehr anzufragen ändert daran nichts. Dann
        ist der Freitext unten der richtige Ausgang. #}
-    <p class="fussnote">Mehr hat der Katalog zu
-      „{{ v.search_term or v.name }}“ nicht hergegeben.</p>
+    <p class="fussnote">{{ t('vorschlag.mehr_nicht', begriff=v.search_term or v.name) }}</p>
     {% endif %}
     {% else %}
-    <p class="fussnote">Zu „{{ v.search_term or v.name }}“ hat die Suche
-      nichts vorgelegt — eine Lücke im Katalog. Schreib es selbst, dann steht
-      es im Laden auf der Liste.</p>
+    <p class="fussnote">{{ t('vorschlag.suche_leer', begriff=v.search_term or v.name) }}</p>
     {% endif %}
 
     {# Auch hier der ganze Zug: der Freitext wird als neue Zeile angelegt. #}
@@ -221,8 +219,8 @@
           hx-disabled-elt="find button">
       <input type="text" name="text" autocomplete="off"
              value="{{ v.search_term or v.name }}"
-             aria-label="Stattdessen als Freitext">
-      <button class="mini" type="submit">Nichts davon</button>
+             aria-label="{{ t('vorschlag.freitext_label') }}">
+      <button class="mini" type="submit">{{ t('vorschlag.nichts_davon') }}</button>
     </form>
   </details>
   {% endif %}

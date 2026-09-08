@@ -2,7 +2,7 @@
    im ausgelieferten HTML steht kein Verweis auf eine fremde Domain, weil das
    Tailnet nicht zwingend online ist (Spec 15). #}
 <!doctype html>
-<html lang="de">
+<html lang="{{ sprache }}">
 <head>
   <meta charset="utf-8">
   {# Ohne diese Zeile zoomt das Handy die Seite auf Desktop-Breite heraus und
@@ -80,15 +80,15 @@
      Sie steht im HTML NACH dem Inhalt: fest positioniert ist die Reihenfolge
      fürs Auge egal, und ein Vorleseprogramm soll zuerst die Seite hören.
      Der Chat steht vor dem Korb, weil er der Weg dorthin ist (WB-382). #}
-  <nav class="leiste" id="hauptnavigation" aria-label="Hauptbereiche">
-    <a href="/katalog"{{ wo('/katalog') }}>Katalog</a>
-    <a href="/chat"{{ wo('/chat') }}>Chat</a>
+  <nav class="leiste" id="hauptnavigation" aria-label="{{ t('nav.bereiche') }}">
+    <a href="/katalog"{{ wo('/katalog') }}>{{ t('nav.katalog') }}</a>
+    <a href="/chat"{{ wo('/chat') }}>{{ t('nav.chat') }}</a>
     {# Die Zahl wird nach jedem „+" per hx-swap-oob nachgezogen (siehe
        _eingelegt.html) — deshalb braucht sie eine feste id. #}
-    <a href="/warenkorb"{{ wo('/warenkorb') }}>Korb <span id="korb-anzahl"
+    <a href="/warenkorb"{{ wo('/warenkorb') }}>{{ t('nav.korb') }} <span id="korb-anzahl"
        class="korbzahl">{{ korb_anzahl or 0 }}</span></a>
-    <a href="/pick"{{ wo('/pick') }}>Pick-Liste</a>
-    <a href="/mehr"{% if ns.mehr %} class="aktiv" aria-current="page"{% endif %}>Mehr</a>
+    <a href="/pick"{{ wo('/pick') }}>{{ t('nav.pick') }}</a>
+    <a href="/mehr"{% if ns.mehr %} class="aktiv" aria-current="page"{% endif %}>{{ t('nav.mehr') }}</a>
   </nav>
 </body>
 </html>

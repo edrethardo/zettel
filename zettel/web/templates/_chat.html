@@ -60,12 +60,12 @@
           hx-swap="outerHTML show:window:top"
           hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
       <input type="text" name="satz" autocomplete="off" value="{{ satz or '' }}"
-             aria-label="Was brauchst du?" placeholder="Was brauchst du?">
-      <button type="submit">Fragen</button>
+             aria-label="{{ t('chat.platzhalter') }}" placeholder="{{ t('chat.platzhalter') }}">
+      <button type="submit">{{ t('chat.fragen') }}</button>
     </form>
     {# Ein 27B-Modell schreibt Sekunden lang. Ohne sichtbares Warten tippt man
        ein zweites Mal. #}
-    <p id="chat-laeuft" class="htmx-indicator fussnote">Das Modell überlegt …</p>
+    <p id="chat-laeuft" class="htmx-indicator fussnote">{{ t('chat.laeuft') }}</p>
   </div>
 
   {# Der Wartezähler (WB-414) steht UNTER dem Kopf und klebt nicht: er ist mit
@@ -78,11 +78,16 @@
   {# Was gelöscht wurde, und was ausdrücklich nicht (WB-372). Der zweite Satz
      ist der wichtigere: sie leert den Verlauf, weil sie ihn loswerden will,
      nicht ihren Einkauf. #}
-  <p class="band" role="status">Der Verlauf ist gelöscht —
-    {{ verlauf_geleert.nachrichten }} {{ "Chatzeile" if verlauf_geleert.nachrichten == 1 else "Chatzeilen" }}
-    mit {{ verlauf_geleert.vorschlaege }} {{ "Vorschlag" if verlauf_geleert.vorschlaege == 1 else "Vorschlägen" }}.
-    <span class="fussnote">Der Warenkorb ist unberührt: was du eingelegt
-      hast, liegt weiter drin.</span></p>
+  {%- set g_zeilen = t('allgemein.chatzeilen_eins',
+      n=verlauf_geleert.nachrichten)
+        if verlauf_geleert.nachrichten == 1
+        else t('allgemein.chatzeilen_mehrere', n=verlauf_geleert.nachrichten) %}
+  {%- set g_vors = t('chat.vorschlaegen_eins',
+      n=verlauf_geleert.vorschlaege)
+        if verlauf_geleert.vorschlaege == 1
+        else t('chat.vorschlaegen_mehrere', n=verlauf_geleert.vorschlaege) %}
+  <p class="band" role="status">{{ t('chat.geleert', zeilen=g_zeilen, vorschlaege=g_vors) }}
+    <span class="fussnote">{{ t('chat.korb_unberuehrt') }}</span></p>
   {% endif %}
 
   {% if gewechselt %}
@@ -90,10 +95,8 @@
      ist dieselbe Zusage wie beim Leeren des Verlaufs: der Korb gehört dem
      Korb. Wer nach dem Wechsel nachrechnen müsste, ob ihm eben etwas
      herausgeflogen ist, wechselt beim nächsten Mal nicht mehr. #}
-  <p class="band" role="status">Das Rezept ist jetzt „{{ gewechselt }}“ —
-    der Zug dazu steht an seiner Stelle neu.
-    <span class="fussnote">Was du vorher bestätigt hast, liegt weiter im
-      Korb; offene Vorschläge zum alten Rezept sind weg.</span></p>
+  <p class="band" role="status">{{ t('chat.gewechselt', name=gewechselt) }}
+    <span class="fussnote">{{ t('allgemein.wechsel_korb') }}</span></p>
   {% endif %}
 
 
@@ -131,8 +134,17 @@
      aus jedem Chip stillschweigend einen leeren Satz; deshalb hält
      `test_ein_chip_gewinnt_gegen_das_leere_textfeld` genau diesen Rumpf
      fest. #}
+  {# Diese drei Sätze werden NICHT übersetzt, und das ist der Punkt: der Knopf
+     schickt seine Beschriftung als `satz` an den Agenten ab. Der Agent ist
+     deutsch — `rezeptweg.erkenne` sucht deutsche Wörter, `plan.extract`
+     fragt auf Deutsch, und der Katalog führt „Milch" und nicht „milk". Ein
+     englischer Beispielsatz sähe richtig aus und lieferte einen leeren Korb.
+     Die Zeile darüber sagt deshalb in der jeweiligen Sprache, dass hier
+     Deutsch gesprochen wird; sichtbar unvollständig ist besser als still
+     falsch. Wenn der Agent eines Tages zweisprachig ist, kommen diese drei
+     Sätze mit ihm mit — nicht vorher. #}
   <div class="beispiele">
-    <p>Sag, was du brauchst — zum Beispiel:</p>
+    <p>{{ t('chat.beispiele') }}</p>
     {% for satz in ["Alles für Spaghetti Bolognese, und Klopapier",
                     "Lasagne für 6 Personen",
                     "Milch, Butter, Eier"] %}
@@ -158,9 +170,14 @@
         hx-target="#chat" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <input type="hidden" name="verlauf" value="alles">
-    <button class="mini" type="submit">{{ aeltere.zuege }} {{ "älterer Zug" if aeltere.zuege == 1 else "ältere Züge" }} —
-      {{ aeltere.vorschlaege }} {{ "Vorschlag" if aeltere.vorschlaege == 1 else "Vorschläge" }},
-      {{ aeltere.entschieden }} entschieden. Anzeigen</button>
+    {%- set a_zuege = t('chat.zug_eins', n=aeltere.zuege) if aeltere.zuege == 1 else t('chat.zug_mehrere',
+        n=aeltere.zuege) %}
+    {%- set a_vors = t('allgemein.vorschlaege_eins',
+        n=aeltere.vorschlaege)
+          if aeltere.vorschlaege == 1
+          else t('allgemein.vorschlaege_mehrere', n=aeltere.vorschlaege) %}
+    <button class="mini" type="submit">{{ t('chat.aeltere', zuege=a_zuege, vorschlaege=a_vors,
+        entschieden=aeltere.entschieden) }}</button>
   </form>
   {% endif %}
 
@@ -175,24 +192,28 @@
      aus, und eine Rückfrage, die ohne JavaScript ausfällt, ist genau dann
      weg, wenn sie gebraucht wird. #}
   <div class="band frage" role="status">
-    <p>{{ umfang.nachrichten }} {{ "Chatzeile" if umfang.nachrichten == 1 else "Chatzeilen" }},
-      {{ umfang.vorschlaege }} {{ "Vorschlag" if umfang.vorschlaege == 1 else "Vorschläge" }},
-      davon {{ umfang.entschieden }} entschieden — wirklich löschen?
-      <span class="fussnote">Aus diesen Entscheidungen werden beim Abschicken
-        die Eval-Labels. Gelöscht sind sie fort. Der Warenkorb bleibt, wie er
-        ist.</span></p>
+    {%- set u_zeilen = t('allgemein.chatzeilen_eins',
+        n=umfang.nachrichten)
+          if umfang.nachrichten == 1
+          else t('allgemein.chatzeilen_mehrere', n=umfang.nachrichten) %}
+    {%- set u_vors = t('allgemein.vorschlaege_eins',
+        n=umfang.vorschlaege)
+          if umfang.vorschlaege == 1
+          else t('allgemein.vorschlaege_mehrere', n=umfang.vorschlaege) %}
+    <p>{{ t('chat.leeren_frage', zeilen=u_zeilen, vorschlaege=u_vors, entschieden=umfang.entschieden) }}
+      <span class="fussnote">{{ t('chat.leeren_hinweis') }}</span></p>
     <div class="sammel">
       <form method="post" action="/chat/leeren?ja=1"
             hx-post="/chat/leeren?ja=1"
             hx-target="#chat" hx-swap="outerHTML"
             hx-disabled-elt="find button">
-        <button class="mini nein" type="submit">Ja, Verlauf löschen</button>
+        <button class="mini nein" type="submit">{{ t('chat.leeren_ja') }}</button>
       </form>
       <form method="post" action="/chat/leeren?ja=0"
             hx-post="/chat/leeren?ja=0"
             hx-target="#chat" hx-swap="outerHTML"
             hx-disabled-elt="find button">
-        <button class="mini" type="submit">Abbrechen</button>
+        <button class="mini" type="submit">{{ t('allgemein.abbrechen') }}</button>
       </form>
     </div>
   </div>
@@ -204,7 +225,7 @@
         hx-post="/chat/leeren"
         hx-target="#chat" hx-swap="outerHTML"
         hx-disabled-elt="find button">
-    <button class="mini zurueck" type="submit">Verlauf leeren</button>
+    <button class="mini zurueck" type="submit">{{ t('chat.leeren') }}</button>
   </form>
   {% endif %}
 

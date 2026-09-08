@@ -16,10 +16,9 @@
    still weggelassene Zutat wäre der schlimmste Ausgang — dann steht jemand im
    Laden und weiss nicht, dass etwas fehlt. #}
 <p class="band" role="status">
-  {{ rezept.n_ausgemustert }} {% if rezept.n_ausgemustert == 1 %}Zutat steht{% else %}Zutaten stehen{% endif %}
-  nicht mehr im Katalog. Sie {% if rezept.n_ausgemustert == 1 %}bleibt{% else %}bleiben{% endif %}
-  im Rezept und {% if rezept.n_ausgemustert == 1 %}wandert{% else %}wandern{% endif %}
-  mit in den Korb — nur der Preis kann alt sein.
+  {% if rezept.n_ausgemustert == 1 %}{{ t('rezept.ausgemustert_eins',
+      n=rezept.n_ausgemustert) }}{% else %}{{ t('rezept.ausgemustert_mehrere',
+          n=rezept.n_ausgemustert) }}{% endif %}
 </p>
 {% endif %}
 
@@ -40,11 +39,9 @@
   {# Ein geholtes Rezept (WB-338) hat eine Zutatenliste, aber noch keine
      verknüpften PRODUKTE — die beiden sind nicht dasselbe. Hier „noch keine
      Zutat" zu schreiben wäre schlicht falsch: unten stehen 23. #}
-  <p class="leer">Noch kein Produkt verknüpft — die Zutaten laut Rezept
-    stehen unten. Schreib im Chat „alles für {{ rezept.name }}“, dann sucht
-    der Shop sie im Katalog.</p>
+  <p class="leer">{{ t('rezept.kein_produkt', name=rezept.name) }}</p>
   {% else %}
-  <p class="leer">Noch keine Zutat. Ohne Zutaten wird daraus kein Einkauf.</p>
+  <p class="leer">{{ t('rezept.keine_zutat') }}</p>
   {% endif %}
 {% else %}
 <ul class="korb">
@@ -64,10 +61,10 @@
          Bedienstrecken. Ein Absatz zwischen zwei Bedienzeilen zerschnitt,
          was zusammengehört. #}
       <span class="menge">
-        {% if z.ist_freitext %}Freitext
+        {% if z.ist_freitext %}{{ t('allgemein.freitext') }}
         {%- else %}{{ z.unit_text or "" }} · {{ z.price_cents | euro }}{% endif %}
         {%- if z.nicht_im_katalog %}
-        · <span class="ausgemustert">nicht mehr im Katalog</span>{% endif %}
+        · <span class="ausgemustert">{{ t('allgemein.nicht_mehr_im_katalog') }}</span>{% endif %}
       </span>
       {# Die benötigte Menge — die Grösse, die mit den Portionen wächst
          (WB-362). Die Zahl rechts daneben ist die PACKUNGSZAHL und wächst
@@ -91,14 +88,14 @@
             hx-trigger="change, submit" hx-target="#rezept" hx-swap="innerHTML">
         <input type="text" inputmode="decimal" name="amount"
                value="{{ z.amount | menge }}"
-               aria-label="benötigte Menge {{ z.name }}">
+               aria-label="{{ t('rezept.menge_label', name=z.name) }}">
         <input class="einheit" type="text" name="unit" list="einheiten"
                value="{{ z.einheit_feld }}" autocomplete="off"
-               placeholder="Stk" aria-label="Einheit für {{ z.name }}">
-        <span class="hinweis">für
-          {{ rezept.servings or "?" }} Portionen{% if not z.amount %} —
-          ohne Menge skaliert die Zutat nicht mit{% endif %}</span>
-        <noscript><button class="mini" type="submit">ok</button></noscript>
+               placeholder="{{ t('rezept.einheit_platzhalter') }}" aria-label="{{ t('rezept.einheit_label',
+                   name=z.name) }}">
+        <span class="hinweis">{{ t('allgemein.fuer_portionen',
+            n=rezept.servings or "?") }}{% if not z.amount %} {{ t('rezept.ohne_menge') }}{% endif %}</span>
+        <noscript><button class="mini" type="submit">{{ t('allgemein.ok') }}</button></noscript>
       </form>
       {% endif %}
     </span>
@@ -112,7 +109,7 @@
               hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty - 1 }}"
               hx-target="#rezept" hx-swap="innerHTML">
           <button class="mini" type="submit"
-                  aria-label="weniger {{ z.name }}">&minus;</button>
+                  aria-label="{{ t('allgemein.weniger', name=z.name) }}">&minus;</button>
         </form>
         <span class="anzahl">{{ z.qty }}</span>
         <form method="post"
@@ -120,7 +117,7 @@
               hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/menge?qty={{ z.qty + 1 }}"
               hx-target="#rezept" hx-swap="innerHTML">
           <button class="mini" type="submit"
-                  aria-label="mehr {{ z.name }}">+</button>
+                  aria-label="{{ t('allgemein.mehr', name=z.name) }}">+</button>
         </form>
       </span>
       <form method="post"
@@ -128,7 +125,7 @@
             hx-post="/rezepte/{{ rezept.id }}/zutaten/{{ z.id }}/loeschen"
             hx-target="#rezept" hx-swap="innerHTML">
         <button class="mini loeschen" type="submit"
-                aria-label="{{ z.name }} entfernen">&times;</button>
+                aria-label="{{ t('rezept.entfernen_label', name=z.name) }}">&times;</button>
       </form>
     </span>
   </li>
@@ -142,9 +139,9 @@
       hx-post="/rezepte/{{ rezept.id }}/zutaten"
       hx-target="#rezept" hx-swap="innerHTML">
   <input type="text" name="free_text" autocomplete="off"
-         aria-label="Zutat, die der Katalog nicht hat"
-         placeholder="Zutat ohne Katalogprodukt…">
-  <button type="submit">Dazu</button>
+         aria-label="{{ t('rezept.freitext_label') }}"
+         placeholder="{{ t('rezept.freitext_platzhalter') }}">
+  <button type="submit">{{ t('allgemein.dazu') }}</button>
 </form>
 
 {% if rezept.zutaten %}
@@ -162,18 +159,16 @@
       action="/rezepte/{{ rezept.id }}/korb"
       hx-post="/rezepte/{{ rezept.id }}/korb"
       hx-target="#rezept" hx-swap="innerHTML">
-  <label>Diesmal für wie viele Portionen?
+  <label>{{ t('rezept.diesmal') }}
     <input type="text" inputmode="numeric" name="portionen"
            value="{{ rezept.servings if rezept.servings is not none else '' }}"
-           aria-label="Portionen für diesen Einkauf"></label>
-  <button class="gross" type="submit">Alles in den Warenkorb</button>
+           aria-label="{{ t('rezept.portionen_label') }}"></label>
+  <button class="gross" type="submit">{{ t('rezept.alles_in_korb') }}</button>
   {% if rezept.servings %}
-  <span class="hinweis">Gilt nur für diesen Einkauf — das Rezept bleibt bei
-    {{ rezept.servings }} {{ "Portion" if rezept.servings == 1 else "Portionen" }}.
-    Dauerhaft ändern: unten unter „Kopfdaten“.</span>
+  <span class="hinweis">{%- if rezept.servings == 1 %}{{ t('rezept.gilt_nur_eins',
+      n=rezept.servings) }}{%- else %}{{ t('rezept.gilt_nur_mehrere', n=rezept.servings) }}{% endif %}</span>
   {% else %}
-  <span class="hinweis">Am Rezept steht keine Portionszahl — dann gibt es
-    keinen Faktor, und die Mengen bleiben, wie sie sind.</span>
+  <span class="hinweis">{{ t('allgemein.keine_portionszahl') }}</span>
   {% endif %}
 </form>
 {% endif %}
