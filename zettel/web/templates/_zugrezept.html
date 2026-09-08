@@ -47,26 +47,30 @@
      Datenbankzeile; die Ruhezeit steht sichtbar daneben, weil sie der Grund
      ist, warum aus 90 Minuten neuneinhalb Stunden werden. #}
   <p class="gesamtzeit">{{ r.zeitsatz }}
-    {%- if r.ruhesatz %} <span class="ruhe">davon {{ r.ruhesatz }} Ruhezeit</span>{% endif %}</p>
+    {%- if r.ruhesatz %} <span class="ruhe">{{ t('zugrezept.ruhezeit',
+        satz=r.ruhesatz) }}</span>{% endif %}</p>
   {%- endif %}
 
   {%- if r.n_zutaten %}
-  <p class="deckung">{{ r.n_zutaten }} {{ "Zutat" if r.n_zutaten == 1 else "Zutaten" }}
-    {%- if r.n_fehlt %}, {{ r.n_fehlt }} davon nicht auf dem Zettel{% endif %}
-    {%- if r.n_ohne_produkt %} · {{ r.n_ohne_produkt }} {{ "Zeile" if r.n_ohne_produkt == 1 else "Zeilen" }}
-      ohne Katalogprodukt{% endif %}</p>
+  <p class="deckung">{{ r.n_zutaten }} {%- if r.n_zutaten == 1 %} {{ t('allgemein.zutat_eins') }}{%- else %} {{ t('allgemein.zutat_mehrere') }}{% endif %}
+    {%- if r.n_fehlt %}, {{ t('zugrezept.nicht_auf_zettel', n=r.n_fehlt) }}{% endif %}
+    {%- if r.n_ohne_produkt %} · {%- if r.n_ohne_produkt == 1 %}{{ t('zugrezept.ohne_produkt_eins',
+        n=r.n_ohne_produkt) }}{%- else %}{{ t('zugrezept.ohne_produkt_mehrere',
+            n=r.n_ohne_produkt) }}{% endif %}{% endif %}</p>
   {%- endif %}
 
   {%- if r.difficulty or r.source_rating or r.source_url %}
   <p class="rezeptherkunft">
-    {%- if r.difficulty %}<span class="zeit">Schwierigkeit {{ r.difficulty }} von 3</span>{% endif %}
-    {%- if r.source_rating %}<span class="zeit">{{ "%.2f"|format(r.source_rating) }} aus {{ r.source_votes or 0 }} Stimmen</span>{% endif %}
+    {%- if r.difficulty %}<span class="zeit">{{ t('allgemein.schwierigkeit',
+        n=r.difficulty) }}</span>{% endif %}
+    {%- if r.source_rating %}<span class="zeit">{{ t('allgemein.stimmen', note="%.2f"|format(r.source_rating),
+        n=r.source_votes or 0) }}</span>{% endif %}
     {%- if r.source_url %}
     {# Die Herkunft nennen und verlinken — das ist fremde Arbeit. Der
        Vorbehalt aus dem README gilt weiter: robots.txt erlaubt die zwei
        benutzten Endpunkte, die Nutzungsbedingungen wurden nicht gelesen. Das
        hier ist eine Angabe der Herkunft und keine Behauptung einer Erlaubnis. #}
-    <a class="quelle" href="{{ r.source_url }}" target="_blank" rel="noopener noreferrer">Original auf {{ r.source | capitalize if r.source else "der Quellseite" }}</a>
+    <a class="quelle" href="{{ r.source_url }}" target="_blank" rel="noopener noreferrer">{{ t('allgemein.original_auf', quelle=r.source | capitalize if r.source else t('allgemein.quellseite')) }}</a>
     {%- endif %}
   </p>
   {%- endif %}
@@ -121,8 +125,7 @@
         hx-post="/chat/{{ m.id }}/rezept"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
-    <p class="andere-kopf">Nicht gemeint? {{ r.alternativen | length - 1 }}
-      andere Rezepte zu „{{ r.gericht }}“ aus derselben Suche.</p>
+    <p class="andere-kopf">{{ t('zugrezept.andere', n=r.alternativen | length - 1, gericht=r.gericht) }}</p>
     <ul class="andereliste">
       {# Die ganze Zeile ist das Ziel: Titel oben, Zahlen darunter. Das
          vorgeschlagene Rezept steht MIT in der Liste und trägt keinen Knopf —
@@ -135,7 +138,7 @@
       {%- for a in r.alternativen %}
       <li{% if a.gewaehlt %} class="ist"{% endif %}>
       {%- if a.gewaehlt %}<span class="wahl"><span class="name">{{ a.titel }}
-        <span class="marke">vorgeschlagen</span></span>
+        <span class="marke">{{ t('zugrezept.vorgeschlagen') }}</span></span>
       {%- else %}<button class="wahl" type="submit" name="rezept" value="{{ a.source_id }}">
         <span class="name">{{ a.titel }}</span>
       {%- endif %}
@@ -147,9 +150,10 @@
             aussehen, als sie ist. Sie steht deshalb wie Bewertung und
             Zutatenzahl: gedämpft. Der Vorbehalt, WAS die Suche hergibt,
             bleibt wörtlich in der Fussnote darunter (WB-387). -#}
-        {%- if a.zeitsatz %}<span class="dauer{% if a.arbeitszeit %} arbeitszeit{% endif %}">{{ a.zeitsatz }}{% if a.arbeitszeit %} Arbeitszeit{% endif %}</span>{% endif %}
-        {%- if a.rating %}<span>{{ "%.2f"|format(a.rating) }} aus {{ a.votes }} Stimmen</span>{% endif %}
-        {%- if a.n_zutaten %}<span>{{ a.n_zutaten }} Zutaten</span>{% endif %}
+        {%- if a.zeitsatz %}<span class="dauer{% if a.arbeitszeit %} arbeitszeit{% endif %}">{{ a.zeitsatz }}{% if a.arbeitszeit %} {{ t('zugrezept.arbeitszeit') }}{% endif %}</span>{% endif %}
+        {%- if a.rating %}<span>{{ t('allgemein.stimmen', note="%.2f"|format(a.rating),
+            n=a.votes) }}</span>{% endif %}
+        {%- if a.n_zutaten %}<span>{{ a.n_zutaten }} {{ t('allgemein.zutat_mehrere') }}</span>{% endif %}
         </span>
       {%- if a.gewaehlt %}</span>{% else %}</button>{% endif %}</li>
       {%- endfor %}
@@ -164,10 +168,8 @@
        Der zweite: was ein Wechsel mit dem Korb macht — nämlich nichts. Was
        bestätigt wurde, gehört dem Korb (dieselbe Haltung wie in WB-361 und
        WB-384), und wer das nicht weiss, traut sich nicht zu wechseln. #}
-    <p class="fussnote">Ein anderes Rezept ersetzt diesen Zug hier —
-      <strong>was schon im Korb liegt, bleibt liegen</strong>, offene
-      Vorschläge zum alten Rezept fallen weg. Zutatenzahl und Kochzeit stehen
-      erst im Rezept selbst; die Suche nennt nur die Arbeitszeit.</p>
+    <p class="fussnote">{{ t('zugrezept.wechsel_vor') }}
+      <strong>{{ t('allgemein.korb_bleibt') }}</strong>{{- t('zugrezept.wechsel_nach') }}</p>
   </form>
   {# **Vorgerechnet, während der Mensch liest** (WB-408). Ein Wechsel zu
      einem Rezept, dessen Zuordnung dasteht, ist eine Datenbankabfrage; einer
@@ -238,12 +240,12 @@
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <input type="hidden" name="rezept" value="{{ r.id }}">
-    <label>Für wie viele Portionen?
+    <label>{{ t('zugrezept.portionen_label') }}
       <input type="text" inputmode="numeric" name="portionen"
              id="zugportionen-{{ m.id }}"
              value="{{ r.portionen }}"
-             aria-label="Portionen für „{{ r.name }}“"></label>
-    <button class="mini" type="submit">Mengen neu rechnen</button>
+             aria-label="{{ t('zugrezept.portionen_aria', name=r.name) }}"></label>
+    <button class="mini" type="submit">{{ t('zugrezept.neu_rechnen') }}</button>
     {# Drei Sätze, die alle drei gesagt werden müssen. Der erste: wovon
        abgewichen wird — ohne ihn wäre Chefkochs Zahl nach dem ersten Tippen
        verschwunden. Der zweite: dass das Rezept selbst bleibt. Der dritte:
@@ -253,18 +255,19 @@
        sonst mit aus, und „6\n Portionen" ist im Quelltext nicht mehr
        dieselbe Zeichenkette — die Zusicherung von WB-383 hing daran. #}
     <p class="fussnote">
-      {%- if r.umgerechnet %}Hochgerechnet von {{ r.portionen_rezept }} {{ "Portion" if r.portionen_rezept == 1 else "Portionen" }} laut Rezept.
-      {%- else %}Das Rezept rechnet mit {{ r.portionen_rezept }} {{ "Portion" if r.portionen_rezept == 1 else "Portionen" }}.{% endif %}
-      Das Rezept selbst ändert sich davon nicht — und <strong>was schon im
-      Korb liegt, bleibt liegen</strong>; die neue Zahl gilt für das
-      Nächste.</p>
+      {%- if r.umgerechnet %}{% if r.portionen_rezept == 1 %}{{ t('zugrezept.hochgerechnet_eins',
+          n=r.portionen_rezept) }}{% else %}{{ t('zugrezept.hochgerechnet_mehrere',
+              n=r.portionen_rezept) }}{% endif %}
+      {%- else %}{% if r.portionen_rezept == 1 %}{{ t('zugrezept.rechnet_mit_eins',
+          n=r.portionen_rezept) }}{% else %}{{ t('zugrezept.rechnet_mit_mehrere',
+              n=r.portionen_rezept) }}{% endif %}{% endif %}
+      {{ t('zugrezept.portionen_hinweis') | safe }}</p>
   </form>
   {%- else %}
   {# Regel 4 des Tickets: ohne Portionszahl der Quelle gibt es keinen Faktor,
      und geraten wird nicht. Ein Feld, das nichts bewirkt, wäre schlimmer als
      keines — es verspräche eine Rechnung, die es nicht gibt. #}
-  <p class="fussnote">Am Rezept steht keine Portionszahl — dann gibt es
-    keinen Faktor, und die Mengen bleiben, wie sie sind.</p>
+  <p class="fussnote">{{ t('allgemein.keine_portionszahl') }}</p>
   {%- endif %}
   {%- endif %}
 
@@ -290,15 +293,17 @@
 
   {%- if r.n_schritte %}
   <details class="zubereitung-klapp">
-    <summary>Zubereitung — {{ r.n_schritte }} {{ "Schritt" if r.n_schritte == 1 else "Schritte" }}</summary>
+    <summary>{% if r.n_schritte == 1 %}{{ t('zugrezept.zubereitung_eins',
+        n=r.n_schritte) }}{% else %}{{ t('zugrezept.zubereitung_mehrere',
+            n=r.n_schritte) }}{% endif %}</summary>
     {# Nachgeladen und nicht mitgeschickt: siehe oben. Ohne JavaScript wird
        hier nie gefragt — dann bleibt der Satz stehen, und er nennt den Weg,
        auf dem dasselbe vollständig zu lesen ist. #}
     <div hx-get="/rezepte/{{ r.id }}/zubereitung"
          hx-trigger="toggle once from:closest details"
          hx-swap="innerHTML">
-      <p class="fussnote">Wird beim Aufklappen nachgeladen — sie steht auch
-        auf der <a href="/rezepte/{{ r.id }}">Rezeptseite</a>.</p>
+      <p class="fussnote">{{ t('zugrezept.nachgeladen_vor') }}
+        <a href="/rezepte/{{ r.id }}">{{ t('zugrezept.rezeptseite') }}</a>.</p>
     </div>
   </details>
   {%- endif %}
@@ -312,14 +317,12 @@
      Ausgang, der immer wahr ist: das Rezept selbst. Ein Satz über einen
      Entwurf, den es in einer Sekunde geben wird, wäre eine Vorhersage. #}
   {%- if vorschau %}
-  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">Das ganze Rezept
-    ansehen</a></p>
+  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">{{ t('zugrezept.ganzes_rezept') }}</a></p>
   {%- elif m.entwurf and m.entwurf.saved_at %}
-  <p class="fussnote">Steht in deiner Sammlung.
-    <a class="ausgang" href="/rezepte/{{ r.id }}">Ansehen</a></p>
+  <p class="fussnote">{{ t('zugrezept.in_sammlung') }}
+    <a class="ausgang" href="/rezepte/{{ r.id }}">{{ t('allgemein.ansehen') }}</a></p>
   {%- elif m.entwurf and not m.entwurf.verworfen %}
-  <p class="fussnote">Beim Abschicken kommen die Zeilen, die du unten mit
-    „Ja“ bestätigst, als Zutaten in genau dieses Rezept.</p>
+  <p class="fussnote">{{ t('zugrezept.beim_abschicken') }}</p>
   {%- else %}
   {# Kein Entwurf: der Rezeptweg (das Rezept gibt es längst) oder ein Zug, in
      dem keine Zutat des Gerichts übrig blieb. Beides Mal ist nur EINES
@@ -327,7 +330,6 @@
      den Weg zu raten, den der Zug genommen hat. #}
   {# `.ausgang`: das hier führt aus der Karte heraus und ist deshalb ein
      Tap-Ziel wie jedes andere (WB-400) — es mass 176 × 17 px. #}
-  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">Das ganze Rezept
-    ansehen</a></p>
+  <p class="fussnote"><a class="ausgang" href="/rezepte/{{ r.id }}">{{ t('zugrezept.ganzes_rezept') }}</a></p>
   {%- endif %}
 </section>

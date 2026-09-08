@@ -1,7 +1,7 @@
 {% extends "basis.html" %}
-{% block titel %}Rezepte — Zettel{% endblock %}
+{% block titel %}{{ t('rezepte.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Rezepte</h1>
+<h1>{{ t('rezepte.titel') }}</h1>
 
 {% if fehler %}
 <p class="fehler" role="status">{{ fehler }}</p>
@@ -12,12 +12,11 @@
    gelöschten Rezept genauso aus wie nach einem Abbruch — und wer eines von
    vieren gelöscht hat, zählt nach, statt es zu lesen. Der Name kommt aus dem
    Query der Weiterleitung: eine Sitzung hat dieser Shop nicht. #}
-<p class="fertig" role="status">„{{ weg }}“ ist gelöscht.</p>
+<p class="fertig" role="status">{{ t('rezepte.geloescht', name=weg) }}</p>
 {% endif %}
 
 {% if not rezepte %}
-  <p class="leer">Noch kein Rezept. Leg eines an — oder mach an einer
-    erledigten Bestellung eines daraus.</p>
+  <p class="leer">{{ t('rezepte.leer') }}</p>
 {% else %}
 <ul class="rezepte">
   {% for r in rezepte %}
@@ -31,19 +30,19 @@
              zweite — ein geholtes Rezept mit 23 Zutaten meldete „0 Zutaten",
              und die Liste ist der erste Blick auf die Rezepte. #}
           {% if r.n_rezeptzutaten %}
-          {{ r.n_rezeptzutaten }} {% if r.n_rezeptzutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
-          {%- if r.n_zutaten %} · {{ r.n_zutaten }} verknüpft
-          {%- else %} · noch nichts verknüpft{% endif %}
+          {{ r.n_rezeptzutaten }} {% if r.n_rezeptzutaten == 1 %}{{ t('allgemein.zutat_eins') }}{% else %}{{ t('allgemein.zutat_mehrere') }}{% endif %}
+          {%- if r.n_zutaten %} · {{ r.n_zutaten }} {{ t('rezepte.verknuepft') }}
+          {%- else %} · {{ t('rezepte.nichts_verknuepft') }}{% endif %}
           {%- else %}
-          {{ r.n_zutaten }} {% if r.n_zutaten == 1 %}Zutat{% else %}Zutaten{% endif %}
+          {{ r.n_zutaten }} {% if r.n_zutaten == 1 %}{{ t('allgemein.zutat_eins') }}{% else %}{{ t('allgemein.zutat_mehrere') }}{% endif %}
           {%- endif %}
-          {%- if r.servings %} · für {{ r.servings }} Portionen{% endif %}
-          {%- if r.hat_zubereitung %} · mit Zubereitung{% endif %}
-          {%- if r.source %} · von {{ r.source }}{% endif %}
+          {%- if r.servings %} · {{ t('allgemein.fuer_portionen', n=r.servings) }}{% endif %}
+          {%- if r.hat_zubereitung %} · {{ t('rezepte.mit_zubereitung') }}{% endif %}
+          {%- if r.source %} · {{ t('rezepte.von_quelle', quelle=r.source) }}{% endif %}
           {%- if r.n_ausgemustert %}
           {# Der Hinweis steht schon in der Liste: wer ein Rezept in den Korb
              legen will, soll es vorher wissen und nicht erst im Laden. #}
-          · <span class="ausgemustert">{{ r.n_ausgemustert }} nicht mehr im Katalog</span>{% endif %}
+          · <span class="ausgemustert">{{ r.n_ausgemustert }} {{ t('allgemein.nicht_mehr_im_katalog') }}</span>{% endif %}
         </span>
       </span>
     </a>
@@ -53,8 +52,8 @@
 {% endif %}
 
 <form class="freitext" method="post" action="/rezepte">
-  <input type="text" name="name" autocomplete="off" placeholder="Neues Rezept…"
-         aria-label="Name des neuen Rezepts" value="{{ name or '' }}">
-  <button type="submit">Anlegen</button>
+  <input type="text" name="name" autocomplete="off" placeholder="{{ t('rezepte.platzhalter') }}"
+         aria-label="{{ t('rezepte.name_label') }}" value="{{ name or '' }}">
+  <button type="submit">{{ t('rezepte.anlegen') }}</button>
 </form>
 {% endblock %}

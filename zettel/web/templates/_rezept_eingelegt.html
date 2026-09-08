@@ -11,5 +11,5 @@
    Mal. #}
 {% include "_rezept.html" %}
 {%- if rueckmeldung %}
-<span id="rz-{{ rueckmeldung }}" hx-swap-oob="innerHTML"><span class="ok" role="status">im Rezept</span></span>
+<span id="rz-{{ rueckmeldung }}" hx-swap-oob="innerHTML"><span class="ok" role="status">{{ t('rezept_eingelegt.marke') }}</span></span>
 {%- endif %}

@@ -45,13 +45,12 @@
     <span role="status">{{ warten_meldung }}</span>
     {%- if warten_rest %}
     <span class="warten-zaehler" aria-hidden="true"
-          data-warten-bis="{{ warten_rest }}">noch ~{{ warten_rest }} s</span>
+          data-warten-bis="{{ warten_rest }}">{{ t('chat.warten_rest', n=warten_rest) }}</span>
     {%- elif warten_ueberfaellig %}
-    <span class="warten-zaehler" aria-hidden="true">es dauert länger als sonst</span>
+    <span class="warten-zaehler" aria-hidden="true">{{ t('chat.warten_ueberfaellig') }}</span>
     {%- endif %}
     {%- if warten_grund %}<span class="fussnote">{{ warten_grund }}</span>{% endif %}
-    <span class="fussnote">Dein Satz: „{{ warten_satz }}“ — er läuft, sobald
-      das Modell antwortet. Du musst nichts weiter tun.</span>
+    <span class="fussnote">{{ t('chatwarten.satz', satz=warten_satz) }}</span>
   </p>
   {# Ohne JavaScript der einzige Weg, und mit JavaScript der Weg für den, der
      nicht warten will. Dieselbe Adresse wie der Zähler, damit es keine zweite
@@ -60,7 +59,7 @@
         hx-post="/chat/warten" hx-target="#chat-warten" hx-swap="outerHTML"
         hx-disabled-elt="find button">
     <input type="hidden" name="satz" value="{{ warten_satz }}">
-    <button class="mini" type="submit">Jetzt versuchen</button>
-    <a class="ausgang fussnote" href="/chat">Abbrechen</a>
+    <button class="mini" type="submit">{{ t('chatwarten.jetzt') }}</button>
+    <a class="ausgang fussnote" href="/chat">{{ t('allgemein.abbrechen') }}</a>
   </form>
 </div>

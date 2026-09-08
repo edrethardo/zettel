@@ -1,7 +1,7 @@
 {% extends "basis.html" %}
-{% block titel %}Bestellungen — Zettel{% endblock %}
+{% block titel %}{{ t('bestellungen.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Bestellungen</h1>
+<h1>{{ t('bestellungen.titel') }}</h1>
 {% if fehler %}
 <p class="fehler" role="status">{{ fehler }}</p>
 {% endif %}
@@ -14,17 +14,17 @@
    „0,00 €". #}
 <p class="fertig" role="status">
   {%- if quittung.summe.cents %}
-  Abgeschickt: {{ quittung.n }} Posten,
-  zusammen etwa {{ quittung.summe.cents | euro }}
-  {%- if quittung.summe.ohne_preis %} · {{ quittung.summe.ohne_preis }} Posten ohne Preis{% endif %}.
+  {{ t('bestellungen.abgeschickt', n=quittung.n, summe=quittung.summe.cents | euro) }}
+  {%- if quittung.summe.ohne_preis %} · {{ t('allgemein.posten_ohne_preis',
+      n=quittung.summe.ohne_preis) }}{% endif %}.
   {%- else %}
-  Abgeschickt: {{ quittung.n }} Posten ohne Preis.
+  {{ t('bestellungen.abgeschickt_ohne_preis', n=quittung.n) }}
   {%- endif %}
-  Die Bestellung steht jetzt auf der <a href="/pick">Pick-Liste</a>.</p>
+  {{ t('bestellungen.jetzt_auf') }} <a href="/pick">{{ t('nav.pick') }}</a>.</p>
 {% endif %}
 {% if not bestellungen %}
-  <p class="leer">Noch nichts abgeschickt.</p>
-  <p><a class="knopf" href="/warenkorb">Zum Warenkorb</a></p>
+  <p class="leer">{{ t('bestellungen.leer') }}</p>
+  <p><a class="knopf" href="/warenkorb">{{ t('allgemein.zum_warenkorb') }}</a></p>
 {% else %}
 {# Offene oben, erledigte darunter (Spec 9) — die Reihenfolge kommt aus
    `orders.bestellungen()`, die Vorlage sortiert nicht selbst. #}
@@ -39,17 +39,17 @@
            alles im Wagen lag. #}
         <span class="name">
           {%- if b.state == 'offen' -%}
-            offen · {{ b.n_offen }} von {{ b.n_posten }} noch zu holen
-            {%- if b.n_fehlt %}, {{ b.n_fehlt }} gab's nicht{% endif -%}
+            {{ t('bestellungen.offen', offen=b.n_offen, gesamt=b.n_posten) }}
+            {%- if b.n_fehlt %}{{ t('bestellungen.fehlt_zusatz', n=b.n_fehlt) | safe }}{% endif -%}
           {%- elif b.n_fehlt -%}
-            erledigt · {{ b.n_geholt }} geholt, {{ b.n_fehlt }} gab's nicht
+            {{ t('bestellungen.erledigt_mit_fehlt', geholt=b.n_geholt, fehlt=b.n_fehlt) | safe }}
           {%- else -%}
-            erledigt · {{ b.n_posten }} Posten
+            {{ t('bestellungen.erledigt', n=b.n_posten) }}
           {%- endif -%}
         </span>
         <span class="menge">
-          {% if b.state == 'offen' %}abgeschickt {{ b.submitted_at | zeit }}
-          {% else %}fertig {{ b.done_at | zeit }}{% endif %}
+          {% if b.state == 'offen' %}{{ t('bestellungen.abgeschickt_am', zeit=b.submitted_at | zeit) }}
+          {% else %}{{ t('bestellungen.fertig_am', zeit=b.done_at | zeit) }}{% endif %}
         </span>
         {# Vier Zeilen statt fünfzehn Namen mit Kommas in 13 px (UI-Review
            2026-09-01, Fund 7): die Karte ist ein Blick, die Pick-Liste
@@ -64,8 +64,9 @@
         {# Ein Rest ist einer: „und 1 weiterer". Dieselbe Sorgfalt wie bei
            „liegt/liegen" in `mengen.py` — die Zahl steht daneben, also fällt
            die falsche Endung sofort auf. #}
-        <span class="menge">und {{ b.posten | length - 4 }}
-          {{- " weiterer" if b.posten | length == 5 else " weitere" }}</span>
+        <span class="menge">{%- if b.posten | length == 5 %}{{ t('bestellungen.weitere_eins',
+            n=b.posten | length - 4) }}{%- else %}{{ t('bestellungen.weitere_mehrere',
+                n=b.posten | length - 4) }}{% endif %}</span>
         {% endif %}
       </span>
     </a>
@@ -75,9 +76,9 @@
        überschreibbar — „Einkauf vom 3. Mai“ findet später niemand wieder. #}
     <form class="rezept-daraus" method="post" action="/bestellungen/{{ b.id }}/rezept">
       <input type="text" name="name" autocomplete="off"
-             aria-label="Name des Rezepts aus Bestellung {{ b.id }}"
-             placeholder="Name für das Rezept…">
-      <button class="knopf" type="submit">Daraus ein Rezept machen</button>
+             aria-label="{{ t('bestellungen.rezeptname_label', id=b.id) }}"
+             placeholder="{{ t('bestellungen.rezeptname_platzhalter') }}">
+      <button class="knopf" type="submit">{{ t('bestellungen.rezept_daraus') }}</button>
     </form>
     {% endif %}
   </li>

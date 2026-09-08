@@ -1,5 +1,5 @@
 {% extends "basis.html" %}
-{% block titel %}Katalog — Zettel{% endblock %}
+{% block titel %}{{ t('katalog.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
 
 <form class="suche" action="/katalog" method="get" role="search">
@@ -10,12 +10,12 @@
      eine Liste, die weiter unten steht, und ohne diesen Zusatz ändert sich im
      sichtbaren Bereich nach dem Tippen NICHTS. Mit ihm rückt die Trefferliste
      ins Bild — beim Suchen wie beim Kategoriewechsel. #}
-  <input type="search" name="q" value="{{ q or '' }}" placeholder="Suchen…"
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="{{ t('katalog.platzhalter') }}"
          autocomplete="off"
          hx-get="/produkte"
          hx-trigger="input changed delay:300ms, search"
          hx-target="#produkte" hx-swap="innerHTML show:#treffer:top">
-  <button type="submit">Suchen</button>
+  <button type="submit">{{ t('allgemein.suchen') }}</button>
 </form>
 
 {# 138 Kategoriezeilen à 44 px sind 6.100 px. Ausgeklappt lagen sie ZWISCHEN
@@ -24,12 +24,12 @@
    auf. Offen ist die Karte genau dann, wenn gerade nach Kategorie geblättert
    wird: dann ist sie das Werkzeug, das man in der Hand hat. #}
 <details class="kategorienkarte"{% if l1 and not q %} open{% endif %}>
-  <summary>Kategorien durchstöbern
+  <summary>{{ t('katalog.kategorien') }}
     <span class="anzahl">{{ baum | length }}</span></summary>
-  <nav class="kategorien" aria-label="Kategorien">
+  <nav class="kategorien" aria-label="{{ t('katalog.kategorien_nav') }}">
     <a class="zweig alle" href="/katalog"
        hx-get="/produkte" hx-target="#produkte"
-       hx-swap="innerHTML show:#treffer:top">Alles</a>
+       hx-swap="innerHTML show:#treffer:top">{{ t('katalog.alles') }}</a>
     {% for k1 in baum %}
     {# Der gewählte Ast steht offen. Sonst musste man ihn nach jedem Wechsel
        von Hand wieder aufklappen, um zu sehen, wo man ist. #}
@@ -37,7 +37,8 @@
       <summary>{{ k1.name }} <span class="anzahl">{{ k1.anzahl }}</span></summary>
       <a class="zweig" href="/katalog?l1={{ k1.name | urlencode }}"
          hx-get="/produkte?l1={{ k1.name | urlencode }}"
-         hx-target="#produkte" hx-swap="innerHTML show:#treffer:top">alles aus {{ k1.name }}</a>
+         hx-target="#produkte" hx-swap="innerHTML show:#treffer:top">{{ t('katalog.alles_aus',
+             name=k1.name) }}</a>
       {% for k2 in k1.kinder %}
       <a class="zweig" href="/katalog?l1={{ k1.name | urlencode }}&amp;l2={{ k2.name | urlencode }}"
          hx-get="/produkte?l1={{ k1.name | urlencode }}&amp;l2={{ k2.name | urlencode }}"
@@ -53,11 +54,8 @@
    Suche und jeder Kategoriezweig scrollen. Der Text bleibt beim Tausch stehen
    (getauscht wird nur `#produkte`), deshalb steht hier kein Suchbegriff drin,
    der gleich falsch wäre; was gefunden wurde, sagt die Liste selbst. #}
-<h2 id="treffer">Produkte</h2>
+<h2 id="treffer">{{ t('katalog.produkte') }}</h2>
 <div id="produkte">{% include "_produkte.html" %}</div>
 
-<p class="fussnote">
-  Preise stammen von knuspr.de und sind Richtwerte — eingekauft wird bei Rewe
-  und Lidl.
-</p>
+<p class="fussnote">{{ t('katalog.preise') }}</p>
 {% endblock %}

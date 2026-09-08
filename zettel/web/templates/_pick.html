@@ -7,19 +7,19 @@
      Eine Bestellung, die ehrlich Lücken nennt, ist fertig; eine, die
      Vollständigkeit behauptet, ist es nicht. #}
   {% if fehlt %}
-<p class="fertig" role="status">Fertig — {{ geholt }} geholt,
-  {{ fehlt }} gab's nicht. Erledigt {{ bestellung.done_at | zeit }}.</p>
+<p class="fertig" role="status">{{ t('pick.fertig_mit_fehlt', geholt=geholt, fehlt=fehlt,
+    zeit=bestellung.done_at | zeit | e) | safe }}</p>
   {% else %}
-<p class="fertig" role="status">Alles abgehakt — erledigt {{ bestellung.done_at | zeit }}.</p>
+<p class="fertig" role="status">{{ t('pick.alles_abgehakt', zeit=bestellung.done_at | zeit) }}</p>
   {% endif %}
 {% else %}
-<p class="stand" role="status">Noch {{ offen }} zu holen.{% if fehlt %}
-  {{ fehlt }} gab's nicht.{% endif %}</p>
+<p class="stand" role="status">{{ t('pick.noch_zu_holen', n=offen) }}{% if fehlt %}
+  {{ t('pick.gabs_nicht_zahl', n=fehlt) | safe }}{% endif %}</p>
 {% endif %}
 
 {% for g in gruppen %}
 <section class="gruppe">
-  <h2>{{ g.titel }} <span class="anzahl">{{ g.n_offen }} offen</span></h2>
+  <h2>{{ g.titel }} <span class="anzahl">{{ t('pick.offen_zahl', n=g.n_offen) }}</span></h2>
   <ul class="pickliste">
     {% for i in g.posten %}
     {# Der Hinweis hängt an der ZEILE und nicht in einem Band am Seitenkopf:
@@ -40,7 +40,7 @@
             hx-indicator="#pick-laeuft" hx-disabled-elt="find input">
         <label class="haken">
           <input type="checkbox" {% if i.gepickt %}checked{% endif %}
-                 aria-label="{{ i.name }} abhaken">
+                 aria-label="{{ t('pick.abhaken', name=i.name) }}">
           {% if i.bild_url %}
             <img class="bild" src="{{ i.bild_url }}" alt="" loading="lazy" width="56" height="56">
           {% else %}
@@ -68,7 +68,7 @@
                dann trägt sie das Feld allein, und das „2 ×" davor sagt, dass
                sie eine Packungsgrösse ist und keine Bedarfsmenge. #}
             {% if i.gebinde_text or i.ist_freitext %}
-            <span class="gebinde">{% if i.ist_freitext %}Freitext{% else %}{{ i.gebinde_text }}{% endif %}</span>
+            <span class="gebinde">{% if i.ist_freitext %}{{ t('allgemein.freitext') }}{% else %}{{ i.gebinde_text }}{% endif %}</span>
             {% endif %}
             {# Was die beiden Angaben nicht schon selbst sagen (WB-381): eine
                von Hand gesetzte Packungszahl, die Annahme „1 ml als 1 g" —
@@ -79,15 +79,14 @@
             <span class="hinweis">{{ i.bedarf_nachsatz }}</span>
             {% endif %}
             {% if i.fehlt %}
-            <span class="vermisst">Gab's nicht — zählt als erledigt.</span>
+            <span class="vermisst">{{ t('pick.vermisst') | safe }}</span>
             {% endif %}
             {% if i.nicht_im_katalog %}
-            <span class="ausgemustert">Nicht mehr im Katalog — such nicht
-              lange, nimm etwas Ähnliches oder lass es weg.</span>
+            <span class="ausgemustert">{{ t('pick.ausgemustert') }}</span>
             {% endif %}
           </span>
         </label>
-        <noscript><button class="mini" type="submit">ok</button></noscript>
+        <noscript><button class="mini" type="submit">{{ t('allgemein.ok') }}</button></noscript>
       </form>
       {# Der dritte Stand (WB-373). Er steht als eigener Knopf neben dem Haken
          und nicht in einem Menü: vor dem leeren Regal ist das der Moment, in
@@ -100,10 +99,11 @@
               hx-indicator="#pick-laeuft" hx-disabled-elt="find button">
           {% if i.fehlt %}
           <button class="mini zurueck" type="submit"
-                  aria-label="{{ i.name }} doch wieder offen">zurück</button>
+                  aria-label="{{ t('pick.wieder_offen', name=i.name) }}">{{ t('allgemein.zurueck') }}</button>
           {% else %}
           <button class="mini nein" type="submit"
-                  aria-label="{{ i.name }} gab's nicht">gab's nicht</button>
+                  aria-label="{{ t('pick.gabs_nicht_label',
+                      name=i.name | e) | safe }}">{{ t('allgemein.gabs_nicht') | safe }}</button>
           {% endif %}
         </form>
       </span>

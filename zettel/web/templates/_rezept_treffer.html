@@ -3,7 +3,7 @@
    Rezept. Mit einer gemeinsamen Vorlage und einem Umschalter wäre genau diese
    Verwechslung eine Frage der Zeit. #}
 {% if not treffer %}
-  {% if q %}<p class="leer">Nichts gefunden zu „{{ q }}“.</p>{% endif %}
+  {% if q %}<p class="leer">{{ t('rezept_treffer.nichts_gefunden', q=q) }}</p>{% endif %}
 {% else %}
 <ul class="kacheln">
   {% for p in treffer %}
@@ -28,7 +28,7 @@
           hx-post="/rezepte/{{ rezept.id }}/zutaten?product_id={{ p.id }}{{ mengenteil }}"
           hx-target="#rezept" hx-swap="innerHTML">
       <button class="plus" type="submit"
-              aria-label="{{ p.name }} ins Rezept">+</button>
+              aria-label="{{ t('rezept_treffer.plus', name=p.name) }}">+</button>
     </form>
     {# Dasselbe wie an der Katalogkachel (`_produkte.html`), und aus demselben
        Grund: ohne Rückmeldung drückt man zweimal. Hier wiegt es schwerer —

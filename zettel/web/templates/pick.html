@@ -1,11 +1,11 @@
 {% extends "basis.html" %}
-{% block titel %}Pick-Liste — Zettel{% endblock %}
+{% block titel %}{{ t('pick.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
 {% if weg %}
-<p class="fertig" role="status">Einkauf Nr. {{ weg }} ist gelöscht.</p>
+<p class="fertig" role="status">{{ t('pick.geloescht', n=weg) }}</p>
 {% endif %}
 {% if bestellung %}
-  <h1>Einkauf Nr. {{ bestellung.id }}</h1>
+  <h1>{{ t('pick.einkauf_nr', n=bestellung.id) }}</h1>
   <div id="pickliste">{% include "_pick.html" %}</div>
 
   {# Beide Meldungen stehen AUSSERHALB von `#pickliste`: der Austausch nach
@@ -16,10 +16,9 @@
      gescrollt, der Daumen ist unten, und eine Meldung am Seitenkopf ist genau
      dann aus dem Bild, wenn sie gebraucht wird. #}
   <p id="pick-laeuft" class="htmx-indicator pick-meldung" role="status">
-    Wird gespeichert …</p>
+    {{ t('pick.speichert') }}</p>
   <p id="pick-fehler" class="pick-meldung fehler" role="alert" hidden>
-    Nicht gespeichert — wahrscheinlich kein Netz. Der Haken ist
-    zurückgesprungen; nochmal tippen, sobald du wieder Empfang hast.</p>
+    {{ t('pick.fehler') }}</p>
 
   {# Ohne dieses Stück sieht ein Haken, der nicht ankam, aus wie einer, der
      ankam: HTMX tauscht bei einem Fehler nichts, und die Checkbox bleibt
@@ -55,17 +54,17 @@
     })();
   </script>
 {% else %}
-  <h1>Pick-Liste</h1>
-  <p class="leer">Nichts zu holen — es ist keine Bestellung offen.</p>
-  <p><a class="knopf" href="/katalog">Zum Katalog</a></p>
+  <h1>{{ t('pick.titel') }}</h1>
+  <p class="leer">{{ t('pick.leer') }}</p>
+  <p><a class="knopf" href="/katalog">{{ t('allgemein.zum_katalog') }}</a></p>
 {% endif %}
 
 {% if auswahl %}
-<h2>Weitere offene Bestellungen</h2>
+<h2>{{ t('pick.weitere') }}</h2>
 <ul class="bestellungen">
   {% for b in auswahl %}
   <li class="bestellung offen">
-    <a class="zweig" href="/pick/{{ b.id }}">Nr. {{ b.id }} · {{ b.n_offen }} zu holen
+    <a class="zweig" href="/pick/{{ b.id }}">{{ t('pick.nr_offen', id=b.id, n=b.n_offen) }}
       <span class="anzahl">{{ b.submitted_at | zeit }}</span></a>
   </li>
   {% endfor %}
@@ -76,7 +75,7 @@
 {# Ganz unten, nach allem anderen: der Knopf ist der letzte Griff auf dieser
    Seite, nicht der erste, und er führt auf eine Rückfrage (2026-09-04). #}
 <div class="pickloeschen">
-  <a class="knopf loeschen" href="/pick/{{ bestellung.id }}/loeschen">Pick-Liste löschen</a>
+  <a class="knopf loeschen" href="/pick/{{ bestellung.id }}/loeschen">{{ t('pick.loeschen') }}</a>
 </div>
 {% endif %}
 {% endblock %}

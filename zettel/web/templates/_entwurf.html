@@ -25,20 +25,20 @@
 {% if m.entwurf %}
 <section class="entwurf">
   {% if m.entwurf.saved_at %}
-  <h3>Rezept angelegt</h3>
-  <p class="fussnote">„{{ m.entwurf.name }}“ steht in der Sammlung.
+  <h3>{{ t('entwurf.angelegt') }}</h3>
+  <p class="fussnote">{{ t('entwurf.in_sammlung', name=m.entwurf.name) }}
     {% if m.entwurf.recipe_id %}
-    <a href="/rezepte/{{ m.entwurf.recipe_id }}">Ansehen</a>{% endif %}
+    <a href="/rezepte/{{ m.entwurf.recipe_id }}">{{ t('allgemein.ansehen') }}</a>{% endif %}
   </p>
   {% elif m.entwurf.verworfen %}
-  <h3>Rezeptentwurf</h3>
-  <p class="fussnote">Daraus wird kein Rezept.</p>
+  <h3>{{ t('entwurf.titel') }}</h3>
+  <p class="fussnote">{{ t('entwurf.kein_rezept') }}</p>
   <form method="post"
         action="/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
         hx-post="/chat/{{ m.id }}/entwurf/verwerfen?ja=0"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
-    <button class="mini" type="submit">Doch ein Rezept daraus</button>
+    <button class="mini" type="submit">{{ t('entwurf.doch_rezept') }}</button>
   </form>
   {% else %}
   {# Eingeklappt (UI-Review 2026-09-01, Fund 2): über diesem Block stehen
@@ -53,9 +53,13 @@
      Menge wieder zu. `entwurf_offen` setzen nur die vier Entwurf-Endpunkte;
      das Ja/Nein oben lässt ihn zu — dort ist er der Nebenpfad. #}
   <details{% if entwurf_offen %} open{% endif %}>
-    <summary>Rezeptentwurf „{{ m.entwurf.name }}“ —
-      {{ m.entwurf.n_drin }} von {{ m.entwurf.zeilen | length }}
-      {{ "Zutat" if m.entwurf.zeilen | length == 1 else "Zutaten" }} im Rezept</summary>
+    <summary>
+      {%- set kopf = t('entwurf.summary_eins', name=m.entwurf.name,
+                       drin=m.entwurf.n_drin, gesamt=m.entwurf.zeilen | length)
+                     if m.entwurf.zeilen | length == 1
+                     else t('entwurf.summary_mehrere', name=m.entwurf.name,
+                            drin=m.entwurf.n_drin, gesamt=m.entwurf.zeilen | length) %}
+      {{- kopf }}</summary>
   {# Der Name ist überschreibbar, und das ist keine Kosmetik: der Rezeptweg
      sucht ihn beim nächsten Mal wörtlich im Satz. #}
   <form class="entwurf-name" method="post"
@@ -65,8 +69,8 @@
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
     <input type="text" name="name" autocomplete="off"
            value="{{ m.entwurf.name }}"
-           aria-label="Name des Rezepts">
-    <button class="mini" type="submit">Name merken</button>
+           aria-label="{{ t('entwurf.name_label') }}">
+    <button class="mini" type="submit">{{ t('entwurf.name_merken') }}</button>
   </form>
   <ul class="entwurfsliste">
     {% for z in m.entwurf.zeilen %}
@@ -82,11 +86,11 @@
         {% if wartet %}
         {# Nicht „kommt nicht ins Rezept": nichts ist entschieden, und der
            Satz soll den Weg zeigen statt ein Urteil zu behaupten. #}
-        <span class="menge">wartet auf dein „Ja“ oben</span>
+        <span class="menge">{{ t('entwurf.wartet') }}</span>
         {% elif not z.offen and not z.behalten and not ersetzt %}
-        <span class="menge">verworfen — kommt nicht ins Rezept</span>
+        <span class="menge">{{ t('entwurf.verworfen') }}</span>
         {% elif not z.im_rezept %}
-        <span class="menge">aus dem Entwurf genommen</span>
+        <span class="menge">{{ t('entwurf.raus_genommen') }}</span>
         {% endif %}
       </span>
       {# Die MENGE aus dem Rezept, nicht die Packungszahl (WB-362). Was schon
@@ -100,11 +104,11 @@
         <input type="text" name="menge" inputmode="decimal"
                autocomplete="off"
                value="{{ z.need_amount | menge }}"
-               aria-label="Menge von {{ z.rezeptzeile.name }} im Rezept">
+               aria-label="{{ t('entwurf.menge_label', name=z.rezeptzeile.name) }}">
         <input type="text" name="einheit" autocomplete="off"
                value="{{ z.need_unit | einheit }}"
-               aria-label="Einheit von {{ z.rezeptzeile.name }}">
-        <button class="mini" type="submit">ok</button>
+               aria-label="{{ t('entwurf.einheit_label', name=z.rezeptzeile.name) }}">
+        <button class="mini" type="submit">{{ t('allgemein.ok') }}</button>
       </form>
       {# Aus dem Entwurf nehmen ist NICHT „Nein": das eine heisst „das kaufe
          ich, aber es gehört nicht ins Rezept", das andere „das Produkt ist
@@ -116,33 +120,28 @@
             hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
             hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
         <button class="mini {{ 'zurueck' if z.im_rezept }}" type="submit">
-          {{ "raus" if z.im_rezept else "wieder rein" }}</button>
+          {{ t('entwurf.raus') if z.im_rezept else t('entwurf.wieder_rein') }}</button>
       </form>
     </li>
     {% endfor %}
   </ul>
   {% if m.entwurf.n_drin %}
-  <p class="fussnote">Beim Abschicken wird daraus das Rezept
-    „{{ m.entwurf.name }}“ mit {{ m.entwurf.n_drin }}
-    {{ "Zutat" if m.entwurf.n_drin == 1 else "Zutaten" }} — nur die
-    bestätigten, und nie das, was nicht zum Gericht gehört.</p>
+  <p class="fussnote">{%- if m.entwurf.n_drin == 1 %}{{ t('entwurf.beim_abschicken_eins', name=m.entwurf.name,
+      n=m.entwurf.n_drin) }}{%- else %}{{ t('entwurf.beim_abschicken_mehrere', name=m.entwurf.name,
+          n=m.entwurf.n_drin) }}{% endif %}</p>
   {% elif m.entwurf.zeilen | selectattr("offen") | list %}
   {# Der erste Anblick. Hier fehlt nichts — es hat nur noch niemand
      hingesehen, und der Satz sagt, wie es weitergeht. #}
-  <p class="fussnote">So fängt das Rezept „{{ m.entwurf.name }}“ an: jedes
-    „Ja“ oben nimmt die Zutat hier auf. Gespeichert wird erst beim
-    Abschicken — bis dahin lässt sich alles noch ändern.</p>
+  <p class="fussnote">{{ t('entwurf.anfang', name=m.entwurf.name) }}</p>
   {% else %}
-  <p class="fussnote">Es steht keine bestätigte Zutat im Entwurf —
-    so entsteht kein Rezept. Ein „rückgängig“ oben oder ein „wieder rein“
-    hier holt eine zurück.</p>
+  <p class="fussnote">{{ t('entwurf.leer') }}</p>
   {% endif %}
   <form method="post"
         action="/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
         hx-post="/chat/{{ m.id }}/entwurf/verwerfen?ja=1"
         hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
         hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
-    <button class="mini zurueck" type="submit">Kein Rezept daraus</button>
+    <button class="mini zurueck" type="submit">{{ t('entwurf.kein_rezept_daraus') }}</button>
   </form>
   </details>
   {% endif %}

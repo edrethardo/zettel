@@ -1,18 +1,37 @@
 {% extends "basis.html" %}
-{% block titel %}Mehr — Zettel{% endblock %}
+{% block titel %}{{ t('mehr.titel') }} — Zettel{% endblock %}
 {% block inhalt %}
-<h1>Mehr</h1>
+<h1>{{ t('mehr.titel') }}</h1>
 {# Was keinen Reiter in der Leiste hat (UI-Review 2026-09-01, Fund 6). Drei
    Bereiche, die man seltener braucht als Katalog, Chat, Korb und Pick-Liste
    — und darunter, leiser, die zwei Seiten, die keine Bereiche sind: eine
    Einstellung und eine Diagnose (Fund 3). #}
 <ul class="mehrliste">
-  <li><a href="/rezepte">Rezepte</a></li>
-  <li><a href="/bestellungen">Bestellungen</a></li>
-  <li><a href="/bons">Bons</a></li>
+  <li><a href="/rezepte">{{ t('mehr.rezepte') }}</a></li>
+  <li><a href="/bestellungen">{{ t('mehr.bestellungen') }}</a></li>
+  <li><a href="/bons">{{ t('mehr.bons') }}</a></li>
 </ul>
 <ul class="mehrliste still">
-  <li><a href="/rolle">Wer bin ich?{% if rolle %} <span class="anzahl">{{ rolle }}</span>{% endif %}</a></li>
-  <li><a href="/status">Status</a></li>
+  <li><a href="/rolle">{{ t('mehr.rolle') }}{% if rolle %} <span class="anzahl">{{ rolle }}</span>{% endif %}</a></li>
+  <li><a href="/status">{{ t('mehr.status') }}</a></li>
 </ul>
+
+{# Die Sprachwahl steht hier und nicht in der Leiste: sie wird einmal
+   getroffen und dann nie wieder angefasst, und die fünf Reiter unten sind
+   für das gedacht, was man täglich braucht. Ein POST und kein Link, weil er
+   etwas ändert — dieselbe Regel wie bei der Rollenwahl. #}
+<h2>{{ t('sprache.titel') }}</h2>
+{# Der Wert steht im `action` und nicht als Feld: Starlette 1.6 verweigert
+   `request.form()` ohne `python-multipart`, und das Paket steht nicht in
+   Spec 15. Dieselbe Bauart wie `rolle.html`. #}
+<div class="sprachwahl">
+  {% for code in sprachen %}
+  <form method="post" action="/sprache?code={{ code }}">
+    <button type="submit"
+            {% if code == sprache %}class="gewaehlt" aria-current="true"{% endif %}>
+      {{ t('sprache.' ~ code) }}</button>
+  </form>
+  {% endfor %}
+</div>
+<p class="hinweistext">{{ t('sprache.hinweis') }}</p>
 {% endblock %}

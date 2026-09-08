@@ -28,6 +28,7 @@ from fastapi.templating import Jinja2Templates
 
 from zettel import (betrieb, bons as bonmodul, db, gerichte, mengen,
                     miniaturen, obs, orders, recipes)
+from zettel import sprache
 from zettel import umgebung as umg
 from zettel.assistant import chat as chatmodul
 from zettel.assistant import entwurf as entwuerfe
@@ -681,7 +682,22 @@ def create_app(db_path: str | Path | None = None,
                            else bonmodul.Laeufe())
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-    vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR))
+    def _sprach_kontext(request: Request) -> dict:
+        """Jede Vorlage bekommt `t()` und `sprache` — ohne dass eine einzige
+        Route etwas mitgeben muss.
+
+        Ein Kontextprozessor und keine Jinja-Globale: die Globale wäre für
+        den ganzen Prozess dieselbe, die Sprache hängt aber am einzelnen
+        Besuch (Cookie, sonst `Accept-Language`). Zwei Menschen im selben
+        Tailnet dürfen den Shop gleichzeitig in verschiedenen Sprachen offen
+        haben.
+        """
+        code = sprache.aus_request(request)
+        return {"t": sprache.uebersetzer(code), "sprache": code,
+                "sprachen": sprache.SPRACHEN}
+
+    vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR),
+                               context_processors=[_sprach_kontext])
     vorlagen.env.filters["euro"] = euro
     vorlagen.env.filters["menge"] = menge
     vorlagen.env.filters["zeit"] = zeit
@@ -731,6 +747,31 @@ def create_app(db_path: str | Path | None = None,
                                              _rahmen(request, c))
         finally:
             c.close()
+
+    @app.post("/sprache")
+    def sprache_setzen(request: Request, code: str = ""):
+        """Setzt das Sprach-Cookie und kommt dorthin zurück, wo man war.
+
+        Wie die Rollenwahl ist das eine Einstellung und keine Berechtigung.
+        Zurück geht es über den `Referer`, damit die Wahl da wirkt, wo man
+        sie trifft — fehlt er, führt der Weg auf die Startseite statt ins
+        Leere.
+        """
+        zurueck = request.headers.get("referer") or "/"
+        # Nur eigene Wege: ein fremder Referer würde den Haushalt aus dem
+        # Tailnet hinausschicken, weil er auf „Deutsch" getippt hat.
+        if not zurueck.startswith("/"):
+            from urllib.parse import urlparse
+            ziel = urlparse(zurueck)
+            zurueck = ziel.path or "/"
+            if ziel.query:
+                zurueck = f"{zurueck}?{ziel.query}"
+        antwort = RedirectResponse(zurueck, status_code=303)
+        if code in sprache.SPRACHEN:
+            antwort.set_cookie(sprache.COOKIE, code,
+                               max_age=COOKIE_TAGE * 86400,
+                               httponly=True, samesite="lax")
+        return antwort
 
     @app.get("/rolle")
     def rolle_waehlen(request: Request):

@@ -70,7 +70,7 @@
         {% endfor %}
       </ul>
       <div class="sammel">
-        <button class="mini ja" type="submit">Ausgewählte Sorten zeigen</button>
+        <button class="mini ja" type="submit">{{ t('zug.sorten_zeigen') }}</button>
       </div>
     </form>
     {# Kein Kästchen angekreuzt heisst „überspringen": dann wird direkt nach
@@ -82,8 +82,7 @@
           hx-post="/chat/{{ m.id }}/sorten"
           hx-target="#chat" hx-swap="outerHTML"
           hx-indicator="#chat-laeuft" hx-disabled-elt="find button">
-      <button class="mini" type="submit">Überspringen — direkt nach
-        „{{ m.faecher.wort }}“ suchen</button>
+      <button class="mini" type="submit">{{ t('zug.ueberspringen', wort=m.faecher.wort) }}</button>
     </form>
     {% endif %}
     {# Das vorgeschlagene Rezept (WB-383) — ÜBER der Vorschlagsliste, weil es
@@ -122,9 +121,8 @@
           hx-post="/chat/{{ m.id }}/neusuche"
           hx-target="#zug-{{ m.id }}" hx-swap="outerHTML"
           hx-indicator="#zug-{{ m.id }}" hx-disabled-elt="find button">
-      <button class="mini" type="submit">Neu suchen</button>
-      <span class="fussnote">Fragt das Modell noch einmal, ohne das
-        Gedächtnis — was dabei herauskommt, gilt ab dann.</span>
+      <button class="mini" type="submit">{{ t('zug.neu_suchen') }}</button>
+      <span class="fussnote">{{ t('zug.neu_suchen_hinweis') }}</span>
     </form>
     <div id="sammel-{{ m.id }}">{% include "_sammel.html" %}</div>
     <div id="entwurf-{{ m.id }}">{% include "_entwurf.html" %}</div>

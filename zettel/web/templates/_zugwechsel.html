@@ -71,15 +71,13 @@
      laufen noch" sind zwei Hälften derselben Auskunft. Der pulsende Punkt
      ist das Statuslicht dieses Blattes und keine vierte Bewegung — „etwas
      ist unterwegs" sieht hier aus wie beim aufwachenden Modell. #}
-  <p class="band zugband laeuft" role="status">Das Rezept ist jetzt „{{ gewechselt }}“ — die Vorschläge dazu werden gesucht …
-    <span class="fussnote">Zutaten aus dem Rezept, Katalogsuche, Auswahl —
-      das ist der Teil, der wirklich dauert. Was du vorher bestätigt hast, liegt weiter im Korb.</span>
+  <p class="band zugband laeuft" role="status">{{ t('zugwechsel.band', name=gewechselt) }}
+    <span class="fussnote">{{ t('zugwechsel.dauert') }}</span>
     {# Der Ausweg, falls die Antwort nie ankommt (abgebrochene Verbindung,
        geschlossenes Telefon). Ohne ihn stünde „wird gesucht" für immer da,
        und das wäre die Sorte Anzeige, die man nicht mehr glaubt. #}
-    <span class="fussnote">Bleibt es stehen?
-      <a href="/chat">Chat neu laden</a> — der Zug läuft trotzdem zu
-      Ende.</span></p>
+    <span class="fussnote">{{ t('zugwechsel.bleibt_stehen') }}
+      <a href="/chat">{{ t('zugwechsel.neu_laden') }}</a> {{ t('zugwechsel.laeuft_zu_ende') }}</span></p>
 
   {%- if r %}
   {# `vorschau`: dieselbe Karte wie am Zug, nur ohne die beiden Formulare, die
