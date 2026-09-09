@@ -1,13 +1,20 @@
 # Zettel
 
 > **English** — Zettel (German for the slip of paper you take to the shop) is
-> a grocery agent for a multi-person household that is allowed to do exactly
-> one thing: **choose from the products the shop retrieved** — never invent.
-> An invented product id is rejected and counted; every Yes/No the household
-> taps becomes an eval label; every turn is one trace in Arize Phoenix. No
-> cloud, no API keys: one open model on one NVIDIA RTX 3090.
+> a grocery agent for a multi-person household. Its furthest step: **a week of
+> dinners in, one shopping list out — minus what is already in the fridge.**
+> Four numbers and one sentence, and the model assigns dishes to days; it may
+> only use dishes the household already has, and it returns one sentence per
+> day and not a single number. Servings, weekly sums, stock, packs, price,
+> kcal and protein are computed in code.
+>
+> The rule underneath is the same everywhere: the model is allowed to do
+> exactly one thing — **choose from what was retrieved** — never invent. An
+> invented id is rejected and counted; every Yes/No the household taps becomes
+> an eval label; every turn is one trace in Arize Phoenix. No cloud, no API
+> keys: one open model on one NVIDIA RTX 3090.
 
-![One sentence becomes a recipe card with computed pack counts](docs/images/chat-recipe-card.gif)
+![Der Wochenplan: je Tag ein Gericht, ein Satz Begründung, kcal und Eiweiss je Portion — und Ja/Nein](docs/images/wochenplan.png)
 
 | 128 German dishes, one RTX 3090 (2026-09-05) | ingredients found in the catalog | per dish | seconds per dish |
 |---|---|---|---|
@@ -30,24 +37,168 @@
 > The code itself stays German; `CONTRIBUTING.md` explains why, and why that
 > does not have to stop you.
 
+## Der Wochenplan: eine Woche rein, eine Liste raus
+
+Die weiteste Stufe, und die interessanteste. Unter **Mehr → Wochenplan**
+stehen vier Zahlen — Tage, Personen, höchstens Minuten am Herd, Budget — und
+ein Satz: was noch da ist („500 g Kartoffeln, 6 Eier, Nudeln"). Dann belegt
+das Modell die Tage.
+
+* **Es wählt nur aus, was der Haushalt schon hat** — eigene Rezepte und
+  Gerichte, die im Chat schon einmal geholt wurden. Eine Gericht-id, die nicht
+  vorgelegt wurde, wird verworfen und gezählt, nie repariert.
+* **Es liefert einen Satz je Tag und keine einzige Zahl.** Portionen, Summen
+  über die Woche, Bestand abziehen, Packungen, Preis, Rest, kcal und Eiweiss
+  je Tag rechnet der Code.
+* **Der Bestand ist kein Lagerstand.** Er gilt für *diesen* Plan. Der Shop
+  kennt Käufe, nicht Verbrauch — ein gepflegter Vorrat wäre nach ein paar
+  Tagen still falsch. Der Bon von gestern darf deshalb vorschlagen („10 Eier
+  — noch da?"), aber nichts zählt vor einem Ja.
+* **„Nein" an einem Tag plant nur diesen Tag neu.** Der Rest bleibt stehen,
+  und das abgelehnte Gericht kommt nicht wieder.
+
+Messung weiter unten und in [`EVALS.md`](EVALS.md).
+
+## Worauf er steht
+
+![One sentence becomes a recipe card with computed pack counts](docs/images/chat-recipe-card.gif)
+
 Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
 Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
 dort auf dem Handy ab. **Es wird nie eine
 Bestellung an einen echten Händler geschickt.** Dazu ein Chat-Feld: freier Text
 („alles für Spaghetti Bolognese, und Klopapier") wird auf echte
-Katalogprodukte abgebildet und als Vorschlag vorgelegt.
+Katalogprodukte abgebildet und als Vorschlag vorgelegt — der Zug, an dem die
+Regel entstanden ist und an dem sie über 128 Gerichte und drei Modelle
+gemessen wurde (Tabelle oben).
 
-Zweiter, gleichrangiger Zweck: Der Chat-Agent ist in Arize Phoenix vollständig
+Zweiter, gleichrangiger Zweck: Der Agent ist in Arize Phoenix vollständig
 beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
-Seit dem 06.09. eine Ebene darüber: der **Wochenplan** (unter „Mehr"). Vier
-Zahlen und ein Satz („500 g Kartoffeln, 6 Eier, Nudeln"), und das Modell
-belegt die Tage — nur mit Gerichten, die der Haushalt schon hat; erfundene
-werden verworfen und gezählt. Jede Zahl am Plan rechnet der Code, der
-Bestand ist ein erklärter Rahmen für diesen Plan und kein Lagerstand, und
-der Bon von gestern darf vorschlagen, aber nicht entscheiden. Entwurf:
-`docs/superpowers/specs/2026-09-06-wochenplan-design.md`, Messung in
-[`EVALS.md`](EVALS.md).
+## Demo
+
+Zwei Filme, beide ohne Ton und mit eingebrannten Untertiteln, beide auf
+derselben Bühne gedreht (Xvfb, App in Handybreite links, Phoenix rechts):
+
+| Film | Was er zeigt |
+|---|---|
+| **Der Wochenplan**, 87,2 s | Eine Woche wird eine Liste, abzüglich dessen, was schon da ist — kcal und Eiweiss je Tag daneben. Modell im Bild: Qwen3.8-27B-Instruct. |
+| **Der Chat-Zug**, 90,9 s | Ein Satz wird eine Einkaufsliste, mit dem Trace daneben, live. Modell im Bild: NVIDIA Nemotron 3.5 Lightning. |
+
+Der Link wird hier eingetragen, sobald der Film veröffentlicht ist — ein
+Platzhalter, der ins Leere zeigt, wäre schlechter als keiner. Drehbuch,
+Takes und Schnitt stehen vollständig in
+[`docs/contest/VIDEO.md`](docs/contest/VIDEO.md), inklusive der vier Takes,
+die unbrauchbar waren, und warum.
+
+Eingereicht beim NVIDIA GTC Berlin Golden Ticket Contest 2026 · `#NVIDIAGTC`
+
+## Wie es gebaut ist
+
+Vier Modellstufen, und keine davon darf etwas erfinden. Gezeichnet ist der
+Chat-Zug, weil er die kleinste vollständige Ausführung der Regel ist — der
+Wochenplan (`plan.woche`) hat dieselbe Form eine Ebene höher: statt Produkten
+aus dem Katalog werden Gerichte aus dem eigenen Bestand vorgelegt, und statt
+Packungen und Preis werden zusätzlich Portionen, Bestand und kcal gerechnet.
+Kursiv steht, **wer** den Schritt macht — das ist die ganze Idee:
+
+```mermaid
+flowchart TD
+    A["Ein Satz: „alles für Bolognese, und Klopapier“"] --> B
+    B["<b>plan.extract</b> — der Satz wird zu Suchbegriffen<br/><i>Modell · sieht keine einzige Katalogzeile</i>"] --> C
+    C["<b>Suche</b> — SQLite FTS5, höchstens 5 Kandidaten je Begriff<br/><i>Code</i>"] --> D
+    D["<b>plan.choose</b> — wählt aus den vorgelegten Kandidaten<br/><i>Modell · wählt aus, erfindet nicht</i>"] --> E
+    E{"Stand die id in der Vorlage?"}
+    E -->|nein| F["<b>verworfen und gezählt</b> — zettel.rejected<br/>keine Rettung per Ähnlichkeit; der Begriff<br/>bleibt als Freitext auf dem Zettel sichtbar"]
+    E -->|ja| G["<b>Rechnung</b> — Portionen, Packungen, Preis, Rest, kcal<br/><i>Code · nie das Modell</i>"]
+    G --> H["Vorschlag → <b>Ja/Nein je Posten</b> → Korb → Bestellung"]
+    F --> H
+    H --> I["<b>Labels</b> zurück an den chat.turn-Span<br/>beim Abschicken, nicht beim Tippen"]
+    B -.->|OpenAI-API| BOX
+    D -.-> BOX
+    BOX["<b>vLLM auf einer RTX 3090</b><br/>Qwen3.8-27B AWQ 4-bit oder<br/>NVIDIA Nemotron 3.5 Lightning W4A16<br/><i>im Haus · keine Cloud, keine API-Schlüssel</i>"]
+    I --> PHX["<b>Arize Phoenix</b> — ein Trace je Zug,<br/>Labels aus echten Entscheidungen"]
+    G -.-> PHX
+```
+
+Drei Dinge, die man an der Skizze ablesen können soll:
+
+1. **Stufe 1 sieht den Katalog nicht.** Sie macht aus einem Satz Suchbegriffe,
+   mehr nicht — deshalb kann sie kein Produkt erfinden, das es zu erfinden
+   gäbe. Gesucht wird mit FTS5, nicht mit dem Modell.
+2. **Die Prüfung steht im Code, nicht im Schema.** Ein JSON-Schema erzwingt
+   die *Form*, nicht die *Wahrheit*. Nach einem vLLM-Upgrade war Guided
+   Decoding vier Tage lang still wirkungslos, und keine Zahl bewegte sich —
+   weil die Prüfung nie dort hing (`CASE-STUDY.md`).
+3. **Niemand annotiert.** Das Ja/Nein, das der Haushalt ohnehin tippt, *ist*
+   das Eval-Label. Es geht beim Abschicken an den Span, nicht beim Tippen.
+
+Wer das Muster in eigenen Code holen will, findet die drei Codestellen in
+[`PATTERN.md`](PATTERN.md); die Architekturentscheidungen samt der
+Begründungen, die von aussen wie ein Versehen aussehen, stehen in
+[`DESIGN.md`](DESIGN.md).
+
+## Gemessen: 0 erfundene Gerichte in 6 Zügen
+
+Der Wochenplaner am 2026-09-06 gegen die **echte Datenbank** (Kopie: 16.746
+Produkte, 57 Rezepte, davon 19 in der Vorlage), fünf Szenarien, sechs Züge
+(Szenario D plant nach einem „Nein" ein zweites Mal). Modell:
+**Qwen3.8-27B-Instruct**, AWQ 4-bit, auf einer RTX 3090.
+
+| Zug | Gerichte vorgelegt | Tagen zugewiesen | erfunden → verworfen | Dauer |
+|---|---|---|---|---|
+| A — 3 Tage, ≤ 40 min, Bestand erklärt | 3 | 3 von 3 | **0** | 7,3 s |
+| B — 5 Tage, 4 Personen, Budget 60 € | 19 | 5 von 5 | **0** | 12,2 s |
+| C — 3 Tage, Tag 2 auswärts | 19 | 3 von 3 | **0** | 5,3 s |
+| D — wie A | 3 | 3 von 3 | **0** | 7,3 s |
+| D' — nach „Nein" auf Tag 1, Neuplanung | 2 | 0 von 1 | **0** | 0,5 s |
+| E — 7 Tage, ≤ 30 min | 1 | 1 von 7 | **0** | 3,6 s |
+
+„Erfunden" und „verworfen" ist dieselbe Spalte, und das ist der Punkt: eine
+Gericht-id, die nicht vorgelegt wurde, wird nicht repariert, sondern
+verworfen und gezählt. Die Prüfung hatte in diesen sechs Zügen nichts zu
+tun — sie steht trotzdem, denn dass sie nichts zu tun hat, weiss man nur,
+weil sie zählt.
+
+Zwei Zeilen, die man nicht überlesen sollte: **D' ist ehrlich leer** (nach dem
+„Nein" standen die zwei übrigen Gerichte schon an anderen Tagen — das Modell
+belegte nichts und bot das abgelehnte nicht wieder an), und **E zeigt die
+Grenze der Vorlage, nicht des Modells** (unter 30 Minuten kennt die Datenbank
+genau ein Gericht; sechs Tage bleiben leer, und die Seite sagt das). Die
+Antwort auf „7 Tage, 30 Minuten" ist ein grösserer Rezeptbestand, kein
+anderer Prompt.
+
+Die Tabelle reproduzieren — die echte Datei fasst die Probe nie an:
+
+```bash
+sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"
+ZETTEL_PHOENIX_PROJECT="Zettel Eval Wochenplan" \
+.venv/bin/python scripts/plan_probe.py --db kopie.db --trace \
+    --json evals/plan_probe-2026-09-06-qwen.json
+```
+
+So sieht einer dieser Züge in Arize Phoenix aus — Szenario A, 3 von 3 Tagen
+belegt:
+
+![Der plan.woche-Span in Phoenix: links der Spanbaum von plan.woche über recipe.zuordnung, plan.extract und catalog.search bis plan.choose, rechts die gezählten Attribute](docs/images/phoenix-plan-trace.png)
+
+Links steht die ganze Maschinerie eines Zuges als Baum, rechts das, was
+gezählt wurde: `zettel.plan.presented = 3` (so viele Gerichte lagen zur
+Wahl), `assigned = 3` (so viele Tage wurden belegt), **`rejected = 0`** (kein
+erfundenes Gericht), dazu `covered`, `rest`, `lines` und `price_cents` — die
+Zahlen der Einkaufsliste, alle im Code gerechnet. Der Reiter *Info* daneben
+zeigt Eingabe und Ausgabe des Modells im Wortlaut: hinein gehen Rahmen,
+Bestand und die offenen Tage, heraus kommen `tag`, `recipe_id`, `name` und
+ein Satz `grund` — und sonst nichts. Die Annotation `plan_day: kept` am Span
+ist kein Nachtrag von Hand, sondern das „Ja", das jemand auf der Seite
+getippt hat.
+
+Rohdaten und Provenienz (Stack, Endpunkt, Modell, Kontextlänge, Commit,
+Phoenix-Projekt) liegen als `evals/plan_probe-2026-09-06-qwen.*` daneben.
+Die vollständige Tabelle mit Einkaufsliste, Bestand und Preis, und was diese
+Messung ausdrücklich **nicht** sagt, steht in [`EVALS.md`](EVALS.md) unter
+„Der Wochenplaner"; die 128-Gerichte-Messung des Chat-Zugs gegen drei Modelle
+steht dort ebenfalls.
 
 ## Wozu die Observability gut ist — in einem Fall
 
@@ -93,6 +244,23 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m zettel.web.app
 ```
 
+**In fünf Schritten, und was die Maschine dafür haben muss:**
+
+1. **vLLM starten.** Referenz ist eine **RTX 3090 mit 24 GB**, ein Modell,
+   keine Cloud. Gemessen wurde mit
+   `useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16` —
+   **16,6 GiB** Gewichte, der Rest der Karte ist KV-Cache; und mit
+   Qwen3.8-27B-Instruct in AWQ 4 bit als Referenz. Kleiner geht auch, aber
+   siehe die Nano-8B-Zeile in der Tabelle oben: unter einer gewissen Grösse
+   bricht die Wahl aus Kandidaten zusammen.
+2. **Phoenix starten**, wenn man zusehen will: `phoenix serve` auf Port 6006.
+   Ohne läuft der Shop unverändert weiter, nur ohne Traces.
+3. **Katalog holen** (`nachtlauf --begriff …`) — ohne Produkte hat der Agent
+   nichts zur Wahl.
+4. **Rezepte anlegen** — ohne sie bleibt der Wochenplan leer (siehe
+   „Eigene Rezepte hineinbekommen").
+5. **App starten** und `/plan` öffnen.
+
 Der Shop lauscht dann auf `http://127.0.0.1:8730` — und, wenn die Maschine
 im Tailnet ist, zusätzlich auf `http://<deine Tailnet-Adresse>:8730`. Die
 Adresse steht nicht im Code: sie wird beim Start von der Maschine erfragt
@@ -122,6 +290,57 @@ ersten Projektimport `connect`, `bind` und `getaddrinfo` im eigenen Prozess
 und prüft als Erstes, dass eine Verbindung nach `localhost:6006` scheitert.
 Was das abdeckt und was ausdrücklich nicht, steht in
 [`GATES.md`](GATES.md).
+
+## Eigene Rezepte hineinbekommen
+
+Der Wochenplaner belegt Tage **nur mit Gerichten, die der Haushalt schon
+hat**. Ein leerer Rezeptbestand heisst also: der Plan bleibt leer, und das
+ist kein Fehler des Modells (Szenario E in [`EVALS.md`](EVALS.md) zeigt genau
+das). Wer das Repo ausprobiert, füllt deshalb zuerst die Rezepte. Vier Wege,
+alle in derselben Tabelle:
+
+| Weg | Wie |
+|---|---|
+| **Von Hand** | *Mehr → Rezepte → anlegen*, dann Zutaten hinzufügen. Portionen ändern rechnet alle Mengen mit. |
+| **Aus dem Chat** | Ein Gericht nennen („was brauche ich für Lasagne?"). Der Shop holt das Rezept, und beim Abschicken wird es als eigenes Rezept angelegt. |
+| **Aus einer Bestellung** | Aus einem abgeschickten Korb „daraus ein Rezept machen". |
+| **Stapelweise, aus eigenen Daten** | Ein paar Zeilen Python gegen `zettel.recipes.sammlung` — siehe unten. |
+
+**Das Format ist ein Wörterbuch je Zutat.** Genau eines von `product_id`
+(Verknüpfung in den Katalog) oder `free_text` (alles andere), dazu optional
+`qty`, `amount` und `unit`:
+
+```python
+from zettel import db
+from zettel.recipes import sammlung
+
+con = db.connect("data/picknick.db")
+sammlung.anlegen(con, "Linsensuppe", servings=4, zutaten=[
+    {"free_text": "rote Linsen",   "amount": 250, "unit": "g"},
+    {"free_text": "Karotte",       "amount": 2,   "unit": "Stueck"},
+    {"free_text": "Gemuesebruehe", "amount": 1,   "unit": "l"},
+])
+```
+
+Vier Dinge, die dabei wichtig sind und nicht selbstverständlich:
+
+* **`free_text` reicht zum Anfangen.** Eine Zutat braucht keinen Katalogtreffer,
+  um zu zählen. Sie bleibt sichtbar, wandert als Freitext in den Korb und
+  lässt sich später verknüpfen — im Rezept von Hand, oder der Chat-Agent
+  ordnet sie beim Planen zu. Wer erst einen passenden Katalog aufbauen müsste,
+  käme nie zum ersten Rezept.
+* **`amount`/`unit` ist die benötigte Menge, `qty` die Stückzahl.** „500 ml"
+  wächst mit den Portionen, „1 Packung" nicht. Deshalb sind es zwei Felder
+  und nicht eines.
+* **Einheiten werden normalisiert**, nicht wörtlich gespeichert: aus `1 l`
+  wird `1000 ml`, aus `Stueck` wird `Stk`. Zwei Schreibweisen derselben
+  Menge dürfen nicht zwei Zahlen sein, die sich nicht addieren lassen.
+* **Ein halbes Rezept wird gar keines.** Scheitert eine Zutat, ist auch das
+  Rezept nicht angelegt — sonst stünde etwas in der Liste, das vollständig
+  aussieht und es nicht ist.
+
+Das Beispiel oben ist gegen eine Kopie der echten Datenbank gelaufen, bevor
+es hier stand.
 
 ## Der Katalog: was er ist und was er nicht ist
 

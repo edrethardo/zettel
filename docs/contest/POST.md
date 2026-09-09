@@ -73,7 +73,7 @@ Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
 **Zweiter Kommentar — der Wochenplan-Film (08.09.).** Der Absatz über die
 Woche steht im Post; der Film dazu gehört in einen eigenen Kommentar, damit
 der native Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film
-je Post). `take_plan_2026-09-06d_final.mp4` — 101 s, quer, Titelkarte, P1–P7,
+je Post). `take_plan_2026-09-06d_final.mp4` — 87,2 s, quer, Titelkarte, P1–P7,
 Endcard. Wer lieber hochkant kommentiert: `zettel_linkedin_plan_2026-09-06.mp4`
 (72,6 s, englische Karten) — die deutsche Fassung `…_de.mp4` liegt daneben und
 ist nur für einen deutschsprachigen Kanal gedacht. Ein Satz dazu, Vorschlag:

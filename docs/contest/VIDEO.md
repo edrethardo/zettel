@@ -42,7 +42,7 @@ zweiter Film, kein Ersatz.
 | `take_plan_2026-09-06b.mkv` | 195 s, ohne Warnung, dieselbe P6-Falle (lief noch mit dem alten Skript) |
 | `take_plan_2026-09-06c.mkv` | **unbrauchbar**: „Das Modell wacht auf" — der Wecker im Shop hielt die Box für schlafend, fünf Warnungen |
 | `take_plan_2026-09-06d.mkv` (+ `.zeitmarken.txt`, `.ffmpeg_start.txt`) | **der Take**: 197 s, ohne Warnung, P6 geprüft („die Trace-Tafel steht") |
-| `take_plan_2026-09-06d_final.mp4` (+ `.srt`, `thumbnail_plan.png`) | der Schnitt: Titelkarte 3 s, Shots P1–P7 (93 s), Endcard 8 s — **101 s** |
+| `take_plan_2026-09-06d_final.mp4` (+ `.srt`, `titelkarte_plan.png`) | der Schnitt: Titelkarte 3 s, Shots P1–P7 (rund 76 s), Endcard 8,2 s — **87,2 s** |
 
 ### Was den Mehrwert trägt — und warum jeder Shot eine Zahl hat
 
