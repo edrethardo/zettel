@@ -3,18 +3,50 @@
 Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
-.venv/bin/python checks/smoke.py     # 67 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q        # 870 Tests, rund 34 s
+.venv/bin/python checks/smoke.py               # 79 Checks, exit 0 grün / 1 rot
+.venv/bin/python -m pytest -q                  # 1.499 Tests (14 übersprungen), rund 95 s
+.venv/bin/python checks/veroeffentlichung.py   # 10 Checks — darf das Repo raus?
 ```
 
 Wem das zu lang ist: `.venv/bin/python -m pytest -q -n auto` verteilt die Suite
-auf alle Kerne und braucht rund 14 s (`pytest-xdist`, siehe
+auf alle Kerne und braucht rund 45 s (`pytest-xdist`, siehe
 `requirements.txt`). Das ist eine Abkürzung und keine zweite Wahrheit — beide
 Wege müssen grün sein, und die Zusicherungen sind dieselben.
 
 `checks/smoke.py` ist das Gate: eine Zeile je Frage, ein Rückgabewert.
 `pytest` ist die Suite darunter — feinkörniger, aber ohne die eine Zusicherung,
 um die es beim Gate geht.
+
+## Das dritte Gate: darf es raus?
+
+`checks/veroeffentlichung.py` beantwortet eine Frage, die die anderen beiden
+nicht stellen: ob das, was hier liegt, öffentlich werden darf. Es läuft vor
+einem `git push`, nicht vor einem Commit.
+
+Der Anlass war konkret. Am 08.09.2026 schlug
+`test_keine_privaten_angaben_im_repo` erst NACH dem Commit an — er prüft
+`git ls-files`, also den Arbeitsbaum. Beim Veröffentlichen zählt aber die
+**Historie**, und dort steht der Hostname der Box bis heute in Commits aus
+dem August. Ein Gate, das nur den Arbeitsbaum ansieht, meldet grün und trägt
+den Namen trotzdem ins Netz.
+
+Sechs Fragen, zehn Checks: private Angaben in der Historie (`git log -S`) und
+im Arbeitsbaum · LICENSE · Testzahl und Check-Zahl in allen Dokumenten, die
+in der Gegenwart sprechen · jeder relative Verweis zeigt auf eine vorhandene
+Datei · Platzhalter nur im Post-Entwurf · und die Modellbehauptung gegen die
+Messdaten: solange kein Nemotron-Lauf des Wochenplaners in `evals/` liegt,
+muss der Vorbehalt im Post stehen — liegt einer, muss er weg.
+
+**Stand 09.09.2026: drei Checks rot**, alle drei dieselbe Sache — die
+Historie trägt Hostname, Benutzername und Tailnet-Adresse. Das ist kein
+Fehler im Repo, sondern die Zusage, dass vor dem Push ein gefilterter Klon
+gebaut wird (`git-filter-repo`). Solange das nicht passiert ist, ist das
+Gate rot, und das soll es sein.
+
+Was es NICHT kann: sagen, ob eine Zahl richtig gemessen wurde. Es prüft
+Übereinstimmung, nicht Wahrheit. Übrigens steht in diesem Dokument selbst
+eine Teilzahl („5 Checks" für die Netzfreiheit) — deshalb zählt `GATES.md`
+nicht zu den Dokumenten, die das Gate auf eine gemeinsame Zahl prüft.
 
 ## Warum es zwei sind
 

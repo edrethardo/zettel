@@ -958,6 +958,45 @@ Gerichten kaum zu drücken. Und die Vorlage trägt keinen Unterschied
 zwischen Hauptgericht und Nachtisch; ein Planer, der Churros zum Abendessen
 setzt, hat aus seiner Sicht nichts falsch gemacht.
 
+### Offen: derselbe Lauf gegen Nemotron 3.5
+
+**Der Wochenplaner ist nie gegen Nemotron gelaufen.** Der Chat-Zug ist es —
+128 Gerichte, zwei Modelle, der Abschnitt darüber. Die vierte Stufe hat
+bisher nur Qwen gesehen, und der Film zeigt Qwen, weil an dem Abend Qwen auf
+der Box lag.
+
+Das ist kein Versehen und keine Auslassung, sondern ein offener Punkt: am
+09.09.2026 war das Fenster vorbereitet (`vllm-model serve … --max-len 32768
+--lm-only`, ohne Reasoning-Parser, ohne Spekulation), die Karte gehörte
+jedoch einem Nachbarprojekt, und Vorrang war eine Entscheidung des
+Haushalts, keine technische. Bis der Lauf existiert, trägt der Post den
+Vorbehalt „on the Qwen3.8-27B reference, not yet on Nemotron", und
+`checks/veroeffentlichung.py` prüft, dass er dort steht.
+
+Nachzuholen ist es in zwanzig Minuten:
+
+```bash
+gpu-lock.sh acquire zettel -m "plan_probe Nemotron" -t 60 --keep-vllm   # der GPU-Lock der Box
+# Fenster bei der Box-Session anfragen; danach ZUERST /v1/models prüfen —
+# steht dort Qwen, ist es nicht Nemotron (das Container-Drop-in gewinnt
+# gegen `vllm-switch`).
+sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"
+ZETTEL_PHOENIX_PROJECT="Zettel Eval Wochenplan Nemotron" \
+.venv/bin/python scripts/plan_probe.py --db kopie.db --trace \
+    --json evals/plan_probe-<datum>-nemotron35.json
+```
+
+Zwei Werte gehören dabei in die Provenienz, sonst misst man womöglich etwas
+anderes als das Modell: `kv_cache_max_concurrency` und
+`vllm:num_preemptions_total`. Liegt die Concurrency nahe 1, verdrängt vLLM
+laufende Anfragen und rechnet sie neu — auf dieser Karte bei
+`max_model_len=131072` gemessen (1,04 und 129 Verdrängungen), bei 32768
+nicht. Das sieht in den Ergebnissen wie ein langsames Modell aus und ist
+ein zu kleiner Cache.
+
+Sobald die Datei liegt, muss der Vorbehalt aus dem Post — das Gate schlägt
+sonst an, und zwar in beide Richtungen.
+
 ## Was hier schwächer ist, als es aussieht
 
 Diese Liste gehört zum Ergebnis. Wer die Tabelle oben zitiert, muss sie
