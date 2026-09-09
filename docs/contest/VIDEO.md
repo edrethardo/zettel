@@ -1031,7 +1031,7 @@ Tastatur-Roboter gehören nicht hinein):
 | `pruefstand.py hin\|weg\|reset` | Gespeichert-Pfad an/aus (16 `recipe_item`-Zeilen), Reset ohne den Gericht-Cache |
 | `dreh.py [--trocken]` | der Durchlauf; `--trocken` lässt Shot 7 aus, weil es ohne Box keine Spans gibt |
 | `schnitt.py` | Schnittfassung + `.srt`, und die Zeitmarken fürs Voice-Over |
-| `gpu_streifen.py <box> <geometrie>` | der schmale Streifen unten: GPU, Watt, VRAM, Temperatur — **seit 09.09. auch tok/s und Dauer je Anfrage** |
+| `gpu_streifen.py <box> <geometrie>` | der schmale Streifen unten: GPU, Watt, VRAM, Temperatur — **seit 09.09. auch die Zahlen des Modells**, seit 10.09. englisch beschriftet |
 
 **Der Streifen zeigt seit dem 09.09. auch, was das Modell leistet.** Bis dahin
 stand im Bild nur, dass die Karte zu 100 % ausgelastet ist; wie schnell dabei
@@ -1057,8 +1057,53 @@ Entscheidungen dahinter, alle aus einem Fehler gelernt:
   genau dem Moment nichts angezeigt, in dem etwas zu sehen sein soll.
 
 Steht keine frische Zahl an (zwischen zwei Anfragen), bleibt die zuletzt
-gemessene stehen, gekennzeichnet mit „(zuletzt)" — eine Null wäre falsch: die
+gemessene stehen, gekennzeichnet mit „(last)" — eine Null wäre falsch: die
 Box rechnet dann nicht langsam, sie rechnet nichts.
+
+**Vier Zeilen, seit 10.09.** Zwei für die Karte, zwei für das Modell:
+
+    GPU     [████······]  100 %      POWER  271.4 W / 280 W
+    VRAM    [████████··]  22.2 / 24.0 GiB   TEMP  67 °C
+    CACHE   [████······]  45.0 %     PREEMPT   130
+    TOK/S   69.9 t/s   1ST TOKEN 0.41 s   REQUEST 2.8 s
+
+* **CACHE ist der Balken, der sich bewegt.** Der VRAM-Balken steht die ganze
+  Aufnahme still, weil vLLM vorab reserviert — er zeigt, dass das Modell
+  geladen ist, nicht dass es arbeitet. `vllm:kv_cache_usage_perc` zeigt das.
+* **PREEMPT ist die Zahl, die alles daneben entwertet.** Wächst sie während
+  der Aufnahme, hängt die Warnung „(+n since start — numbers unusable)" rot
+  daneben und bleibt stehen — nicht nur in der Sekunde, in der es passiert.
+  Wer sie verpasst, schneidet die falschen Zahlen ins Video (Befund vom
+  09.09.: bei `max_model_len=131072` traten 129 Verdrängungen auf).
+* **1ST TOKEN ist die Zahl, die der Zuschauer fühlt.** Zwischen Klick und
+  erstem Zeichen liegt die Zeit, die er wartet; die Gesamtdauer erklärt sie
+  nicht.
+
+**Die Beschriftung ist englisch, die Kommentare im Code bleiben deutsch** —
+dieselbe Regel wie in `zettel/sprache.py`: übersetzt wird, was auf dem
+Bildschirm steht. Untertitel, Titelkarte und Endcard waren es längst; der
+Streifen war das letzte Element, das der Zuschauer mitliest und das noch
+deutsch war.
+
+### Der Modellname kommt aus dem Take, nicht aus dem Schnittskript (10.09.)
+
+`schnitt.py` trug den Namen als Konstante:
+
+    BADGE = ["model   Nemotron 3.5 Lightning 30B-A3B", …]
+
+Das ist die gefährlichste Sorte Zahl im ganzen Projekt. Wer nach einem
+Modellwechsel neu rendert, brennt eine falsche Behauptung ins Bild — und
+nichts im Ablauf widerspricht ihr. `schnitt_plan.py` machte es von Anfang an
+richtig und liest `/v1/models`.
+
+Der Weg ist jetzt ein dritter, und ein besserer als beide: **`aufnahme.sh`
+fragt beim DREH** (da ist die Antwort eindeutig, das Modell läuft ja gerade)
+und legt sie als `<STAMM>.modell.txt` neben Band, Zeitmarken und
+Gestenprotokoll. `schnitt.py` liest die Datei. Fehlt sie — alte Takes haben
+sie nicht —, bleibt die Vorgabe stehen, aber der Schnitt sagt beim Rendern
+laut: „modell.txt fehlt — Badge nennt die Vorgabe. Stimmt das für diesen
+Take?" Gefragt wird wie im Streifen von der Box aus über `127.0.0.1` und nur,
+wenn `vllm.service` schon läuft — kein Wecker.
 
 > **Beim Ablesen der Zahlen aufpassen** (Befund vom 09.09., aus einem
 > Nachbarprojekt): Liegt `kv_cache_max_concurrency` nahe 1, verdrängt vLLM
