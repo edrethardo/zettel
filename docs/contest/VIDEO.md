@@ -1031,6 +1031,42 @@ Tastatur-Roboter gehören nicht hinein):
 | `pruefstand.py hin\|weg\|reset` | Gespeichert-Pfad an/aus (16 `recipe_item`-Zeilen), Reset ohne den Gericht-Cache |
 | `dreh.py [--trocken]` | der Durchlauf; `--trocken` lässt Shot 7 aus, weil es ohne Box keine Spans gibt |
 | `schnitt.py` | Schnittfassung + `.srt`, und die Zeitmarken fürs Voice-Over |
+| `gpu_streifen.py <box> <geometrie>` | der schmale Streifen unten: GPU, Watt, VRAM, Temperatur — **seit 09.09. auch tok/s und Dauer je Anfrage** |
+
+**Der Streifen zeigt seit dem 09.09. auch, was das Modell leistet.** Bis dahin
+stand im Bild nur, dass die Karte zu 100 % ausgelastet ist; wie schnell dabei
+etwas entsteht, stand allein in der Endcard — als Zahl aus einem
+Messprotokoll, die man glauben musste. Jetzt läuft sie mit. Drei
+Entscheidungen dahinter, alle aus einem Fehler gelernt:
+
+* **Zähler statt Gauge.** Gelesen werden `vllm:generation_tokens_total` und
+  Summe/Anzahl des End-zu-End-Histogramms; die Rate rechnet der Streifen aus
+  zwei Messpunkten selbst. `avg_generation_throughput_toks_per_s` gibt es je
+  nach vLLM-Fassung oder nicht, und eine Zahl, die mal fehlt, ist im Video
+  schlimmer als keine.
+* **Erst fragen, ob der Dienst läuft, dann erst die 8000 anfassen.**
+  `vllm-proxy.socket` weckt die Engine bei der ersten Verbindung — ein
+  Streifen, der jede Sekunde fragt, würde die Karte an sich reissen, während
+  ein fremder Lauf darauf rechnet. Deshalb `systemctl is-active` davor, und
+  gefragt wird von der Box aus über `127.0.0.1`: was nicht über das Netz
+  geht, löst auch keinen Wecker im Netz aus. Läuft vLLM nicht, sagt die Zeile
+  das („vLLM läuft nicht — kein Wecker geschickt") statt eine Null zu zeigen.
+* **`LC_ALL=C` vor `awk`.** Die Box läuft in deutscher Locale und formatierte
+  `15295,0000` statt `15295.0000`; Python liest das nicht. Beim ersten
+  Testlauf gegen die echte Box aufgefallen — vorher hätte der Streifen in
+  genau dem Moment nichts angezeigt, in dem etwas zu sehen sein soll.
+
+Steht keine frische Zahl an (zwischen zwei Anfragen), bleibt die zuletzt
+gemessene stehen, gekennzeichnet mit „(zuletzt)" — eine Null wäre falsch: die
+Box rechnet dann nicht langsam, sie rechnet nichts.
+
+> **Beim Ablesen der Zahlen aufpassen** (Befund vom 09.09., aus einem
+> Nachbarprojekt): Liegt `kv_cache_max_concurrency` nahe 1, verdrängt vLLM
+> laufende Anfragen und rechnet sie neu (`vllm:num_preemptions_total` steigt).
+> Der Streifen zeigt dann echte, aber sinnlose tok/s — gemessen wird
+> Verdrängung, nicht Modellleistung. Auf dieser Karte trat das bei
+> `max_model_len=131072` auf (Concurrency 1,04, 129 Verdrängungen); bei 32768
+> nicht. Vor einem Take die beiden Werte einmal ansehen.
 
 Aufgeräumt wird über `buehne.pids`, **nie über `pkill -f`**: auf `:1` liegt
 Aarons angemeldete Sitzung, und der echte Shop auf 8730 läuft im selben
