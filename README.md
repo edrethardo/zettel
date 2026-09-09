@@ -280,9 +280,20 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.480 Tests, rund 95 s
+.venv/bin/python -m pytest -q        # 1.499 Tests (14 übersprungen), rund 95 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
+.venv/bin/python checks/veroeffentlichung.py   # darf das Repo raus?
 ```
+
+Das dritte ist ein Gate für den `git push` und nicht für den Commit: es
+fragt, ob das, was hier liegt, öffentlich werden darf. Private Angaben **in
+der Historie** (nicht nur im Arbeitsbaum — dort steht der Hostname der Box
+bis heute in Commits aus dem August), tote Verweise, Platzhalter ausserhalb
+des Post-Entwurfs, und ob die Zahlen in den Dokumenten übereinstimmen. Dazu
+eine Prüfung, die Behauptung und Beleg aneinander bindet: solange kein
+Nemotron-Lauf des Wochenplaners in `evals/` liegt, muss der Vorbehalt im Post
+stehen — liegt einer, muss er weg. Was es nicht kann, steht in
+[`GATES.md`](GATES.md).
 
 Beides ohne Netz, ohne Modell, ohne Phoenix — und im Fall des Gates ist das
 nicht zugesichert, sondern **erzwungen**: `checks/smoke.py` sperrt vor dem

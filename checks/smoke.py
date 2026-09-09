@@ -137,52 +137,14 @@ from zettel.llm.client import Modellzugang  # noqa: E402
 from zettel.obs import labels  # noqa: E402
 from zettel.web import app as webapp  # noqa: E402
 
+from checks.bericht import Bericht  # noqa: E402
+
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 DOKS = SpanAttributes.RETRIEVAL_DOCUMENTS
 
 
 # --------------------------------------------------------------------------
 # Ausgabe
-
-class Bericht:
-    """Eine Zeile je Frage. Am Ende eine Zahl und ein Rückgabewert."""
-
-    def __init__(self) -> None:
-        self.gruen = 0
-        self.rot: list[str] = []
-
-    def abschnitt(self, titel: str) -> None:
-        print(f"\n-- {titel}")
-
-    def ok(self, satz: str, beleg: str = "") -> None:
-        self.gruen += 1
-        print(f"[ok  ] {satz}" + (f" -- {beleg}" if beleg else ""))
-
-    def fehler(self, satz: str, grund: str) -> None:
-        self.rot.append(satz)
-        print(f"[FAIL] {satz} -- {grund}")
-
-    def pruefe(self, satz: str, fn) -> None:
-        """Führt `fn` aus. Rückgabe ist der Beleg, eine Ausnahme der Grund."""
-        try:
-            beleg = fn()
-        except Exception as e:  # noqa: BLE001 — der Grund gehört in die Zeile
-            self.fehler(satz, f"{e.__class__.__name__}: {e}")
-        else:
-            self.ok(satz, "" if beleg is None else str(beleg))
-
-    def ende(self) -> int:
-        print()
-        if self.rot:
-            print(f"{len(self.rot)} von {self.gruen + len(self.rot)} Checks "
-                  "rot:")
-            for satz in self.rot:
-                print(f"  - {satz}")
-            return 1
-        print(f"alle {self.gruen} Checks grün -- ohne Netz, ohne Modell, "
-              "ohne Phoenix")
-        return 0
-
 
 def gleich(ist, soll, was: str) -> str:
     if ist != soll:
@@ -2085,7 +2047,7 @@ def checks_bindung(b: Bericht) -> None:
 # --------------------------------------------------------------------------
 
 def main() -> int:
-    b = Bericht()
+    b = Bericht("ohne Netz, ohne Modell, ohne Phoenix")
     print("zettel — Rauchtest (checks/smoke.py)")
     checks_netz(b)
     with tempfile.TemporaryDirectory(prefix="zettel-smoke-") as tmp:
