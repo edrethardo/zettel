@@ -1085,6 +1085,33 @@ Bildschirm steht. Untertitel, Titelkarte und Endcard waren es längst; der
 Streifen war das letzte Element, das der Zuschauer mitliest und das noch
 deutsch war.
 
+### Der Take vom 10.09. — erster Versuch, keine Warnung
+
+`take_plan_2026-09-10a` (196 s Durchlauf) ist der erste Take dieses Films, bei
+dem **kein einziger Schritt gewarnt hat**; am 06.09. hat dasselbe vier Takes
+gekostet. Was inzwischen anders ist: `bereit_plan.sh` fragt den Wecker im Shop
+ab, legt ein frisches Phoenix-Projekt an und schickt einen Aufwärm-Zug
+hindurch, und `dreh_plan.py` tippt nach 25 s notfalls nach.
+
+| | |
+|---|---|
+| Plan | 5 Tage in **5,7 s** belegt, aus 9 vorgelegten Gerichten, verworfen 0 |
+| Neuplanung | Tag 2 nach „Nein" in **1,2 s** neu belegt |
+| Korb | 20 Posten |
+| Schnitt | `take_plan_2026-09-10a_final.mp4`, **86,9 s**, 1920×1250 |
+
+Im Bild neu: der Streifen mit CACHE, PREEMPT, TOK/S, 1ST TOKEN und REQUEST
+(144,8 t/s, erster Token nach 0,88 s, keine Verdrängung), und der Badge nennt
+`Qwen3.8-27B-Instruct` — gelesen aus dem Take, nicht aus dem Skript.
+
+**Ein Fehler ist dabei aufgefallen und behoben:** der erste Schnitt füllte den
+Untertitel mit Fragezeichen. `bereit_plan.sh` legt seit dem 06.09. ein
+frisches Projekt je Take an („Zettel Demo Plan 0035"), `schnitt_plan.py` suchte
+aber noch im fest verdrahteten „Zettel Demo Plan". Der Name wandert jetzt wie
+`modell.txt` mit dem Take (`<STAMM>.phx.txt`); fehlt er, sagt der Schnitt, wo
+er stattdessen sucht. Danach standen die Zahlen im Bild: **9 vorgelegt,
+5 belegt, verworfen 0**, 436 kcal je Portion.
+
 ### Der Modellname kommt aus dem Take, nicht aus dem Schnittskript (10.09.)
 
 `schnitt.py` trug den Namen als Konstante:
