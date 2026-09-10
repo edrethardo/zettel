@@ -661,17 +661,20 @@ def test_units_tragen_installationsabschnitte():
     assert "[Install]" not in crawl
 
 
-def test_readme_nennt_linger_und_die_installationsbefehle():
+def test_betriebsdoku_nennt_linger_und_die_installationsbefehle():
     """`Linger=no` heisst: der Dienst endet beim Abmelden (gemessen).
 
-    Der Befehl steht mit Platzhalter statt Benutzername im README — das Repo
-    ist zur Veröffentlichung gedacht (WB-388), die Zusicherung bleibt: der
-    Satz muss da sein.
+    Der Befehl steht mit Platzhalter statt Benutzername — das Repo ist
+    öffentlich, die Zusicherung bleibt: der Satz muss da sein. Seit dem
+    10.09.2026 steht die Betriebsanleitung in `BETRIEB.md` statt im README;
+    das README verweist darauf, damit sie zu finden ist.
     """
+    betrieb = (WURZEL / "BETRIEB.md").read_text(encoding="utf-8")
+    assert "loginctl enable-linger <benutzer>" in betrieb
+    assert "systemctl --user enable --now zettel-crawl.timer" in betrieb
+    assert "schläft" in betrieb
     readme = (WURZEL / "README.md").read_text(encoding="utf-8")
-    assert "loginctl enable-linger <benutzer>" in readme
-    assert "systemctl --user enable --now zettel-crawl.timer" in readme
-    assert "schläft" in readme
+    assert "[`BETRIEB.md`](BETRIEB.md)" in readme
 
 
 # --------------------------------------------------------------------------
