@@ -12,13 +12,13 @@ Checkliste vor dem Absenden:
       Vorschlag anklicken), nicht nur schreiben. Ihr Feed: Agenten, die lokal
       laufen (DGX Spark), und NVIDIAs These „small models for agentic AI“ —
       darum steht der 3B-active-Satz im Modellabsatz
-- [ ] `<video link>` — der Film (157 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
+- [ ] `<video link>` — der Film (155 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
 - [x] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (seit 10.09., 20:50; Actions grün) (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
-- [ ] **Der Film ist `zettel_demo_2026-09-10_intro_vo.mp4`** (157 s, mit Aarons Voice-Over: Intro, dann
+- [ ] **Der Film ist `zettel_demo_2026-09-10_intro_vo.mp4`** (155 s, mit Aarons Voice-Over: Intro, dann
       der Satz, der die Woche plant, dann der eine Einkauf, alles auf Nemotron) als nativer Upload; Vorschaubild
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
@@ -73,7 +73,7 @@ Dazu das Vergleichsbild `docs/images/modelle-128.png` (kein Trailer mehr —
 der Hochkant-Schnitt ist gestrichen, 10.09.). Dann eine Stunde antworten.
 
 **Kein zweiter Film-Kommentar mehr (10.09.).** Der native Upload ist der
-kombinierte Film `zettel_demo_2026-09-10_intro_vo.mp4` — 157 s, Intro, erst die Woche,
+kombinierte Film `zettel_demo_2026-09-10_intro_vo.mp4` — 155 s, Intro, erst die Woche,
 dann die Überleitung „Not the whole week? Then just tonight", dann der eine
 Einkauf; alles im selben Take auf Nemotron 3.5 Lightning, mit Cache, tok/s
 und Zeit bis zum ersten Token im Bild. Die früheren Einzelfilme

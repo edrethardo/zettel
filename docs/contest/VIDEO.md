@@ -15,7 +15,26 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
-## Stand 10.09. nachts — die Stimme liegt drunter: `zettel_demo_2026-09-10_intro_vo.mp4`
+## Stand 10.09. spät — v10: die neue Antwort im Bild, Analytics kurz
+
+Aaron beim Abnehmen: „You can see in the video that the Kartoffelgratin
+returned." Im Plan war es nicht zurück (Trace: Freitag → Bratkartoffeln,
+23 Kandidaten) — aber die Analytics-Passage öffnete den Trace der ERSTEN
+Planung, in deren Antwort „Tag 2: Kartoffelgratin" steht. Nach dem Nein
+sieht das aus wie eine Rückkehr. Zwei Takes (v9, v10) und drei Änderungen:
+nach der Neuplanung rollt das Drehbuch zum neu belegten Freitag und wartet
+(Marke „Neues Gericht gezeigt", P3 endet dort); P6 öffnet für Prompt und
+Antwort die Neuplanung — den Zug-Span unter „Info", weil dort die Ausgabe
+MIT Gerichtsnamen steht (der LLM-Span hätte nur IDs) —, und die Passage ist
+kurz: Trace 4 s, Zahlen 6 s, Antwort 7 s, ohne lange Standbilder (Aaron:
+„der Analytics-Teil ist langweilig"). Untertitel danach nachgezogen: die
+Nein-Zeile nennt den Tausch, die Zahlen-Tafel zeigt 28 · 5 · 0 aus Phoenix,
+die Antwort-Zeile „Friday open, the rest fixed, 23 dishes offered — one
+answer, and the gratin is not in it." Sprechtext weiter gestrafft (Zeile 4,
+Rest von Zeile 9, „some veggie, some with meat", „27 lines" — der Take hat
+24) und auf 1,18×. **Abgabefilm: 155 s.**
+
+## Stand 10.09. nachts — die Stimme liegt drunter (erste Fassung, 167 s)
 
 **Der Abgabefilm: 157 s, neues Intro (13,5 s, Aaron vor dem Regal, ganz),
 dann Take v8 mit Aarons Voice-Over — zweite Aufnahme, gestrafft, 1,1×.**
