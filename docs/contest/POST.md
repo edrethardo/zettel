@@ -32,26 +32,23 @@ An open NVIDIA Nemotron 3.5 Lightning (30B total, 3B active, 4-bit) runs our hou
 
 Not a prompt wrapper, not an orchestra either: two model calls with a database search in between, and one rule that makes them checkable.
 
-1. Retrieve first. The model turns "everything for lasagna, and toilet paper" into search terms and sees zero catalog rows. SQLite FTS5 does the search and presents at most 5 candidates per term.
+1. Retrieve first. The model turns "everything for lasagna, and toilet paper" into search terms and sees zero catalog rows. SQLite FTS5 searches and presents at most 5 candidates per term.
 
-2. Reject, don't repair. An ID that was never presented is thrown out — no fuzzy rescue — and the term stays visible as free text. The JSON schema enforces shape, not truth, so the check lives in code. It was silently unenforced for 4 days after a vLLM upgrade; every number stayed the same.
+2. Reject, don't repair. An ID that was never presented is thrown out — no fuzzy rescue. The JSON schema enforces shape, not truth, so the check lives in code. It was silently unenforced for 4 days after a vLLM upgrade; every number stayed the same.
 
-3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the basket without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
+3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the basket without a per-item Yes, and every Yes/No goes back to that span as an annotation. Nobody annotates.
 
-The same three rules run one level up — that is the film. One sentence: "one meal a day, 700 kcal, high protein, potatoes, eggs and pasta are in." The model reads it into the fields (every number has to be in the sentence, or it is rejected), then assigns dishes to days — only from the dishes this household already has, one sentence of reasoning per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price, kcal per serving are computed in code. A No on Friday re-plans Friday only, in 1.3 s; the rejected dish does not come back. Measured on the real database, 5 scenarios, both models: 0 rejected, 3–6 s per week. One trace earlier that day showed the only bug was in the offer — dishes already in the plan were offered again — not in the model. Fixed, re-measured, both runs in EVALS.md. Every Yes/No on a day goes back to the plan.woche span as a label.
+The same three rules run one level up — that is the film. One sentence: "one meal a day, 700 kcal, high protein, potatoes, eggs and pasta are in." The model reads it into the fields (every number has to be in the sentence, or it is rejected), then assigns dishes to days — only from dishes this household already has, one sentence of reasoning per day and not a single number: servings, sums, stock, packs, price, kcal are computed in code. A No on Friday re-plans Friday only, in 1.3 s; the rejected dish does not come back. Measured on the real database, 5 scenarios, both models: 0 rejected. The one bug a trace found was in the offer, not in the model — fixed, re-measured, both runs in EVALS.md.
 
-Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
-– Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
+Swapping models cost an afternoon and no production code. Same dishes, same 3090:
+– Nemotron 3.5 Lightning, W4A16, 16.6 GiB: 85 %, 6 s per dish
 – Qwen3.8-27B reference, AWQ 4-bit: 87 %, 20 s
-– Llama-Nemotron-Nano-8B (first 64 dishes): median 0 % per dish. That number stays in the docs next to the wins.
-The 3× speed is not tok/s — those are nearly identical. The 3B-active model generates about a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
+– Llama-Nemotron-Nano-8B (first 64 dishes): median 0 %. That number stays in the docs next to the wins.
+The 3× speed is not tok/s — the 3B-active model generates a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
 
-Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,517 tests and a 79-check gate that blocks the network at socket level.
+Local is not the test bed here, it is the deployment. The model never leaves the house. 1,517 tests and a 79-check gate that blocks the network at socket level.
 
-Works for any agent that picks rows from a database you own — tickets, documents, accounts. Three code locations:
-Pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md
-Repo: https://github.com/edrethardo/zettel
-Dataset (128 dishes, 7 runs): <HF dataset link>
+Works for any agent that picks rows from a database you own — tickets, documents, accounts. Pattern and repo: https://github.com/edrethardo/zettel
 
 When a local agent is the production system — one household, one GPU — which layer would you add first before you trust it? For us it was the labels.
 
