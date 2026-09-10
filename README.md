@@ -108,7 +108,7 @@ beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Demo
 
-Ein Film, 152 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
+Ein Film, 167 s mit Intro und Voice-Over, mit eingebrannten Untertiteln, in einem Take
 gedreht (Xvfb-Bühne: App in Handybreite links, Phoenix rechts, unten der
 Streifen mit GPU, VRAM, KV-Cache, Verdrängungen, tok/s und Zeit bis zum
 ersten Token — alles live). Erst ein Satz, der die Woche plant („eine Mahlzeit pro Tag, 700

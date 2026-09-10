@@ -15,6 +15,27 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
+## Stand 10.09. nachts — die Stimme liegt drunter: `zettel_demo_2026-09-10_intro_vo.mp4`
+
+**Der Abgabefilm: 167 s, neues Intro (13 s, Aaron vor dem Regal), dann Take
+v8 mit Aarons Voice-Over.** Aufgenommen mit dem DJI Mic 3 am Teleprompter
+(Artifact; fürs iPhone lädt die Seite den Film per `fetch` als blob-URL,
+weil Safari die Bereichsanfragen an den Asset-Server nicht bekommt), 13:09
+Band mit mehreren Durchläufen. Der Weg zur Spur: Whisper mit Wortzeiten
+(Mic-Helfer-Session), je Zeile die beste Fassung von Hand gewählt
+(`vo/vo_plan_v8.json`, 21 Stücke für 19 Zeilen), `vo_mischen.py --plan`
+setzt jedes Stück an seine Marke — Überlauf erlaubt, spätere Zeilen rücken
+nach, das Endcard hält den Rest —, −16 LUFS, unter das Intro-Band gemischt.
+Damit die Analytics-Sätze unter ihrem Bild bleiben, hält der Schnitt die
+Attribut-Tafel 9 s und den LLM-Span 5 s länger als Standbild (`HALTEN` in
+`schnitt_kombi.py`; einem Tableau sieht man nicht an, ob es 7 oder 16 s
+steht). Rest-Versatz: 1–3 s im Einkaufsteil, 7 s vor dem LLM-Span — die
+Stimme kommt nach dem Bild, nicht davor. Gemessen: Intro −16,3 LUFS,
+Voice-Over −17,1 LUFS.
+
+Das Repo ist seit 20:50 öffentlich: `github.com/edrethardo/zettel`, erster
+Actions-Lauf grün.
+
 ## Stand 10.09. spätabends — v8, gedreht: mehr Analytics, in Aarons Ton
 
 Aaron: „mach das, was du vorgeschlagen hast" — mehr Analytics für die Jury,
