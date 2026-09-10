@@ -32,7 +32,14 @@ Nein-Zeile nennt den Tausch, die Zahlen-Tafel zeigt 28 · 5 · 0 aus Phoenix,
 die Antwort-Zeile „Friday open, the rest fixed, 23 dishes offered — one
 answer, and the gratin is not in it." Sprechtext weiter gestrafft (Zeile 4,
 Rest von Zeile 9, „some veggie, some with meat", „27 lines" — der Take hat
-24) und auf 1,18×. **Abgabefilm: 155 s.**
+24) und auf 1,18×. Dann Aaron: „schneid das Video tighter, so dass es zum
+Text passt" — die Bildfenster waren länger als die Sätze (Tippen 19 s zu
+11 s Stimme, Liste 7 s zu 3,4 s), dazwischen Pausen. Jetzt hat jedes Stück
+Sprechlänge plus Luft, und drei Wartestrecken laufen als Zeitraffer
+(`RAFFER` in `schnitt_kombi.py`: Tippen 1,5×, Neuplanung bis zum neuen
+Freitag 1,5×, Chat-Antwort 1,3× — `setpts`+`fps` vor `zoompan`).
+**Abgabefilm: 127 s** (Intro 13,5 s + Demo 113 s), Versatz Stimme/Bild
+≤ 1,3 s.
 
 ## Stand 10.09. nachts — die Stimme liegt drunter (erste Fassung, 167 s)
 
