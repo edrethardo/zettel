@@ -36,7 +36,7 @@ keys: one open model on one NVIDIA RTX 3090.
   database: five scenarios, **0 rejected** ([`EVALS.md`](EVALS.md)) — after a
   trace showed the one bug that was in the offer, not in the model.
 * **Try it in five minutes without a GPU:** [`GETTING-STARTED.md`](GETTING-STARTED.md).
-  The 2¾-minute film is linked from the contest post; how it was made, take
+  The 2½-minute film is linked from the contest post; how it was made, take
   by take, is in [`docs/contest/VIDEO.md`](docs/contest/VIDEO.md).
 
 | 128 German dishes, one RTX 3090 (2026-09-05) | ingredients found in the catalog | per dish | seconds per dish |

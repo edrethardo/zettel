@@ -12,13 +12,13 @@ Checkliste vor dem Absenden:
       Vorschlag anklicken), nicht nur schreiben. Ihr Feed: Agenten, die lokal
       laufen (DGX Spark), und NVIDIAs These „small models for agentic AI“ —
       darum steht der 3B-active-Satz im Modellabsatz
-- [ ] `<video link>` — der Film (167 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
+- [ ] `<video link>` — der Film (157 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
 - [x] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (seit 10.09., 20:50; Actions grün) (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
-- [ ] **Der Film ist `zettel_demo_2026-09-10_intro_vo.mp4`** (167 s, mit Aarons Voice-Over: Intro, dann
+- [ ] **Der Film ist `zettel_demo_2026-09-10_intro_vo.mp4`** (157 s, mit Aarons Voice-Over: Intro, dann
       der Satz, der die Woche plant, dann der eine Einkauf, alles auf Nemotron) als nativer Upload; Vorschaubild
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
@@ -36,7 +36,7 @@ Not a prompt wrapper, not an orchestra either: two model calls with a database s
 
 2. Reject, don't repair. An ID that was never presented is thrown out — no fuzzy rescue — and the term stays visible as free text. The JSON schema enforces shape, not truth, so the check lives in code. It was silently unenforced for 4 days after a vLLM upgrade; every number stayed the same.
 
-3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
+3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the basket without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
 The same three rules run one level up — that is the film. One sentence: "one meal a day, 700 kcal, high protein, potatoes, eggs and pasta are in." The model reads it into the fields (every number has to be in the sentence, or it is rejected), then assigns dishes to days — only from the dishes this household already has, one sentence of reasoning per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price, kcal per serving are computed in code. A No on Friday re-plans Friday only, in 1.3 s; the rejected dish does not come back. Measured on the real database, 5 scenarios, both models: 0 rejected, 3–6 s per week. One trace earlier that day showed the only bug was in the offer — dishes already in the plan were offered again — not in the model. Fixed, re-measured, both runs in EVALS.md. Every Yes/No on a day goes back to the plan.woche span as a label.
 
@@ -73,7 +73,7 @@ Dazu das Vergleichsbild `docs/images/modelle-128.png` (kein Trailer mehr —
 der Hochkant-Schnitt ist gestrichen, 10.09.). Dann eine Stunde antworten.
 
 **Kein zweiter Film-Kommentar mehr (10.09.).** Der native Upload ist der
-kombinierte Film `zettel_demo_2026-09-10_intro_vo.mp4` — 167 s, Intro, erst die Woche,
+kombinierte Film `zettel_demo_2026-09-10_intro_vo.mp4` — 157 s, Intro, erst die Woche,
 dann die Überleitung „Not the whole week? Then just tonight", dann der eine
 Einkauf; alles im selben Take auf Nemotron 3.5 Lightning, mit Cache, tok/s
 und Zeit bis zum ersten Token im Bild. Die früheren Einzelfilme

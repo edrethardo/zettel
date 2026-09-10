@@ -17,8 +17,17 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 
 ## Stand 10.09. nachts — die Stimme liegt drunter: `zettel_demo_2026-09-10_intro_vo.mp4`
 
-**Der Abgabefilm: 167 s, neues Intro (13 s, Aaron vor dem Regal), dann Take
-v8 mit Aarons Voice-Over.** Aufgenommen mit dem DJI Mic 3 am Teleprompter
+**Der Abgabefilm: 157 s, neues Intro (13,5 s, Aaron vor dem Regal, ganz),
+dann Take v8 mit Aarons Voice-Over — zweite Aufnahme, gestrafft, 1,1×.**
+Nach der ersten Fassung (167 s, Take von 20:01) sprach Aaron um 21:10
+komplett neu ein; aus dem dritten, durchgehenden Abschnitt wählte die
+Mic-Helfer-Session je Zeile den letzten Anlauf (`vo/vo_plan_final*.json`,
+von Aaron abgenommen). Danach drei Versprecher herausgeschnitten („the
+list", „now the analytics", „what the model was offered"), den Kartenteil in
+Zeile 2 und den Kalorien-Satz in Zeile 9 gestrichen (beides steht im
+Untertitel) — 124 s Sprechzeit statt 154 —, und das Ganze mit `atempo=1.1`
+ohne Tonhöhenänderung. Die Standbilder unter den Tafeln schrumpften
+entsprechend (P6: 2 s + 6 s), Endcard 6 s. Aufgenommen mit dem DJI Mic 3 am Teleprompter
 (Artifact; fürs iPhone lädt die Seite den Film per `fetch` als blob-URL,
 weil Safari die Bereichsanfragen an den Asset-Server nicht bekommt), 13:09
 Band mit mehreren Durchläufen. Der Weg zur Spur: Whisper mit Wortzeiten
