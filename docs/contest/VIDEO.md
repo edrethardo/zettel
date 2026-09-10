@@ -15,6 +15,46 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
+## Stand 10.09. morgens — v4, vorbereitet: EIN Film, erst die Woche, dann der eine Einkauf
+
+Aaron, nach dem dritten Schnitt des Wochenplan-Films: erst den Wochenplaner
+zeigen, dann später den einzelnen Einkauf mit dem Gericht — mit der
+Überleitung „wenn ich nicht die ganze Woche planen will, kann ich auch fix
+einen Einkauf eintragen." Das ist die Entscheidung, die seit dem 06.09. offen
+stand (Chat-Film und Plan-Film zu einem?): **ja, und in dieser Reihenfolge.**
+
+Der Take existiert noch nicht — er braucht das laufende Modell, und die Karte
+gehört seit 02:30 der Arena für drei Kampagnen à ~3 h; sie lässt uns an der
+ersten Grenze (Schätzung: heute Nachmittag) ein Fenster von 25 Minuten.
+Vorbereitet ist alles, was ohne Karte geht:
+
+| Datei | Was |
+|---|---|
+| `dreh_chat_kurz.py` | der ZWEITE Teil des Takes: tippt selbst auf den Reiter „Chat" (die Überleitung als sichtbare Handlung, Marke `Zum Chat gewechselt`), dann Shots 1–4 aus `dreh.py` — Satz, Antwort, Karte mit Portionen, zwei Ja. Ohne Sammeltipp, Korb, Pick-Liste, Trace: der Trace war im Wochenteil schon im Bild |
+| `aufnahme.sh` | `SKRIPTE="dreh_plan.py dreh_chat_kurz.py"` lässt beide Drehbücher in EINEM Take laufen; ffmpeg läuft durch, das zweite Skript hängt seine Zeitmarken an (`DREH_ANHAENGEN=1`) |
+| `schnitt_kombi.py` | P1–P7 wie `schnitt_plan.py`, dann B (Überleitung), S1–S4. Zwei Nahsicht-Blöcke (P3–P5, S3–S4), jeder als Kamerafahrt hinein und heraus. Die Marken des Chat-Teils werden erst HINTER der Zäsur gesucht — „Blick nach rechts" und „ENDE" kommen in beiden Teilen vor |
+| `titelkarte_plan.py … kombi`, `endcard_plan.py … kombi` | „A week of dinners — or just tonight's." / Endcard nennt beides und keine Nemotron-Zahl (der Take läuft auf Qwen) |
+
+Gegen einen synthetischen Kombi-Take (Wochenteil = der echte Take von heute
+Nacht, Chat-Marken plausibel dahinter) rechnet der Schnitt **~125 s Bild +
+8 s Endcard, also gut zwei Minuten**; zwei Untertitel waren zu schnell
+(3,9 und 3,5 Wörter/s) und sind gekürzt.
+
+**Der Dreh, wenn die Karte frei ist:**
+
+    gpu-lock.sh acquire zettel -m "Kombi-Take" -t 25 --keep-vllm
+    cd ~/picknick-video
+    BUEHNE_SCHIRM=xvfb PHX_PROJEKT="Zettel Demo Plan" bash buehne.sh
+    bash bereit_plan.sh                       # legt Projekt an, wärmt vor, leert Chat + Plan
+    SKRIPTE="dreh_plan.py dreh_chat_kurz.py" STAMM=take_kombi_<datum> bash aufnahme.sh 330
+    gpu-lock.sh release zettel                # sofort — der Schnitt braucht die Karte nicht
+    .venv/bin/python schnitt_kombi.py take_kombi_<datum> github.com/edrethardo/zettel
+
+Was ungetestet bleibt, bis der Take läuft: die Überleitung selbst (der
+Reiter-Klick über `zur_seite`, erprobt in `dreh.py` für den Korb, aber nicht
+von /plan aus) und ob der Chat-Zug mit 20 Posten im Korb aus dem Wochenteil
+sauber weiterzählt — `dreh.py` prüft die Korbzahl relativ, das sollte gehen.
+
 ## Stand 06.09. abends — v3.1: der Wochenplan, gedreht
 
 Der Chat-Zug zeigt „ein Satz -> eine Liste". Der zweite Film zeigt die
