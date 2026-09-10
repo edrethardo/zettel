@@ -12,7 +12,7 @@ Checkliste vor dem Absenden:
       Vorschlag anklicken), nicht nur schreiben. Ihr Feed: Agenten, die lokal
       laufen (DGX Spark), und NVIDIAs These „small models for agentic AI“ —
       darum steht der 3B-active-Satz im Modellabsatz
-- [ ] `<video link>` — der Film (127 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
+- [x] gepostet am 10.09.2026: https://lnkd.in/p/eUy6VVBm — der Film (127 s mit Intro und Stimme, Drehbuch: `VIDEO.md`, Abschnitte v8 und „die Stimme liegt drunter“)
 - [x] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (seit 10.09., 20:50; Actions grün) (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
 - [ ] Hashtag `#NVIDIAGTC` steht drin
@@ -92,6 +92,6 @@ die Reichweite), sondern für Instagram (Aaron hat kein X):
 
 Open NVIDIA Nemotron 3.5 Lightning (3B active, 4-bit) on one RTX 3090 runs the grocery agent our household shops from. 128 dishes: 85 % of ingredients found, 6 s a dish, 1 invented ID in 1,167 — rejected, counted, traced in Arize Phoenix. Every Yes/No is an eval label.
 
-Demo: <video link> · Repo: https://github.com/edrethardo/zettel
+Demo: https://lnkd.in/p/eUy6VVBm · Repo: https://github.com/edrethardo/zettel
 
 @Chorouk Malmoum #NVIDIAGTC
