@@ -15,6 +15,38 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
+## Stand 10.09. spätabends — v8, gedreht: mehr Analytics, in Aarons Ton
+
+Aaron: „mach das, was du vorgeschlagen hast" — mehr Analytics für die Jury,
+das Skript in seinem Ton. Zwei Erweiterungen, beide ohne neuen Wortlaut im
+Bild: **eine Kamerafahrt auf den GPU-Streifen**, solange das Modell plant
+(P2 in zwei Stücken: hinein mit dem Klick, halten, heraus in dem Moment, in
+dem der Plan da ist — 204 t/s, 0,31 s bis zum ersten Token, 99 % GPU im
+Bild), und **P6 in drei Stücken**: Zug öffnen, `plan.*`-Attribute, dann der
+LLM-Span mit Prompt und Antwort — die 28 Gerichte wörtlich, das JSON mit
+einem Satz je Tag. Das Modell-Badge wanderte nach rechts oben, weil es in
+der Streifen-Nahsicht die Watt-Zahl überlagerte.
+
+**`zettel_demo_2026-09-10_final.mp4` ist seither Take v8 (137,5 s),
+mit Intro `…_intro_final.mp4` (151,8 s) — unter drei Minuten, für den
+nativen LinkedIn-Upload.** Ablauf wie v6, Neuplanung in 1,3 s, `rejected 0`
+durchgehend.
+
+Zwei Takes davor: v7 hatte den LLM-Span zwar offen, aber die Tafel stand
+noch auf „Attributes" mit dem Filter `plan.` — im Bild „No matching
+attributes" unter dem Untertitel „the model's own words". Nicht
+jurytauglich. Das Drehbuch klickt seither den Reiter „Info" (beim LLM-Span
+eine Zeile tiefer als beim Zug, deshalb zwei geprüfte Versuche) und setzt
+die Marke erst, wenn sich die Tafel geändert hat. Und der erste v7-Schnitt
+hatte 4,9 Wörter/s im ersten P6-Untertitel — gekürzt.
+
+Recherche zur Länge (Aaron: „schau, wie lang die Gewinner-Showcases sind"):
+wo NVIDIA eine Länge vorschreibt, sind es 45–90 s (Gen-AI-on-RTX-Contest,
+Agents-Contest mit LangChain); die Golden-Ticket-Regeln sagen nur „short
+video". Aaron lädt nativ auf LinkedIn hoch (kein X), also gilt: unter drei
+Minuten, Voice-Over in der ersten Person, erst die Handlung, dann was
+passiert.
+
 ## Stand 10.09. abends — v6, gedreht: die Neuplanung ersetzt den Tag
 
 Aaron, nach dem Blick auf v5e: „Yeah fix that it stays open — in the code,
