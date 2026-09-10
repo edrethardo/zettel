@@ -68,8 +68,8 @@ ENTWURF = "docs/contest/POST.md"
 #: eine Zahl einig sein. Specs, Reviews, Pläne und die Geschichtsabschnitte
 #: von `VIDEO.md` tragen mit Absicht alte Zahlen — sie berichten, was an
 #: einem Tag galt, und wären falsch, wenn jemand sie nachzöge.
-JETZT = ["README.md", "SHOWCASE.md", "GETTING-STARTED.md", "CASE-STUDY.md",
-         "docs/contest/POST.md"]
+JETZT = ["README.md", "README.en.md", "SHOWCASE.md", "GETTING-STARTED.md",
+         "CASE-STUDY.md", "docs/contest/POST.md"]
 
 #: Der Vorbehalt aus dem Post und das Messdatum, an dem er hängt.
 VORBEHALT = "not yet on Nemotron"

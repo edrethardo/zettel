@@ -2,6 +2,8 @@
 
 [![tests](https://github.com/edrethardo/zettel/actions/workflows/tests.yml/badge.svg)](https://github.com/edrethardo/zettel/actions/workflows/tests.yml) ![license MIT](https://img.shields.io/badge/license-MIT-blue) ![model](https://img.shields.io/badge/model-Nemotron%203.5%20Lightning%2030B--A3B-76B900) ![runs on](https://img.shields.io/badge/runs%20on-one%20RTX%203090-76B900)
 
+**🇬🇧 English readers: the full English README is [`README.en.md`](README.en.md).** Deutsch geht hier weiter.
+
 > **English** — Zettel (German for the slip of paper you take to the shop) is
 > a grocery agent for a multi-person household. Its furthest step: **a week of
 > dinners in, one shopping list out — minus what is already in the fridge.**
