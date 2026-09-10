@@ -38,7 +38,7 @@ Not a prompt wrapper, not an orchestra either: two model calls with a database s
 
 3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
-The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured against the real database, 5 scenarios, both models: Qwen3.8-27B rejected 0 in all six turns; Nemotron 3.5 rejected 0 in the four normal ones; in the two thin ones — one dish offered for seven days, a re-plan where the remaining dishes were already fixed on other days — the code rejected 6 and 3 proposals: the same dish on every day, fixed days filled again. Counted, none reached the page — and the trace showed the offer was the bug, not the model: dishes already in the plan were offered again. Since then the model is offered only what it can choose, and the schema enumerates the allowed ids and open days, so guided decoding cannot produce anything else — the same five scenarios after the fix: 0 rejected, 20 s. 3–4 s per week on Nemotron. Every Yes/No on a day goes back to the `plan.woche` span as a label.
+The same three rules run one level up — that is the film. One sentence: "one meal a day, 700 kcal, high protein, potatoes, eggs and pasta are in." The model reads it into the fields (every number has to be in the sentence, or it is rejected), then assigns dishes to days — only from the dishes this household already has, one sentence of reasoning per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price, kcal per serving are computed in code. A No on Friday re-plans Friday only, in 1.3 s; the rejected dish does not come back. Measured on the real database, 5 scenarios, both models: 0 rejected, 3–6 s per week. One trace earlier that day showed the only bug was in the offer — dishes already in the plan were offered again — not in the model. Fixed, re-measured, both runs in EVALS.md. Every Yes/No on a day goes back to the plan.woche span as a label.
 
 Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
 – Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
@@ -69,8 +69,8 @@ dort), Wortlaut:
 > Same discipline in my eval harness, where the LLM judge is checked against
 > real test runs: github.com/edrethardo/llm-eval-phoenix
 
-Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
-`docs/images/modelle-128.png`. Dann eine Stunde antworten.
+Dazu das Vergleichsbild `docs/images/modelle-128.png` (kein Trailer mehr —
+der Hochkant-Schnitt ist gestrichen, 10.09.). Dann eine Stunde antworten.
 
 **Kein zweiter Film-Kommentar mehr (10.09.).** Der native Upload ist der
 kombinierte Film `zettel_demo_2026-09-10_intro_final.mp4` — 152 s, Intro, erst die Woche,
@@ -89,7 +89,7 @@ raus). Nano-8B lief nur über die ersten 64 Gerichte — der alte Entwurf sagte
 „three models, the same 128 dishes", das war falsch.
 
 **Kürzere Variante** — nicht als zweiter LinkedIn-Post (zwei Posts teilen
-die Reichweite), sondern für X oder Instagram:
+die Reichweite), sondern für Instagram (Aaron hat kein X):
 
 ---
 
