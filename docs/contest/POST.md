@@ -18,6 +18,9 @@ Checkliste vor dem Absenden:
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
+- [ ] **Falls der Kombi-Take heute Nachmittag gelingt** (VIDEO.md, Abschnitt v4):
+      EIN Film — Woche, dann der eine Einkauf — als nativer Upload statt der
+      zwei; erster Kommentar bleibt, zweiter entfällt. Gelingt er nicht: wie unten.
 - [ ] Wochenplan-Film als **zweiter** Kommentar (Wortlaut unten) — der native
       Upload gehört dem Chat-Zug, LinkedIn zeigt nur einen nativen Film je Post
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
