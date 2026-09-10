@@ -2,10 +2,13 @@
 
 *Zettel* (ˈtsɛtl̩) is German for the slip of paper you take to the shop.
 
-> **A grocery app for a multi-person household where a 27B open model —
-> quantized to fit a single NVIDIA RTX 3090 — turns "everything for lasagna,
-> and toilet paper" into a real shopping list: fully traced in Arize Phoenix,
-> evaluated across 128 dishes, zero cloud, zero API keys.**
+> **A grocery app for a multi-person household where one open model on a
+> single NVIDIA RTX 3090 — NVIDIA Nemotron 3.5 Lightning 30B-A3B in the demo,
+> Qwen3.8-27B as the reference — turns "everything for lasagna, and toilet
+> paper" into a real shopping list, and "one meal a day, 700 kcal, high
+> protein, potatoes, eggs and pasta are in" into a week of dinners: fully
+> traced in Arize Phoenix, evaluated across 128 dishes and five planning
+> scenarios, zero cloud, zero API keys.**
 
 She fills the cart from her phone, he buys the groceries at a physical store
 and checks them off on his. In between sits an LLM agent that is allowed to do

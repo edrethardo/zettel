@@ -1,5 +1,7 @@
 # Zettel
 
+[![tests](https://github.com/edrethardo/zettel/actions/workflows/tests.yml/badge.svg)](https://github.com/edrethardo/zettel/actions/workflows/tests.yml) ![license MIT](https://img.shields.io/badge/license-MIT-blue) ![model](https://img.shields.io/badge/model-Nemotron%203.5%20Lightning%2030B--A3B-76B900) ![runs on](https://img.shields.io/badge/runs%20on-one%20RTX%203090-76B900)
+
 > **English** — Zettel (German for the slip of paper you take to the shop) is
 > a grocery agent for a multi-person household. Its furthest step: **a week of
 > dinners in, one shopping list out — minus what is already in the fridge.**
@@ -14,7 +16,26 @@
 > an eval label; every turn is one trace in Arize Phoenix. No cloud, no API
 > keys: one open model on one NVIDIA RTX 3090.
 
-![Der Wochenplan: je Tag ein Gericht, ein Satz Begründung, kcal und Eiweiss je Portion — und Ja/Nein](docs/images/wochenplan.png)
+![One sentence plans the week: the sentence is read into the fields, five days get a dish each, a No on Friday re-plans Friday only — Nemotron 3.5 Lightning on one RTX 3090, Phoenix trace on the right, GPU strip below](docs/images/wochenplan-satz.gif)
+
+> **In sixty seconds, for the GTC Berlin Golden Ticket jury.**
+>
+> * **Open model, one card, no cloud.** NVIDIA Nemotron 3.5 Lightning
+>   30B-A3B (W4A16) served by vLLM 0.27.1 on a single RTX 3090 in a living
+>   room. Every turn is one trace in Arize Phoenix; the GPU strip in the film
+>   shows KV cache, tokens per second and time to first token live.
+> * **Three rules, everywhere.** The model may only *choose* from what code
+>   retrieved; an invented id is rejected and counted, never repaired; every
+>   Yes or No a person taps goes back to the span as an eval label.
+> * **The furthest step: a week from one sentence.** "one meal a day, 700
+>   kcal, high protein, potatoes, eggs and pasta are in" — the model reads it
+>   into the fields (every number must be *in* the sentence), assigns dishes
+>   to days, and a No on one day re-plans that day only. Measured on the real
+>   database: five scenarios, **0 rejected** ([`EVALS.md`](EVALS.md)) — after a
+>   trace showed the one bug that was in the offer, not in the model.
+> * **Try it in five minutes without a GPU:** [`GETTING-STARTED.md`](GETTING-STARTED.md).
+>   The 2½-minute film is linked from the contest post; how it was made, take
+>   by take, is in [`docs/contest/VIDEO.md`](docs/contest/VIDEO.md).
 
 | 128 German dishes, one RTX 3090 (2026-09-05) | ingredients found in the catalog | per dish | seconds per dish |
 |---|---|---|---|
@@ -38,6 +59,8 @@
 > does not have to stop you.
 
 ## Der Wochenplan: eine Woche rein, eine Liste raus
+
+![Der Wochenplan: je Tag ein Gericht, ein Satz Begründung, kcal und Eiweiss je Portion — und Ja/Nein](docs/images/wochenplan.png)
 
 Die weiteste Stufe, und die interessanteste. Unter **Mehr → Wochenplan**
 stehen vier Zahlen — Tage, Personen, höchstens Minuten am Herd, Budget — und
@@ -85,7 +108,7 @@ beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Demo
 
-Ein Film, 146 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
+Ein Film, 152 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
 gedreht (Xvfb-Bühne: App in Handybreite links, Phoenix rechts, unten der
 Streifen mit GPU, VRAM, KV-Cache, Verdrängungen, tok/s und Zeit bis zum
 ersten Token — alles live). Erst ein Satz, der die Woche plant („eine Mahlzeit pro Tag, 700
