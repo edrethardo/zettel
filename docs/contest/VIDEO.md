@@ -15,7 +15,33 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
-## Stand 10.09. morgens — v4, vorbereitet: EIN Film, erst die Woche, dann der eine Einkauf
+## Stand 10.09. mittags — v4, gedreht: EIN Film auf Nemotron, erst die Woche, dann der eine Einkauf
+
+**`zettel_demo_2026-09-10_final.mp4` — 135,5 s**, aus `take_kombi_2026-09-10_nemotron_b`
+(zweiter Versuch; Band 420 s, Wochenteil 265 s, Chat-Teil 115 s). Modell im
+Take: `Nemotron-3.5-Lightning-30B-A3B`, serviert von der Box-Session in einem
+35-Minuten-Fenster der Arena (Lock 10:45–11:15, Aarons Go 10:52, Nemotron
+bereit 10:53:30, Rückstellung auf den Qwen-Container verifiziert 11:13:46).
+Vorschaubild `thumbnail_2026-09-10.png`.
+
+Was der erste Versuch gelehrt hat: die Neuplanung nach dem „Nein" kam „nicht
+innerhalb von 120 s" — sie kam in 0,7 s, aber Nemotron nannte zwei Gerichte,
+die nicht vorgelegt waren, beide verworfen, der Tag blieb offen, und
+`dreh_plan.py` wartete nur auf ein ANDERES Gericht. Der Chat-Teil lief
+dadurch hinter dem Ende des 330-s-Bandes. Take b: Band 420 s, die Wartezeit
+auf 40 s begrenzt, und `schnitt_kombi.py` liest den Ausgang der Neuplanung
+aus Phoenix (`rejected = 2`) und schreibt ihn in den Untertitel, statt ihn
+wegzuschneiden — das ist die Regel bei der Arbeit, kein kaputter Take.
+
+Die Zahlen im Streifen auf Nemotron: 101,8 t/s, erster Token nach 0,19 s,
+Anfrage 0,6 s, keine Verdrängung (Concurrency 28,4 bei 32k Fenster und fp8-KV
+— gegen 1,05 beim dichten 27B-Qwen). Direkt nach dem Take lief im selben
+Fenster `plan_probe.py` gegen Nemotron; Ergebnis in `EVALS.md`.
+
+Der Vorbereitungsabschnitt darunter bleibt, weil die Kette beim nächsten
+Dreh dieselbe ist.
+
+### v4, vorbereitet (10.09. morgens)
 
 Aaron, nach dem dritten Schnitt des Wochenplan-Films: erst den Wochenplaner
 zeigen, dann später den einzelnen Einkauf mit dem Gericht — mit der

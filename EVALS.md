@@ -958,44 +958,46 @@ Gerichten kaum zu drücken. Und die Vorlage trägt keinen Unterschied
 zwischen Hauptgericht und Nachtisch; ein Planer, der Churros zum Abendessen
 setzt, hat aus seiner Sicht nichts falsch gemacht.
 
-### Offen: derselbe Lauf gegen Nemotron 3.5
+### Derselbe Lauf gegen Nemotron 3.5 (2026-09-10)
 
-**Der Wochenplaner ist nie gegen Nemotron gelaufen.** Der Chat-Zug ist es —
-128 Gerichte, zwei Modelle, der Abschnitt darüber. Die vierte Stufe hat
-bisher nur Qwen gesehen, und der Film zeigt Qwen, weil an dem Abend Qwen auf
-der Box lag.
+Dieselben fünf Szenarien, derselbe Harness, dieselbe Datenbankkopie-Methode —
+gegen **NVIDIA Nemotron 3.5 Lightning 30B-A3B** (W4A16, vLLM 0.27.1,
+`--max-len 32768 --lm-only`, kein Reasoning-Parser, keine Spekulation).
+Rohdaten und Provenienz: `evals/plan_probe-2026-09-10-nemotron35.*`; die
+Provenienz trägt auch den KV-Cache-Zustand (931.157 Token, Concurrency 28,4,
+fp8, 0 Verdrängungen), damit niemand Verdrängung für Modellleistung hält.
 
-Das ist kein Versehen und keine Auslassung, sondern ein offener Punkt: am
-09.09.2026 war das Fenster vorbereitet (`vllm-model serve … --max-len 32768
---lm-only`, ohne Reasoning-Parser, ohne Spekulation), die Karte gehörte
-jedoch einem Nachbarprojekt, und Vorrang war eine Entscheidung des
-Haushalts, keine technische. Bis der Lauf existiert, trägt der Post den
-Vorbehalt „on the Qwen3.8-27B reference, not yet on Nemotron", und
-`checks/veroeffentlichung.py` prüft, dass er dort steht.
+| Zug | Gerichte vorgelegt | Tagen zugewiesen | erfunden → verworfen | Dauer |
+|---|---|---|---|---|
+| A — 3 Tage, ≤ 40 min, Bestand erklärt | 3 | 3 von 3 | 0 | 4,2 s |
+| B — 5 Tage, 4 Personen, Budget 60 € | 19 | 5 von 5 | 0 | 3,8 s |
+| C — 3 Tage, Tag 2 auswärts | 19 | 3 von 3 | 0 | 4,4 s |
+| D — wie A | 3 | 3 von 3 | 0 | 4,0 s |
+| D' — nach „Nein" auf Tag 1, Neuplanung | 2 | 0 von 1 | **3** | ~1 s |
+| E — 7 Tage, ≤ 30 min | 1 | 1 von 7 | **6** | 2,7 s |
 
-Nachzuholen ist es in zwanzig Minuten:
+Fünf Szenarien in **21 s** gesamt (Qwen: rund 36 s ohne Vorwärmen der
+Zuordnung). Und der Befund, der diese Messung wert war:
 
-```bash
-gpu-lock.sh acquire zettel -m "plan_probe Nemotron" -t 60 --keep-vllm   # der GPU-Lock der Box
-# Fenster bei der Box-Session anfragen; danach ZUERST /v1/models prüfen —
-# steht dort Qwen, ist es nicht Nemotron (das Container-Drop-in gewinnt
-# gegen `vllm-switch`).
-sqlite3 data/picknick.db "VACUUM INTO 'kopie.db'"
-ZETTEL_PHOENIX_PROJECT="Zettel Eval Wochenplan Nemotron" \
-.venv/bin/python scripts/plan_probe.py --db kopie.db --trace \
-    --json evals/plan_probe-<datum>-nemotron35.json
-```
+* **Wo die Vorlage dünn wird, rät das schnellere Modell.** In den vier
+  normalen Szenarien wählt Nemotron wie Qwen nur aus der Vorlage (verworfen
+  0). In den zwei knappen — ein einziges Gericht für sieben Tage; eine
+  Neuplanung mit zwei Kandidaten — nennt es **6 und 3 Gericht-ids, die
+  nicht vorgelegt waren.** Qwen liess dieselben Tage leer. Alle neun wurden
+  verworfen und gezählt, keine kam auf die Seite: das ist die Prüfung im
+  Code bei der Arbeit, nicht ein Modellfehler, der durchrutscht.
+* **Das Muster wiederholte sich vor der Kamera.** Im Take vom 10.09. schlug
+  Nemotron nach dem „Nein" auf Dienstag zwei Gerichte vor, die nicht in der
+  Vorlage standen — `rejected = 2`, Tag blieb offen. Der Film sagt es im
+  Untertitel, statt es wegzuschneiden.
+* **Die Begründungen sind etwas ausführlicher** als bei Qwen („Caesar-Salad
+  passt gut als leichter Start in die Woche und teilt Zutaten wie Knoblauch
+  und Weißbrot mit anderen Gerichten") und weiterhin Sätze, keine Zahlen.
 
-Zwei Werte gehören dabei in die Provenienz, sonst misst man womöglich etwas
-anderes als das Modell: `kv_cache_max_concurrency` und
-`vllm:num_preemptions_total`. Liegt die Concurrency nahe 1, verdrängt vLLM
-laufende Anfragen und rechnet sie neu — auf dieser Karte bei
-`max_model_len=131072` gemessen (1,04 und 129 Verdrängungen), bei 32768
-nicht. Das sieht in den Ergebnissen wie ein langsames Modell aus und ist
-ein zu kleiner Cache.
-
-Sobald die Datei liegt, muss der Vorbehalt aus dem Post — das Gate schlägt
-sonst an, und zwar in beide Richtungen.
+Was diese Messung nicht sagt: ob 6 erfundene ids bei einem vorgelegten
+Gericht „schlechter" sind als 0 leere Tage — beides ist derselbe Zustand
+auf der Seite (sechs Tage leer), nur der Weg dorthin unterscheidet sich, und
+der steht im Trace. Ein Lauf je Szenario, keine Wiederholung.
 
 ## Was hier schwächer ist, als es aussieht
 

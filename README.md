@@ -77,13 +77,15 @@ beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Demo
 
-Zwei Filme, beide ohne Ton und mit eingebrannten Untertiteln, beide auf
-derselben Bühne gedreht (Xvfb, App in Handybreite links, Phoenix rechts):
-
-| Film | Was er zeigt |
-|---|---|
-| **Der Wochenplan**, 86,8 s | Eine Woche wird eine Liste, abzüglich dessen, was schon da ist — kcal und Eiweiss je Tag daneben. Unten laufen die Zahlen des Modells mit: 144,8 t/s, erster Token nach 0,88 s, keine Verdrängung. Modell im Bild: Qwen3.8-27B-Instruct. |
-| **Der Chat-Zug**, 90,9 s | Ein Satz wird eine Einkaufsliste, mit dem Trace daneben, live. Modell im Bild: NVIDIA Nemotron 3.5 Lightning. |
+Ein Film, 135 s, ohne Ton, mit eingebrannten Untertiteln, in einem Take
+gedreht (Xvfb-Bühne: App in Handybreite links, Phoenix rechts, unten der
+Streifen mit GPU, VRAM, KV-Cache, Verdrängungen, tok/s und Zeit bis zum
+ersten Token — alles live). Erst die Woche, dann die Überleitung „nicht die
+ganze Woche? dann eben ein Einkauf", dann der eine Einkauf mit dem Gericht.
+Modell im Bild: **NVIDIA Nemotron 3.5 Lightning 30B-A3B**, W4A16, auf einer
+RTX 3090. Im Wochenteil sieht man auch die Regel bei der Arbeit: nach dem
+„Nein" auf Dienstag nennt das Modell zwei Gerichte, die nicht vorgelegt
+waren — verworfen, gezählt, der Tag bleibt offen.
 
 Der Link wird hier eingetragen, sobald der Film veröffentlicht ist — ein
 Platzhalter, der ins Leere zeigt, wäre schlechter als keiner. Drehbuch,
@@ -193,8 +195,18 @@ ein Satz `grund` — und sonst nichts. Die Annotation `plan_day: kept` am Span
 ist kein Nachtrag von Hand, sondern das „Ja", das jemand auf der Seite
 getippt hat.
 
-Rohdaten und Provenienz (Stack, Endpunkt, Modell, Kontextlänge, Commit,
-Phoenix-Projekt) liegen als `evals/plan_probe-2026-09-06-qwen.*` daneben.
+**Derselbe Lauf gegen Nemotron 3.5 Lightning** (2026-09-10, W4A16, 32k
+Fenster, fünf Szenarien in 21 s): in den vier normalen Szenarien ebenfalls
+0 erfundene Gerichte. In den zwei knappen — ein einziges Gericht für sieben
+Tage, eine Neuplanung mit zwei Kandidaten — nennt Nemotron **6 und 3
+Gericht-ids, die nicht vorgelegt waren**; Qwen liess dieselben Tage leer.
+Alle neun verworfen und gezählt, keine kam auf die Seite. Wo die Vorlage
+dünn wird, rät das schnellere Modell, und genau dafür steht die Prüfung im
+Code. Beide Läufe mit Tabelle in [`EVALS.md`](EVALS.md).
+
+Rohdaten und Provenienz (Stack, Endpunkt, Modell, Kontextlänge, KV-Cache,
+Commit, Phoenix-Projekt) liegen als `evals/plan_probe-2026-09-06-qwen.*` und
+`evals/plan_probe-2026-09-10-nemotron35.*` daneben.
 Die vollständige Tabelle mit Einkaufsliste, Bestand und Preis, und was diese
 Messung ausdrücklich **nicht** sagt, steht in [`EVALS.md`](EVALS.md) unter
 „Der Wochenplaner"; die 128-Gerichte-Messung des Chat-Zugs gegen drei Modelle
