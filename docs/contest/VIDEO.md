@@ -1106,7 +1106,7 @@ hindurch, und `dreh_plan.py` tippt nach 25 s notfalls nach.
 | Plan | 5 Tage in **5,7 s** belegt, aus 9 vorgelegten Gerichten, verworfen 0 |
 | Neuplanung | Tag 2 nach „Nein" in **1,2 s** neu belegt |
 | Korb | 20 Posten |
-| Schnitt | `take_plan_2026-09-10a_final.mp4`, **86,9 s**, 1920×1250 |
+| Schnitt | `take_plan_2026-09-10a_final.mp4`, **86,8 s**, 1920×1250 |
 
 Im Bild neu: der Streifen mit CACHE, PREEMPT, TOK/S, 1ST TOKEN und REQUEST
 (144,8 t/s, erster Token nach 0,88 s, keine Verdrängung), und der Badge nennt
@@ -1138,7 +1138,36 @@ enthält jetzt `P3`, `P4` und `P5` — die Mitte ist ein zusammenhängender
 erst die Maschinerie, dann der Plan aus der Nähe, dann wieder die Maschinerie
 mit dem Trace.
 
-Die Länge ändert sich dadurch nicht (86,9 s), die Untertitel auch nicht.
+Die Untertitel ändern sich dadurch nicht.
+
+### Kein Schnitt zwischen den Einstellungen, sondern eine Fahrt (10.09., zweite Runde)
+
+Der Block in der Mitte reichte Aaron nicht: „kein harter Cut zwischen den
+Ansichten, das ist schlimm anzusehen." Zwei Einstellungen hart
+aneinanderzusetzen ist ein Sprung, egal wie selten er vorkommt. Die Nahsicht
+ist jetzt eine **Kamerafahrt**: über eine Sekunde fährt das Bild in einen
+16:9-Ausschnitt links unten (1280×720 ab y=150, also 1,5-fach) hinein, bleibt
+dort für P3–P5, und fährt am Ende von P5 in einer Sekunde wieder heraus —
+mit sanftem An- und Auslauf (smoothstep), damit weder Anfang noch Ende der
+Fahrt ruckt.
+
+Drei Folgen, die man kennen sollte:
+
+* **Der Bildaufbau bleibt derselbe.** Vorher zeigte die Nahsicht die
+  App-Spalte allein, mittig auf dunklem Grund — ein anderes Bild als die
+  Bühne. Jetzt ist die Nahsicht die Bühne aus der Nähe: App links, Phoenix
+  rechts angeschnitten, der Streifen verschwindet unten aus dem Bild. Das
+  Auge folgt einer Bewegung, statt sich neu zu orientieren.
+* **`zoompan` statt `crop`.** Bei `crop` werden Breite und Höhe nur einmal
+  ausgewertet, nur x und y je Bild — eine wachsende Ausschnittgrösse geht
+  damit nicht. `zoompan` hält das Seitenverhältnis und rechnet je Bild.
+* **86,8 s statt 86,9 s** — zwei Bilder Rundung an den Segmentgrenzen.
+
+Was Aaron eigentlich beschrieben hat, ist noch etwas anderes: das Fenster im
+Take **mit der Maus** breiter ziehen, sichtbar, als Handlung. Das wäre die
+ehrlichere Fassung — die Kamera bewegt sich nicht, der Mensch tut etwas —
+und sie braucht einen neuen Dreh mit laufendem Modell. Die Karte gehörte in
+dieser Nacht einem Nachbarprojekt; die Fahrt ist das, was ohne Karte geht.
 
 ### Der Modellname kommt aus dem Take, nicht aus dem Schnittskript (10.09.)
 

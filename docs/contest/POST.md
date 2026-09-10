@@ -74,7 +74,7 @@ Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
 im Post; der Film dazu gehört in einen eigenen Kommentar, damit der native
 Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film je Post).
 
-**`take_plan_2026-09-10a_final.mp4` — 86,9 s, quer**, Titelkarte, P1–P7,
+**`take_plan_2026-09-10a_final.mp4` — 86,8 s, quer**, Titelkarte, P1–P7,
 Endcard. Das ist der Take vom 10.09.: erster Versuch ohne Warnung, 5 Tage in
 5,7 s belegt aus 9 vorgelegten Gerichten, verworfen 0. Im Bild laufen die
 Zahlen des Modells mit (144,8 t/s, erster Token nach 0,88 s, keine
