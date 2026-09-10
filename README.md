@@ -302,7 +302,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
    **16,6 GiB** Gewichte, der Rest der Karte ist KV-Cache; und mit
    Qwen3.8-27B-Instruct in AWQ 4 bit als Referenz. Kleiner geht auch, aber
    siehe die Nano-8B-Zeile in der Tabelle oben: unter einer gewissen Grösse
-   bricht die Wahl aus Kandidaten zusammen.
+   bricht die Wahl aus Kandidaten zusammen. Der genaue `vllm serve`-Aufruf
+   (vLLM 0.27.1, 32k Kontext, fp8-KV-Cache, `--language-model-only`) steht
+   in [`GETTING-STARTED.md`](GETTING-STARTED.md#serve-the-model-on-one-rtx-3090).
 2. **Phoenix starten**, wenn man zusehen will: `phoenix serve` auf Port 6006.
    Ohne läuft der Shop unverändert weiter, nur ohne Traces.
 3. **Katalog holen** (`nachtlauf --begriff …`) — ohne Produkte hat der Agent
