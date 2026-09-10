@@ -1,0 +1,22 @@
+{
+  "stack": "vllm-model serve --runtime 027 (vLLM 0.27.1 venv), useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16, --max-len 32768 --lm-only, kein Reasoning-Parser, ohne Spekulation, Denken je Anfrage aus",
+  "endpunkt": "http://vllm-box.local:8000/v1",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B",
+  "max_model_len": 32768,
+  "kv_cache": {
+    "kv_cache_size_tokens": 931157,
+    "kv_cache_max_concurrency": 28.42,
+    "cache_dtype": "fp8_e4m3",
+    "num_preemptions_total_vor_lauf": 0
+  },
+  "created_lesbar": "2026-09-10T11:12:45",
+  "guided": "response_format json_schema (Schema `wochenplan`)",
+  "commit": "34efef4",
+  "datenbank": "VACUUM INTO-Kopie von data/picknick.db am 2026-09-10",
+  "szenarien": 5,
+  "dauer_gesamt_s": 21,
+  "phoenix_projekt": "Zettel Eval Wochenplan Nemotron",
+  "fenster": "Box-Session serviert seit 10:53:30, Aarons Go 10:52; Lock zettel 10:45-11:15; Karte danach zurueck an die Arena (Container-Stack Qwen 65536/bfloat16)",
+  "vergleich": "derselbe Harness und dieselben 5 Szenarien wie evals/plan_probe-2026-09-06-qwen.json",
+  "annotationen": "je Szenario plan_precision + plan_day, geschrieben beim Uebergeben in den Korb (Ja auf alle belegten Tage)"
+}

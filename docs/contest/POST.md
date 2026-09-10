@@ -12,17 +12,16 @@ Checkliste vor dem Absenden:
       Vorschlag anklicken), nicht nur schreiben. Ihr Feed: Agenten, die lokal
       laufen (DGX Spark), und NVIDIAs These „small models for agentic AI“ —
       darum steht der 3B-active-Satz im Modellabsatz
-- [ ] `<video link>` — das 60-Sekunden-Video (Drehbuch: `VIDEO.md`)
+- [ ] `<video link>` — der Film (135 s, Drehbuch: `VIDEO.md`, Abschnitt v4)
 - [ ] das Repo ist öffentlich unter `https://github.com/edrethardo/zettel` (SHOWCASE.md ist die
       englische Einstiegsseite und im README verlinkt)
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
-- [ ] **Falls der Kombi-Take heute Nachmittag gelingt** (VIDEO.md, Abschnitt v4):
-      EIN Film — Woche, dann der eine Einkauf — als nativer Upload statt der
-      zwei; erster Kommentar bleibt, zweiter entfällt. Gelingt er nicht: wie unten.
-- [ ] Wochenplan-Film als **zweiter** Kommentar (Wortlaut unten) — der native
-      Upload gehört dem Chat-Zug, LinkedIn zeigt nur einen nativen Film je Post
+- [ ] **Der Film ist `zettel_demo_2026-09-10_final.mp4`** (135 s, Woche, dann der
+      eine Einkauf, alles auf Nemotron) als nativer Upload; Vorschaubild
+      `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
+      Film-Kommentar entfällt
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
       1.499 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-09; sie
       wachsen weiter, also vor dem Absenden noch einmal
@@ -39,7 +38,7 @@ Not a prompt wrapper, not an orchestra either: two model calls with a database s
 
 3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
-The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured 2026-09-06 against the real database, 5 scenarios — on the Qwen3.8-27B reference, not yet on Nemotron: rejected 0 in all six turns, 3–14 s per week. Every Yes/No on a day goes back to the `plan.woche` span as a label.
+The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured against the real database, 5 scenarios, both models: Qwen3.8-27B rejected 0 in all six turns; Nemotron 3.5 rejected 0 in the four normal ones, and in the two thin ones — one dish offered for seven days, a re-plan with two candidates — it named 6 and 3 dishes it was never shown. Rejected, counted, none reached the page. 3–4 s per week on Nemotron. Every Yes/No on a day goes back to the `plan.woche` span as a label.
 
 Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
 – Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
@@ -73,28 +72,13 @@ dort), Wortlaut:
 Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
 `docs/images/modelle-128.png`. Dann eine Stunde antworten.
 
-**Zweiter Kommentar — der Wochenplan-Film.** Der Absatz über die Woche steht
-im Post; der Film dazu gehört in einen eigenen Kommentar, damit der native
-Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film je Post).
-
-**`take_plan_2026-09-10a_final.mp4` — 86,8 s, quer**, Titelkarte, P1–P7,
-Endcard. Das ist der Take vom 10.09.: erster Versuch ohne Warnung, 5 Tage in
-5,7 s belegt aus 9 vorgelegten Gerichten, verworfen 0. Im Bild laufen die
-Zahlen des Modells mit (144,8 t/s, erster Token nach 0,88 s, keine
-Verdrängung), und der Untertitel nennt die Werte aus dem Phoenix-Span dieses
-Zuges, nicht aus einem Messprotokoll.
-
-Der ältere Schnitt `take_plan_2026-09-06d_final.mp4` (87,2 s) bleibt liegen,
-geht aber nicht mit — er zeigt einen anderen Durchlauf und den alten Streifen.
-**Ein Hochkant-Clip des Wochenplans wird nicht eingereicht** (Entscheidung
-10.09.): die vorhandene Fassung stammt aus dem Take vom 06.09. und passt
-weder zu den Gerichten noch zum Streifen des neuen Films; ein Nachdreh hätte
-die GPU gekostet, die ein Nachbarprojekt für zwölf Stunden braucht. Ein Satz
-zum Film, Vorschlag:
-
-> One level up, same three rules: a week of dinners in, one shopping list out,
-> minus what the receipt says is still there. The model assigns dishes to
-> days and writes one sentence per day; every number on the plan is computed.
+**Kein zweiter Film-Kommentar mehr (10.09.).** Der native Upload ist der
+kombinierte Film `zettel_demo_2026-09-10_final.mp4` — 135 s, erst die Woche,
+dann die Überleitung „Not the whole week? Then just tonight", dann der eine
+Einkauf; alles im selben Take auf Nemotron 3.5 Lightning, mit Cache, tok/s
+und Zeit bis zum ersten Token im Bild. Die früheren Einzelfilme
+(`zettel_demo_nemotron_final.mp4`, `take_plan_2026-09-10a_final.mp4`) bleiben
+liegen und gehen nicht mit.
 
 **Zugeschnitten auf die Jurorin (05.09.):** ihr Vokabular (prompt wrapper,
 layer, observability, production), nicht ihre Sätze; das nummerierte
