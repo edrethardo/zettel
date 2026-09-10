@@ -249,4 +249,4 @@ why, and why that does not have to stop you.
 | [`docs/contest/`](docs/contest/) | the contest post and the making of the film |
 
 Submitted to the NVIDIA GTC Berlin Golden Ticket Contest 2026 · `#NVIDIAGTC`.
-MIT license.
+MIT license, Aaron Nowak.
