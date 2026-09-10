@@ -30,18 +30,22 @@ Der Anlass war konkret. Am 08.09.2026 schlug
 dem August. Ein Gate, das nur den Arbeitsbaum ansieht, meldet grün und trägt
 den Namen trotzdem ins Netz.
 
-Sechs Fragen, zehn Checks: private Angaben in der Historie (`git log -S`) und
+Sechs Fragen, elf Checks: private Angaben in der Historie (`git log -S`) und
 im Arbeitsbaum · LICENSE · Testzahl und Check-Zahl in allen Dokumenten, die
 in der Gegenwart sprechen · jeder relative Verweis zeigt auf eine vorhandene
 Datei · Platzhalter nur im Post-Entwurf · und die Modellbehauptung gegen die
 Messdaten: solange kein Nemotron-Lauf des Wochenplaners in `evals/` liegt,
 muss der Vorbehalt im Post stehen — liegt einer, muss er weg.
 
-**Stand 09.09.2026: drei Checks rot**, alle drei dieselbe Sache — die
-Historie trägt Hostname, Benutzername und Tailnet-Adresse. Das ist kein
-Fehler im Repo, sondern die Zusage, dass vor dem Push ein gefilterter Klon
-gebaut wird (`git-filter-repo`). Solange das nicht passiert ist, ist das
-Gate rot, und das soll es sein.
+**Im Arbeitsrepo sind drei Checks rot, und das bleibt so** — die Historie
+trägt Hostname, Benutzername und Tailnet-Adresse. Das ist kein Fehler im
+Repo, sondern die Zusage, dass veröffentlicht wird, was ein Skript ausserhalb
+des Repos daraus baut: ein frischer Klon, durch `git-filter-repo` mit einer
+Ersetzungsliste (Text und Commit-Nachrichten) und einer Mailmap. Die Liste
+liegt neben dem Repo, nicht darin — sie enthält ja genau die Strings. **Im
+gefilterten Klon läuft dasselbe Gate noch einmal, und dort müssen alle elf
+grün sein** (Stand 10.09.2026: sind sie). Gepusht wird der Klon, nie das
+Arbeitsrepo.
 
 Was es NICHT kann: sagen, ob eine Zahl richtig gemessen wurde. Es prüft
 Übereinstimmung, nicht Wahrheit. Übrigens steht in diesem Dokument selbst

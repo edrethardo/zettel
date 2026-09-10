@@ -61,7 +61,10 @@ Vorschaubild `thumbnail_2026-09-10.png`.
 
 Was der erste Versuch gelehrt hat: die Neuplanung nach dem „Nein" kam „nicht
 innerhalb von 120 s" — sie kam in 0,7 s, aber Nemotron nannte zwei Gerichte,
-die nicht vorgelegt waren, beide verworfen, der Tag blieb offen, und
+die schon im Plan standen (Nachtrag 10.09. abends: nicht „nicht vorgelegt",
+wie hier zuerst stand — der Trace zeigt das Gratin von Tag 1 und die Lasagne
+von Tag 5, beide in der Vorlage; die Vorlage war der Fehler, siehe v6),
+beide verworfen, der Tag blieb offen, und
 `dreh_plan.py` wartete nur auf ein ANDERES Gericht. Der Chat-Teil lief
 dadurch hinter dem Ende des 330-s-Bandes. Take b: Band 420 s, die Wartezeit
 auf 40 s begrenzt, und `schnitt_kombi.py` liest den Ausgang der Neuplanung

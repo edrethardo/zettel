@@ -122,7 +122,8 @@ def _lauf(sz: dict, basis: str, ordner: Path, zugang) -> dict:
         bericht = planer.planen(con, pid)
         d["dauer_s"] = round(time.monotonic() - t0, 1)
         d.update({k: bericht[k] for k in ("offen", "vorgelegt", "belegt",
-                                          "verworfen", "vorgewaermt",
+                                          "verworfen", "verworfen_gruende",
+                                          "vorgewaermt",
                                           "bestand_vorgeschlagen", "meldung")})
         d["fehler_modell"] = bericht.get("fehler")
 
@@ -142,6 +143,8 @@ def _lauf(sz: dict, basis: str, ordner: Path, zugang) -> dict:
                 "dauer_s": round(time.monotonic() - t1, 1),
                 "offen": zweiter["offen"], "belegt": zweiter["belegt"],
                 "verworfen": zweiter["verworfen"],
+                "verworfen_gruende": zweiter.get("verworfen_gruende", []),
+                "meldung": zweiter.get("meldung"),
                 "abgelehnt_wieder_gewaehlt": any(
                     w["recipe_id"] == abgelehnt for w in zweiter["gewaehlt"]),
             }

@@ -1044,11 +1044,15 @@ SYSTEM_WOCHE = """\
 Du planst die Abendessen eines Haushalts für einige Tage.
 
 Du bekommst die Tage und eine Liste von Gerichten mit ID, Zeit, Portionen \
-und Zutaten. Manche Tage sind schon festgelegt; du belegst nur die offenen.
+und Zutaten. Manche Tage sind schon festgelegt; du belegst nur die offenen. \
+Die Liste enthält nur Gerichte, die noch frei sind — was schon an einem \
+festgelegten Tag steht, fehlt darin und darf nicht noch einmal gewählt werden.
 
 Regeln:
 - Du darfst AUSSCHLIESSLICH IDs verwenden, die in der Liste stehen. Eine \
 ID, die dort nicht steht, wird verworfen.
+- Nenne nur Tage, die als „offen — zu belegen" markiert sind. Ein \
+festgelegter Tag wird nicht angefasst.
 - Belege so viele offene Tage wie möglich — je Tag genau ein Gericht, und \
 kein Gericht zweimal in der Woche. Ein Tag bleibt nur leer, wenn kein \
 Gericht der Liste mehr übrig ist, das an ihn passt.
@@ -1104,6 +1108,28 @@ SCHEMA_WOCHE = {
 }
 
 
+def schema_woche(offene_tage, gericht_ids) -> dict:
+    """`SCHEMA_WOCHE`, verengt auf das, was diesmal überhaupt gewählt werden
+    kann: `tag` nur ein offener Tag, `gericht_id` nur eine vorgelegte ID.
+
+    **Gemessen am 10.09. vor der Kamera** (Nemotron 3.5, Neuplanung nach
+    einem „Nein"): das Modell nannte ein Gericht, das schon an Tag 1 stand,
+    und belegte Tag 5, der festgelegt war — beides verworfen, der Tag blieb
+    offen. Die Prüfung im Code hat gehalten; aber ein Fehler, den das Modell
+    gar nicht erst machen KANN, ist besser als einer, der gezählt wird. Mit
+    Guided Decoding erzeugt der Server keine ID und keinen Tag ausserhalb
+    dieser Mengen. Die Prüfung in `woche()` bleibt daneben stehen — für
+    Server ohne `response_format`, und für Dubletten innerhalb einer
+    Antwort, die kein Schema ausdrücken kann.
+    """
+    schema = json.loads(json.dumps(SCHEMA_WOCHE))
+    eintrag = schema["properties"]["tage"]["items"]["properties"]
+    eintrag["tag"] = {"type": "integer", "enum": sorted(int(t) for t in offene_tage)}
+    eintrag["gericht_id"] = {"type": "integer",
+                             "enum": sorted(int(g) for g in gericht_ids)}
+    return schema
+
+
 @dataclass(frozen=True)
 class Wochenwahl:
     """Was Stufe 4 ergeben hat — samt dem, was verworfen wurde.
@@ -1149,11 +1175,11 @@ def wochenvorlage(tage: list[dict], gerichte: list[dict], *,
     zeilen.append("Tage:")
     for t in tage:
         if t.get("offen"):
-            zeilen.append(f"- Tag {t['tag']} ({t['name']}): offen")
+            zeilen.append(f"- Tag {t['tag']} ({t['name']}): offen — zu belegen")
         else:
             was = t.get("festgelegt") or "auswärts, nichts kochen"
             zeilen.append(f"- Tag {t['tag']} ({t['name']}): festgelegt — {was}")
-    zeilen.append("Gerichte zur Wahl:")
+    zeilen.append("Gerichte zur Wahl (nur diese, jedes höchstens einmal):")
     for g in gerichte:
         zutaten = ", ".join(str(z) for z in (g.get("zutaten") or [])[:20])
         kopf = (f"- ID {int(g['id'])}: {g['name']} — {_zeitwort(g.get('minuten'))}"
@@ -1172,26 +1198,36 @@ def woche(zugang, tage: list[dict], gerichte: list[dict], *,
     """Ordnet offenen Tagen je ein vorgelegtes Gericht zu.
 
     Die Prüfung dahinter ist der Kern: gewählt werden kann nur, was in
-    `gerichte` steht, belegt nur ein Tag, der `offen` ist, und jedes Gericht
-    nur einmal. Alles andere landet in `verworfen` mit Grund — und wird nicht
-    durch das nächstbeste ersetzt.
+    `gerichte` steht und noch an keinem festgelegten Tag ist, belegt nur ein
+    Tag, der `offen` ist, und jedes Gericht nur einmal. Alles andere landet
+    in `verworfen` mit Grund — und wird nicht durch das nächstbeste ersetzt.
+
+    Dieselben Mengen stehen im Schema (`schema_woche`): mit Guided Decoding
+    kann der Server eine fremde ID oder einen festen Tag gar nicht erst
+    erzeugen. Vorgelegt wird nur, was wählbar ist — die Liste im Prompt und
+    die Menge im Schema sind dieselbe.
 
     Ohne offenen Tag oder ohne Gericht wird gar nicht gefragt: das Modell zu
     fragen wäre eine Einladung zum Erfinden.
     """
     offen = {int(t["tag"]) for t in tage if t.get("offen")}
-    erlaubt = {int(g["id"]): g for g in gerichte}
-    if not offen or not erlaubt:
-        return Wochenwahl()
     schon = {int(t["festgelegt_id"]) for t in tage
              if t.get("festgelegt_id") is not None}
+    # Vorgelegt wird nur, was gewählt werden kann. Ein Gericht, das schon an
+    # einem festgelegten Tag steht, gehört nicht in die Liste — sonst wählt
+    # das Modell es (Take vom 10.09.), und der Code muss verwerfen, was er
+    # selbst angeboten hat.
+    frei = [g for g in gerichte if int(g["id"]) not in schon]
+    erlaubt = {int(g["id"]): g for g in frei}
+    if not offen or not erlaubt:
+        return Wochenwahl()
 
     antwort = _frage(zugang, system,
-                     wochenvorlage(tage, gerichte, personen=personen,
+                     wochenvorlage(tage, frei, personen=personen,
                                    max_minuten=max_minuten, bestand=bestand,
                                    vorlieben=vorlieben),
-                     SCHEMA_WOCHE, "wochenplan", guided, temperatur,
-                     max_tokens, denken)
+                     schema_woche(offen, erlaubt), "wochenplan", guided,
+                     temperatur, max_tokens, denken)
     roh = _eintraege(antwort, ("tage", "plan", "wochenplan", "days"))
 
     gewaehlt: list[dict] = []
@@ -1202,6 +1238,12 @@ def woche(zugang, tage: list[dict], gerichte: list[dict], *,
         tag = _id(eintrag, ("tag", "day", "pos"))
         rid = _id(eintrag, ("gericht_id", "recipe_id", "rezept_id", "id"))
         grund = _text(eintrag, ("grund", "reason", "warum"))[:MAX_GRUND]
+        if rid is not None and rid in schon:
+            # Stand nicht in der Liste, weil es schon im Plan steht — der
+            # Grund sagt das, statt „nicht vorgelegt" zu behaupten.
+            verworfen.append({"tag": tag, "recipe_id": rid,
+                              "grund": "Gericht steht schon im Plan"})
+            continue
         if rid is None or rid not in erlaubt:
             # HIER endet der Halluzinationsweg — wie in `choose()`.
             verworfen.append({"tag": tag, "recipe_id": rid,
