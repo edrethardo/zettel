@@ -1,0 +1,23 @@
+{
+  "stack": "vllm-model serve --runtime 027 (vLLM 0.27.1 venv), useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16, --max-len 32768 --lm-only, kein Reasoning-Parser, ohne Spekulation, Denken je Anfrage aus",
+  "endpunkt": "http://vllm-box.local:8000/v1",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B",
+  "max_model_len": 32768,
+  "kv_cache": {
+    "kv_cache_size_tokens": 931157,
+    "kv_cache_max_concurrency": 28.42,
+    "cache_dtype": "fp8_e4m3",
+    "num_preemptions_total_vor_lauf": 0
+  },
+  "created_lesbar": "2026-09-10 16:23 (Europe/Berlin)",
+  "guided": "response_format json_schema (Schema `wochenplan`)",
+  "commit": "67604f2 (+ maxItems im Schema, im Folge-Commit)",
+  "datenbank": "VACUUM INTO-Kopie von data/picknick.db vom Vormittag des 2026-09-10 (dieselbe Kopie wie im ersten Nemotron-Lauf)",
+  "szenarien": 5,
+  "dauer_gesamt_s": 20,
+  "phoenix_projekt": "Zettel Eval Wochenplan Nemotron v6",
+  "fenster": "Lock zettel 16:10-16:26; Zettel-Session serviert selbst per vllm-model serve (16:13:14) und stellt per vllm-model default zurueck (16:24:35); Rueckstellung von der Box-Session unabhaengig gegengeprueft 16:26:01 (Container-Stack Qwen 65536/bfloat16, 68605 Token, kein 40-model.conf)",
+  "vergleich": "evals/plan_probe-2026-09-10-nemotron35.json — derselbe Stack VOR der Korrektur (D' 3 und E 6 verworfen); evals/plan_probe-2026-09-06-qwen.json — Qwen3.8-27B",
+  "annotationen": "je Szenario plan_precision + plan_day, geschrieben beim Uebergeben in den Korb (Ja auf alle belegten Tage)",
+  "anmerkung": "Lauf NACH der Korrektur der Vorlage (plan.woche legt nur Wählbares vor; schema_woche mit enum für tag/gericht_id und maxItems). Datenbankkopie vom Vormittag (dieselbe wie im ersten Nemotron-Lauf), derselbe Stack, dieselben fünf Szenarien."
+}

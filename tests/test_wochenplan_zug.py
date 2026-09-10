@@ -193,6 +193,11 @@ def test_schema_bleibt_ein_serialisierbares_json_schema():
                       "gericht_id": {"type": "integer", "enum": [7, 58]},
                       "grund": {"type": "string", "maxLength": stufen.MAX_GRUND}}
     assert schema["properties"]["tage"]["items"]["required"] == ["tag", "gericht_id"]
+    # Ein offener Tag, zwei Gerichte: höchstens ein Eintrag. Sieben Tage,
+    # ein Gericht (Szenario E): auch nur einer.
+    assert schema["properties"]["tage"]["maxItems"] == 1
+    assert stufen.schema_woche(range(1, 8), {5})["properties"]["tage"]["maxItems"] == 1
+    assert stufen.schema_woche(range(1, 8), range(10, 40))["properties"]["tage"]["maxItems"] == 7
 
 
 def test_stufe_fragt_nicht_ohne_offenen_tag_oder_gericht():

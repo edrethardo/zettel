@@ -15,6 +15,33 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
+## Stand 10.09. abends — v6, gedreht: die Neuplanung ersetzt den Tag
+
+Aaron, nach dem Blick auf v5e: „Yeah fix that it stays open — in the code,
+and make it reliable." Der Trace des Takes gab die Antwort: das Modell hatte
+nichts erfunden, es wählte das Gratin von Donnerstag und belegte Montag noch
+einmal mit seiner Lasagne — beides stand in „Gerichte zur Wahl". Der Code
+hatte angeboten, was er dann verwerfen musste. Seit Commit 67604f2 legt
+`plan.woche` nur vor, was wählbar ist, und das Schema zählt erlaubte IDs,
+offene Tage und die Höchstzahl der Einträge auf (`schema_woche`, EVALS.md).
+Messlauf danach: 0 verworfen in allen fünf Szenarien.
+
+**`zettel_demo_2026-09-10_final.mp4` ist seither Take v6 (131,4 s), mit
+Intro `…_intro_final.mp4` (145,7 s).** Im Bild: derselbe Satz, 5 Tage
+in 6,5 s aus 28 Gerichten; „Nein" auf Freitag (Kartoffelgratin), Neuplanung
+in 1,2 s aus 23 Kandidaten — Bratkartoffeln, das Gratin kommt nicht wieder;
+`rejected 0` im Untertitel und im Trace. Bon, Liste, Trace, 27 Zeilen in den
+Korb, Überleitung, der eine Einkauf wie in v5e. Ein Anlauf, keine Warnung im
+Drehbuch.
+
+Zwei Dinge am Werkzeug: `schnitt_kombi.py` nimmt den Wochentag der
+Ablehnung jetzt aus der Marke „Nein an Tag N" und dem Drehdatum (v5e sagte
+„Tuesday", es war Freitag), und `nemotron_fenster.sh` trägt eine Kennung
+(`KENNUNG=v6`), damit Take und Messlauf desselben Tages nichts
+überschreiben. Die Karte: Nemotron 16:13–16:24 über `vllm-model serve`,
+Rückstellung auf den Qwen-Container von der Box-Session unabhängig
+gegengeprüft (68605 Token, bfloat16, kein `40-model.conf`).
+
 ## Stand 10.09. nachmittags — v5, gedreht: der Satz füllt die Maske
 
 Aaron am Nachmittag: der Film muss die Änderung von eben zeigen — ein Satz

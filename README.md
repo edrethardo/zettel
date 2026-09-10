@@ -85,7 +85,7 @@ beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Demo
 
-Ein Film, 150 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
+Ein Film, 146 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
 gedreht (Xvfb-Bühne: App in Handybreite links, Phoenix rechts, unten der
 Streifen mit GPU, VRAM, KV-Cache, Verdrängungen, tok/s und Zeit bis zum
 ersten Token — alles live). Erst ein Satz, der die Woche plant („eine Mahlzeit pro Tag, 700
@@ -216,7 +216,8 @@ Seite. Der Befund dahinter war ein Fehler der Vorlage, nicht des Modells:
 Gerichte, die schon im Plan standen, wurden noch einmal vorgelegt. Seit dem
 10.09. steht zur Wahl nur, was wählbar ist, und das Schema zählt die
 erlaubten IDs und offenen Tage auf — Guided Decoding kann dann nichts
-anderes erzeugen. Beide Läufe mit Tabelle in [`EVALS.md`](EVALS.md).
+anderes erzeugen. **Derselbe Lauf danach: 0 verworfen in allen fünf
+Szenarien, 20 s.** Alle drei Läufe mit Tabelle in [`EVALS.md`](EVALS.md).
 
 Rohdaten und Provenienz (Stack, Endpunkt, Modell, Kontextlänge, KV-Cache,
 Commit, Phoenix-Projekt) liegen als `evals/plan_probe-2026-09-06-qwen.*` und
