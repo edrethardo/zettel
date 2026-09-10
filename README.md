@@ -122,8 +122,8 @@ RTX 3090. Im Wochenteil sieht man das „Nein" auf einen Tag und die
 Neuplanung, die ihn mit einem anderen Gericht belegt — das abgelehnte kommt
 nicht wieder.
 
-Der Link wird hier eingetragen, sobald der Film veröffentlicht ist — ein
-Platzhalter, der ins Leere zeigt, wäre schlechter als keiner. Drehbuch,
+**Der Film, mit Post:** https://lnkd.in/p/eUy6VVBm (LinkedIn, 10.09.2026,
+`#NVIDIAGTC`). Drehbuch,
 Takes und Schnitt stehen vollständig in
 [`docs/contest/VIDEO.md`](docs/contest/VIDEO.md), inklusive der vier Takes,
 die unbrauchbar waren, und warum.
