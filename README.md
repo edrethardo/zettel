@@ -96,10 +96,10 @@ Messung weiter unten und in [`EVALS.md`](EVALS.md).
 
 ![One sentence becomes a recipe card with computed pack counts](docs/images/chat-recipe-card.gif)
 
-Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine Person legt Lebensmittel in einen Warenkorb und schickt die
-Bestellung ab, eine zweite kauft sie physisch im Laden ein und hakt sie
-dort auf dem Handy ab. **Es wird nie eine
-Bestellung an einen echten Händler geschickt.** Dazu ein Chat-Feld: freier Text
+Ein privater Bestell-Shop für einen Mehrpersonenhaushalt im Tailnet. Eine
+Person legt Lebensmittel in einen Warenkorb und schickt die Bestellung ab,
+eine zweite kauft sie physisch im Laden ein und hakt sie dort auf dem Handy
+ab. **Es wird nie eine Bestellung an einen echten Händler geschickt.** Dazu ein Chat-Feld: freier Text
 („alles für Spaghetti Bolognese, und Klopapier") wird auf echte
 Katalogprodukte abgebildet und als Vorschlag vorgelegt — der Zug, an dem die
 Regel entstanden ist und an dem sie über 128 Gerichte und drei Modelle
@@ -287,6 +287,7 @@ dem Retrieval, nicht dem Modell.** Genau deshalb ist `catalog.search` ein
 | [`DEMO.md`](DEMO.md) | der Klickpfad zum Vorführen, eine Prüfung pro Klick |
 | [`GATES.md`](GATES.md) | was das Gate abdeckt — und was ausdrücklich nicht |
 | [`LEHREN.md`](LEHREN.md) | was das Projekt gekostet hat und was davon woanders gilt |
+| [`BETRIEB.md`](BETRIEB.md) | systemd-Units, nächtlicher Lauf, Sicherungen — und was daran bewusst schwach ist |
 
 ## Schnellstart
 
@@ -462,7 +463,7 @@ prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
 * **zwei Anfragen je Gericht, dann nie wieder** — das Ergebnis wird in `dish`
   zwischengespeichert (90 Tage; „kennt Chefkoch nicht" sieben Tage, eine
   Störung eine Stunde). Ein Gericht wird nicht bei jedem Chat-Zug neu geholt.
-* **eine dritte, wenn ein Mensch ein anderes Rezept wählt**. Die
+* **eine dritte, wenn ein Mensch ein anderes Rezept wählt.** Die
   Suche liefert zwölf Rezepte in einer Antwort; sie werden seither
   mitgespeichert (`dish_treffer`) und zur Wahl gestellt. **Gesucht wird
   dafür nicht noch einmal** — geholt wird allein das Detail des gewählten
@@ -474,7 +475,8 @@ prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
 * **die Herkunft bleibt am Rezept**: Rezeptname und `siteUrl` stehen in der
   Rezeptansicht, mit Link auf die Originalseite. Das ist fremde Arbeit.
 
-**Der erste Satz zu einem neuen Gericht nimmt schon das Rezept** —. Liegt nichts im Zwischenspeicher, holt der Web-Prozess selbst, mit 2 s
+**Der erste Satz zu einem neuen Gericht nimmt schon das Rezept.**
+Liegt nichts im Zwischenspeicher, holt der Web-Prozess selbst, mit 2 s
 Frist je Anfrage; bei Zeitüberschreitung oder Ausfall bleibt es beim
 Modellweg, und die Meldung sagt warum. Der Chat bricht nicht.
 
@@ -496,7 +498,8 @@ Das Kommando von Hand bleibt — zum Vorwärmen und zum Nachholen:
 .venv/bin/python -m zettel.gerichte.lauf --ohne-treffer    # Altbestand
 ```
 
-`--ohne-treffer` holt die Gerichte neu, ohne Trefferliste: zu
+`--ohne-treffer` holt die Gerichte neu, zu denen keine Trefferliste
+mitgeschrieben wurde: zu
 ihnen wurde keine Trefferliste mitgeschrieben, und aus einem gespeicherten
 Rezept lassen sich die elf anderen nicht zurückgewinnen. **Das holt
 bestehende Rezepte neu**, und dabei kann ein inzwischen besser bewertetes
@@ -506,3 +509,8 @@ Zurücknehmen lässt sich der Abruf an einer Stelle: `Chat(quelle=Quelle(
 holer=gerichte.nicht_holen))` liest weiter den Speicher, holt aber nichts
 mehr nach. Genau das tun die Evals, damit zwei Läufe vergleichbar bleiben.
 
+## Betrieb
+
+Zwei systemd-User-Units (Web-Prozess und nächtlicher Katalog-Lauf mit
+Sicherung), kein root. Installation, Drop-ins, Linger, Zurückspielen und was
+am Betrieb bewusst schwach ist: [`BETRIEB.md`](BETRIEB.md).
