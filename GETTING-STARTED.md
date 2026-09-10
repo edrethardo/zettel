@@ -87,6 +87,44 @@ against the presented candidates lives in code, not in the sampler
 (see “The guarantees” in `SHOWCASE.md`). Do not use vLLM's older
 `guided_json` extra-body field: on 0.27.1 it is ignored without a warning.
 
+## Serve the model on one RTX 3090
+
+This is the exact configuration the demo film and the measurements ran on
+(vLLM 0.27.1 in its own venv, CUDA 13). Weights are 16.6 GiB; the rest of the
+24 GB is KV cache — at 32k context that is 931k cache tokens, 28 sequences
+in parallel, no preemptions.
+
+```bash
+python3 -m venv ~/.venvs/vllm && ~/.venvs/vllm/bin/pip install "vllm==0.27.1"
+
+~/.venvs/vllm/bin/vllm serve useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16 \
+  --served-model-name Nemotron-3.5-Lightning-30B-A3B \
+  --host 127.0.0.1 --port 8000 \
+  --gpu-memory-utilization 0.94 --max-model-len 32768 --max-num-seqs 32 \
+  --kv-cache-dtype fp8_e4m3 --language-model-only
+```
+
+Then tell the shop where it is (or leave the default, which is exactly this
+address) and switch the wake-up off if your box does not sleep:
+
+```bash
+export ZETTEL_LLM_ENDPOINT=http://127.0.0.1:8000/v1
+export ZETTEL_WAKE_CMD=/bin/true
+.venv/bin/python -m zettel.web.app
+```
+
+Check with `curl -s localhost:8000/v1/models` — the shop asks the same
+endpoint for the model name, nothing is hard-coded. `--language-model-only`
+skips the vision tower (the shop sends text only); the first request after
+start takes a few seconds while the KV cache warms. Any OpenAI-compatible
+server with `response_format: json_schema` support works the same way; the
+reference for the numbers in `EVALS.md` is Qwen3.8-27B-Instruct AWQ 4-bit
+on the same card, at 65k context in bf16 cache (one sequence at a time —
+that is the trade-off the tables mention).
+
+For traces: `pip install arize-phoenix && phoenix serve` — port 6006, no
+configuration; the shop finds it at the default endpoint.
+
 ## The first turn
 
 1. Start Phoenix if you want to watch: `phoenix serve` (or your own
