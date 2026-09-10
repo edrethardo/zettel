@@ -857,6 +857,11 @@ SCHEMA = [
         kcal_ziel    INTEGER,
         -- Was eingegeben wurde, wörtlich — daneben die gelesenen Zahlen.
         rahmen_text  TEXT,
+        -- Der SATZ, wenn der Rahmen aus dem Chat kam (2026-09-10), und was
+        -- das Modell daraus als Vorliebe las („eiweissreich"). Beides Text:
+        -- der Satz ist der Beleg, die Vorliebe geht wörtlich in die Vorlage.
+        satz         TEXT,
+        vorlieben    TEXT,
         status       TEXT NOT NULL DEFAULT 'entwurf'
                          CHECK (status IN ('entwurf', 'im_korb')),
         span_id      TEXT,
@@ -1095,6 +1100,10 @@ NACHGETRAGENE_SPALTEN = (
     # am selben Tag entstanden; eine Datenbank vom Nachmittag hat sie ohne
     # die Spalte.
     ("plan", "kcal_ziel", "INTEGER"),
+    # 2026-09-10: der Rahmen aus einem Satz — der Satz selbst und die
+    # gelesene Vorliebe. Pläne aus dem Formular haben beides leer.
+    ("plan", "satz", "TEXT"),
+    ("plan", "vorlieben", "TEXT"),
     # WB-359: die Korrektur und der Hinweis, dass nur der allgemeinste
     # Kettenbegriff etwas gefunden hat.
     ("chat_suggestion", "corrected_from",

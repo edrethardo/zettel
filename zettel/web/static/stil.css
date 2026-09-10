@@ -327,7 +327,8 @@ button, .knopf { overflow-wrap: normal; }
 .suche button:active, .freitext button:active, .knopf:active,
 .rollen button:active { transform: scale(0.96); }
 .abschicken .gross, .chatform button, .bonupload button,
-.planformular .knopf, .plankopf .planen .knopf, .planliste .sammel .knopf {
+.planformular .knopf, .plankopf .planen .knopf, .planliste .sammel .knopf,
+.plansatz .knopf {
   min-height: var(--tap); padding: 0 var(--v4); font-size: var(--t-text); font-weight: 700;
   border: none; border-radius: var(--radius-knopf);
   background: var(--akzent); color: var(--auf-akzent);
@@ -336,7 +337,7 @@ button, .knopf { overflow-wrap: normal; }
 }
 .chatform button { flex: 0 0 auto; }
 .abschicken .gross, .bonupload button, .planformular .knopf,
-.planliste .sammel .knopf { width: 100%; min-height: 54px; }
+.planliste .sammel .knopf, .plansatz .knopf { width: 100%; min-height: 54px; }
 .abschicken .gross:active, .chatform button:active,
 .bonupload button:active { transform: scale(0.98); }
 /* Die Sprachwahl steht auf der Mehr-Seite und benutzt die Knöpfe der
@@ -1720,3 +1721,14 @@ a.mini {
 .tage .hinweis.naehrwert { font-size: var(--t-klein); color: var(--tinte); }
 .einkauf .zeile .hinweis.eben, .einkauf .zeile .hinweis.gebraucht { font-size: var(--t-klein); }
 .naehrwert-woche { margin-top: var(--v2); }
+
+/* Der Satz über der Maske (10.09.): ein eigener Kasten mit Akzentrand, damit
+   man sieht, dass es ZWEI Wege sind — der Satz füllt die Felder darunter,
+   die Felder sind, was gelesen wurde. Die Trennzeile dazwischen sagt es. */
+.plansatz { border: 1.5px solid var(--akzent); border-radius: var(--radius); padding: var(--v3); margin: 0 0 var(--v3); background: var(--karte); display: grid; gap: var(--v3); }
+.plansatz label { display: flex; flex-direction: column; gap: var(--v1); font-size: var(--t-klein); color: var(--gedaempft); }
+.plansatz input { min-height: var(--tap); padding: 0 var(--v3); border: 1px solid var(--linie); border-radius: var(--radius); background: var(--grund); color: var(--tinte); font: inherit; }
+.plansatz .hinweistext { margin: 0; }
+.oder { display: flex; align-items: center; gap: var(--v3); color: var(--gedaempft); font-size: var(--t-klein); margin: var(--v3) 0; }
+.oder::before, .oder::after { content: ""; flex: 1; height: 1px; background: var(--linie); }
+.plankopf .gelesen { margin: 0 0 var(--v3); }

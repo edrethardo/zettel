@@ -23,7 +23,7 @@ Checkliste vor dem Absenden:
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      1.499 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-09; sie
+      1.512 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-09; sie
       wachsen weiter, also vor dem Absenden noch einmal
 
 ---
@@ -46,7 +46,7 @@ Layer 3 is what made swapping models cost an afternoon and no production code. S
 – Llama-Nemotron-Nano-8B (first 64 dishes): median 0 % per dish. That number stays in the docs next to the wins.
 The 3× speed is not tok/s — those are nearly identical. The 3B-active model generates about a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
 
-Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,499 tests and a 79-check gate that blocks the network at socket level.
+Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,512 tests and a 79-check gate that blocks the network at socket level.
 
 Works for any agent that picks rows from a database you own — tickets, documents, accounts. Three code locations:
 Pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md

@@ -3066,6 +3066,77 @@ def create_app(db_path: str | Path | None = None,
         finally:
             c.close()
 
+    def _planbericht(t, bericht: dict) -> tuple[str | None, str | None]:
+        """(fehler, meldung) aus dem Bericht eines Zugs — für beide Wege,
+        Knopf und Satz, derselbe Text."""
+        if bericht["meldung"] == "modell_kaputt":
+            return t("plan.modell_kaputt", grund=bericht["fehler"]), None
+        if bericht["meldung"] in ("kein_offener_tag", "nichts_zur_wahl"):
+            return t("plan." + bericht["meldung"]), None
+        meldung = t("plan.geplant", n=bericht["belegt"],
+                    offen=bericht["offen"], vorgelegt=bericht["vorgelegt"])
+        if bericht["verworfen"]:
+            meldung += " " + t("plan.verworfen_n", n=bericht["verworfen"])
+        if bericht.get("bestand_vorgeschlagen"):
+            meldung += " " + t("plan.bon_vorgeschlagen",
+                               n=bericht["bestand_vorgeschlagen"])
+        return None, meldung
+
+    @app.post("/plan/verstehen")
+    async def plan_verstehen(request: Request):
+        """Stufe 5 (2026-09-10): EIN Satz füllt die Maske und plant die Woche.
+
+        Der Satz wird vom Modell gelesen, jede Zahl daraus muss im Satz
+        stehen (`assistant.plan.rahmen_lesen`); dann derselbe Weg wie beim
+        Formular — anlegen, planen — und die Seite zeigt den Satz, den
+        gelesenen Rahmen und was verworfen wurde. Ohne Modell bleibt das
+        Formular; ein halber Plan wird nicht angelegt.
+        """
+        from zettel.assistant import plan as stufen
+        werte = await eingaben(request)
+        satz = " ".join((werte.get("satz") or "").split())
+        c = con()
+        try:
+            t = wochenplan_texte(request)
+
+            def formular(fehler: str):
+                return vorlagen.TemplateResponse(request, "plan.html", {
+                    **_rahmen(request, c), "plan": None,
+                    "werte": {"satz": satz}, "fehler": fehler})
+            if not satz:
+                return formular(t("plan.satz_leer"))
+            if getattr(app.state, "planer", None) is None:
+                return formular(t("plan.kein_planer"))
+            try:
+                lesung = app.state.planer.rahmen_lesen(satz)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                return formular(_nicht_verfuegbar(e))
+            except stufen.PlanFehler as e:
+                return formular(t("plan.modell_kaputt", grund=str(e)))
+            rahmen = wochenplan.aus_lesung(lesung.werte, satz)
+            pid = wochenplan.anlegen(c, rahmen)
+            hinweise = []
+            if lesung.verworfen:
+                hinweise.append(t("plan.gelesen_verworfen",
+                                  n=len(lesung.verworfen)))
+            mahlzeiten = lesung.werte.get("mahlzeiten_pro_tag")
+            if mahlzeiten and int(mahlzeiten) > 1:
+                hinweise.append(t("plan.mahlzeiten_hinweis", n=int(mahlzeiten)))
+            try:
+                bericht = app.state.planer.planen(c, pid)
+            except wochenplan.WochenplanFehler as e:
+                return _nicht_gefunden(request, str(e), _WEGE_PLAN)
+            except chatmodul.ChatNichtVerfuegbar as e:
+                return _plan_antwort(request, c, pid, fehler=_nicht_verfuegbar(e),
+                                     meldung=" ".join(hinweise) or None)
+            fehler, meldung = _planbericht(t, bericht)
+            if hinweise:
+                meldung = " ".join([meldung] if meldung else []) + " " + " ".join(hinweise)
+                meldung = meldung.strip()
+            return _plan_antwort(request, c, pid, fehler=fehler, meldung=meldung)
+        finally:
+            c.close()
+
     @app.post("/plan")
     async def plan_anlegen(request: Request):
         """Rahmen -> Plan mit leeren Tagen. Zahlen nachsichtig gelesen."""
@@ -3203,21 +3274,9 @@ def create_app(db_path: str | Path | None = None,
             except chatmodul.ChatNichtVerfuegbar as e:
                 return _plan_antwort(request, c, plan_id,
                                      fehler=_nicht_verfuegbar(e))
-            if bericht["meldung"] == "modell_kaputt":
-                return _plan_antwort(request, c, plan_id,
-                                     fehler=t("plan.modell_kaputt",
-                                              grund=bericht["fehler"]))
-            if bericht["meldung"] in ("kein_offener_tag", "nichts_zur_wahl"):
-                return _plan_antwort(request, c, plan_id,
-                                     fehler=t("plan." + bericht["meldung"]))
-            meldung = t("plan.geplant", n=bericht["belegt"],
-                        offen=bericht["offen"], vorgelegt=bericht["vorgelegt"])
-            if bericht["verworfen"]:
-                meldung += " " + t("plan.verworfen_n", n=bericht["verworfen"])
-            if bericht.get("bestand_vorgeschlagen"):
-                meldung += " " + t("plan.bon_vorgeschlagen",
-                                   n=bericht["bestand_vorgeschlagen"])
-            return _plan_antwort(request, c, plan_id, meldung=meldung)
+            fehler, meldung = _planbericht(t, bericht)
+            return _plan_antwort(request, c, plan_id, fehler=fehler,
+                                 meldung=meldung)
         finally:
             c.close()
 

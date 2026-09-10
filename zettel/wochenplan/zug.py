@@ -70,6 +70,35 @@ class Planer:
     def __init__(self, chat: chatmodul.Chat):
         self.chat = chat
 
+    def rahmen_lesen(self, satz: str) -> stufen.Rahmenlesung:
+        """Stufe 5: ein Satz -> geprüfte Felder, mit eigenem Span.
+
+        `zettel.rahmen.rejected` zählt, was das Modell nannte, ohne dass es
+        im Satz stand. Wirft `ChatNichtVerfuegbar`, wenn die Box nicht
+        bedient, und `PlanFehler`, wenn die Antwort kein Objekt ist — der
+        Aufrufer zeigt dann das Formular, nicht einen halben Plan.
+        """
+        zustand = self.chat.zustand()
+        if not zustand.bedient:
+            raise chatmodul.ChatNichtVerfuegbar(zustand)
+        with obs.chain("plan.rahmen", eingabe={"satz": satz}) as span:
+            obs.setze(span, {obs.PFAD: WEG_PLAN})
+            try:
+                with obs.stufe("plan.rahmen"):
+                    lesung = stufen.rahmen_lesen(
+                        self.chat.zugang, satz, guided=self.chat.guided,
+                        denken=self.chat.denken)
+            except ModellNichtErreichbar as e:
+                raise chatmodul.ChatNichtVerfuegbar(
+                    wake.Zustand(wake.NICHT_ERREICHBAR, grund=str(e))) from e
+            obs.setze(span, {
+                "zettel.rahmen.rejected": len(lesung.verworfen),
+                "zettel.rahmen.fields": len([k for k, v in lesung.werte.items()
+                                             if k != "bestand" and v is not None]),
+                "zettel.rahmen.stock": len(lesung.werte.get("bestand") or [])})
+            obs.setze_ausgabe(span, lesung.werte)
+            return lesung
+
     def planen(self, con: sqlite3.Connection, plan_id: int, *,
                vorwaermen: bool = True) -> dict:
         """Belegt die offenen Tage. Gibt einen Bericht zurück, wirft nur, wenn
@@ -123,6 +152,7 @@ class Planer:
                         personen=plan["personen"],
                         max_minuten=plan["max_minuten"],
                         bestand=bestand_namen,
+                        vorlieben=plan.get("vorlieben"),
                         guided=self.chat.guided, denken=self.chat.denken)
             except stufen.PlanFehler as e:
                 # Wie im Chat: eine kaputte Antwort ist eine Meldung, kein

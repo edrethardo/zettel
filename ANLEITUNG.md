@@ -152,6 +152,14 @@ belegt die Tage mit Gerichten aus deinen Rezepten und aus dem, was du im
 Chat schon einmal gefragt hast. Es erfindet nichts; zu jedem Tag steht ein
 Satz, warum.
 
+* **Oder ein Satz.** Über der Maske steht seit dem 10.09. ein Feld: „eine
+  Mahlzeit pro Tag, 700 Kalorien, viel Protein, Kartoffeln, Eier und Nudeln
+  sind da" — **Verstehen und planen** liest den Satz in die Felder, legt den
+  Plan an und belegt die Tage in einem Zug. Jede Zahl, die das Modell
+  einträgt, muss im Satz stehen; was es dazuerfindet, wird verworfen und
+  gezählt, und die Seite sagt, wie viele. Der Satz steht danach über dem Plan,
+  damit du vergleichen kannst, was verstanden wurde. Eine Mahlzeit je Tag
+  ist die Bauart — „drei Mahlzeiten" nimmt er nicht an und sagt es.
 * **Ja / Nein** an jedem Tag. „Nein" heisst: nicht das — **Offene Tage neu
   planen** belegt nur diesen Tag neu, die anderen bleiben. **auswärts** für
   Tage ohne Kochen. Ein Tag lässt sich auch von Hand belegen (Liste am Tag,

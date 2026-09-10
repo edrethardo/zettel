@@ -25,7 +25,7 @@ from zettel.wochenplan.bestand import vorschlagen as bestand_vorschlagen  # noqa
 from zettel.wochenplan.liste import einkaufsliste, in_den_korb  # noqa: F401
 from zettel.wochenplan.naehrwert import anreichern as naehrwerte  # noqa: F401
 from zettel.wochenplan.rahmen import (  # noqa: F401
-    Rahmen, aus_formular, bestand_aus_text)
+    Rahmen, aus_formular, aus_lesung, bestand_aus_text)
 from zettel.wochenplan.speicher import (  # noqa: F401
     AUS_BON, ENTWURF, ERKLAERT, IM_KORB, WochenplanFehler, aktuell, alle,
     anlegen, auswaerts_setzen, bestand_entfernen, bestand_entscheiden,
@@ -37,7 +37,7 @@ from zettel.wochenplan.zug import Planer, WEG_PLAN  # noqa: F401
 __all__ = [
     "AUS_BON", "ENTWURF", "ERKLAERT", "IM_KORB", "Planer", "Rahmen",
     "WEG_PLAN", "WochenplanFehler",
-    "aktuell", "alle", "anlegen", "aus_formular", "auswaerts_setzen",
+    "aktuell", "alle", "anlegen", "aus_formular", "aus_lesung", "auswaerts_setzen",
     "bestand_aus_text", "bestand_entfernen", "bestand_entscheiden",
     "bestand_vorschlagen",
     "bestand_hinzufuegen", "einkaufsliste", "gerichte", "in_den_korb",

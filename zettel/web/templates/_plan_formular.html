@@ -2,6 +2,19 @@
    einem Satz: eine Zahl, die ein Modell aus einem Satz liest, kann es
    erfunden haben (`wochenplan.rahmen`). Der Bestand ist der einzige
    Freitext und wird im Code zerlegt, nicht vom Modell. #}
+{# Seit dem 10.09. gibt es den Satz doch — als eigenes Feld ÜBER der Maske,
+   sichtbar abgetrennt: der Satz füllt die Felder, das Modell liest ihn, und
+   jede Zahl muss im Satz stehen (`assistant.plan.rahmen_lesen`). Das
+   Formular darunter bleibt der Weg von Hand und zeigt, was gelesen wurde. #}
+{% if fehler %}<p class="fehler" role="alert">{{ fehler }}</p>{% endif %}
+<form method="post" action="/plan/verstehen" class="plansatz" autocomplete="off">
+  <label>{{ t('plan.satz_frage') }}
+    <input type="text" name="satz" autocomplete="off" value="{{ werte.satz or '' }}"
+           placeholder="{{ t('plan.satz_platzhalter') }}"></label>
+  <button type="submit" class="knopf">{{ t('plan.verstehen') }}</button>
+  <p class="hinweistext">{{ t('plan.satz_hinweis') }}</p>
+</form>
+<p class="oder"><span>{{ t('plan.oder_von_hand') }}</span></p>
 <form method="post" action="/plan" class="planformular" autocomplete="off">
   <p class="hinweistext">{{ t('plan.formular_hinweis') }}</p>
   <div class="felder">

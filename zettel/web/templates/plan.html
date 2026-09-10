@@ -18,6 +18,11 @@
     {%- if plan.budget_cents %} · {{ t('plan.bis_budget', betrag=plan.budget_cents | euro) }}{% endif %}
     {%- if plan.kcal_ziel %} · {{ t('plan.kcal_ziel_satz', n=plan.kcal_ziel) }}{% endif %}
   </p>
+  {% if plan.satz %}
+  {# Der Satz, aus dem der Rahmen gelesen wurde — er steht daneben, damit
+     man vergleichen kann, was verstanden wurde. #}
+  <p class="gelesen hinweistext">{{ t('plan.gelesen_aus', satz=plan.satz) }}{% if plan.vorlieben %} · {{ t('plan.vorliebe', was=plan.vorlieben) }}{% endif %}</p>
+  {% endif %}
   {% if plan.status == 'im_korb' %}
   <p class="hinweistext">{{ t('plan.schon_im_korb') }} <a href="/warenkorb">{{ t('plan.zum_korb') }}</a></p>
   {% endif %}
