@@ -1120,6 +1120,26 @@ aber noch im fest verdrahteten „Zettel Demo Plan". Der Name wandert jetzt wie
 er stattdessen sucht. Danach standen die Zahlen im Bild: **9 vorgelegt,
 5 belegt, verworfen 0**, 436 kcal je Portion.
 
+### Die Mitte ist ein Block, kein Wechselspiel (10.09.)
+
+Aaron hat den ersten Schnitt angesehen und gesagt, es springe zu oft zwischen
+der Weitsicht mit Analytics und der Nahsicht nur auf Zettel — anstrengend für
+die Augen. Er hatte recht, und man sieht es an der Folge:
+
+    vorher   weit(27 s) · nah(17,7) · WEIT(6,0) · nah(6,5) · weit(18,5)
+    nachher  weit(27 s) · nah(30,2)              · weit(18,5)
+
+Vier Wechsel, zwei davon nach sechs Sekunden. P4 lag als kurze Insel in der
+Weitsicht zwischen zwei Nahsichten, und dafür gab es keinen erzählerischen
+Grund: „Nein zu Dienstag plant nur Dienstag neu" spielt sich in der
+App-Spalte ab, Phoenix trägt dort nichts bei. `ZOOM` in `schnitt_plan.py`
+enthält jetzt `P3`, `P4` und `P5` — die Mitte ist ein zusammenhängender
+30-Sekunden-Block, und die zwei verbliebenen Wechsel liegen an einer Zäsur:
+erst die Maschinerie, dann der Plan aus der Nähe, dann wieder die Maschinerie
+mit dem Trace.
+
+Die Länge ändert sich dadurch nicht (86,9 s), die Untertitel auch nicht.
+
 ### Der Modellname kommt aus dem Take, nicht aus dem Schnittskript (10.09.)
 
 `schnitt.py` trug den Namen als Konstante:
@@ -1128,8 +1148,12 @@ er stattdessen sucht. Danach standen die Zahlen im Bild: **9 vorgelegt,
 
 Das ist die gefährlichste Sorte Zahl im ganzen Projekt. Wer nach einem
 Modellwechsel neu rendert, brennt eine falsche Behauptung ins Bild — und
-nichts im Ablauf widerspricht ihr. `schnitt_plan.py` machte es von Anfang an
-richtig und liest `/v1/models`.
+nichts im Ablauf widerspricht ihr. `schnitt_plan.py` las immerhin `/v1/models` — hatte
+damit aber zwei andere Fehler: es fragte, was JETZT läuft statt was beim Take
+lief, und es tat das beim Import unbedingt, was über `vllm-proxy.socket` die
+Engine weckt und die Karte an sich reisst, auch wenn ein fremder Lauf darauf
+rechnet. Auch dort steht die Datei aus dem Take jetzt vorn; die Box wird nur
+noch gefragt, wenn sie fehlt, und der Schnitt sagt dann, dass er es tut.
 
 Der Weg ist jetzt ein dritter, und ein besserer als beide: **`aufnahme.sh`
 fragt beim DREH** (da ist die Antwort eindeutig, das Modell läuft ja gerade)
