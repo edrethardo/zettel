@@ -41,7 +41,10 @@ muss der Vorbehalt im Post stehen — liegt einer, muss er weg.
 trägt Hostname, Benutzername und Tailnet-Adresse. Das ist kein Fehler im
 Repo, sondern die Zusage, dass veröffentlicht wird, was ein Skript ausserhalb
 des Repos daraus baut: ein frischer Klon, durch `git-filter-repo` mit einer
-Ersetzungsliste (Text und Commit-Nachrichten) und einer Mailmap. Die Liste
+Ersetzungsliste (Text und Commit-Nachrichten), einer Mailmap und einem
+Blob-Filter, der aus jeder Fassung nimmt, was öffentlich nichts zu suchen
+hat — Haushaltsdetails, interne Ticketnummern, die Betriebsanleitung dieser
+einen Maschine. Die Liste
 liegt neben dem Repo, nicht darin — sie enthält ja genau die Strings. **Im
 gefilterten Klon läuft dasselbe Gate noch einmal, und dort müssen alle elf
 grün sein** (Stand 10.09.2026: sind sie). Gepusht wird der Klon, nie das

@@ -81,9 +81,10 @@ Then the model fills the days.
 
 ![One sentence becomes a recipe card with computed pack counts](docs/images/chat-recipe-card.gif)
 
-A private ordering shop for a multi-person household on a tailnet. One person puts groceries into a cart and submits the order, a second
-buys them physically at the store and ticks them off there on a phone. **No order is ever sent to a real
-retailer.** Plus a chat field: free text ("everything for spaghetti
+A private ordering shop for a multi-person household on a tailnet. One person
+puts groceries into a cart and submits the order, a second buys them
+physically at the store and ticks them off there on a phone. **No order is
+ever sent to a real retailer.** Plus a chat field: free text ("everything for spaghetti
 bolognese, and toilet paper") is mapped to real catalog products and
 presented as a suggestion — the turn where the rule was born, and where it
 was measured across 128 dishes and three models (table above).
