@@ -98,6 +98,15 @@ everywhere else. The model returns one sentence per day and no number at
 all: servings, sums across the week, what the declared stock covers, packs,
 price and leftovers are computed in code.
 
+Since 2026-09-10 the four numbers can also be one sentence — *"one meal a
+day, 700 calories, high protein, potatoes, eggs and pasta are in"* — read by
+a fifth model stage (`plan.rahmen`) into the same fields. The guard is the
+same shape as everywhere else: **every number the model returns must appear
+verbatim in the sentence**, every stock item must be a piece of it, and a
+preference needs a word from it. "700 calories" becomes 700; "high protein"
+becomes a preference passed to the planner and never a number. What is not
+in the sentence is rejected and counted, and the page says how many.
+
 Stock is deliberately **not** a tracked inventory: the shop knows purchases,
 not consumption, so a maintained stock would be silently wrong after a few
 days. It is a declaration for *this* plan — and yesterday's confirmed
@@ -296,7 +305,7 @@ reason (it stopped forgetting onions and garlic), and precision 0.850 →
 0.960 — partly by **omitting** an item, which the docs flag as suspect
 rather than celebrate.
 
-**Gates: 1,499 tests and a 79-check smoke gate** (counted 2026-09-09 — the
+**Gates: 1,512 tests and a 79-check smoke gate** (counted 2026-09-09 — the
 numbers keep growing), both running without
 network, model, or Phoenix — and for the gate that is *enforced, not
 assumed*: it monkeypatches `socket.connect/bind/getaddrinfo` before the

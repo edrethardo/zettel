@@ -4,7 +4,7 @@ Zwei Befehle. Beide laufen ohne Netz, ohne Modell und ohne Phoenix.
 
 ```bash
 .venv/bin/python checks/smoke.py               # 79 Checks, exit 0 grün / 1 rot
-.venv/bin/python -m pytest -q                  # 1.499 Tests (14 übersprungen), rund 95 s
+.venv/bin/python -m pytest -q                  # 1.512 Tests (14 übersprungen), rund 95 s
 .venv/bin/python checks/veroeffentlichung.py   # 10 Checks — darf das Repo raus?
 ```
 

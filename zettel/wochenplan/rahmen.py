@@ -13,6 +13,17 @@ und der wird mit einem Zerleger gelesen, der nichts errät: Zahl, Einheit
 (wenn `mengen` sie kennt), Rest ist der Name. „Nudeln" ohne Zahl ist ein
 Bestand ohne Menge; er deckt nichts ab, steht aber im Plan, damit niemand
 Nudeln kauft, ohne es zu merken.
+
+**Seit 2026-09-10 gibt es den Satz doch** — Aaron wollte „eine Mahlzeit pro
+Tag, 700 Kalorien, viel Protein, Kartoffeln, Eier und Nudeln sind da" tippen
+und die Maske gefüllt sehen. Der Einwand oben bleibt richtig, und er wird
+nicht umgangen, sondern beantwortet: das Modell liest den Satz
+(`assistant.plan.rahmen_lesen`), und **jede Zahl, die es liefert, muss
+wörtlich im Satz stehen** — „700" im Satz, sonst kein kcal-Ziel; jeder
+Bestandsname muss ein Stück des Satzes sein. Was nicht belegt ist, wird
+verworfen und gezählt, nie übernommen. Und die gefüllte Maske steht sichtbar
+unter dem Satz, damit der Mensch sieht, was verstanden wurde, bevor er ihr
+glaubt. `aus_lesung()` baut daraus denselben `Rahmen` wie `aus_formular()`.
 """
 from __future__ import annotations
 
@@ -44,6 +55,10 @@ class Rahmen:
     #: Der Bestandstext, wörtlich, wie eingegeben.
     text: str | None = None
     bestand: list[dict] = field(default_factory=list)
+    #: Der Satz aus dem Chat, wörtlich — leer bei einem Plan aus dem Formular.
+    satz: str | None = None
+    #: Was das Modell als Vorliebe las („eiweissreich"); geht in die Vorlage.
+    vorlieben: str | None = None
 
 
 _ZAHL = re.compile(r"\d+(?:[.,]\d+)?")
@@ -128,3 +143,28 @@ def bestand_aus_text(text) -> list[dict]:
             continue
         zeilen.append({"menge": menge, "einheit": einheit, "name": name})
     return zeilen
+
+
+def aus_lesung(werte: dict, satz: str) -> Rahmen:
+    """Die geprüfte Lesung eines Satzes -> `Rahmen`, wie `aus_formular`.
+
+    `werte` ist das Ergebnis von `assistant.plan.rahmen_lesen` — dort ist
+    schon geprüft, dass jede Zahl im Satz steht. Hier gelten dieselben
+    Obergrenzen und Vorgaben wie beim Formular, damit ein Satz keinen Plan
+    anlegen kann, den das Formular verweigert hätte.
+    """
+    text = ", ".join(str(b).strip() for b in (werte.get("bestand") or [])
+                     if str(b).strip()) or None
+    return Rahmen(
+        tage=_ganz(werte.get("tage"), vorgabe=TAGE_VORGABE, hoechstens=MAX_TAGE),
+        personen=_ganz(werte.get("personen"), vorgabe=PERSONEN_VORGABE,
+                       hoechstens=MAX_PERSONEN),
+        max_minuten=_ganz(werte.get("max_minuten")),
+        budget_cents=_cents(werte.get("budget_euro")),
+        kcal_ziel=_ganz(werte.get("kcal"), hoechstens=10_000),
+        text=text,
+        bestand=bestand_aus_text(text),
+        satz=" ".join(str(satz or "").split()) or None,
+        vorlieben=(str(werte.get("vorlieben")).strip() or None)
+        if werte.get("vorlieben") else None,
+    )

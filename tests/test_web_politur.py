@@ -588,9 +588,11 @@ def test_der_primaere_knopf_ist_genau_eine_regel():
     # Korb: je Seite die eine Handlung, für die sie da ist. Eine Regel
     # bleibt es; der Trockenlauf des Drehs hatte „Plan anlegen" ohne die
     # Füllung nicht gefunden.
+    # Seit dem 10.09. auch der Satz über der Maske (`.plansatz .knopf`) —
+    # dieselbe eine Handlung, derselbe Stil, dieselbe Regel.
     assert gefuellt == [".abschicken .gross, .chatform button, .bonupload button,\n"
                         ".planformular .knopf, .plankopf .planen .knopf, "
-                        ".planliste .sammel .knopf"]
+                        ".planliste .sammel .knopf,\n.plansatz .knopf"]
 
 
 def test_der_sekundaere_knopf_ist_genau_eine_regel():

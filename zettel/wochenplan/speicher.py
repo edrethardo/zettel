@@ -63,11 +63,11 @@ def anlegen(con: sqlite3.Connection, rahmen: Rahmen, *,
     stempel = jetzt or _jetzt()
     cur = con.execute(
         "INSERT INTO plan (created_at, von, tage, personen, max_minuten,"
-        " budget_cents, kcal_ziel, rahmen_text, status)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " budget_cents, kcal_ziel, rahmen_text, satz, vorlieben, status)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (stempel, start.isoformat(), int(rahmen.tage), rahmen.personen,
          rahmen.max_minuten, rahmen.budget_cents, rahmen.kcal_ziel,
-         rahmen.text, ENTWURF))
+         rahmen.text, rahmen.satz, rahmen.vorlieben, ENTWURF))
     plan_id = int(cur.lastrowid)
     for pos in range(int(rahmen.tage)):
         con.execute(
@@ -305,7 +305,8 @@ def rahmen_von(plan: dict) -> Rahmen:
     return Rahmen(tage=plan["tage"], personen=plan["personen"],
                   max_minuten=plan["max_minuten"],
                   budget_cents=plan["budget_cents"],
-                  kcal_ziel=plan.get("kcal_ziel"))
+                  kcal_ziel=plan.get("kcal_ziel"),
+                  satz=plan.get("satz"), vorlieben=plan.get("vorlieben"))
 
 
 def aktuell(con: sqlite3.Connection) -> dict | None:

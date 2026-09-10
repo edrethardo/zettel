@@ -56,6 +56,14 @@ das Modell die Tage.
   — noch da?"), aber nichts zählt vor einem Ja.
 * **„Nein" an einem Tag plant nur diesen Tag neu.** Der Rest bleibt stehen,
   und das abgelehnte Gericht kommt nicht wieder.
+* **Oder ein Satz statt der vier Zahlen** (seit 10.09.): „eine Mahlzeit pro
+  Tag, 700 Kalorien, viel Protein, Kartoffeln, Eier und Nudeln sind da" —
+  eine fünfte Modellstufe (`plan.rahmen`) liest ihn in die Felder, und
+  **jede Zahl muss wörtlich im Satz stehen**, sonst wird sie verworfen und
+  gezählt. Das Modell darf lesen, nicht wissen: „700 Kalorien" wird 700,
+  „viel Protein" wird eine Vorliebe für die Vorlage und nie eine Zahl.
+  Live gemessen: vier Sätze, deutsch und englisch, 0,6–2,3 s, nichts
+  verworfen — und aus dem Satz oben fünf Tage in sechs Sekunden.
 
 Messung weiter unten und in [`EVALS.md`](EVALS.md).
 
@@ -292,7 +300,7 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.499 Tests (14 übersprungen), rund 95 s
+.venv/bin/python -m pytest -q        # 1.512 Tests (14 übersprungen), rund 95 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
 .venv/bin/python checks/veroeffentlichung.py   # darf das Repo raus?
 ```

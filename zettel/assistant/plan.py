@@ -1125,7 +1125,8 @@ def _zeitwort(minuten) -> str:
 
 def wochenvorlage(tage: list[dict], gerichte: list[dict], *,
                   personen=None, max_minuten=None,
-                  bestand: list[str] | None = None) -> str:
+                  bestand: list[str] | None = None,
+                  vorlieben: str | None = None) -> str:
     """Der Benutzerteil von Stufe 4 — deterministisch, ohne Modell prüfbar.
 
     `tage` ist `[{"tag": 1, "name": "Mo 07.09.", "offen": True,
@@ -1138,6 +1139,9 @@ def wochenvorlage(tage: list[dict], gerichte: list[dict], *,
         rahmen.append(f"{personen} Personen")
     if max_minuten:
         rahmen.append(f"höchstens {max_minuten} Minuten am Herd je Tag")
+    if vorlieben:
+        # Wörtlich aus dem Satz des Haushalts (Stufe 5), nicht erfunden.
+        rahmen.append(f"Vorliebe: {vorlieben}")
     if rahmen:
         zeilen.append("Rahmen: " + ", ".join(rahmen))
     if bestand:
@@ -1160,6 +1164,7 @@ def wochenvorlage(tage: list[dict], gerichte: list[dict], *,
 
 def woche(zugang, tage: list[dict], gerichte: list[dict], *,
           personen=None, max_minuten=None, bestand: list[str] | None = None,
+          vorlieben: str | None = None,
           guided: bool = True, system: str = SYSTEM_WOCHE,
           temperatur: float = TEMPERATUR,
           max_tokens: int = MAX_TOKENS_WOCHE,
@@ -1183,7 +1188,8 @@ def woche(zugang, tage: list[dict], gerichte: list[dict], *,
 
     antwort = _frage(zugang, system,
                      wochenvorlage(tage, gerichte, personen=personen,
-                                   max_minuten=max_minuten, bestand=bestand),
+                                   max_minuten=max_minuten, bestand=bestand,
+                                   vorlieben=vorlieben),
                      SCHEMA_WOCHE, "wochenplan", guided, temperatur,
                      max_tokens, denken)
     roh = _eintraege(antwort, ("tage", "plan", "wochenplan", "days"))
@@ -1220,6 +1226,181 @@ def woche(zugang, tage: list[dict], gerichte: list[dict], *,
                          "name": erlaubt[rid].get("name")})
     gewaehlt.sort(key=lambda w: w["tag"])
     return Wochenwahl(gewaehlt=gewaehlt, verworfen=verworfen, roh=antwort)
+
+
+# --------------------------------------------------------------------------
+# Stufe 5 — plan.rahmen (2026-09-10): der Rahmen aus EINEM Satz
+#
+# Aaron: „eine Mahlzeit pro Tag, 700 Kalorien, viel Protein, Kartoffeln, Eier
+# und Nudeln sind da" — getippt in ein Chatfeld, und die Maske darunter füllt
+# sich. `wochenplan.rahmen` hat lange begründet, warum Zahlen aus Feldern
+# kommen und nicht aus einem Satz: eine Zahl, die ein Modell aus einem Satz
+# liest, kann es erfunden haben. Der Einwand bleibt — und wird hier
+# beantwortet wie in Stufe 3 die erfundene Produkt-id: **jede Zahl, die das
+# Modell liefert, muss wörtlich im Satz stehen**, jeder Bestandsname ein
+# Stück des Satzes sein, jede Vorliebe ein Wort daraus. Was nicht belegt ist,
+# wird verworfen und gezählt (`zettel.rahmen.rejected`), nie übernommen.
+#
+# Das Modell darf hier also LESEN, nicht wissen. „700 Kalorien" -> kcal 700
+# ist Lesen; „viel Protein" -> kcal 2000 wäre Wissen, und das wird verworfen.
+
+SYSTEM_RAHMEN = """\
+Du liest einen Satz eines Haushalts über die kommende Woche und trägst ein, \
+was DARIN STEHT — in Felder. Nichts ergänzen, nichts schätzen.
+
+Felder (null, wenn der Satz nichts dazu sagt):
+- tage: Zahl der Tage
+- personen: Zahl der Personen
+- max_minuten: höchstens Minuten am Herd je Tag
+- budget_euro: Budget für die Woche in Euro
+- kcal: Kalorien je Person und Tag
+- mahlzeiten_pro_tag: Mahlzeiten je Tag
+- vorlieben: EIN Wort oder kurzer Ausdruck aus dem Satz (z. B. „viel Protein", \
+„vegetarisch"), sonst null
+- bestand: was noch da ist, als Liste — jeder Eintrag WÖRTLICH so, wie er im \
+Satz steht, mit Menge, wenn eine dasteht („6 Eier", „Kartoffeln")
+
+Jede Zahl muss im Satz vorkommen. Steht keine Zahl da, bleibt das Feld null.
+
+Antworte ausschliesslich als JSON:
+{"tage": null, "personen": null, "max_minuten": null, "budget_euro": null, \
+"kcal": 700, "mahlzeiten_pro_tag": 1, "vorlieben": "viel Protein", \
+"bestand": ["Kartoffeln", "Eier", "Nudeln"]}"""
+
+SCHEMA_RAHMEN = {
+    "type": "object",
+    "properties": {
+        "tage": {"type": ["integer", "null"]},
+        "personen": {"type": ["integer", "null"]},
+        "max_minuten": {"type": ["integer", "null"]},
+        "budget_euro": {"type": ["number", "null"]},
+        "kcal": {"type": ["integer", "null"]},
+        "mahlzeiten_pro_tag": {"type": ["integer", "null"]},
+        "vorlieben": {"type": ["string", "null"], "maxLength": 60},
+        "bestand": {"type": "array", "maxItems": 30,
+                    "items": {"type": "string", "maxLength": 60}},
+    },
+    "required": ["tage", "personen", "max_minuten", "budget_euro", "kcal",
+                 "mahlzeiten_pro_tag", "vorlieben", "bestand"],
+    "additionalProperties": False,
+}
+
+MAX_TOKENS_RAHMEN = 300
+
+#: Zahlwörter, die als Beleg für eine Zahl gelten — „eine Mahlzeit" belegt
+#: die 1, „zwei Personen" die 2. Deutsch und Englisch, bis vierzehn: mehr
+#: Tage plant der Planer ohnehin nicht.
+ZAHLWOERTER = {
+    1: ("ein", "eine", "einen", "einem", "einer", "eins", "one", "a"),
+    2: ("zwei", "two"), 3: ("drei", "three"), 4: ("vier", "four"),
+    5: ("fünf", "fuenf", "five"), 6: ("sechs", "six"), 7: ("sieben", "seven"),
+    8: ("acht", "eight"), 9: ("neun", "nine"), 10: ("zehn", "ten"),
+    11: ("elf", "eleven"), 12: ("zwölf", "zwoelf", "twelve"),
+    13: ("dreizehn", "thirteen"), 14: ("vierzehn", "fourteen"),
+}
+
+#: Eine Vorliebe gilt als belegt, wenn ein Wort ihrer Gruppe im Satz steht —
+#: „eiweissreich" ist belegt durch „Protein", nicht nur durch „Eiweiss".
+VORLIEBEN_GRUPPEN = (
+    ("protein", "eiweiss", "eiweiß"),
+    ("vegetar",), ("vegan",), ("gluten",), ("laktos", "lactose"),
+    ("fisch", "fish"), ("fleisch", "meat"), ("scharf", "spicy"),
+    ("günstig", "guenstig", "billig", "cheap"), ("schnell", "quick", "fast"),
+    ("leicht", "light"), ("kohlenhydrat", "carb"), ("zucker", "sugar"),
+)
+
+
+@dataclass
+class Rahmenlesung:
+    """Was Stufe 5 aus dem Satz las — und was davon verworfen wurde."""
+    werte: dict = field(default_factory=dict)
+    verworfen: list[dict] = field(default_factory=list)
+    roh: str = ""
+
+
+def _zahl_im_satz(zahl, satz_klein: str) -> bool:
+    """Steht diese Zahl im Satz — als Ziffern oder als Zahlwort?"""
+    try:
+        wert = float(zahl)
+    except (TypeError, ValueError):
+        return False
+    woerter = re.findall(r"[a-zäöüß]+|\d+(?:[.,]\d+)?", satz_klein)
+    if wert == int(wert):
+        ziffern = str(int(wert))
+        if ziffern in woerter:
+            return True
+        for w in ZAHLWOERTER.get(int(wert), ()):
+            if w in woerter:
+                return True
+        return False
+    return any(w.replace(",", ".") == f"{wert:g}" for w in woerter)
+
+
+def _vorliebe_im_satz(vorliebe: str, satz_klein: str) -> bool:
+    v = vorliebe.lower()
+    for gruppe in VORLIEBEN_GRUPPEN:
+        if any(g in v for g in gruppe) and any(g in satz_klein for g in gruppe):
+            return True
+    # Sonst muss ein tragendes Wort der Vorliebe selbst im Satz stehen.
+    return any(w in satz_klein for w in re.findall(r"[a-zäöüß]{5,}", v))
+
+
+def rahmen_lesen(zugang, satz: str, *, guided: bool = True,
+                 system: str = SYSTEM_RAHMEN, temperatur: float = TEMPERATUR,
+                 max_tokens: int = MAX_TOKENS_RAHMEN,
+                 denken: bool = DENKEN) -> Rahmenlesung:
+    """Ein Satz -> geprüfte Felder. Das Modell liest, der Code belegt.
+
+    Jede Zahl muss im Satz stehen (Ziffern oder Zahlwort), jeder
+    Bestandseintrag ein Stück des Satzes sein, jede Vorliebe ein Wort
+    daraus. Unbelegtes landet in `verworfen` mit Grund — und wird nicht durch
+    eine Vorgabe ersetzt; die Vorgaben setzt `wochenplan.rahmen.aus_lesung`,
+    und die sind dann sichtbar die des Formulars, nicht das Wissen des
+    Modells.
+    """
+    satz = " ".join(str(satz or "").split())
+    if not satz:
+        return Rahmenlesung()
+    antwort = _frage(zugang, system, satz, SCHEMA_RAHMEN, "rahmen", guided,
+                     temperatur, max_tokens, denken)
+    roh = _json_wert(antwort)
+    if not isinstance(roh, dict):
+        raise PlanFehler("Die Antwort auf den Satz ist kein Objekt.")
+    klein = satz.lower()
+    werte: dict = {}
+    verworfen: list[dict] = []
+    for feld in ("tage", "personen", "max_minuten", "budget_euro", "kcal",
+                 "mahlzeiten_pro_tag"):
+        wert = roh.get(feld)
+        if wert is None or wert == "":
+            continue
+        if _zahl_im_satz(wert, klein):
+            werte[feld] = wert
+        else:
+            # HIER endet der Halluzinationsweg für Zahlen: eine Zahl, die
+            # nicht im Satz steht, hat das Modell gewusst, nicht gelesen.
+            verworfen.append({"feld": feld, "wert": wert,
+                              "grund": "Zahl steht nicht im Satz"})
+    bestand = []
+    for eintrag in roh.get("bestand") or []:
+        text = " ".join(str(eintrag or "").split())
+        if not text:
+            continue
+        if text.lower() in klein:
+            bestand.append(text)
+        else:
+            verworfen.append({"feld": "bestand", "wert": text,
+                              "grund": "steht nicht im Satz"})
+    werte["bestand"] = bestand
+    vorliebe = roh.get("vorlieben")
+    if vorliebe:
+        vorliebe = " ".join(str(vorliebe).split())
+        if _vorliebe_im_satz(vorliebe, klein):
+            werte["vorlieben"] = vorliebe
+        else:
+            verworfen.append({"feld": "vorlieben", "wert": vorliebe,
+                              "grund": "kein Wort davon im Satz"})
+    return Rahmenlesung(werte=werte, verworfen=verworfen, roh=antwort)
 
 
 def _frage(zugang, system: str, benutzer: str, schema: dict, wurzel: str,
