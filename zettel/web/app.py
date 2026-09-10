@@ -717,6 +717,17 @@ def create_app(db_path: str | Path | None = None,
 
     vorlagen = Jinja2Templates(directory=str(TEMPLATE_DIR),
                                context_processors=[_sprach_kontext])
+    # **Das Stylesheet trägt seine Version im Link** (10.09.): Firefox hielt
+    # auf der Bühne die alte `stil.css` aus dem Cache und zeigte das neue
+    # Satzfeld ohne seine Regeln — Label neben dem Feld, Knopf halb breit.
+    # `/static/stil.css` ohne Version wird heuristisch gecacht; mit der
+    # Änderungszeit als Query ändert sich der Link mit der Datei, und ein
+    # Haushalt sieht nach einem Deploy die Seite, die deployt wurde.
+    try:
+        stil_version = int((STATIC_DIR / "stil.css").stat().st_mtime)
+    except OSError:
+        stil_version = 0
+    vorlagen.env.globals["stil_version"] = stil_version
     vorlagen.env.filters["euro"] = euro
     vorlagen.env.filters["menge"] = menge
     vorlagen.env.filters["zeit"] = zeit

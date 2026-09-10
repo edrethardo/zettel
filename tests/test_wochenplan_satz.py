@@ -95,6 +95,18 @@ def test_zahlwoerter_belegen_eine_zahl():
                             "bestand": []}
 
 
+def test_eine_mahlzeit_pro_tag_ist_keine_tageszahl():
+    # Take v5d vom 10.09.: „eine Mahlzeit pro Tag" wurde zu tage=1 — die
+    # „eine" stand im Satz, aber vor „Mahlzeit", nicht vor „Tag".
+    llm = FakeLLM(_lesung(tage=1, mahlzeiten_pro_tag=1),
+                  _lesung(tage=3), _lesung(tage=5))
+    erste = stufen.rahmen_lesen(llm, SATZ)
+    assert "tage" not in erste.werte and erste.werte["mahlzeiten_pro_tag"] == 1
+    assert erste.verworfen[0]["feld"] == "tage"
+    assert stufen.rahmen_lesen(llm, "für drei Tage, 2 Personen").werte["tage"] == 3
+    assert stufen.rahmen_lesen(llm, "plan 5 days please").werte["tage"] == 5
+
+
 def test_bestand_muss_ein_stueck_des_satzes_sein():
     llm = FakeLLM(_lesung(bestand=["Kartoffeln", "Zwiebeln", "6 Eier"]))
     lesung = stufen.rahmen_lesen(llm, "Kartoffeln und 6 Eier sind da")

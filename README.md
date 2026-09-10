@@ -85,11 +85,13 @@ beobachtbar, bewertbar und reproduzierbar vergleichbar.
 
 ## Demo
 
-Ein Film, 135 s, ohne Ton, mit eingebrannten Untertiteln, in einem Take
+Ein Film, 150 s mit Intro, ohne Ton im Demo-Teil, mit eingebrannten Untertiteln, in einem Take
 gedreht (Xvfb-Bühne: App in Handybreite links, Phoenix rechts, unten der
 Streifen mit GPU, VRAM, KV-Cache, Verdrängungen, tok/s und Zeit bis zum
-ersten Token — alles live). Erst die Woche, dann die Überleitung „nicht die
-ganze Woche? dann eben ein Einkauf", dann der eine Einkauf mit dem Gericht.
+ersten Token — alles live). Erst ein Satz, der die Woche plant („eine Mahlzeit pro Tag, 700
+Kalorien, viel Protein, Kartoffeln, Eier und Nudeln sind da"), dann die
+Überleitung „nicht die ganze Woche? dann eben ein Einkauf", dann der eine
+Einkauf mit dem Gericht.
 Modell im Bild: **NVIDIA Nemotron 3.5 Lightning 30B-A3B**, W4A16, auf einer
 RTX 3090. Im Wochenteil sieht man auch die Regel bei der Arbeit: nach dem
 „Nein" auf Dienstag nennt das Modell zwei Gerichte, die nicht vorgelegt
