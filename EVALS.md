@@ -1006,15 +1006,35 @@ Zuordnung). Und der Befund, der diese Messung wert war:
   kann der Server „Gericht von Tag 1" und „Tag 5 belegen" nicht mehr
   erzeugen. Die Prüfung im Code bleibt — für Server ohne `response_format`
   und für die Dublette innerhalb einer Antwort (E), die kein Schema
-  ausdrücken kann. Die Tabelle oben ist der Lauf VOR dieser Änderung; ein
-  Lauf danach wird hier nachgetragen, sobald die Karte wieder Nemotron
-  trägt.
+  ausdrücken kann — dafür begrenzt `maxItems` die Einträge auf die Zahl
+  der freien Gerichte. Die Tabelle oben ist der Lauf VOR dieser Änderung;
+  der Lauf danach steht direkt darunter.
+**Derselbe Lauf nach der Korrektur** (2026-09-10 16:23, gleicher Stack,
+gleiche Datenbankkopie, `evals/plan_probe-2026-09-10-v6-nemotron35.*`):
+
+| Zug | Gerichte vorgelegt | Tagen zugewiesen | verworfen | Dauer |
+|---|---|---|---|---|
+| A — 3 Tage, ≤ 40 min, Bestand erklärt | 3 | 3 von 3 | **0** | 4,1 s |
+| B — 5 Tage, 4 Personen, Budget 60 € | 19 | 5 von 5 | **0** | 5,8 s |
+| C — 3 Tage, Tag 2 auswärts | 19 | 3 von 3 | **0** | 4,1 s |
+| D — wie A | 3 | 3 von 3 | **0** | 3,9 s |
+| D' — nach „Nein" auf Tag 1, Neuplanung | **0** — nicht gefragt | 0 von 1 | — | 0,0 s |
+| E — 7 Tage, ≤ 30 min | 1 | 1 von 7 | **0** | 1,6 s |
+
+Fünf Szenarien in 20 s. D' legt nichts mehr vor — die zwei übrigen
+Gerichte stehen an Tag 2 und 3 — und meldet „nichts zur Wahl", ohne das
+Modell zu fragen. E bekommt ein Schema mit `maxItems: 1` und liefert einen
+Eintrag. Die Prüfung im Code hatte in diesen sechs Zügen nichts zu tun, und
+diesmal aus dem richtigen Grund: nicht, weil das Modell brav war, sondern
+weil es die Fehler von heute Vormittag nicht mehr machen kann.
+
 * **Vor der Kamera war es dasselbe Muster.** Im Take vom 10.09. schlug
   Nemotron nach dem „Nein" auf Freitag das Kartoffelgratin von Donnerstag
   für Freitag vor und die Lasagne von Montag noch einmal für Montag —
   `rejected = 2`, Grund „Gericht steht schon im Plan" und „Tag nicht
   offen", Tag blieb offen. Genau das war der Anlass, die Vorlage zu
-  korrigieren.
+  korrigieren — und Take v6 am selben Nachmittag zeigt die Neuplanung, wie
+  sie sein soll: Freitag „Nein", 1,2 s, ein anderes Gericht.
 * **Die Begründungen sind etwas ausführlicher** als bei Qwen („Caesar-Salad
   passt gut als leichter Start in die Woche und teilt Zutaten wie Knoblauch
   und Weißbrot mit anderen Gerichten") und weiterhin Sätze, keine Zahlen.

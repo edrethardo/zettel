@@ -1118,11 +1118,16 @@ def schema_woche(offene_tage, gericht_ids) -> dict:
     offen. Die Prüfung im Code hat gehalten; aber ein Fehler, den das Modell
     gar nicht erst machen KANN, ist besser als einer, der gezählt wird. Mit
     Guided Decoding erzeugt der Server keine ID und keinen Tag ausserhalb
-    dieser Mengen. Die Prüfung in `woche()` bleibt daneben stehen — für
+    dieser Mengen, und nicht mehr Einträge, als es freie Gerichte gibt. Die Prüfung in `woche()` bleibt daneben stehen — für
     Server ohne `response_format`, und für Dubletten innerhalb einer
     Antwort, die kein Schema ausdrücken kann.
     """
     schema = json.loads(json.dumps(SCHEMA_WOCHE))
+    # Mehr Einträge als freie Gerichte (oder offene Tage) kann es nicht
+    # geben — Szenario E auf Nemotron (ein Gericht, sieben Tage) lieferte
+    # sonst dasselbe Gericht siebenmal, sechs davon verworfen.
+    schema["properties"]["tage"]["maxItems"] = min(len(set(offene_tage)),
+                                                   len(set(gericht_ids)))
     eintrag = schema["properties"]["tage"]["items"]["properties"]
     eintrag["tag"] = {"type": "integer", "enum": sorted(int(t) for t in offene_tage)}
     eintrag["gericht_id"] = {"type": "integer",

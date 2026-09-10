@@ -1,0 +1,469 @@
+[
+ {
+  "szenario": "A",
+  "rahmen": {
+   "tage": "3",
+   "personen": "2",
+   "max_minuten": "40",
+   "bestand": "500 g Kartoffeln, 6 Eier"
+  },
+  "fehler": null,
+  "dauer_s": 4.1,
+  "offen": 3,
+  "vorgelegt": 3,
+  "belegt": 3,
+  "verworfen": 0,
+  "verworfen_gruende": [],
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-11",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "verwendet Eier und teilt Zwiebeln/Pfeffer mit Tag 3",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "verwendet Hackfleisch und Lauch; teilt Zutaten mit Tag 3",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": "Spanische Churros ohne Ei",
+    "minuten": 40,
+    "grund": "verwendet Mehl und Wasser; teilt Grundzutaten mit Tag 1 und 2",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Kartoffeln",
+    "menge": 500.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Eier",
+    "menge": 6.0,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 9,
+   "gedeckt": 1,
+   "ohne_produkt": 0,
+   "n_rest": 10,
+   "preis_cents": 2306,
+   "ohne_preis": 0,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 3,
+   "belegt": 3,
+   "auswaerts": 0,
+   "offen": 3,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 100,
+   "kochzeit_satz": "1 Stunde 40 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 9,
+   "gedeckt": 1,
+   "ohne_produkt": 0
+  },
+  "labels": 4,
+  "span_id": "eedef2884144c4a3",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B"
+ },
+ {
+  "szenario": "B",
+  "rahmen": {
+   "tage": "5",
+   "personen": "4",
+   "budget": "60"
+  },
+  "fehler": null,
+  "dauer_s": 5.8,
+  "offen": 5,
+  "vorgelegt": 19,
+  "belegt": 5,
+  "verworfen": 0,
+  "verworfen_gruende": [],
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-11",
+    "rezept": "Caesar's Salad mit Parmesan - Croûtons",
+    "minuten": 45,
+    "grund": "Caesar-Salat passt gut als leichtes Gericht zu Wochenstart und teilt Zutaten wie Zitronensaft und Weißbrot mit anderen Gerichten",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "Käse-Lauch-Suppe nutzt Zwiebeln und Lauch, die auch in anderen Gerichten vorkommen, und ist schnell zubereitet",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": "Flammkuchen Elsässer Art, süß oder herzhaft",
+    "minuten": 45,
+    "grund": "Flammkuchen teilt Zwiebeln und Mehl mit anderen Gerichten und bietet Abwechslung durch die süße oder herzhafte Variante",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-14",
+    "rezept": "Chicken-Cheese-Quesadillas",
+    "minuten": 75,
+    "grund": "Chicken-Cheese-Quesadillas nutzen Zwiebeln und Paprikaschoten, die in der Woche häufig benötigt werden, und sind für 6 Portionen gut geeignet",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-15",
+    "rezept": "Paella mit Meeresfrüchten",
+    "minuten": 55,
+    "grund": "Paella mit Meeresfrüchten teilt Zwiebeln, Knoblauch und Paprikaschoten und rundet die Woche mit einem mediterranen Gericht ab",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [],
+  "liste": {
+   "zu_kaufen": 37,
+   "gedeckt": 0,
+   "ohne_produkt": 9,
+   "n_rest": 34,
+   "preis_cents": 13474,
+   "ohne_preis": 9,
+   "budget_ueber": 7474
+  },
+  "zusammenfassung": {
+   "tage": 5,
+   "belegt": 5,
+   "auswaerts": 0,
+   "offen": 5,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 255,
+   "kochzeit_satz": "4 Stunden 15 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 37,
+   "gedeckt": 0,
+   "ohne_produkt": 9
+  },
+  "labels": 6,
+  "span_id": "873ce3169b5cbcb8",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B"
+ },
+ {
+  "szenario": "C",
+  "rahmen": {
+   "tage": "4",
+   "personen": "2",
+   "bestand": "Nudeln, 200 g Parmesan",
+   "auswaerts": 1
+  },
+  "fehler": null,
+  "dauer_s": 4.1,
+  "offen": 3,
+  "vorgelegt": 19,
+  "belegt": 3,
+  "verworfen": 0,
+  "verworfen_gruende": [],
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-11",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "verbraucht Nudeln und Parmesan für 2 Portionen",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": true
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": "Caesar's Salad mit Parmesan - Croûtons",
+    "minuten": 45,
+    "grund": "verbraucht Parmesan und teilt Zwiebeln mit Tag 4",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-14",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "verbraucht Zwiebeln und teilt Hackfleisch mit Tag 3",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Nudeln",
+    "menge": null,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Parmesan",
+    "menge": 200.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 17,
+   "gedeckt": 1,
+   "ohne_produkt": 3,
+   "n_rest": 17,
+   "preis_cents": 3922,
+   "ohne_preis": 3,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 4,
+   "belegt": 3,
+   "auswaerts": 1,
+   "offen": 3,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 105,
+   "kochzeit_satz": "1 Stunde 45 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 17,
+   "gedeckt": 1,
+   "ohne_produkt": 3
+  },
+  "labels": 4,
+  "span_id": "6af718aa557412d4",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B"
+ },
+ {
+  "szenario": "D",
+  "rahmen": {
+   "tage": "3",
+   "personen": "2",
+   "max_minuten": "40",
+   "bestand": "500 g Kartoffeln, 6 Eier",
+   "neuplanung": 0
+  },
+  "fehler": null,
+  "dauer_s": 3.9,
+  "offen": 3,
+  "vorgelegt": 3,
+  "belegt": 3,
+  "verworfen": 0,
+  "verworfen_gruende": [],
+  "vorgewaermt": 2,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "neuplanung": {
+   "dauer_s": 0.0,
+   "offen": 1,
+   "belegt": 0,
+   "verworfen": 0,
+   "verworfen_gruende": [],
+   "meldung": "nichts_zur_wahl",
+   "abgelehnt_wieder_gewaehlt": false
+  },
+  "tage": [
+   {
+    "datum": "2026-09-11",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "verwendet Eier und teilt Zwiebeln mit Tag 3",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": "Käse-Lauch-Suppe mit Hackfleisch",
+    "minuten": 35,
+    "grund": "verwendet Hackfleisch und teilt Lauch mit Tag 3",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": "Spanische Churros ohne Ei",
+    "minuten": 40,
+    "grund": "verwendet Mehl und Wasser und teilt keine Zutaten",
+    "auswaerts": false
+   }
+  ],
+  "bestand": [
+   {
+    "name": "Kartoffeln",
+    "menge": 500.0,
+    "einheit": "g",
+    "herkunft": "erklaert",
+    "decision": "kept"
+   },
+   {
+    "name": "Eier",
+    "menge": 6.0,
+    "einheit": null,
+    "herkunft": "erklaert",
+    "decision": "kept"
+   }
+  ],
+  "liste": {
+   "zu_kaufen": 6,
+   "gedeckt": 0,
+   "ohne_produkt": 0,
+   "n_rest": 6,
+   "preis_cents": 1739,
+   "ohne_preis": 0,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 3,
+   "belegt": 3,
+   "auswaerts": 0,
+   "offen": 0,
+   "behalten": 2,
+   "verworfen": 1,
+   "kochzeit": 100,
+   "kochzeit_satz": "1 Stunde 40 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 6,
+   "gedeckt": 0,
+   "ohne_produkt": 0
+  },
+  "labels": 4,
+  "span_id": "33e12206e7458169",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B"
+ },
+ {
+  "szenario": "E",
+  "rahmen": {
+   "tage": "7",
+   "personen": "2",
+   "max_minuten": "30"
+  },
+  "fehler": null,
+  "dauer_s": 1.6,
+  "offen": 7,
+  "vorgelegt": 1,
+  "belegt": 1,
+  "verworfen": 0,
+  "verworfen_gruende": [],
+  "vorgewaermt": 1,
+  "bestand_vorgeschlagen": 0,
+  "meldung": "ok",
+  "fehler_modell": null,
+  "tage": [
+   {
+    "datum": "2026-09-11",
+    "rezept": "Carbonara wie bei der Mamma in Rom",
+    "minuten": 25,
+    "grund": "schnell (25 Min), für 2 Portionen passend, teilt Zutaten mit Tag 3",
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-12",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-13",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-14",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-15",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-16",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   },
+   {
+    "datum": "2026-09-17",
+    "rezept": null,
+    "minuten": null,
+    "grund": null,
+    "auswaerts": false
+   }
+  ],
+  "bestand": [],
+  "liste": {
+   "zu_kaufen": 4,
+   "gedeckt": 0,
+   "ohne_produkt": 0,
+   "n_rest": 4,
+   "preis_cents": 946,
+   "ohne_preis": 0,
+   "budget_ueber": null
+  },
+  "zusammenfassung": {
+   "tage": 7,
+   "belegt": 1,
+   "auswaerts": 0,
+   "offen": 1,
+   "behalten": 0,
+   "verworfen": 0,
+   "kochzeit": 25,
+   "kochzeit_satz": "25 Minuten",
+   "zeit_unbekannt": 0,
+   "ueber_zeit": 0
+  },
+  "korb": {
+   "eingelegt": 4,
+   "gedeckt": 0,
+   "ohne_produkt": 0
+  },
+  "labels": 2,
+  "span_id": "20bb331c0081986b",
+  "modell": "Nemotron-3.5-Lightning-30B-A3B"
+ }
+]
