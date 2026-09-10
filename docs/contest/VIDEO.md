@@ -15,6 +15,41 @@ Datenbank, keine Haushaltsdaten) — nie der echte Shop auf 8730.
 > Gesicht, Voice-Over, Supermarkt-Shot 6b — und steht, weil jede Zahl darin
 > einmal bezahlt wurde. Nichts davon ist mehr Anleitung.
 
+## Stand 10.09. nachmittags — v5, gedreht: der Satz füllt die Maske
+
+Aaron am Nachmittag: der Film muss die Änderung von eben zeigen — ein Satz
+statt vier Zahlen. **`zettel_demo_2026-09-10_final.mp4` ist seither Take v5e
+(135,5 s), mit Intro `…_intro_final.mp4` (149,9 s).** Im Bild: das Satzfeld
+über der Maske, „eine Mahlzeit pro Tag, 700 Kalorien, viel Protein, 500 g
+Kartoffeln, 6 Eier und Nudeln sind da" getippt, Eingabetaste, 5 Tage in
+6,0 s aus 28 Gerichten, Nemotron. Danach wie v4: Nein, Neuplanung (wieder
+zwei verworfene Vorschläge, Tag bleibt offen), Bon, Liste, Trace, 27 Zeilen
+in den Korb, Überleitung, der eine Einkauf.
+
+**Vier Anläufe, alle Fehler im Drehbuch, keiner an der Box** — jeder hat
+eine Zeile im Skript hinterlassen:
+
+* v5: `finde.pillen` sieht das Satzfeld nicht, weil es über die ganze
+  Blattbreite läuft; der Satz landete im Zahlenfeld „Tage". Jetzt: neben die
+  Überschrift klicken, einmal Tab — das Satzfeld ist das erste Eingabefeld.
+* v5 auch: Firefox hielt auf der Bühne die alte `stil.css` aus dem Cache
+  (Satzfeld ohne seine Regeln). Das Stylesheet trägt seither seine
+  Änderungszeit im Link (`/static/stil.css?v=…`) — ein Haushalt sieht nach
+  einem Deploy die Seite, die deployt wurde.
+* v5b/v5c: `akzentflaechen` liefert nicht oben-nach-unten, und das
+  fokussierte Satzfeld hat einen Akzentrand, der als Fläche wie ein Knopf
+  aussieht — und über dem Knopf liegt. Jetzt schickt die Eingabetaste ab.
+* v5d: Nemotron las „eine Mahlzeit pro Tag" als `tage = 1`, und die „eine"
+  stand ja im Satz. Eine Tageszahl braucht ihr Zahlwort seither DIREKT vor
+  „Tag(e)"/„day(s)" (`_tageszahl_im_satz`), mit Test.
+
+Das Sprechskript ist neu, aus Aarons eigener Probe auf dem DJI Mic 3
+(`~/picknick-video/stimme/mic006_sprechfassung.md`, transkribiert von der
+Mic-Helfer-Session): erste Person aus dem echten Haushalt, erst die
+Handlung, dann was passiert, deutsche Gerichtsnamen bleiben — und mit dem
+Satz zu Phoenix, den er wollte: *„My no to Shakshuka goes back to that plan
+as a label."* Der Teleprompter (Artifact) trägt es, synchron zum Film.
+
 ## Stand 10.09. mittags — v4, gedreht: EIN Film auf Nemotron, erst die Woche, dann der eine Einkauf
 
 **`zettel_demo_2026-09-10_final.mp4` — 135,5 s**, aus `take_kombi_2026-09-10_nemotron_b`

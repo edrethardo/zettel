@@ -18,8 +18,8 @@ Checkliste vor dem Absenden:
 - [ ] Hashtag `#NVIDIAGTC` steht drin
 - [ ] Video zuerst hochladen, Link ins Posting — LinkedIn rankt natives
       Video besser; dann ist `<video link>` überflüssig und kann raus
-- [ ] **Der Film ist `zettel_demo_2026-09-10_final.mp4`** (135 s, Woche, dann der
-      eine Einkauf, alles auf Nemotron) als nativer Upload; Vorschaubild
+- [ ] **Der Film ist `zettel_demo_2026-09-10_intro_final.mp4`** (150 s: Intro, dann
+      der Satz, der die Woche plant, dann der eine Einkauf, alles auf Nemotron) als nativer Upload; Vorschaubild
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —

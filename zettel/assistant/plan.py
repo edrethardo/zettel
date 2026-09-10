@@ -1249,7 +1249,8 @@ Du liest einen Satz eines Haushalts über die kommende Woche und trägst ein, \
 was DARIN STEHT — in Felder. Nichts ergänzen, nichts schätzen.
 
 Felder (null, wenn der Satz nichts dazu sagt):
-- tage: Zahl der Tage
+- tage: Zahl der zu planenden Tage — NUR wenn der Satz eine Anzahl Tage \
+nennt („5 Tage", „für drei Tage"). „pro Tag" oder „am Tag" ist keine Tageszahl.
 - personen: Zahl der Personen
 - max_minuten: höchstens Minuten am Herd je Tag
 - budget_euro: Budget für die Woche in Euro
@@ -1336,6 +1337,19 @@ def _zahl_im_satz(zahl, satz_klein: str) -> bool:
     return any(w.replace(",", ".") == f"{wert:g}" for w in woerter)
 
 
+def _tageszahl_im_satz(zahl, satz_klein: str) -> bool:
+    """„5 Tage", „drei Tage", „for 3 days" — die Zahl unmittelbar vor dem Tag."""
+    try:
+        wert = int(float(zahl))
+    except (TypeError, ValueError):
+        return False
+    woerter = {str(wert), *ZAHLWOERTER.get(wert, ())}
+    for treffer in re.finditer(r"([a-zäöüß]+|\d+)\s+(tage?n?|days?)\b", satz_klein):
+        if treffer.group(1) in woerter:
+            return True
+    return False
+
+
 def _vorliebe_im_satz(vorliebe: str, satz_klein: str) -> bool:
     v = vorliebe.lower()
     for gruppe in VORLIEBEN_GRUPPEN:
@@ -1374,7 +1388,15 @@ def rahmen_lesen(zugang, satz: str, *, guided: bool = True,
         wert = roh.get(feld)
         if wert is None or wert == "":
             continue
-        if _zahl_im_satz(wert, klein):
+        belegt = _zahl_im_satz(wert, klein)
+        if feld == "tage" and belegt:
+            # **„eine Mahlzeit pro Tag" ist keine Tageszahl** (Take v5d vom
+            # 10.09.: das Modell las daraus tage=1, die „eine" stand im Satz,
+            # der Plan hatte einen Tag). Eine Tageszahl braucht ihr Zahlwort
+            # DIREKT vor „Tag(e)"/„day(s)": „5 Tage", „drei Tage" — nicht
+            # eine Zahl irgendwo und „Tag" irgendwo anders.
+            belegt = _tageszahl_im_satz(wert, klein)
+        if belegt:
             werte[feld] = wert
         else:
             # HIER endet der Halluzinationsweg für Zahlen: eine Zahl, die

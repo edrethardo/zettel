@@ -35,7 +35,7 @@
   <link rel="manifest" href="/static/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <title>{% block titel %}Zettel{% endblock %}</title>
-  <link rel="stylesheet" href="/static/stil.css">
+  <link rel="stylesheet" href="/static/stil.css?v={{ stil_version }}">
   {# htmx 1.9.12, einmal von unpkg geladen und ins Repo gelegt. Kein CDN:
      ohne Internet wäre der Shop sonst genau dann tot, wenn nur das Tailnet
      steht. #}
