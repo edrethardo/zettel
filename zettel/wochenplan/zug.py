@@ -106,19 +106,28 @@ class Planer:
 
         Ohne offenen Tag oder ohne ein einziges Gericht zur Wahl wird das
         Modell nicht gefragt und kein Span geöffnet: ein Zug, der nichts
-        fragen kann, ist kein Zug.
+        fragen kann, ist kein Zug. Das gilt auch für die Neuplanung, bei der
+        alle übrigen Gerichte schon an festen Tagen stehen — die Seite sagt
+        dann „nichts zur Wahl", statt ein Modell zu fragen, das nur falsch
+        antworten kann.
         """
         plan = speicher.laden(con, plan_id)
         rahmen = speicher.rahmen_von(plan)
         tage = tage_fuer_modell(plan)
         offen = [t for t in tage if t["offen"]]
         abgelehnt = {t["abgelehnt_id"] for t in tage if t["abgelehnt_id"]}
+        festgelegt = {t["festgelegt_id"] for t in tage if t["festgelegt_id"]}
+        # Zur Wahl steht, was gewählt werden kann: nicht das Abgelehnte, und
+        # nicht, was schon an einem festen Tag steht. `presented` zählt
+        # dann genau die Gerichte, aus denen das Modell wählen durfte.
         gerichte = [g for g in vorlage.gerichte(con, rahmen)
-                    if int(g["id"]) not in abgelehnt]
+                    if int(g["id"]) not in abgelehnt
+                    and int(g["id"]) not in festgelegt]
         bestand_namen = [b["produkt_name"] or b["name"]
                          for b in plan["bestand"] if b["decision"] == "kept"]
         bericht = {"plan_id": int(plan_id), "offen": len(offen),
                    "vorgelegt": len(gerichte), "belegt": 0, "verworfen": 0,
+                   "verworfen_gruende": [],
                    "vorgewaermt": 0, "bestand_vorgeschlagen": 0,
                    "fehler": None, "gewaehlt": []}
         if not offen:
@@ -174,6 +183,9 @@ class Planer:
             bericht["gewaehlt"] = list(wahl.gewaehlt)
             bericht["belegt"] = len(wahl.gewaehlt)
             bericht["verworfen"] = len(wahl.verworfen)
+            # Die Gründe gehören zur Zahl: „nicht vorgelegt" und „steht
+            # schon im Plan" sind zwei verschiedene Befunde (EVALS.md, D').
+            bericht["verworfen_gruende"] = [v["grund"] for v in wahl.verworfen]
 
             if vorwaermen:
                 bericht["vorgewaermt"] = self._vorwaermen(

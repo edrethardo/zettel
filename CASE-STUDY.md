@@ -241,6 +241,6 @@ mehr — 76 % -> 83 %"). All measurements dated 2026-08-28/29, model
 two more open models, each in under an afternoon: `Llama-3.1-Nemotron-Nano-8B`
 (median 0 % catalog hits against Qwen's 89 % — recorded in `EVALS.md` as
 plainly as the wins) and NVIDIA's Nemotron 3.5 Lightning 30B-A3B, which
-matched the reference on 64 dishes (85 % / 88 %) and sits two points behind it on 128 (87 % / 89 % vs. 89 % / 91 %), at six seconds a dish. The repo's gates — 1,512 tests and
+matched the reference on 64 dishes (85 % / 88 %) and sits two points behind it on 128 (87 % / 89 % vs. 89 % / 91 %), at six seconds a dish. The repo's gates — 1,517 tests and
 a 79-check smoke gate at the time of writing — run without network, model,
 or Phoenix.

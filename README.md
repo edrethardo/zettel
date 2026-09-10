@@ -93,9 +93,9 @@ Kalorien, viel Protein, Kartoffeln, Eier und Nudeln sind da"), dann die
 Überleitung „nicht die ganze Woche? dann eben ein Einkauf", dann der eine
 Einkauf mit dem Gericht.
 Modell im Bild: **NVIDIA Nemotron 3.5 Lightning 30B-A3B**, W4A16, auf einer
-RTX 3090. Im Wochenteil sieht man auch die Regel bei der Arbeit: nach dem
-„Nein" auf Dienstag nennt das Modell zwei Gerichte, die nicht vorgelegt
-waren — verworfen, gezählt, der Tag bleibt offen.
+RTX 3090. Im Wochenteil sieht man das „Nein" auf einen Tag und die
+Neuplanung, die ihn mit einem anderen Gericht belegt — das abgelehnte kommt
+nicht wieder.
 
 Der Link wird hier eingetragen, sobald der Film veröffentlicht ist — ein
 Platzhalter, der ins Leere zeigt, wäre schlechter als keiner. Drehbuch,
@@ -208,11 +208,15 @@ getippt hat.
 **Derselbe Lauf gegen Nemotron 3.5 Lightning** (2026-09-10, W4A16, 32k
 Fenster, fünf Szenarien in 21 s): in den vier normalen Szenarien ebenfalls
 0 erfundene Gerichte. In den zwei knappen — ein einziges Gericht für sieben
-Tage, eine Neuplanung mit zwei Kandidaten — nennt Nemotron **6 und 3
-Gericht-ids, die nicht vorgelegt waren**; Qwen liess dieselben Tage leer.
-Alle neun verworfen und gezählt, keine kam auf die Seite. Wo die Vorlage
-dünn wird, rät das schnellere Modell, und genau dafür steht die Prüfung im
-Code. Beide Läufe mit Tabelle in [`EVALS.md`](EVALS.md).
+Tage, eine Neuplanung, bei der die übrigen Gerichte schon an festen Tagen
+standen — **verwarf der Code 6 und 3 Vorschläge**: Nemotron setzte das eine
+Gericht auf alle sieben Tage und belegte bei der Neuplanung feste Tage mit
+festen Gerichten; Qwen liess dieselben Tage leer. Keine der neun kam auf die
+Seite. Der Befund dahinter war ein Fehler der Vorlage, nicht des Modells:
+Gerichte, die schon im Plan standen, wurden noch einmal vorgelegt. Seit dem
+10.09. steht zur Wahl nur, was wählbar ist, und das Schema zählt die
+erlaubten IDs und offenen Tage auf — Guided Decoding kann dann nichts
+anderes erzeugen. Beide Läufe mit Tabelle in [`EVALS.md`](EVALS.md).
 
 Rohdaten und Provenienz (Stack, Endpunkt, Modell, Kontextlänge, KV-Cache,
 Commit, Phoenix-Projekt) liegen als `evals/plan_probe-2026-09-06-qwen.*` und
@@ -302,7 +306,7 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.512 Tests (14 übersprungen), rund 95 s
+.venv/bin/python -m pytest -q        # 1.517 Tests (14 übersprungen), rund 95 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
 .venv/bin/python checks/veroeffentlichung.py   # darf das Repo raus?
 ```

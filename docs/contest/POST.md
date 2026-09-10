@@ -23,7 +23,7 @@ Checkliste vor dem Absenden:
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      1.512 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-09; sie
+      1.517 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-10; sie
       wachsen weiter, also vor dem Absenden noch einmal
 
 ---
@@ -38,7 +38,7 @@ Not a prompt wrapper, not an orchestra either: two model calls with a database s
 
 3. Count it, and let real decisions be the labels. zettel.rejected sits on every turn's span in Arize Phoenix. Nothing enters the cart without a per-item Yes, and every Yes/No goes back to that span as an annotation when the order is submitted. Nobody annotates.
 
-The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured against the real database, 5 scenarios, both models: Qwen3.8-27B rejected 0 in all six turns; Nemotron 3.5 rejected 0 in the four normal ones, and in the two thin ones — one dish offered for seven days, a re-plan with two candidates — it named 6 and 3 dishes it was never shown. Rejected, counted, none reached the page. 3–4 s per week on Nemotron. Every Yes/No on a day goes back to the `plan.woche` span as a label.
+The same three rules run one level up. A weekly plan: four numbers and one sentence about what is already in the fridge, and the model assigns dishes to days — only from the dishes this household already has. It returns one sentence per day and not a single number: servings, weekly sums, what the declared stock covers, packs, price and leftovers are computed in code. Stock is deliberately not a tracked inventory — the shop knows purchases, not consumption — so yesterday's receipt may suggest ("10 eggs — still there?") and nothing counts before a Yes. Measured against the real database, 5 scenarios, both models: Qwen3.8-27B rejected 0 in all six turns; Nemotron 3.5 rejected 0 in the four normal ones; in the two thin ones — one dish offered for seven days, a re-plan where the remaining dishes were already fixed on other days — the code rejected 6 and 3 proposals: the same dish on every day, fixed days filled again. Counted, none reached the page — and the trace showed the offer was the bug, not the model: dishes already in the plan were offered again. Since then the model is offered only what it can choose, and the schema enumerates the allowed ids and open days, so guided decoding cannot produce anything else. 3–4 s per week on Nemotron. Every Yes/No on a day goes back to the `plan.woche` span as a label.
 
 Layer 3 is what made swapping models cost an afternoon and no production code. Same dishes, same 3090, one run each, no repetitions:
 – Nemotron 3.5 Lightning, W4A16 by useful-quants, 16.6 GiB: 85 %, 6 s per dish
@@ -46,7 +46,7 @@ Layer 3 is what made swapping models cost an afternoon and no production code. S
 – Llama-Nemotron-Nano-8B (first 64 dishes): median 0 % per dish. That number stays in the docs next to the wins.
 The 3× speed is not tok/s — those are nearly identical. The 3B-active model generates about a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
 
-Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,512 tests and a 79-check gate that blocks the network at socket level.
+Local is not the test bed here, it is the deployment. The model never leaves the house; the only outbound call is a public recipe lookup. 1,517 tests and a 79-check gate that blocks the network at socket level.
 
 Works for any agent that picks rows from a database you own — tickets, documents, accounts. Three code locations:
 Pattern: https://github.com/edrethardo/zettel/blob/master/PATTERN.md

@@ -139,13 +139,60 @@ def test_stufe_verwirft_nicht_offene_tage_und_dubletten():
         "Tag nicht offen", "zweites Gericht für denselben Tag"]
 
 
-def test_stufe_zaehlt_festgelegte_gerichte_als_belegt():
+def test_stufe_legt_festgelegte_gerichte_nicht_vor():
+    # Take vom 10.09. (Nemotron): das Modell wählte für den offenen Tag das
+    # Gratin, das schon an Tag 1 stand — es STAND in der Liste. Seither ist
+    # ein festgelegtes Gericht weder im Prompt noch im Schema; nennt das
+    # Modell es trotzdem, sagt der Grund, warum es nicht ging.
     llm = FakeLLM(_antwort((1, 11)))
     tage = _tage(True, False)
     tage[1].update({"festgelegt": "Gericht 11", "festgelegt_id": 11})
     wahl = stufen.woche(llm, tage, _gerichte(11, 12))
     assert wahl.gewaehlt == []
     assert wahl.verworfen[0]["grund"] == "Gericht steht schon im Plan"
+    prompt = llm.aufrufe[0]["nachrichten"][1]["content"]
+    liste = prompt.split("Gerichte zur Wahl")[1]
+    assert "ID 12:" in liste and "ID 11:" not in liste
+    assert "Tag 2 (Tag 2): festgelegt — Gericht 11" in prompt
+
+
+def test_stufe_fragt_nicht_wenn_alles_wahlbare_schon_im_plan_steht():
+    # Szenario D' vom 10.09.: zwei Gerichte übrig, beide an festen Tagen.
+    # Nemotron nannte damals genau die — verworfen. Jetzt gibt es nichts
+    # vorzulegen, also keine Frage.
+    llm = FakeLLM()
+    tage = _tage(True, False, False)
+    tage[1].update({"festgelegt": "Gericht 11", "festgelegt_id": 11})
+    tage[2].update({"festgelegt": "Gericht 12", "festgelegt_id": 12})
+    assert stufen.woche(llm, tage, _gerichte(11, 12)).gewaehlt == []
+    assert llm.aufrufe == []
+
+
+def test_schema_nennt_nur_offene_tage_und_vorgelegte_ids():
+    # Was der Code verwerfen würde, kann der Server mit Guided Decoding gar
+    # nicht erst erzeugen: `tag` und `gericht_id` sind Aufzählungen.
+    llm = FakeLLM(_antwort((1, 12), (3, 13)))
+    tage = _tage(True, False, True)
+    tage[1].update({"festgelegt": "Gericht 11", "festgelegt_id": 11})
+    stufen.woche(llm, tage, _gerichte(11, 12, 13))
+    schema = llm.aufrufe[0]["response_format"]["json_schema"]["schema"]
+    felder = schema["properties"]["tage"]["items"]["properties"]
+    assert felder["tag"]["enum"] == [1, 3]
+    assert felder["gericht_id"]["enum"] == [12, 13]
+    # Das Grundschema bleibt, wie es ist — verengt wird eine Kopie.
+    assert "enum" not in stufen.SCHEMA_WOCHE["properties"]["tage"]["items"]["properties"]["tag"]
+
+
+def test_schema_bleibt_ein_serialisierbares_json_schema():
+    # Das Schema geht als `response_format` über den Draht: es muss JSON
+    # sein, die Aufzählungen ganze Zahlen, das Grundschema unverändert.
+    schema = stufen.schema_woche({2}, {58, 7})
+    assert json.loads(json.dumps(schema)) == schema
+    felder = schema["properties"]["tage"]["items"]["properties"]
+    assert felder == {"tag": {"type": "integer", "enum": [2]},
+                      "gericht_id": {"type": "integer", "enum": [7, 58]},
+                      "grund": {"type": "string", "maxLength": stufen.MAX_GRUND}}
+    assert schema["properties"]["tage"]["items"]["required"] == ["tag", "gericht_id"]
 
 
 def test_stufe_fragt_nicht_ohne_offenen_tag_oder_gericht():
@@ -223,9 +270,13 @@ def test_neuplanung_haelt_ja_fest_und_ersetzt_nein(con, spans):
     bericht = planer.planen(con, pid)
     assert bericht["offen"] == 1 and bericht["belegt"] == 1
     # Das abgelehnte Butterbrot stand nicht mehr zur Wahl, das festgelegte
-    # Milchreis auch nicht mehr (steht schon im Plan).
+    # Milchreis auch nicht mehr (steht schon im Plan): vorgelegt ist genau
+    # das eine Gericht, das gewählt werden kann.
+    assert bericht["vorgelegt"] == 1
     prompt = planer.chat.zugang.aufrufe[0]["nachrichten"][1]["content"]
-    assert "Butterbrot" not in prompt.split("Gerichte zur Wahl:")[1]
+    liste = prompt.split("Gerichte zur Wahl")[1]
+    assert "Butterbrot" not in liste and "Milchreis" not in liste
+    assert "Pfannkuchen" in liste
     assert "Tag 1 (Mo 07.09.): festgelegt — Milchreis" in prompt
     assert "Tag 3 (Mi 09.09.): festgelegt — auswärts" in prompt
     assert "Tag 2 (Di 08.09.): offen" in prompt
@@ -234,6 +285,25 @@ def test_neuplanung_haelt_ja_fest_und_ersetzt_nein(con, spans):
         (a, "kept"), (c, "offen"), (None, "kept")]
     span = next(s for s in spans.get_finished_spans() if s.name == "plan.woche")
     assert span.attributes["zettel.plan.fixed"] == 2
+
+
+def test_neuplanung_ohne_freies_gericht_fragt_nicht(con, spans):
+    # D' auf Nemotron am 10.09.: Tag 1 „Nein", die zwei anderen Gerichte
+    # stehen an Tag 2 und 3. Damals wurden beide vorgelegt und beide
+    # genannt (rejected 3). Jetzt: nichts zur Wahl, kein Modellaufruf.
+    a, b, c = _drei(con)
+    pid = _plan(con)
+    tage = wochenplan.laden(con, pid)["tage_liste"]
+    for tag, rid in zip(tage, (a, b, c)):
+        wochenplan.tag_setzen(con, tag["id"], rid)
+        wochenplan.tag_entscheiden(con, tag["id"], "kept")
+    wochenplan.tag_entscheiden(con, tage[0]["id"], "removed")
+    planer = _planer()
+    bericht = planer.planen(con, pid)
+    assert bericht["meldung"] == "nichts_zur_wahl"
+    assert (bericht["offen"], bericht["vorgelegt"]) == (1, 0)
+    assert planer.chat.zugang.aufrufe == []
+    assert spans.get_finished_spans() == ()
 
 
 def test_ohne_offenen_tag_wird_nicht_gefragt(con, spans):

@@ -973,23 +973,48 @@ fp8, 0 Verdrängungen), damit niemand Verdrängung für Modellleistung hält.
 | B — 5 Tage, 4 Personen, Budget 60 € | 19 | 5 von 5 | 0 | 3,8 s |
 | C — 3 Tage, Tag 2 auswärts | 19 | 3 von 3 | 0 | 4,4 s |
 | D — wie A | 3 | 3 von 3 | 0 | 4,0 s |
-| D' — nach „Nein" auf Tag 1, Neuplanung | 2 | 0 von 1 | **3** | ~1 s |
-| E — 7 Tage, ≤ 30 min | 1 | 1 von 7 | **6** | 2,7 s |
+| D' — nach „Nein" auf Tag 1, Neuplanung | 2 | 0 von 1 | **3** ¹ | ~1 s |
+| E — 7 Tage, ≤ 30 min | 1 | 1 von 7 | **6** ¹ | 2,7 s |
+
+¹ Keine davon war eine erfundene ID — die Gründe stehen am Span
+(`zettel.plan.rejected_reasons`): D' „Gericht steht schon im Plan, Tag nicht
+offen, Tag nicht offen", E sechsmal „Gericht steht schon im Plan". Siehe den
+Befund unten.
 
 Fünf Szenarien in **21 s** gesamt (Qwen: rund 36 s ohne Vorwärmen der
 Zuordnung). Und der Befund, der diese Messung wert war:
 
-* **Wo die Vorlage dünn wird, rät das schnellere Modell.** In den vier
-  normalen Szenarien wählt Nemotron wie Qwen nur aus der Vorlage (verworfen
-  0). In den zwei knappen — ein einziges Gericht für sieben Tage; eine
-  Neuplanung mit zwei Kandidaten — nennt es **6 und 3 Gericht-ids, die
-  nicht vorgelegt waren.** Qwen liess dieselben Tage leer. Alle neun wurden
-  verworfen und gezählt, keine kam auf die Seite: das ist die Prüfung im
-  Code bei der Arbeit, nicht ein Modellfehler, der durchrutscht.
-* **Das Muster wiederholte sich vor der Kamera.** Im Take vom 10.09. schlug
-  Nemotron nach dem „Nein" auf Dienstag zwei Gerichte vor, die nicht in der
-  Vorlage standen — `rejected = 2`, Tag blieb offen. Der Film sagt es im
-  Untertitel, statt es wegzuschneiden.
+* **Wo die Vorlage dünn wird, füllt das schnellere Modell lieber, als
+  leer zu lassen.** In den vier normalen Szenarien wählt Nemotron wie Qwen
+  nur aus der Vorlage (verworfen 0). In den zwei knappen — ein einziges
+  Gericht für sieben Tage; eine Neuplanung, bei der beide übrigen Gerichte
+  schon an Tag 2 und 3 standen — verwarf der Code **6 und 3 Vorschläge**:
+  in E setzte Nemotron das eine Gericht auf alle sieben Tage („kein Gericht
+  zweimal" stand im Prompt, das Modell entschied sich für „so viele Tage wie
+  möglich"), in D' belegte es den offenen Tag mit dem Gericht von Tag 1 und
+  die festen Tage 2 und 3 noch einmal mit ihren eigenen Gerichten. Qwen
+  liess dieselben Tage leer. Alle neun wurden verworfen und gezählt, keine
+  kam auf die Seite. Die erste Fassung dieses Absatzes nannte sie „Gericht-
+  ids, die nicht vorgelegt waren" — das war falsch, und die Gründe am Span
+  haben es gezeigt: alle neun IDs standen in der Vorlage.
+* **Der Fehler lag in der Vorlage, und er ist behoben (10.09., nach dem
+  Take).** Ein Gericht, das schon an einem festen Tag stand, wurde bei der
+  Neuplanung noch einmal vorgelegt — der Code bot an, was er dann verwerfen
+  musste. Seither legt `plan.woche` nur vor, was wählbar ist (D' hat damit
+  null Kandidaten und fragt gar nicht erst), und das Schema zählt die
+  erlaubten IDs und die offenen Tage als `enum` auf: mit Guided Decoding
+  kann der Server „Gericht von Tag 1" und „Tag 5 belegen" nicht mehr
+  erzeugen. Die Prüfung im Code bleibt — für Server ohne `response_format`
+  und für die Dublette innerhalb einer Antwort (E), die kein Schema
+  ausdrücken kann. Die Tabelle oben ist der Lauf VOR dieser Änderung; ein
+  Lauf danach wird hier nachgetragen, sobald die Karte wieder Nemotron
+  trägt.
+* **Vor der Kamera war es dasselbe Muster.** Im Take vom 10.09. schlug
+  Nemotron nach dem „Nein" auf Freitag das Kartoffelgratin von Donnerstag
+  für Freitag vor und die Lasagne von Montag noch einmal für Montag —
+  `rejected = 2`, Grund „Gericht steht schon im Plan" und „Tag nicht
+  offen", Tag blieb offen. Genau das war der Anlass, die Vorlage zu
+  korrigieren.
 * **Die Begründungen sind etwas ausführlicher** als bei Qwen („Caesar-Salad
   passt gut als leichter Start in die Woche und teilt Zutaten wie Knoblauch
   und Weißbrot mit anderen Gerichten") und weiterhin Sätze, keine Zahlen.
