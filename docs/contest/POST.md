@@ -70,13 +70,24 @@ dort), Wortlaut:
 Dazu der Hochkant-Trailer (44 s) und das Vergleichsbild
 `docs/images/modelle-128.png`. Dann eine Stunde antworten.
 
-**Zweiter Kommentar — der Wochenplan-Film (08.09.).** Der Absatz über die
-Woche steht im Post; der Film dazu gehört in einen eigenen Kommentar, damit
-der native Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film
-je Post). `take_plan_2026-09-06d_final.mp4` — 87,2 s, quer, Titelkarte, P1–P7,
-Endcard. Wer lieber hochkant kommentiert: `zettel_linkedin_plan_2026-09-06.mp4`
-(72,6 s, englische Karten) — die deutsche Fassung `…_de.mp4` liegt daneben und
-ist nur für einen deutschsprachigen Kanal gedacht. Ein Satz dazu, Vorschlag:
+**Zweiter Kommentar — der Wochenplan-Film.** Der Absatz über die Woche steht
+im Post; der Film dazu gehört in einen eigenen Kommentar, damit der native
+Upload dem Chat-Zug gehört (LinkedIn zeigt nur einen nativen Film je Post).
+
+**`take_plan_2026-09-10a_final.mp4` — 86,9 s, quer**, Titelkarte, P1–P7,
+Endcard. Das ist der Take vom 10.09.: erster Versuch ohne Warnung, 5 Tage in
+5,7 s belegt aus 9 vorgelegten Gerichten, verworfen 0. Im Bild laufen die
+Zahlen des Modells mit (144,8 t/s, erster Token nach 0,88 s, keine
+Verdrängung), und der Untertitel nennt die Werte aus dem Phoenix-Span dieses
+Zuges, nicht aus einem Messprotokoll.
+
+Der ältere Schnitt `take_plan_2026-09-06d_final.mp4` (87,2 s) bleibt liegen,
+geht aber nicht mit — er zeigt einen anderen Durchlauf und den alten Streifen.
+**Ein Hochkant-Clip des Wochenplans wird nicht eingereicht** (Entscheidung
+10.09.): die vorhandene Fassung stammt aus dem Take vom 06.09. und passt
+weder zu den Gerichten noch zum Streifen des neuen Films; ein Nachdreh hätte
+die GPU gekostet, die ein Nachbarprojekt für zwölf Stunden braucht. Ein Satz
+zum Film, Vorschlag:
 
 > One level up, same three rules: a week of dinners in, one shopping list out,
 > minus what the receipt says is still there. The model assigns dishes to

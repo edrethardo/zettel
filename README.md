@@ -82,7 +82,7 @@ derselben Bühne gedreht (Xvfb, App in Handybreite links, Phoenix rechts):
 
 | Film | Was er zeigt |
 |---|---|
-| **Der Wochenplan**, 87,2 s | Eine Woche wird eine Liste, abzüglich dessen, was schon da ist — kcal und Eiweiss je Tag daneben. Modell im Bild: Qwen3.8-27B-Instruct. |
+| **Der Wochenplan**, 86,9 s | Eine Woche wird eine Liste, abzüglich dessen, was schon da ist — kcal und Eiweiss je Tag daneben. Unten laufen die Zahlen des Modells mit: 144,8 t/s, erster Token nach 0,88 s, keine Verdrängung. Modell im Bild: Qwen3.8-27B-Instruct. |
 | **Der Chat-Zug**, 90,9 s | Ein Satz wird eine Einkaufsliste, mit dem Trace daneben, live. Modell im Bild: NVIDIA Nemotron 3.5 Lightning. |
 
 Der Link wird hier eingetragen, sobald der Film veröffentlicht ist — ein

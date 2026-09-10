@@ -269,6 +269,14 @@ langen Fassung.
     MAUS=0 SKRIPT=dreh_plan_handy.py STAMM=take_plan_handy_<datum> bash aufnahme.sh 210
     .venv/bin/python handy_plan.py take_plan_handy_<datum> zettel_linkedin_plan_<datum>.mp4
 
+> **Nicht Teil der Einreichung (Entscheidung 10.09.).** Beide Hochkant-Clips
+> unten stammen aus dem Take vom 06.09. und passen weder zu den Gerichten
+> noch zum Streifen des Films vom 10.09. Nachgedreht wurden sie nicht: die
+> Karte gehört ab dieser Nacht für zwölf Stunden einem Nachbarprojekt, und
+> ein Clip, der einen anderen Durchlauf zeigt als der Film daneben, ist
+> schlechter als keiner. Der Abschnitt bleibt, weil die Choreografie und der
+> Sprachschalter beim nächsten Dreh wieder gebraucht werden.
+
 #### Zwei Sprachen, eine Choreografie (08.09.)
 
 Derselbe Take, zweimal geschnitten: `SPRACHE=de` tauscht die vier Textkarten
