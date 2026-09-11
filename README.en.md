@@ -103,20 +103,20 @@ the step — that is the whole idea.
 
 ```mermaid
 flowchart TD
-    A["One sentence: “everything for bolognese, and toilet paper”"] --> B
-    B["<b>plan.extract</b> — the sentence becomes search terms<br/><i>model · sees not a single catalog row</i>"] --> C
-    C["<b>search</b> — SQLite FTS5, at most 5 candidates per term<br/><i>code</i>"] --> D
-    D["<b>plan.choose</b> — picks from the presented candidates<br/><i>model · chooses, does not invent</i>"] --> E
+    A["One sentence: 'everything for bolognese, and toilet paper'"] --> B
+    B["plan.extract — the sentence becomes search terms<br/>model · sees not a single catalog row"] --> C
+    C["search — SQLite FTS5<br/>at most 5 candidates per term · code"] --> D
+    D["plan.choose — picks from the presented candidates<br/>model · chooses, does not invent"] --> E
     E{"Was the id in the offer?"}
-    E -->|no| F["<b>rejected and counted</b> — zettel.rejected<br/>no fuzzy rescue; the term stays<br/>visible as free text on the list"]
-    E -->|yes| G["<b>arithmetic</b> — servings, packs, price, leftovers, kcal<br/><i>code · never the model</i>"]
-    G --> H["suggestion → <b>Yes/No per item</b> → cart → order"]
+    E -->|no| F["rejected and counted — zettel.rejected<br/>no fuzzy rescue; the term stays<br/>visible as free text on the list"]
+    E -->|yes| G["arithmetic — servings, packs, price, leftovers, kcal<br/>code · never the model"]
+    G --> H["suggestion → Yes/No per item → cart → order"]
     F --> H
-    H --> I["<b>labels</b> back to the chat.turn span<br/>on submit, not on typing"]
+    H --> I["labels back to the chat.turn span<br/>on submit, not on typing"]
     B -.->|OpenAI API| BOX
     D -.-> BOX
-    BOX["<b>vLLM on one RTX 3090</b><br/>Qwen3.8-27B AWQ 4-bit or<br/>NVIDIA Nemotron 3.5 Lightning W4A16<br/><i>in the house · no cloud, no API keys</i>"]
-    I --> PHX["<b>Arize Phoenix</b> — one trace per turn,<br/>labels from real decisions"]
+    BOX["vLLM on one RTX 3090<br/>Qwen3.8-27B AWQ 4-bit or<br/>NVIDIA Nemotron 3.5 Lightning W4A16<br/>in the house · no cloud, no API keys"]
+    I --> PHX["Arize Phoenix — one trace per turn<br/>labels from real decisions"]
     G -.-> PHX
 ```
 
