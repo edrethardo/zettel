@@ -141,20 +141,20 @@ Kursiv steht, **wer** den Schritt macht — das ist die ganze Idee:
 
 ```mermaid
 flowchart TD
-    A["Ein Satz: „alles für Bolognese, und Klopapier“"] --> B
-    B["<b>plan.extract</b> — der Satz wird zu Suchbegriffen<br/><i>Modell · sieht keine einzige Katalogzeile</i>"] --> C
-    C["<b>Suche</b> — SQLite FTS5, höchstens 5 Kandidaten je Begriff<br/><i>Code</i>"] --> D
-    D["<b>plan.choose</b> — wählt aus den vorgelegten Kandidaten<br/><i>Modell · wählt aus, erfindet nicht</i>"] --> E
+    A["Ein Satz: 'alles für Bolognese, und Klopapier'"] --> B
+    B["plan.extract — der Satz wird zu Suchbegriffen<br/>Modell · sieht keine einzige Katalogzeile"] --> C
+    C["Suche — SQLite FTS5<br/>höchstens 5 Kandidaten je Begriff · Code"] --> D
+    D["plan.choose — wählt aus den vorgelegten Kandidaten<br/>Modell · wählt aus, erfindet nicht"] --> E
     E{"Stand die id in der Vorlage?"}
-    E -->|nein| F["<b>verworfen und gezählt</b> — zettel.rejected<br/>keine Rettung per Ähnlichkeit; der Begriff<br/>bleibt als Freitext auf dem Zettel sichtbar"]
-    E -->|ja| G["<b>Rechnung</b> — Portionen, Packungen, Preis, Rest, kcal<br/><i>Code · nie das Modell</i>"]
-    G --> H["Vorschlag → <b>Ja/Nein je Posten</b> → Korb → Bestellung"]
+    E -->|nein| F["verworfen und gezählt — zettel.rejected<br/>keine Rettung per Ähnlichkeit; der Begriff<br/>bleibt als Freitext auf dem Zettel sichtbar"]
+    E -->|ja| G["Rechnung — Portionen, Packungen, Preis, Rest, kcal<br/>Code · nie das Modell"]
+    G --> H["Vorschlag → Ja/Nein je Posten → Korb → Bestellung"]
     F --> H
-    H --> I["<b>Labels</b> zurück an den chat.turn-Span<br/>beim Abschicken, nicht beim Tippen"]
+    H --> I["Labels zurück an den chat.turn-Span<br/>beim Abschicken, nicht beim Tippen"]
     B -.->|OpenAI-API| BOX
     D -.-> BOX
-    BOX["<b>vLLM auf einer RTX 3090</b><br/>Qwen3.8-27B AWQ 4-bit oder<br/>NVIDIA Nemotron 3.5 Lightning W4A16<br/><i>im Haus · keine Cloud, keine API-Schlüssel</i>"]
-    I --> PHX["<b>Arize Phoenix</b> — ein Trace je Zug,<br/>Labels aus echten Entscheidungen"]
+    BOX["vLLM auf einer RTX 3090<br/>Qwen3.8-27B AWQ 4-bit oder<br/>NVIDIA Nemotron 3.5 Lightning W4A16<br/>im Haus · keine Cloud, keine API-Schlüssel"]
+    I --> PHX["Arize Phoenix — ein Trace je Zug<br/>Labels aus echten Entscheidungen"]
     G -.-> PHX
 ```
 
