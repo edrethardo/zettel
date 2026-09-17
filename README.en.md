@@ -220,7 +220,7 @@ and the planner you need an OpenAI-compatible endpoint — the exact
 for traces, `pip install arize-phoenix && phoenix serve`.
 
 ```bash
-.venv/bin/python -m pytest -q             # 1,520 tests (14 skipped), ~95 s, no network
+.venv/bin/python -m pytest -q             # 1,540 tests (14 skipped), ~95 s, no network
 .venv/bin/python checks/smoke.py          # 79 checks; the network is blocked at socket level
 ```
 

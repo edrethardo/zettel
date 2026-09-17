@@ -335,7 +335,7 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.520 Tests (14 übersprungen), rund 95 s
+.venv/bin/python -m pytest -q        # 1.540 Tests (14 übersprungen), rund 95 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
 .venv/bin/python checks/veroeffentlichung.py   # darf das Repo raus?
 ```

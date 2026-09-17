@@ -14,6 +14,13 @@ Vier Teile:
   Speicher HOLEN statt raten (WB-367) — und ein anderes Rezept WÄHLEN, wenn
   ein Mensch die Vorauswahl nicht meinte (WB-387).
 
+Dazu seit WB-606 ein zweiter Client, der noch an keinem dieser Teile hängt:
+
+* `kochwiki` — derselbe Bauplan wie `chefkoch`, dieselben Schlüssel, eine
+  Quelle unter **CC BY-SA 3.0**. Bisher nur der Parser (Wikitext -> Rezept)
+  und die Adressen; welche Quelle wann gefragt wird, entscheidet noch
+  niemand.
+
 **Der erste Satz zu einem neuen Gericht nimmt schon das Rezept.** Bis WB-367
 tat er das nicht: der Shop trug einen Wunsch ein, startete einen eigenen
 Prozess und antwortete solange mit dem Modell. Der Abruf kostet gemessen 90

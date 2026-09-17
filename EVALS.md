@@ -1091,3 +1091,79 @@ mitzitieren.
   Phoenix und zeigen fast dieselben Zahlen (Präzision 0,830 / 0,943 / 0,850 /
   0,830). Sie sind nicht gelöscht, weil ein verschwundener Lauf schlechter ist
   als ein alter — aber verglichen wird die Version 4.
+
+## Der Koch-Wiki-Parser (2026-09-17)
+
+Eine andere Art Messung als alles darüber: hier wird kein Modell bewertet,
+sondern ein **Parser gegen eine Quelle**. Gemessen an 120 Rezepten, gezogen
+mit `random.seed(42)` aus allen 9.210 Rezepten des Koch-Wiki (die Liste über
+`list=embeddedin&eititle=Vorlage:Rezept&einamespace=0`), eingecheckt als
+`tests/fixtures/kochwiki_stichprobe.json` — CC BY-SA 3.0 erlaubt das, mit
+Namensnennung. Die Stichprobe geht nie ins Netz; `tests/test_kochwiki.py`
+erzwingt die Zahlen unten als **Mindestwerte**.
+
+| Feld | gemessen | erzwungen | Anmerkung |
+|---|---|---|---|
+| `difficulty` | 100,0 % (120/120) | 100 % | vier Stufen der Quelle auf Chefkochs drei |
+| `servings` | 93,3 % (112/120) | ≥ 90 % | „1 Liter" ist eine Ausbeute, keine Portion — bleibt leer |
+| Zutaten > 0 | 100,0 % (120/120) | 100 % | 1.254 Zeilen |
+| Schritte > 0 | 100,0 % (120/120) | ≥ 99 % | 1.549 Schritte |
+| Zeile mit `[[Zutat:…]]` | 94,4 % (1.215/1.287) | ≥ 94 % | Eigenschaft der QUELLE |
+| Zeile mit kanonischem Namen | 93,7 % (1.175/1.254) | ≥ 93 % | Eigenschaft des PARSERS |
+| `amount` | 77,7 % | — | die übrigen sind echt mengenlos („Salz") |
+| `unit` | 58,1 % | — | Stückzutaten haben keine: „6 Eier" |
+| `name` mit Auszeichnung oder führender Ziffer | 0 von 1.254 | 0 | die Latte |
+
+**Warum 93,7 % und nicht 94,6 %.** Der Prototyp zählte jede Zeile, die
+irgendwo die Zeichenfolge `[[Zutat:` enthält. Der Parser zählt die Zeilen,
+die einen kanonischen Namen für die ZUTAT liefern, und das sind 16 weniger:
+„Mehlbutter ''(je 1 EL [[Zutat:Butter|Butter]] und [[Zutat:Weizenmehl|Mehl]])''"
+enthält zwei Zutat-Links und ist trotzdem Mehlbutter. Dieselbe Quelle, eine
+strengere Frage — deshalb stehen beide Zahlen in der Tabelle und beide im
+Test.
+
+**Die Entscheidung zur Zeitangabe, und was sie kostet.** 59 von 120
+Zeitangaben sind Prosa aus mehreren Teilen („Sauce: 20 Minuten + Abkühlzeit:
+2 Stunden + Zubereitung: 5 Minuten + Backzeit: 20 Minuten"). Drei Wege
+standen zur Wahl: die erste Zahl (falsch — das wären hier 20 Minuten Sauce
+und bei „Einsalzzeit 3 Stunden; Zubereitung 30 Minuten" drei Stunden Warten
+als Arbeitszeit), die Summe (falsch — aus 25 Minuten Arbeit würden mit
+„+ 2 Monate Einlegezeit" 86.425 Minuten) oder `None` bei Mehrteiligkeit.
+
+Genommen wird ein vierter: **nur was benannt ist, und in das Feld, das der
+Name nennt.** „Zubereitung"/„Vorbereitung" sind Arbeitszeit,
+„Backzeit"/„Kochzeit" sind Kochzeit, „Abkühlzeit"/„Einlegezeit" sind
+Ruhezeit — dieselben drei Felder, die Chefkoch mitliefert. Ein unbenanntes
+Teilstück in einer mehrteiligen Angabe fällt weg: ob dort gearbeitet oder
+gewartet wird, ist nicht zu entscheiden, und `prep_minutes` geht in die
+Wochenplanung ein. Der Preis steht daneben:
+
+    prep_minutes   92,5 % (111/120)
+    cook_minutes   33,3 % ( 40/120)
+    rest_minutes   17,5 % ( 21/120)
+
+Eine Angabe ohne Zahl gibt es wirklich („ca. Minuten", „bis Minuten",
+„keine Angaben"); sie liefert überall `None` und wirft nicht.
+
+**Die vier Fallen, je ein Test, der namentlich auf sie zeigt.**
+
+1. `^==` matcht auch `===`. Ein Abschnitt endet am nächsten `==`, dem kein
+   weiteres `=` folgt. Mit dem naiven Muster: **837 statt 1.254
+   Zutatenzeilen** und bei 32 von 120 Rezepten null Zubereitungsschritte.
+   Eine Klammer, 65 % gegen 100 %.
+2. `(Minute|Std)\b` findet „Minuten" nicht — die Wortgrenze scheitert am
+   Plural-n. Zeiterkennung 15,8 % statt 96,7 %.
+3. `=== Variante (n) ===` sind alternative Rezepte, keine Gruppen. Zwei von
+   120 Rezepten haben sie; wer sie zusammenwirft, legt fünf Varianten
+   desselben Bratapfels als eine Liste mit fünffachem Zucker vor.
+4. Die Zeitangabe ist Prosa (oben).
+
+**Was die Quelle kann, was Chefkoch nicht kann:** der kanonische Name.
+`[[Zutat:Karotte|Karotten]]` trägt Anzeigeform und Schlüssel getrennt, und
+der Schlüssel ist über alle 9.210 Rezepte derselbe. Dazu die Alternative
+hinter „ oder " (12,3 % der Zeilen) und die Warengruppe statt eines Produkts
+(4,1 %). Beides steht am Eintrag, ohne eine zweite Einkaufszeile zu werden.
+
+**Was hier NICHT gemessen ist:** ob die Zutatennamen den Katalog treffen. Das
+ist die nächste Frage und ein eigenes Ticket — dieser Abschnitt sagt nur,
+dass aus Wikitext verlässlich ein Rezept wird.

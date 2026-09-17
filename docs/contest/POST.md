@@ -23,7 +23,7 @@ Checkliste vor dem Absenden:
       `thumbnail_2026-09-10.png`. Der erste Kommentar bleibt, ein zweiter
       Film-Kommentar entfällt
 - [x] Test- und Check-Zahl frisch messen (`pytest -q`, `checks/smoke.py`) —
-      1.520 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-17; sie
+      1.540 Tests (14 übersprungen) und 79 Checks, gemessen 2026-09-17; sie
       wachsen weiter, also vor dem Absenden noch einmal
 
 ---
@@ -46,7 +46,7 @@ Swapping models cost an afternoon and no production code. Same dishes, same 3090
 – Llama-Nemotron-Nano-8B (first 64 dishes): median 0 %. That number stays in the docs next to the wins.
 The 3× speed is not tok/s — the 3B-active model generates a third of the tokens and finds two points less. Small-model-for-agents: measured, not asserted.
 
-Local is not the test bed here, it is the deployment. The model never leaves the house. 1,520 tests and a 79-check gate that blocks the network at socket level.
+Local is not the test bed here, it is the deployment. The model never leaves the house. 1,540 tests and a 79-check gate that blocks the network at socket level.
 
 Works for any agent that picks rows from a database you own — tickets, documents, accounts. Pattern and repo: https://github.com/edrethardo/zettel
 
