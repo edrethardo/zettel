@@ -26,8 +26,8 @@ Die Kur hat zwei Hälften, und beide werden hier geprüft:
        laufen nach
 
 **Kein Test geht ins Netz und keiner an ein Modell.** Fixture, Doppelgänger
-und Shop kommen aus `test_alternativrezepte.py` — dieselbe aufgezeichnete
-Pho-Suche, derselbe nachgebaute Alternativ-Doppelgänger.
+und Shop kommen aus `test_alternativrezepte.py` — dieselbe erfundene
+Zwirbel-Suche, derselbe nachgebaute Alternativ-Doppelgänger.
 """
 from __future__ import annotations
 
@@ -35,8 +35,9 @@ from pathlib import Path
 
 from zettel import db
 
-from test_alternativrezepte import (HTMX, PHO_BO, PHO_GA, _karte, _pho_geholt,
-                                    _shop, _wechsel, _zug_id, _eine_zeile)
+from test_alternativrezepte import (HTMX, ZWIRBEL, ZWIRBEL_HUHN, _karte,
+                                    _zwirbel_geholt, _shop, _wechsel,
+                                    _zug_id, _eine_zeile)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 
 STIL = Path(__file__).resolve().parents[1] / "zettel" / "web" / "static" \
@@ -66,9 +67,9 @@ def test_der_tipp_zielt_auf_den_zug_und_nicht_auf_den_chat(datei, tmp_path):
     übersehen worden und stand als einziges Formular des Chats weiter auf dem
     ganzen Verlauf.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     karte = _karte(client.get("/chat").text)
 
@@ -88,15 +89,15 @@ def test_die_antwort_traegt_den_verlauf_nicht_mehr_mit(datei, tmp_path):
     Die Zahl ist dieselbe Art Zahl wie in WB-372 (207.000 -> 2.249 Bytes je
     „Ja"): was zurückkommt, ist so gross wie das, was sich ändert.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
     # So gross war die Antwort vor diesem Ticket: der ganze Verlauf, also
     # genau das, was `GET /chat` als Bruchstück liefert.
     ganzer_chat = client.get("/chat", headers=HTMX).text
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
 
     assert '<section class="chat" id="chat">' in ganzer_chat
@@ -113,16 +114,16 @@ def test_der_gelungene_wechsel_scrollt_nicht(datei, tmp_path):
     Kasten steht jetzt AN der Stelle, auf die getippt wurde; dorthin muss
     niemand erst geholt werden.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     karte = _karte(client.get("/chat").text)
 
     form = karte.split('<form class="andere"', 1)[1].split(">", 1)[0]
     assert "show:" not in form, form
     # Der Kasten kommt trotzdem — er ist nur nicht mehr ein Sprungziel.
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
     assert f'id="wechsel-{mid}"' in erste
     block = erste.split('<div class="zugwechsel"', 1)[1].split(">", 1)[0]
@@ -137,9 +138,9 @@ def test_der_indikator_haengt_am_getauschten_zug(datei, tmp_path):
     und `pointer-events: none` daran verhindert nebenbei den zweiten Tipp,
     während der erste läuft.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     karte = _karte(client.get("/chat").text)
 
@@ -161,24 +162,25 @@ def test_die_karte_zeigt_das_neue_rezept_ohne_ein_modell_zu_fragen(datei,
     `recipe_ingredient`; nur die Vorschlagsliste kostet die zwei
     Modellstufen. Also wechselt die Karte, bevor irgendetwas gerechnet wird.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     vorher = len(client.llm.aufrufe)
     zuege = _zuege(datei)
 
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
 
-    assert "Pho Ga" in erste, "die Karte zeigt das neue Rezept nicht"
-    assert "Pho Bo" not in erste, "die alte Karte steht noch da"
+    assert "Zwirbeltopf mit Huhn" in erste, "die neue Karte fehlt"
+    assert "Zwirbeltopf mit Rinderbrühe" not in erste, \
+        "die alte Karte steht noch da"
     assert len(client.llm.aufrufe) == vorher, \
         "die Karte hat ein Modell gefragt"
     assert _zuege(datei) == zuege, "es ist schon ein Zug entstanden"
     # Und die Zutaten der Quelle stehen darin — die Karte ist vollständig
     # und keine Überschrift mit Platzhalter.
-    assert "Mie Nudeln" in erste
+    assert "Speckwürfel" in erste
 
 
 def test_die_karte_holt_sich_die_vorschlaege_selbst_nach(datei, tmp_path):
@@ -187,15 +189,15 @@ def test_die_karte_holt_sich_die_vorschlaege_selbst_nach(datei, tmp_path):
     Ohne den `load`-Auslöser bliebe die Karte stehen und die Vorschläge
     kämen nie — der Wechsel wäre halb.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
     block = erste.split('<div class="zugwechsel"', 1)[1].split(">", 1)[0]
-    assert f'hx-post="/chat/{mid}/rezept/vorschlaege?rezept={PHO_GA}"' \
+    assert f'hx-post="/chat/{mid}/rezept/vorschlaege?rezept={ZWIRBEL_HUHN}"' \
         in block, block
     assert 'hx-trigger="load"' in block, block
     assert 'hx-target="this"' in block, block
@@ -219,12 +221,12 @@ def test_der_fortschritt_steht_in_dem_stueck_das_getauscht_wird(datei,
     KASTEN an den oberen Rand und die Karte ist eine Bildschirmhöhe lang. Der
     Indikator ist das Tauschziel — aber er muss auch darin zu sehen sein.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
     block = _eine_zeile(erste.split(f'id="wechsel-{mid}"', 1)[1])
     assert "die Vorschläge dazu werden gesucht" in block
@@ -243,12 +245,12 @@ def test_die_vorschau_bietet_keine_zweite_wahl_und_kein_portionsfeld(datei,
     `/chat/<mid>/rezept` — mit `mid` des ALTEN Zugs wären beide falsch
     verdrahtet. Und ein zweiter Tipp mitten im Wechsel wäre ein Rennen.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    erste = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                         headers=HTMX).text
     assert '<form class="andere"' not in erste
     assert '<form class="zugportionen"' not in erste
@@ -266,12 +268,12 @@ def test_die_zweite_haelfte_traegt_nur_das_neue(datei, tmp_path):
     hängen — dann bleibt von ihm nichts übrig, und diese Antwort trägt genau
     den neuen Zug und sonst nichts.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    _erste, zweite = _wechsel(client, mid, PHO_GA)
+    _erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
     neu = _zug_id(datei)
     assert neu > mid
     assert f'id="zug-{neu}"' in zweite.text, "der neue Zug fehlt"
@@ -291,12 +293,12 @@ def test_die_neue_frage_wird_nicht_zweimal_gesetzt(datei, tmp_path):
     Neuladen steht dieselbe Frage an derselben Stelle, nur mit einer anderen
     Nummer.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    _erste, zweite = _wechsel(client, mid, PHO_GA)
+    _erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
     con = db.connect(datei)
     try:
         neue = [dict(r) for r in con.execute(
@@ -315,12 +317,12 @@ def test_die_neue_frage_wird_nicht_zweimal_gesetzt(datei, tmp_path):
     # Nur die Antwort steht im Bruchstück.
     assert f'id="zug-{antwort["id"]}"' in zweite.text
     assert f'id="zug-{frage["id"]}"' not in zweite.text
-    assert zweite.text.count("alles für Pho") == 0, \
+    assert zweite.text.count("alles für Zwirbel") == 0, \
         "der Satz kommt ein zweites Mal mit"
     # Und der Verlauf zeigt danach genau eine Frage und eine Antwort.
     seite = client.get("/chat").text
     assert seite.count('class="chatzeile ich"') == 1, "die Frage steht doppelt"
-    assert seite.count("alles für Pho") == 1
+    assert seite.count("alles für Zwirbel") == 1
 
 
 def test_ohne_javascript_bleibt_es_bei_einem_request(datei, tmp_path):
@@ -330,17 +332,17 @@ def test_ohne_javascript_bleibt_es_bei_einem_request(datei, tmp_path):
     wartet, das nie kommt — und der Shop soll ohne JavaScript bedienbar
     bleiben.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     zuege = _zuege(datei)
 
-    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA})
+    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN})
     assert antwort.status_code == 200
     assert _zuege(datei) == zuege + 1, "ohne HTMX ist kein Zug entstanden"
     assert '<section class="chat" id="chat">' in antwort.text
-    assert "Das Rezept ist jetzt „Pho Ga“" in antwort.text
+    assert "Das Rezept ist jetzt „Zwirbeltopf mit Huhn“" in antwort.text
 
 
 def test_eine_meldung_landet_dort_wo_die_karte_stuende(datei, tmp_path):
@@ -356,9 +358,9 @@ def test_eine_meldung_landet_dort_wo_die_karte_stuende(datei, tmp_path):
     Bild — der gelungene Wechsel tut das ausdrücklich nicht, aber eine
     Begründung, die niemand sieht, ist keine (WB-378).
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
     antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": "4711"},
@@ -367,19 +369,19 @@ def test_eine_meldung_landet_dort_wo_die_karte_stuende(datei, tmp_path):
     assert 'id="chat"' not in antwort.text
     assert f'id="wechsel-{mid}"' in antwort.text
     assert f'id="zug-{mid}"' in antwort.text, "der alte Zug fehlt"
-    assert "Pho Bo" in antwort.text, "die alte Karte fehlt"
+    assert "Zwirbeltopf mit Rinderbrühe" in antwort.text, "alte Karte fehlt"
     assert antwort.headers["HX-Reswap"] == f"outerHTML show:#wechsel-{mid}:top"
     # Und kein Nachladen: hier läuft nichts.
     assert 'hx-trigger="load"' not in antwort.text
 
 
 def test_das_schon_gewaehlte_meldet_sich_an_derselben_stelle(datei, tmp_path):
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_BO},
+    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL},
                           headers=HTMX)
     assert "bereits das vorgeschlagene Rezept" in antwort.text
     assert 'id="chat"' not in antwort.text
@@ -413,7 +415,7 @@ def test_die_zeit_hebt_sich_von_den_anderen_zahlen_ab(datei, tmp_path):
     bleiben gedämpft — eine Spalte, die sich überfliegen lässt.
 
     **Aber nur die Gesamtzeit** (WB-400 Runde 4): eine Arbeitszeit aus der
-    Suchantwort ist eine andere, kleinere Grösse (WB-387 — Pho Bo: 90
+    Suchantwort ist eine andere, kleinere Grösse (WB-387 — der Zwirbeltopf: 90
     Minuten Arbeit, 9½ Stunden gesamt). Beide gleich betont sah aus wie
     EINE Skala, und die Vorgewählte wirkte 2–3× langsamer als jede
     Alternative. Die Arbeitszeit trägt darum die Klasse `arbeitszeit` und
@@ -428,9 +430,9 @@ def test_die_zeit_hebt_sich_von_den_anderen_zahlen_ab(datei, tmp_path):
     leise = stil.split(".andereliste .dauer.arbeitszeit", 1)[1].split("}", 1)[0]
     assert "var(--gedaempft)" in leise, leise
 
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     karte = _karte(client.get("/chat").text)
     # Die Gesamtzeit trägt das Gewicht der Zeile — ohne Zusatzklasse …
     assert '<span class="dauer">9½ Stunden</span>' in karte

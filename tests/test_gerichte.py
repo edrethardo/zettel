@@ -1,11 +1,21 @@
 """Zutaten aus Chefkoch statt aus dem Gedächtnis des Modells (WB-338).
 
-**Kein Test geht ins Netz.** Gespielt wird gegen zwei aufgezeichnete
-Chefkoch-Antworten unter `tests/fixtures/` — die Suche nach „pho" und das
-Detail des Rezepts, das dabei gewinnt. Aufgenommen hat sie
-`scripts/record_chefkoch.py`, und das ist das Einzige im Projekt, was
-chefkoch.de anfasst. Bricht ein Test hier, nachdem jemand die Fixture erneuert
-hat, ist das ein echter Fund: die Quelle hat ihr Format geändert.
+**Kein Test geht ins Netz.** Gespielt wird gegen zwei Chefkoch-Antworten
+unter `tests/fixtures/` — die Suche nach „zwirbel" und das Detail des
+Rezepts, das dabei gewinnt.
+
+**Und beide sind ERFUNDEN** (WB-604). Den Zwirbeltopf gibt es nicht, die
+Rezept-IDs gibt es nicht, die Einsteller gibt es nicht, und keine einzige
+Zeile stammt von chefkoch.de. Bis WB-604 lagen hier zwei echte Antworten —
+zwei fremde Rezepte samt Mengen und Zubereitung, in einem öffentlichen Repo.
+Was geblieben ist, ist die STRUKTUR: Feldnamen, Verschachtelung und die
+Zahlen, an denen die Auswahllogik hängt. Ob sie noch die gemessene ist, prüft
+`test_die_erfundene_fixture_hat_die_form_der_echten_antwort` — gegen eine
+echte Antwort, die lokal liegt und nie ins Repo kommt.
+
+Der `ZWIRBEL`-Block `9999…` ist mit Absicht kein Chefkoch-Zahlenraum: eine
+echte ID fällt darin auf, und `checks/veroeffentlichung.py` lässt sie nicht
+durch.
 
 Der `FakeHTTP` unten ist deshalb streng: eine URL, die nicht vorgesehen war,
 ist ein Testfehler und keine leere Antwort. Genau daran hängt die Zusage
@@ -27,13 +37,13 @@ from zettel.llm import wake
 from zettel.llm.client import Antwort
 
 FIXTURES = Path(__file__).parent / "fixtures"
-SUCHE = json.loads((FIXTURES / "chefkoch_pho_suche.json")
+SUCHE = json.loads((FIXTURES / "chefkoch_zwirbel_suche.json")
                    .read_text(encoding="utf-8"))
-REZEPT = json.loads((FIXTURES / "chefkoch_pho_rezept.json")
+REZEPT = json.loads((FIXTURES / "chefkoch_zwirbel_rezept.json")
                     .read_text(encoding="utf-8"))
 
 #: Das Rezept, das die Gewichtung aus der aufgezeichneten Suche wählt.
-PHO_BO = "9999000000000001"
+ZWIRBEL = "9999000000000001"
 
 
 # --------------------------------------------------------------------------
@@ -95,7 +105,7 @@ class Box:
 
 
 def echtes_chefkoch():
-    return FakeHTTP({"/v2/recipes?": SUCHE, f"/v2/recipes/{PHO_BO}": REZEPT})
+    return FakeHTTP({"/v2/recipes?": SUCHE, f"/v2/recipes/{ZWIRBEL}": REZEPT})
 
 
 class FakeHoler:
@@ -129,9 +139,9 @@ def leeres_chefkoch():
 
 ZUSATZ = [
     ("rifi", "Rinderfilet 400 g", "Fleisch", "Rind", "Filet"),
-    ("ingw", "Ingwer frisch", "Obst & Gemüse", "Gemüse", "Ingwer"),
+    ("past", "Pastinaken 500 g", "Obst & Gemüse", "Gemüse", "Pastinaken"),
     ("zwie", "Zwiebeln Gelb, Netz", "Obst & Gemüse", "Gemüse", "Zwiebeln"),
-    ("mien", "Mie Nudeln 250 g", "Nudeln", "Asia", "Mie"),
+    ("spec", "Speckwürfel 150 g", "Fleisch", "Wurst", "Speck"),
     ("klo1", "Toilettenpapier 10 Rollen", "Haushalt", "Papier",
      "Toilettenpapier"),
 ]
@@ -189,17 +199,17 @@ def test_aus_der_fixture_entstehen_zutaten_mit_menge_und_einheit():
     nach_name = {z["raw_name"]: z for z in zutaten}
     wasser = nach_name["Wasser"]
     assert (wasser["amount"], wasser["unit"]) == (3.0, "Liter")
-    knochen = nach_name["Markknochen"]
+    knochen = nach_name["Rinderknochen"]
     assert (knochen["amount"], knochen["unit"]) == (1.0, "kg")
 
     # Die Gruppe wandert an jede Zutat mit — sie ist beim Kochen die halbe
     # Ordnung des Rezepts.
-    assert wasser["gruppe"] == "Für die Brühe"
+    assert wasser["gruppe"] == "Für den Sud"
     # Und der Zusatz der Rezeptseite bleibt erhalten, ohne in den Namen zu
-    # rutschen: „Zwiebel(n), süß, nicht rot" ist eine Zwiebel.
+    # rutschen: „Zwiebel(n), mild, nicht rot" ist eine Zwiebel.
     zwiebel = nach_name["Zwiebel(n)"]
     assert zwiebel["name"] == "Zwiebel"
-    assert "süß" in zwiebel["usage_info"]
+    assert "mild" in zwiebel["usage_info"]
 
 
 def test_das_rezept_bringt_zubereitung_zeiten_und_herkunft_mit():
@@ -212,7 +222,74 @@ def test_das_rezept_bringt_zubereitung_zeiten_und_herkunft_mit():
     # stehen einzeln da, so wie die Quelle sie getrennt hat.
     assert len(rezept["schritte"]) > 5
     assert all(s == s.strip() and s for s in rezept["schritte"])
-    assert rezept["schritte"][0].startswith("Die Rindermarkknochen")
+    assert rezept["schritte"][0].startswith("Die Rinderknochen")
+
+
+# --------------------------------------------------------------------------
+# Ist die erfundene Fixture noch die gemessene FORM? (WB-604)
+
+#: Wohin `scripts/record_chefkoch.py` schreibt. Gitignoriert: was dort liegt,
+#: sind echte fremde Rezepte und gehört niemandem ausser der Maschine, die
+#: sie geholt hat.
+AUFNAHMEN = Path(__file__).resolve().parents[1] / "data" / "chefkoch"
+
+
+def _echte_aufnahme(art: str):
+    """Eine lokal aufgezeichnete ECHTE Antwort — oder `None`."""
+    treffer = sorted(AUFNAHMEN.glob(f"chefkoch_*_{art}.json"))
+    return (json.loads(treffer[0].read_text(encoding="utf-8"))
+            if treffer else None)
+
+
+def test_die_erfundene_fixture_hat_die_form_der_echten_antwort():
+    """Der Preis der erfundenen Fixture — und die Gegenprobe dazu.
+
+    Eine erfundene Antwort kann veralten, ohne dass ein Test es merkt: sie
+    ist ja immer mit sich selbst einig. Deshalb diese Zeile. Sie braucht eine
+    echte Antwort und läuft nur dort, wo eine liegt:
+
+        python3 scripts/record_chefkoch.py --gericht pho
+
+    schreibt sie nach `data/chefkoch/` (gitignoriert). Ohne sie wird der Test
+    übersprungen — **CI darf ihn nicht verlangen**: die Suite geht nie ins
+    Netz (Spec 13), und aufgezeichnet wird von Hand.
+
+    Verglichen werden FELDNAMEN, nicht Inhalte. Was Chefkoch hinzufügt, ist
+    kein Fehler; was WEGFÄLLT, ist einer — dann liest `chefkoch.py`
+    womöglich ein Feld, das es nicht mehr gibt.
+    """
+    echte_suche = _echte_aufnahme("suche")
+    echtes_rezept = _echte_aufnahme("rezept")
+    if echte_suche is None or echtes_rezept is None:
+        pytest.skip(f"keine echte Aufnahme unter {AUFNAHMEN} — "
+                    "scripts/record_chefkoch.py läuft von Hand")
+
+    def fehlt(echt, unser, pfad):
+        return sorted(k for k in echt
+                      if not str(k).startswith("_") and k not in unser), pfad
+
+    offen = [fehlt(echte_suche, SUCHE, "suche")]
+    offen.append(fehlt(echte_suche["results"][0], SUCHE["results"][0],
+                       "suche.results[]"))
+    offen.append(fehlt(echte_suche["results"][0]["recipe"],
+                       SUCHE["results"][0]["recipe"],
+                       "suche.results[].recipe"))
+    offen.append(fehlt(echtes_rezept, REZEPT, "rezept"))
+    offen.append(fehlt(echtes_rezept["ingredientGroups"][0],
+                       REZEPT["ingredientGroups"][0], "ingredientGroups[]"))
+    offen.append(fehlt(echtes_rezept["ingredientGroups"][0]["ingredients"][0],
+                       REZEPT["ingredientGroups"][0]["ingredients"][0],
+                       "ingredients[]"))
+    luecken = [f"{pfad}: {', '.join(k)}" for k, pfad in offen if k]
+    assert not luecken, ("die erfundene Fixture kennt Felder der echten "
+                         "Antwort nicht (mehr): " + " | ".join(luecken))
+
+    # Und die Gegenrichtung: nichts Erfundenes aus der echten Aufnahme darf
+    # versehentlich hier hereingewandert sein.
+    roh = (FIXTURES / "chefkoch_zwirbel_rezept.json").read_text(
+        encoding="utf-8")
+    assert str(echtes_rezept.get("id")) not in roh
+    assert (echtes_rezept.get("title") or "@@").strip() not in roh
 
 
 # --------------------------------------------------------------------------
@@ -251,8 +328,8 @@ def test_das_bestbewertete_rezept_wird_gewaehlt_und_die_stimmen_wiegen_mit():
     assert len(treffer) == 12
 
     wahl = chefkoch.bestes(treffer)
-    assert wahl["rezept_id"] == PHO_BO
-    assert wahl["titel"].startswith("Pho Bo")
+    assert wahl["rezept_id"] == ZWIRBEL
+    assert wahl["titel"].startswith("Zwirbeltopf mit Rinderbrühe")
 
     # Eine 5,00 aus zwei Stimmen ist die höchste rohe Note der Liste — und
     # verliert trotzdem. Genau dafür ist die Gewichtung da.
@@ -265,10 +342,11 @@ def test_das_bestbewertete_rezept_wird_gewaehlt_und_die_stimmen_wiegen_mit():
 def test_plus_rezepte_mit_platzhalter_stimmen_gewinnen_nicht():
     """255 Stimmen sind bei Chefkoch-Plus kein Abstimmungsergebnis.
 
-    Gemessen: BEIDE `isPlus`-Treffer tragen exakt `numVotes: 255` (der
-    grösste Wert eines Bytes), und der Detail-Endpunkt liefert zu beiden
-    `rating: null`. Mit dieser Zahl gewänne „Wildenten-Pho" gegen „Pho Bo" —
-    auf Grundlage von etwas, das nichts bedeutet.
+    Gemessen an der echten Antwort, aus der die Form dieser Fixture stammt:
+    BEIDE `isPlus`-Treffer tragen exakt `numVotes: 255` (der grösste Wert
+    eines Bytes), und der Detail-Endpunkt liefert zu beiden `rating: null`.
+    Mit dieser Zahl gewänne das Plus-Rezept gegen das bestbewertete — auf
+    Grundlage von etwas, das nichts bedeutet.
     """
     treffer = chefkoch.parse_treffer(SUCHE)
     plus = [t for t in treffer if t["plus"]]
@@ -284,11 +362,11 @@ def test_plus_rezepte_mit_platzhalter_stimmen_gewinnen_nicht():
 
 def test_der_abruf_holt_suche_und_detail_und_sonst_nichts():
     http = echtes_chefkoch()
-    rezept = chefkoch.hole(http, "Pho", pause_s=0)
-    assert rezept["titel"].startswith("Pho Bo")
+    rezept = chefkoch.hole(http, "Zwirbel", pause_s=0)
+    assert rezept["titel"].startswith("Zwirbeltopf mit Rinderbrühe")
     assert len(rezept["zutaten"]) == 23
     assert [u.split("/v2")[1] for u in http.geholt] == [
-        "/recipes?query=Pho&limit=12", f"/recipes/{PHO_BO}"]
+        "/recipes?query=Zwirbel&limit=12", f"/recipes/{ZWIRBEL}"]
 
 
 # --------------------------------------------------------------------------
@@ -296,34 +374,34 @@ def test_der_abruf_holt_suche_und_detail_und_sonst_nichts():
 
 def test_der_zweite_abruf_desselben_gerichts_geht_nicht_ins_netz(con):
     zaehler = []
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=zaehler.append)
-    assert speicher.gericht(con, "Pho")["rezept"]["source_id"] == PHO_BO
+    assert speicher.gericht(con, "Zwirbel")["rezept"]["source_id"] == ZWIRBEL
 
     # Ab hier ist das Netz verboten. Der Speicher muss allein tragen.
     q = quelle.Quelle(holer=quelle.nicht_holen)
-    gefunden = q.gericht(con, "pho")
+    gefunden = q.gericht(con, "zwirbel")
     assert gefunden is not None
     assert len(gefunden["zutaten"]) == 23
-    assert [g["query"] for g in q.bereit(con)] == ["Pho"]
+    assert [g["query"] for g in q.bereit(con)] == ["Zwirbel"]
     # `holen` sieht den frischen Eintrag und ruft gar nicht ab.
     holer = FakeHoler()
     q2 = quelle.Quelle(holer=holer)
-    assert q2.holen(con, "Pho") is None
+    assert q2.holen(con, "Zwirbel") is None
     assert holer.gerichte == []
 
 
 def test_grossschreibung_und_umlaute_treffen_denselben_eintrag(con):
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
-    assert speicher.gericht(con, "PHO") is not None
+    assert speicher.gericht(con, "ZWIRBEL") is not None
     assert speicher.schluessel("Gemüselasagne") == speicher.schluessel(
         "GEMUESELASAGNE")
 
 
 def test_ein_erneuter_abruf_legt_das_rezept_nicht_zweimal_an(con):
     for _ in range(2):
-        lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+        lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                         schreib=lambda _: None)
     assert con.execute("SELECT count(*) AS n FROM recipe").fetchone()["n"] == 1
     assert con.execute(
@@ -331,11 +409,11 @@ def test_ein_erneuter_abruf_legt_das_rezept_nicht_zweimal_an(con):
 
 
 def test_ein_alter_eintrag_gilt_nicht_mehr(con):
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
     import time
     spaeter = time.time() + speicher.ALTER_OK_S + 60
-    assert speicher.gericht(con, "Pho", uhr=lambda: spaeter) is None
+    assert speicher.gericht(con, "Zwirbel", uhr=lambda: spaeter) is None
     assert speicher.bereit(con, uhr=lambda: spaeter) == []
 
 
@@ -362,12 +440,12 @@ def test_ein_gericht_ohne_treffer_wird_als_leer_vermerkt(con):
 
 def test_chefkoch_nicht_erreichbar_wird_vermerkt_und_wirft_nicht(con):
     kaputt = FakeHTTP(fehler=OSError("Name or service not known"))
-    assert lauf.hole_eines(con, kaputt, "Pho", pause_s=0,
+    assert lauf.hole_eines(con, kaputt, "Zwirbel", pause_s=0,
                            schreib=lambda _: None) == speicher.FEHLER
-    zeile = speicher.zeile(con, "Pho")
+    zeile = speicher.zeile(con, "Zwirbel")
     assert zeile["status"] == speicher.FEHLER
     assert "Name or service not known" in zeile["error"]
-    assert speicher.gericht(con, "Pho") is None
+    assert speicher.gericht(con, "Zwirbel") is None
 
 
 def test_ein_rezept_ohne_zutaten_gilt_als_fehler_und_nicht_als_leer(con):
@@ -375,8 +453,9 @@ def test_ein_rezept_ohne_zutaten_gilt_als_fehler_und_nicht_als_leer(con):
     Stunde. Ein Formatwechsel darf sich nicht als „gibt es nicht" tarnen.
     """
     ohne = FakeHTTP({"/v2/recipes?": SUCHE,
-                     f"/v2/recipes/{PHO_BO}": {"id": PHO_BO, "title": "Pho"}})
-    assert lauf.hole_eines(con, ohne, "Pho", pause_s=0,
+                     f"/v2/recipes/{ZWIRBEL}": {"id": ZWIRBEL,
+                                                "title": "Zwirbel"}})
+    assert lauf.hole_eines(con, ohne, "Zwirbel", pause_s=0,
                            schreib=lambda _: None) == speicher.FEHLER
 
 
@@ -389,32 +468,32 @@ def test_der_zug_nimmt_die_zutaten_aus_der_quelle(con):
     Und zwar sichtbar — `weg` steht auf `chefkoch`, damit sich später messen
     lässt, ob die Quelle wirklich besser ist als das Raten.
     """
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
 
     llm = FakeLLM(
         # Stufe 1b: das Modell übersetzt Chefkochs Zutatenliste. Es sieht
         # keinen Katalog und nennt keine Produkte.
-        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1),
-                 (("Mie Nudeln", "Nudeln"), 1)),
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Pastinake",), 1),
+                 (("Speckwürfel", "Speck"), 1)),
         _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
-                ("Ingwer", _pid(con, "Ingwer"), 1),
-                ("Mie Nudeln", _pid(con, "Mie Nudeln"), 1)))
+                ("Pastinake", _pid(con, "Pastinake"), 1),
+                ("Speckwürfel", _pid(con, "Speckwürfel"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
-    ergebnis = agent.turn(con, "alles für Pho")
+    ergebnis = agent.turn(con, "alles für Zwirbel")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE == "chefkoch"
     assert ergebnis.n_produkte == 3
-    assert ergebnis.quelle_name.startswith("Pho Bo")
+    assert ergebnis.quelle_name.startswith("Zwirbeltopf mit Rinderbrühe")
     assert ergebnis.quelle_url.startswith("https://www.chefkoch.de/rezepte/")
     assert ergebnis.quelle_recipe_id
 
     # Und der Prompt von Stufe 1 trug die ZUTATEN DES REZEPTS, nicht den
     # Satz der Nutzerin. Das ist der ganze Unterschied zum Modellweg.
     erster_prompt = llm.aufrufe[0]["nachrichten"][-1]["content"]
-    assert "Markknochen" in erster_prompt and "Zwiebel(n)" in erster_prompt
-    assert "Sternanis" in erster_prompt
+    assert "Rinderknochen" in erster_prompt and "Zwiebel(n)" in erster_prompt
+    assert "Liebstöckel" in erster_prompt
 
 
 def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
@@ -426,13 +505,13 @@ def test_was_neben_dem_gericht_stand_geht_nicht_verloren(con):
     übersetzte ihn in keinem; die Prompt-Zeile kostete den stillen Verlust
     und brachte nichts dafür.
     """
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
     llm = FakeLLM(_extract((("Rinderfilet",), 1)),
                   _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
-    ergebnis = agent.turn(con, "alles für Pho und Klopapier")
+    ergebnis = agent.turn(con, "alles für Zwirbel und Klopapier")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     prompt = llm.aufrufe[0]["nachrichten"][-1]["content"]
@@ -450,7 +529,7 @@ def _schiefes_rezept(con):
 
     Genau die Lage aus WB-380: unter „Salat" steht „KFC Coleslaw", unter
     „Kartoffelpürree" ein Schweinefilet. Hier steht unter „Salat" das
-    aufgezeichnete Pho — der `FakeHTTP` antwortet auf jede Suche mit
+    aufgezeichnete Zwirbel — der `FakeHTTP` antwortet auf jede Suche mit
     derselben Fixture, und das ist für diesen Test kein Mangel, sondern das
     Mittel: schief ist schief.
     """
@@ -474,11 +553,11 @@ def test_ein_schiefes_rezept_reisst_die_zutatenliste_nicht_mit(con):
     """
     _schiefes_rezept(con)
     llm = FakeLLM(
-        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1),
-                 (("Mie Nudeln", "Nudeln"), 1)),
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Pastinake",), 1),
+                 (("Speckwürfel", "Speck"), 1)),
         _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
-                ("Ingwer", _pid(con, "Ingwer"), 1),
-                ("Mie Nudeln", _pid(con, "Mie Nudeln"), 1)))
+                ("Pastinake", _pid(con, "Pastinake"), 1),
+                ("Speckwürfel", _pid(con, "Speckwürfel"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "Salat")
@@ -505,9 +584,9 @@ def test_auch_ohne_satz_wird_nur_vorgelegtes_gewaehlt(con):
     """
     _schiefes_rezept(con)
     llm = FakeLLM(
-        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1)),
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Pastinake",), 1)),
         _choose(("Rinderfilet", 999_999, 1),
-                ("Ingwer", _pid(con, "Ingwer"), 1)))
+                ("Pastinake", _pid(con, "Pastinake"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
     ergebnis = agent.turn(con, "Salat")
@@ -515,7 +594,7 @@ def test_auch_ohne_satz_wird_nur_vorgelegtes_gewaehlt(con):
     assert [v["produkt_id"] for v in ergebnis.verworfen] == [999_999]
     assert ergebnis.verworfen[0]["grund"] == "nicht vorgelegt"
     namen = [v["name"] for v in ergebnis.vorschlaege]
-    assert "Ingwer frisch" in namen
+    assert "Pastinaken 500 g" in namen
     assert "Rinderfilet" in namen           # als Freitext, ohne Produkt
     assert [v["product_id"] for v in ergebnis.vorschlaege
             if v["name"] == "Rinderfilet"] == [None]
@@ -530,15 +609,15 @@ def test_der_modellweg_behaelt_den_satz_im_prompt(con):
     also wurde er auch nicht angefasst — und diese Zeile hält das fest.
     """
     llm = FakeLLM(
-        _extract((("Ingwer",), 1)),
-        _choose(("Ingwer", _pid(con, "Ingwer"), 1)))
+        _extract((("Pastinake",), 1)),
+        _choose(("Pastinake", _pid(con, "Pastinake"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
-    ergebnis = agent.turn(con, "Ingwer für den Tee")
+    ergebnis = agent.turn(con, "Pastinaken für die Suppe")
 
     assert ergebnis.weg == chatmodul.WEG_LLM
     stufe3 = llm.aufrufe[1]["nachrichten"][-1]["content"]
-    assert "Anfrage: Ingwer für den Tee" in stufe3
+    assert "Anfrage: Pastinaken für die Suppe" in stufe3
 
 
 def test_ein_leerer_satz_laesst_die_anfragezeile_weg():
@@ -561,7 +640,7 @@ def test_ein_leerer_satz_laesst_die_anfragezeile_weg():
         ohne.split("Vorgelegte Kandidaten:")[1]
 
 
-def _erster_zug(con, holer, satz="alles für Pho", *, gericht="Pho",
+def _erster_zug(con, holer, satz="alles für Zwirbel", *, gericht="Zwirbel",
                 zusatz=()):
     """Ein Chat-Zug zu einem Gericht, das noch in keinem Speicher steht.
 
@@ -572,10 +651,10 @@ def _erster_zug(con, holer, satz="alles für Pho", *, gericht="Pho",
     """
     llm = FakeLLM(
         _extract((("Rinderhack",), 1), gericht=gericht),
-        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Ingwer",), 1),
+        _extract((("Rinderfilet", "Rindfleisch"), 1), (("Pastinake",), 1),
                  *zusatz),
         _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1),
-                ("Ingwer", _pid(con, "Ingwer"), 1)))
+                ("Pastinake", _pid(con, "Pastinake"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=holer))
     return llm, agent.turn(con, satz)
@@ -589,24 +668,25 @@ def test_der_erste_zug_holt_das_rezept_und_raet_nicht(con):
     einen eigenen Prozess und antwortete mit den geratenen Zutaten. Erst der
     zweite Satz bekam das Rezept.
     """
-    assert speicher.zeile(con, "Pho") is None
+    assert speicher.zeile(con, "Zwirbel") is None
 
     holer = FakeHoler()
     llm, ergebnis = _erster_zug(con, holer)
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE == "chefkoch"
     assert ergebnis.abruf == speicher.OK
-    assert ergebnis.quelle_name.startswith("Pho Bo")
+    assert ergebnis.quelle_name.startswith("Zwirbeltopf mit Rinderbrühe")
     assert ergebnis.quelle_url.startswith("https://www.chefkoch.de/rezepte/")
     assert ergebnis.n_produkte == 2
     # Genau EIN Abruf, und mit der kurzen Frist aus WB-367.
-    assert holer.gerichte == ["Pho"]
+    assert holer.gerichte == ["Zwirbel"]
     assert holer.fristen == [chefkoch.TIMEOUT_SYNC_S]
     # Stufe 1b hat die ZUTATEN DES REZEPTS gelesen, nicht den Satz.
     zweiter_prompt = llm.aufrufe[1]["nachrichten"][-1]["content"]
-    assert "Markknochen" in zweiter_prompt and "Sternanis" in zweiter_prompt
+    assert ("Rinderknochen" in zweiter_prompt
+            and "Liebstöckel" in zweiter_prompt)
     # Und das Rezept steht danach im Speicher, für jeden weiteren Satz.
-    assert speicher.gericht(con, "Pho") is not None
+    assert speicher.gericht(con, "Zwirbel") is not None
 
 
 def test_der_zweite_satz_zum_selben_gericht_geht_nicht_ins_netz(con):
@@ -617,17 +697,17 @@ def test_der_zweite_satz_zum_selben_gericht_geht_nicht_ins_netz(con):
     """
     holer = FakeHoler()
     _erster_zug(con, holer)
-    assert holer.gerichte == ["Pho"]
+    assert holer.gerichte == ["Zwirbel"]
 
     llm = FakeLLM(_extract((("Rinderfilet",), 1)),
                   _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "nochmal alles für Pho")
+    ergebnis = agent.turn(con, "nochmal alles für Zwirbel")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     assert ergebnis.abruf is None            # nicht abgerufen
-    assert holer.gerichte == ["Pho"]         # immer noch nur der eine Abruf
+    assert holer.gerichte == ["Zwirbel"]        # nur der eine Abruf
 
 
 def test_eine_zeitueberschreitung_faellt_auf_das_modell_zurueck(con):
@@ -642,18 +722,18 @@ def test_eine_zeitueberschreitung_faellt_auf_das_modell_zurueck(con):
     langsam = FakeHTTP(fehler=httpx.ReadTimeout("timed out"))
     holer = FakeHoler(http=langsam)
     agent = chatmodul.Chat(
-        FakeLLM(_extract((("Rinderfilet",), 1), gericht="Pho"),
+        FakeLLM(_extract((("Rinderfilet",), 1), gericht="Zwirbel"),
                 _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1))),
         wecker=Box(), quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "alles für Pho")
+    ergebnis = agent.turn(con, "alles für Zwirbel")
 
     assert ergebnis.weg == chatmodul.WEG_LLM
-    assert ergebnis.gericht == "Pho"
+    assert ergebnis.gericht == "Zwirbel"
     assert ergebnis.abruf == speicher.FEHLER
     assert ergebnis.n_produkte == 1          # der Zug lief zu Ende
     assert "nicht zu erreichen" in ergebnis.meldung
     assert "Gedächtnis" in ergebnis.meldung
-    zeile = speicher.zeile(con, "Pho")
+    zeile = speicher.zeile(con, "Zwirbel")
     assert zeile["status"] == speicher.FEHLER
     assert "ReadTimeout" in zeile["error"]
 
@@ -666,15 +746,15 @@ def test_ein_kaputter_holer_bricht_den_chat_nicht(con):
     """
     holer = FakeHoler(wirft=OSError("kein httpx installiert"))
     agent = chatmodul.Chat(
-        FakeLLM(_extract((("Rinderfilet",), 1), gericht="Pho"),
+        FakeLLM(_extract((("Rinderfilet",), 1), gericht="Zwirbel"),
                 _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1))),
         wecker=Box(), quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "alles für Pho")
+    ergebnis = agent.turn(con, "alles für Zwirbel")
 
     assert ergebnis.weg == chatmodul.WEG_LLM
     assert ergebnis.abruf == speicher.FEHLER
     assert ergebnis.n_produkte == 1
-    assert speicher.zeile(con, "Pho")["status"] == speicher.FEHLER
+    assert speicher.zeile(con, "Zwirbel")["status"] == speicher.FEHLER
 
 
 def test_chefkoch_kennt_das_gericht_nicht_und_die_frist_merkt_es_sich(con):
@@ -684,8 +764,8 @@ def test_chefkoch_kennt_das_gericht_nicht_und_die_frist_merkt_es_sich(con):
     """
     holer = FakeHoler(http=leeres_chefkoch())
     agent = chatmodul.Chat(
-        FakeLLM(_extract((("Ingwer",), 1), gericht="Kartoffelraumschiff"),
-                _choose(("Ingwer", _pid(con, "Ingwer"), 1))),
+        FakeLLM(_extract((("Pastinake",), 1), gericht="Kartoffelraumschiff"),
+                _choose(("Pastinake", _pid(con, "Pastinake"), 1))),
         wecker=Box(), quelle=quelle.Quelle(holer=holer))
     ergebnis = agent.turn(con, "alles für Kartoffelraumschiff")
 
@@ -723,14 +803,14 @@ def test_zwei_gleichzeitige_anfragen_loesen_einen_abruf_aus(con):
         return echt(c, gericht, frist_s=frist_s)
 
     erster = quelle.Quelle(holer=holer)
-    assert erster.holen(con, "Pho") == speicher.OK
+    assert erster.holen(con, "Zwirbel") == speicher.OK
     assert dazwischen == [None]               # der zweite Zug rief nicht ab
-    assert echt.gerichte == ["Pho"]
-    assert speicher.gericht(con, "Pho") is not None
+    assert echt.gerichte == ["Zwirbel"]
+    assert speicher.gericht(con, "Zwirbel") is not None
 
 
 def test_ein_gespeichertes_gericht_wird_auch_ohne_woertlichen_namen_genommen(con):
-    """Der Speicher kennt „Pho", der Satz sagt „Phosuppe".
+    """Der Speicher kennt „Zwirbel", der Satz sagt „Zwirbelsuppe".
 
     Der Namensvergleich am Anfang des Zugs findet nichts (er verlangt
     Wortgrenzen, und das mit gutem Grund). Stufe 1 liest das Gericht aber
@@ -738,28 +818,28 @@ def test_ein_gespeichertes_gericht_wird_auch_ohne_woertlichen_namen_genommen(con
     geraten, obwohl es dasteht, und ohne einen einzigen Abruf.
     """
     holer = FakeHoler()
-    _erster_zug(con, holer)                  # „Pho" liegt jetzt im Speicher
+    _erster_zug(con, holer)               # „Zwirbel" liegt jetzt im Speicher
 
     llm = FakeLLM(
-        _extract((("Rinderhack",), 1), gericht="Pho"),
+        _extract((("Rinderhack",), 1), gericht="Zwirbel"),
         _extract((("Rinderfilet",), 1)),
         _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "ich hätte gern Phosuppe")
+    ergebnis = agent.turn(con, "ich hätte gern Zwirbelsuppe")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     assert ergebnis.abruf is None            # nichts abgerufen, nichts geraten
-    assert holer.gerichte == ["Pho"]         # der eine Abruf von vorhin
+    assert holer.gerichte == ["Zwirbel"]         # der eine Abruf von vorhin
 
 
 def test_ohne_gericht_im_satz_wird_nichts_geholt(con):
     holer = FakeHoler()
     agent = chatmodul.Chat(
-        FakeLLM(_extract((("Ingwer",), 1)),
-                _choose(("Ingwer", _pid(con, "Ingwer"), 1))),
+        FakeLLM(_extract((("Pastinake",), 1)),
+                _choose(("Pastinake", _pid(con, "Pastinake"), 1))),
         wecker=Box(), quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "Ingwer bitte")
+    ergebnis = agent.turn(con, "Pastinaken bitte")
     assert ergebnis.weg == chatmodul.WEG_LLM
     assert ergebnis.gericht is None
     assert ergebnis.abruf is None
@@ -774,12 +854,12 @@ def test_was_neben_dem_gericht_stand_ueberlebt_den_wechsel(con):
     """
     holer = FakeHoler()
     llm = FakeLLM(
-        _extract((("Rinderhack",), 1), gericht="Pho Suppe"),
+        _extract((("Rinderhack",), 1), gericht="Zwirbel Suppe"),
         _extract((("Rinderfilet",), 1)),
         _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=holer))
-    ergebnis = agent.turn(con, "alles für Pho und Klopapier")
+    ergebnis = agent.turn(con, "alles für Zwirbel und Klopapier")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     # Der Rest steht seit WB-370 in keinem der beiden Prompts — und trotzdem
@@ -795,13 +875,13 @@ def test_ein_gescheitertes_stufe_1_faellt_auf_die_rohe_zutatenliste_zurueck(con)
     Hier liegt die Liste vor, und aus ihr lässt sich ohne Modell eine
     Begriffskette bauen — schlechter, aber vorhanden.
     """
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
     llm = FakeLLM("kein JSON, sondern Prosa",
                   _choose(("Rinderfilet", _pid(con, "Rinderfilet"), 1)))
     agent = chatmodul.Chat(llm, wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
-    ergebnis = agent.turn(con, "alles für Pho")
+    ergebnis = agent.turn(con, "alles für Zwirbel")
 
     assert ergebnis.weg == chatmodul.WEG_QUELLE
     assert ergebnis.n_produkte == 1
@@ -820,18 +900,17 @@ def test_ein_gespeichertes_rezept_mit_produkten_schlaegt_die_quelle(con):
     """
     from zettel import recipes
 
-    recipe_id = lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    recipe_id = lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                                 schreib=lambda _: None)
     assert recipe_id == speicher.OK
-    geholt = speicher.gericht(con, "Pho")["rezept"]["id"]
+    geholt = speicher.gericht(con, "Zwirbel")["rezept"]["id"]
     recipes.zutat_hinzufuegen(con, geholt,
                               product_id=_pid(con, "Rinderfilet"))
 
     agent = chatmodul.Chat(FakeLLM(), wecker=Box(),
                            quelle=quelle.Quelle(holer=quelle.nicht_holen))
     # Der Rezeptname ist der Titel von Chefkoch — der steht im Satz.
-    ergebnis = agent.turn(con, "alles für Pho Bo - Vietnamesische "
-                               "Rindfleischsuppe")
+    ergebnis = agent.turn(con, "alles für Zwirbeltopf mit Rinderbrühe")
     assert ergebnis.weg == chatmodul.WEG_REZEPT
 
 
@@ -843,10 +922,10 @@ def test_ein_geholtes_rezept_ohne_produkte_faengt_den_zug_nicht_ab(con):
     """
     from zettel.assistant import rezeptweg
 
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
-    assert not rezeptweg.erkenne(con, "alles für Pho Bo - Vietnamesische "
-                                      "Rindfleischsuppe")
+    assert not rezeptweg.erkenne(con, "alles für Zwirbeltopf mit "
+                                      "Rinderbrühe")
 
 
 # --------------------------------------------------------------------------
@@ -855,12 +934,12 @@ def test_ein_geholtes_rezept_ohne_produkte_faengt_den_zug_nicht_ab(con):
 def test_das_geholte_rezept_steht_mit_zubereitung_in_der_sammlung(con):
     from zettel import recipes
 
-    lauf.hole_eines(con, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(con, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
-    recipe_id = speicher.gericht(con, "Pho")["rezept"]["id"]
+    recipe_id = speicher.gericht(con, "Zwirbel")["rezept"]["id"]
     r = recipes.rezept(con, recipe_id)
 
-    assert r["name"].startswith("Pho Bo")
+    assert r["name"].startswith("Zwirbeltopf mit Rinderbrühe")
     assert r["servings"] == 6
     assert (r["prep_minutes"], r["cook_minutes"]) == (90, 480)
     assert r["difficulty"] == 2
@@ -895,19 +974,19 @@ def test_die_rezeptseite_zeigt_zubereitung_und_herkunft(con, tmp_path):
     datei = tmp_path / "zettel.db"
     c = db.connect(datei)
     db.migrate(c)
-    lauf.hole_eines(c, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(c, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
-    recipe_id = speicher.gericht(c, "Pho")["rezept"]["id"]
+    recipe_id = speicher.gericht(c, "Zwirbel")["rezept"]["id"]
     c.close()
 
     client = TestClient(webapp.create_app(db_path=datei, image_dir=tmp_path))
     seite = client.get(f"/rezepte/{recipe_id}").text
     assert "Zubereitung" in seite
-    assert "Die Rindermarkknochen" in seite
+    assert "Die Rinderknochen" in seite
     assert "480 Min. Kochzeit" in seite
     assert "https://www.chefkoch.de/rezepte/" in seite
     # Die Zutaten laut Rezept, mit Menge und Einheit.
-    assert "Markknochen" in seite and "Liter" in seite
+    assert "Rinderknochen" in seite and "Liter" in seite
     # Und die Seite behauptet NICHT, das Rezept habe keine Zutaten, bloss
     # weil noch kein Produkt verknüpft ist. Es sind 23.
     assert "Noch keine Zutat." not in seite
@@ -931,9 +1010,9 @@ def test_die_rezeptseite_traegt_die_leitzahl_der_karte(con, tmp_path):
     datei = tmp_path / "zettel.db"
     c = db.connect(datei)
     db.migrate(c)
-    lauf.hole_eines(c, echtes_chefkoch(), "Pho", pause_s=0,
+    lauf.hole_eines(c, echtes_chefkoch(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
-    recipe_id = speicher.gericht(c, "Pho")["rezept"]["id"]
+    recipe_id = speicher.gericht(c, "Zwirbel")["rezept"]["id"]
     c.close()
 
     client = TestClient(webapp.create_app(db_path=datei, image_dir=tmp_path))
@@ -1041,9 +1120,9 @@ def test_auch_eine_datenbank_im_speicher_bekommt_ihr_rezept():
     try:
         holer = FakeHoler()
         q = quelle.Quelle(holer=holer)
-        assert q.holen(c, "Pho") == speicher.OK
-        assert speicher.gericht(c, "Pho") is not None
-        assert holer.gerichte == ["Pho"]
+        assert q.holen(c, "Zwirbel") == speicher.OK
+        assert speicher.gericht(c, "Zwirbel") is not None
+        assert holer.gerichte == ["Zwirbel"]
     finally:
         c.close()
 
@@ -1065,12 +1144,12 @@ def test_der_lauf_migriert_selbst(tmp_path):
     roh.commit()
     roh.close()
 
-    zaehler = lauf.lauf(str(datei), ["Pho"], http=echtes_chefkoch(), pause_s=0,
-                        schreib=lambda _: None)
+    zaehler = lauf.lauf(str(datei), ["Zwirbel"], http=echtes_chefkoch(),
+                        pause_s=0, schreib=lambda _: None)
     assert zaehler["ok"] == 1
 
     c = db.connect(datei)
     try:
-        assert speicher.gericht(c, "Pho")["rezept"]["source_id"] == PHO_BO
+        assert speicher.gericht(c, "Zwirbel")["rezept"]["source_id"] == ZWIRBEL
     finally:
         c.close()

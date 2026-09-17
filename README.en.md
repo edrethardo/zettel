@@ -220,9 +220,18 @@ and the planner you need an OpenAI-compatible endpoint — the exact
 for traces, `pip install arize-phoenix && phoenix serve`.
 
 ```bash
-.venv/bin/python -m pytest -q             # 1,517 tests (14 skipped), ~95 s, no network
+.venv/bin/python -m pytest -q             # 1,520 tests (14 skipped), ~95 s, no network
 .venv/bin/python checks/smoke.py          # 79 checks; the network is blocked at socket level
 ```
+
+**The checked-in Chefkoch fixtures are invented — on purpose.** Dish, recipe
+ids, contributors and ingredients do not exist; only the structure is the
+measured one. chefkoch.de's terms forbid automated reading (§5.1), use of
+its marks (§6.9) and commercial text and data mining (§6.10); the private
+fetch on one machine is one question, shipping somebody else's full recipe
+in a public repo is another — and that one has an obvious answer. A gate
+(`checks/veroeffentlichung.py`) keeps real recipe ids and the Chefkoch image
+host out of the tree and out of the history.
 
 ## Using this outside Germany
 

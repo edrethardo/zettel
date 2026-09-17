@@ -17,7 +17,7 @@ Deshalb prüft hier kein Test bloss, DASS ein Feld dasteht. Nach jedem Tipp
 wird nachgesehen, was in `recipe_ingredient`, `recipe_item`, `chat_suggestion`
 und `order_item` steht.
 
-Der Chatteil borgt sich den aufgezeichneten Pho-Zug aus
+Der Chatteil borgt sich den erfundenen Zwirbel-Zug aus
 `test_web_zugrezept.py` — dieselbe Fixture, dasselbe Fake-Modell, kein Netz.
 """
 from pathlib import Path
@@ -28,7 +28,7 @@ from fastapi.testclient import TestClient
 from zettel import db, orders, recipes
 from zettel.web import app as webapp
 
-from test_web_zugrezept import HTMX, _karte, _pho_zug  # noqa: F401
+from test_web_zugrezept import HTMX, _karte, _zwirbel_zug  # noqa: F401
 from test_web_zugrezept import datei  # noqa: F401  (Fixture)
 
 
@@ -225,7 +225,7 @@ def test_der_chat_hat_ein_portionsfeld_vorbelegt_aus_der_quelle(datei,
     Nicht aus dem Satz geraten (dort steht keine Ziffer), sondern getippt —
     und vorbelegt mit Chefkochs sechs Portionen.
     """
-    client, _ = _pho_zug(datei, tmp_path)
+    client, _ = _zwirbel_zug(datei, tmp_path)
     karte = _karte(client.get("/chat").text)
 
     assert 'class="zugportionen"' in karte
@@ -238,7 +238,7 @@ def test_der_chat_hat_ein_portionsfeld_vorbelegt_aus_der_quelle(datei,
 
 def test_eine_andere_portionszahl_rechnet_die_mengen_neu(datei, tmp_path):
     """Von 6 auf 12: jede benötigte Menge verdoppelt sich — über `mengen`."""
-    client, _ = _pho_zug(datei, tmp_path)
+    client, _ = _zwirbel_zug(datei, tmp_path)
     karte = _karte(client.get("/chat").text)
     mid = _mid(karte)
     vorher = _bedarf(datei)
@@ -266,7 +266,7 @@ def test_die_zutatenliste_der_karte_folgt_der_gewaehlten_zahl(datei,
     Gespeichert wird dabei nichts: `recipe_ingredient` ist die Liste der
     Quelle, und dieser Zug darf sie nicht umschreiben.
     """
-    client, recipe_id = _pho_zug(datei, tmp_path)
+    client, recipe_id = _zwirbel_zug(datei, tmp_path)
     karte = _karte(client.get("/chat").text)
     mid = _mid(karte)
     assert "500 g" in karte
@@ -294,7 +294,7 @@ def test_was_schon_im_korb_liegt_wird_nicht_nachgerechnet(datei, tmp_path):
     Dieselbe Haltung wie beim Rezeptwechsel (WB-387) und bei der Rücknahme
     (WB-361): die neue Zahl wirkt auf das Nächste.
     """
-    client, recipe_id = _pho_zug(datei, tmp_path)
+    client, recipe_id = _zwirbel_zug(datei, tmp_path)
     seite = client.get("/chat").text
     mid = _mid(_karte(seite))
 
@@ -345,7 +345,7 @@ def test_ohne_portionszahl_am_rezept_bietet_die_karte_kein_feld(datei,
     Ein Feld, das nichts bewirkt, verspricht eine Rechnung, die es nicht
     gibt.
     """
-    client, recipe_id = _pho_zug(datei, tmp_path)
+    client, recipe_id = _zwirbel_zug(datei, tmp_path)
     con = db.connect(datei)
     try:
         con.execute("UPDATE recipe SET servings = NULL WHERE id = ?",
@@ -361,7 +361,7 @@ def test_ohne_portionszahl_am_rezept_bietet_die_karte_kein_feld(datei,
 
 def test_eine_zahl_die_keine_ist_verstellt_keine_menge(datei, tmp_path):
     """Getippt wird auf einem Telefon. Ein Vertipper kostet keinen Einkauf."""
-    client, recipe_id = _pho_zug(datei, tmp_path)
+    client, recipe_id = _zwirbel_zug(datei, tmp_path)
     mid = _mid(_karte(client.get("/chat").text))
     vorher = _bedarf(datei)
 

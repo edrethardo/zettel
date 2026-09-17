@@ -1,24 +1,35 @@
 #!/usr/bin/env python3
-"""Nimmt echte Chefkoch-Antworten als Test-Fixtures auf (WB-338).
+"""Zeichnet echte Chefkoch-Antworten auf — LOKAL, nicht fürs Repo (WB-604).
 
 Das ist — neben `record_fixture.py` für den Katalog — das EINZIGE, was
-chefkoch.de anfasst. Die Testsuite geht nie ins Netz (Spec 13): sie liest die
-beiden Dateien, die dieses Skript schreibt.
+chefkoch.de anfasst.
 
     python3 scripts/record_chefkoch.py --gericht pho
 
 schreibt
 
-    tests/fixtures/chefkoch_pho_suche.json     GET /v2/recipes?query=pho
-    tests/fixtures/chefkoch_pho_rezept.json    GET /v2/recipes/<bestes>
+    data/chefkoch/chefkoch_pho_suche.json     GET /v2/recipes?query=pho
+    data/chefkoch/chefkoch_pho_rezept.json    GET /v2/recipes/<bestes>
 
-Bricht danach ein Test, ist das ein echter Fund: Chefkoch hat das Format
-geändert und `zettel.gerichte.chefkoch` muss nach.
+**`data/chefkoch/` ist gitignoriert, und das ist der Punkt dieses Skripts.**
+Bis WB-604 schrieb es nach `tests/fixtures/`, und damit standen zwei
+vollständige fremde Rezepte samt Zutatenmengen, Zubereitung und den Namen
+ihrer Einsteller in einem öffentlichen Repo. Die Nutzungsbedingungen von
+chefkoch.de untersagen in §5.1 das automatische Auslesen, in §6.9 die
+Nutzung der Kennzeichen und in §6.10 kommerzielles Text und Data Mining;
+über die eigene Abwägung zum privaten Abruf mag man streiten, über das
+Weiterverbreiten nicht. Die eingecheckten Fixtures
+(`tests/fixtures/chefkoch_zwirbel_*.json`) sind deshalb ERFUNDEN — gleiche
+Struktur, erfundenes Gericht, erfundene IDs.
+
+Wozu dann noch aufzeichnen? Damit „die Struktur ist die gemessene" eine
+prüfbare Aussage bleibt: liegt eine echte Antwort lokal, vergleicht
+`test_die_erfundene_fixture_hat_die_form_der_echten_antwort` sie gegen die
+erfundene. Ohne sie wird der Test übersprungen — die Suite geht nie ins Netz
+(Spec 13), und CI darf ihn nicht verlangen.
 
 **Höflich:** eine Pause zwischen den beiden Anfragen, ein ehrlicher
-User-Agent, und von Hand gestartet statt in einer Schleife. robots.txt
-erlaubt genau diese zwei Endpunkte; die Nutzungsbedingungen sind damit nicht
-gelesen (siehe README).
+User-Agent, und von Hand gestartet statt in einer Schleife.
 """
 from __future__ import annotations
 
@@ -32,15 +43,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from zettel.gerichte import chefkoch  # noqa: E402
 
-FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+#: Gitignoriert (siehe `.gitignore`). Fremde Inhalte bleiben auf der
+#: Maschine, auf der sie geholt wurden.
+AUFNAHMEN = Path(__file__).resolve().parents[1] / "data" / "chefkoch"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gericht", default="pho")
     ap.add_argument("--limit", type=int, default=chefkoch.LIMIT,
-                    help="klein halten — die Fixture wird eingecheckt")
-    ap.add_argument("--ziel", default=str(FIXTURES))
+                    help="klein halten — es ist fremder Inhalt")
+    ap.add_argument("--ziel", default=str(AUFNAHMEN),
+                    help="Vorgabe: data/chefkoch/ (gitignoriert). Ein Ziel "
+                         "unter tests/fixtures/ ist ein Fehler — das Gate "
+                         "checks/veroeffentlichung.py schlägt darauf an.")
     args = ap.parse_args()
 
     try:

@@ -335,7 +335,7 @@ auch. Für Traces und Evals ein Phoenix auf `localhost:6006` — ohne läuft der
 
 ```bash
 .venv/bin/python checks/smoke.py     # das Gate: 79 Checks, exit 0 / 1
-.venv/bin/python -m pytest -q        # 1.517 Tests (14 übersprungen), rund 95 s
+.venv/bin/python -m pytest -q        # 1.520 Tests (14 übersprungen), rund 95 s
 .venv/bin/python -m pytest -q -n auto   # dieselben Tests auf allen Kernen, rund 45 s
 .venv/bin/python checks/veroeffentlichung.py   # darf das Repo raus?
 ```
@@ -437,7 +437,7 @@ Zwei weitere Dinge, die man kennen muss, bevor man dem Katalog etwas anlastet:
   sollte das wissen: „Zahnpasta liefert nichts" war eine **Crawl-Lücke, kein
   fehlendes Sortiment** — heute findet die Suche `meridol ZAHNPASTA`.
 
-## Rezepte von Chefkoch — was erlaubt ist und was ich nicht gelesen habe
+## Rezepte von Chefkoch — was erlaubt ist und was nicht
 
 Nennt ein Chat-Satz ein **Gericht**, kommen die Zutaten aus einem
 echten Rezept statt aus dem Gedächtnis des Modells. Der Anlass ist gemessen:
@@ -456,9 +456,24 @@ GET https://api.chefkoch.de/v2/recipes/<id>                       # Zutaten
 ausschliesslich `/v2/search/suggestions/` und die Kommentare zweier einzelner
 Rezepte.
 
-**`robots.txt` ist nicht dasselbe wie eine Erlaubnis.** Wer dieses Projekt
-weitergibt oder öffentlich betreibt, muss die Nutzungsbedingungen selbst
-prüfen und die Abwägung neu treffen. Entsprechend höflich fragt der Abruf:
+**`robots.txt` ist nicht dasselbe wie eine Erlaubnis.** Die
+Nutzungsbedingungen sagen etwas anderes: §5.1 untersagt das automatische
+Auslesen der Inhalte, §6.9 die Nutzung der Kennzeichen ohne schriftliche
+Zustimmung, §6.10 kommerzielles Text und Data Mining nach § 44b UrhG. Wer
+dieses Projekt weitergibt oder öffentlich betreibt, muss die Abwägung selbst
+treffen — hier läuft der Abruf privat, auf einer Maschine, für zwei
+Haushalte.
+
+**Die eingecheckten Test-Fixtures sind deshalb erfunden.** Unter
+`tests/fixtures/` liegen zwei Chefkoch-Antworten zu einem Gericht, das es
+nicht gibt, mit erfundenen Rezept-IDs, erfundenen Namen und erfundenen
+Zutaten — nur die Struktur ist die gemessene. Vorher lagen dort zwei echte
+Antworten: ein vollständiges fremdes Rezept mit Mengen und Zubereitung, in
+einem öffentlichen Repo. Über den privaten Abruf mag man streiten, über das
+Weiterverbreiten nicht. Ein Gate hält das jetzt fest
+(`checks/veroeffentlichung.py`), im Arbeitsbaum wie in der Historie.
+
+Entsprechend höflich fragt der Abruf:
 
 * **zwei Anfragen je Gericht, dann nie wieder** — das Ergebnis wird in `dish`
   zwischengespeichert (90 Tage; „kennt Chefkoch nicht" sieben Tage, eine

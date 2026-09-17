@@ -10,6 +10,11 @@ data/images/
 # Quelle. Sie gehoeren dem Haushalt und nicht dem Repo.
 data/bons/
 
+# Aufgezeichnete Chefkoch-Antworten (WB-604). Fremde Inhalte: sie bleiben auf
+# der Maschine, die sie geholt hat. Die eingecheckten Fixtures unter
+# tests/fixtures/ sind erfunden -- diese hier sind es nicht.
+data/chefkoch/
+
 # Private Betriebswerte (WB-388): die echte Adresse der vLLM-Box steht in
 # dieser Datei statt im Code. Sie darf nie Teil des Repos werden.
 zettel.env

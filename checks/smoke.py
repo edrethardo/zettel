@@ -758,13 +758,13 @@ def _span_id_verankert(con, ergebnis, spans) -> str:
 
 
 # --------------------------------------------------------------------------
-# 6. Die Gerichtequelle (WB-338) — ohne Netz, gegen die aufgezeichnete Antwort
+# 6. Die Gerichtequelle (WB-338) — ohne Netz, gegen die erfundene Antwort
 
 FIXTURES = WURZEL / "tests" / "fixtures"
 
 
 class _Chefkoch:
-    """Chefkoch, aufgezeichnet. Der Rauchtest hat kein Netz — das ist Punkt 1.
+    """Chefkoch, erfunden (WB-604). Der Rauchtest hat kein Netz — Punkt 1.
 
     Genau deshalb steht dieser Abschnitt hier: er belegt, dass der Weg von
     der fremden Antwort bis in die Vorschlagsliste ohne einen einzigen Socket
@@ -772,10 +772,10 @@ class _Chefkoch:
     """
 
     def __init__(self):
-        self.suche = json.loads(
-            (FIXTURES / "chefkoch_pho_suche.json").read_text(encoding="utf-8"))
-        self.rezept = json.loads(
-            (FIXTURES / "chefkoch_pho_rezept.json").read_text(encoding="utf-8"))
+        self.suche = json.loads((FIXTURES / "chefkoch_zwirbel_suche.json")
+                                .read_text(encoding="utf-8"))
+        self.rezept = json.loads((FIXTURES / "chefkoch_zwirbel_rezept.json")
+                                 .read_text(encoding="utf-8"))
         self.geholt = []
 
     def get(self, url):
@@ -824,7 +824,7 @@ def checks_gerichte(b: Bericht, db_datei: Path) -> None:
 def _beste_wahl(quelle) -> str:
     """Zwei naive Regeln, die beide etwas anderes gewählt hätten.
 
-    In der aufgezeichneten Suche nach „pho" steht das gewählte Rezept
+    In der erfundenen Suche nach „zwirbel" steht das gewählte Rezept
     zufällig an erster Stelle — „nimm das erste" wäre hier also nicht
     aufgefallen. Was auffällt, sind die beiden anderen Regeln: die rohe
     Höchstnote (5,00 aus zwei Stimmen) und die höchste GEWICHTETE Note ohne
@@ -849,10 +849,10 @@ def _beste_wahl(quelle) -> str:
 
 
 def _abruf(con, quelle) -> str:
-    zustand = gerichtelauf.hole_eines(con, quelle, "Pho", pause_s=0,
+    zustand = gerichtelauf.hole_eines(con, quelle, "Zwirbel", pause_s=0,
                                       schreib=lambda _: None)
     gleich(zustand, "ok", "status")
-    gericht = gerichte.gericht(con, "Pho")
+    gericht = gerichte.gericht(con, "Zwirbel")
     wahr(gericht is not None, "Nach dem Abruf steht nichts im Speicher.")
     rezept = gericht["rezept"]
     wahr(rezept["source_url"].startswith("https://www.chefkoch.de/"),
@@ -869,9 +869,9 @@ def _aus_dem_speicher(con) -> str:
     q = gerichte.Quelle(holer=gerichte.nicht_holen)
     # Kein http-Doppelgänger im Spiel: was hier noch ins Netz wollte, hätte
     # keine Adresse — und die Netzsperre aus Punkt 1 fienge es ohnehin.
-    gefunden = q.gericht(con, "pho")
+    gefunden = q.gericht(con, "zwirbel")
     wahr(gefunden is not None, "Der Speicher trägt nicht.")
-    wahr(q.holen(con, "Pho") is None,
+    wahr(q.holen(con, "Zwirbel") is None,
          "Ein frischer Eintrag hat trotzdem einen Abruf ausgelöst.")
     return f"{len(gefunden['zutaten'])} Zutaten, 0 Anfragen"
 
@@ -883,7 +883,7 @@ def _zug_aus_quelle(con) -> str:
                 ("Zwiebeln", pid(con, "Zwiebeln"), 1)))
     agent = chatmodul.Chat(zugang, wecker=_Box(),
                            quelle=gerichte.Quelle(holer=gerichte.nicht_holen))
-    ergebnis = agent.turn(con, "alles für Pho")
+    ergebnis = agent.turn(con, "alles für Zwirbel")
     gleich(ergebnis.weg, "chefkoch", "zettel.path")
     wahr(ergebnis.quelle_url and ergebnis.quelle_name,
          "Die Herkunft steht nicht am Ergebnis.")
@@ -905,7 +905,7 @@ def _zug_ohne_speicher(con) -> str:
         return _mock_zugang(json.dumps(erst, ensure_ascii=False), *antworten)
 
     # 1. Der Normalfall: geholt, und die Zutaten kommen aus dem Rezept.
-    #    Der Holer bekommt den aufgezeichneten Doppelgänger; ein Socket
+    #    Der Holer bekommt den erfundenen Doppelgänger; ein Socket
     #    entsteht nirgends (und dürfte es hier auch gar nicht, Punkt 1).
     geholt = []
 
@@ -1561,11 +1561,12 @@ def _freitext_behaelt_seine_menge(client, con) -> str:
     dann grün, wenn der Shop daraus 6 Packungen machte.
     """
     _leeren(con)
-    antwort = client.post("/rezepte", data={"name": "Pho"},
+    antwort = client.post("/rezepte", data={"name": "Zwirbel"},
                           follow_redirects=False)
     rid = int(antwort.headers["location"].rsplit("/", 1)[1])
     client.post(f"/rezepte/{rid}/bearbeiten",
-                data={"name": "Pho", "servings": "4"}, follow_redirects=False)
+                data={"name": "Zwirbel", "servings": "4"},
+                follow_redirects=False)
     client.post(f"/rezepte/{rid}/zutaten",
                 data={"free_text": "Sternanis", "amount": "3", "unit": "Stk"},
                 headers={"HX-Request": "true"})
@@ -1596,7 +1597,7 @@ def _freitext_behaelt_seine_menge(client, con) -> str:
 # sich eine Zutat teilen.
 
 #: Zwei erfundene Chefkoch-Rezepte mit gemeinsamem Hackfleisch. Die
-#: aufgezeichnete Pho-Fixture taugt dafür nicht: sie ist EIN Rezept, und
+#: erfundene Zwirbel-Fixture taugt dafür nicht: sie ist EIN Rezept, und
 #: zwei Rezepte mit derselben Zutat sind genau der Fall des Tickets.
 MENGEN_REZEPTE = {
     "111": {"id": "111", "title": "Bolognese", "servings": 4,

@@ -15,7 +15,7 @@ der Name bis heute in Commits aus dem August. Ein Gate, das nur den
 Arbeitsbaum ansieht, hätte grün gemeldet und den Namen trotzdem ins Netz
 getragen.
 
-Sechs Fragen:
+Sieben Fragen:
 
 1. **Trägt die Historie noch private Angaben?** Nicht die Dateien von heute,
    sondern jeder Commit. Das ist der Grund, warum vor dem Push ein
@@ -36,6 +36,10 @@ Sechs Fragen:
    Post stehen. Liegt einer, muss der Vorbehalt weg. Die Behauptung und ihr
    Beleg werden hier aneinander gebunden, damit keiner ohne den anderen
    wandern kann.
+7. **Gibt dieses Repo fremde Rezepte weiter?** Zwei echte Chefkoch-Antworten
+   lagen als Test-Fixtures darin und waren öffentlich abrufbar (WB-604). Die
+   eingecheckten Fixtures sind seither erfunden; dieser Check hält das fest —
+   im Arbeitsbaum und in jeder Fassung der Historie.
 
 Was dieses Gate NICHT kann: sagen, ob eine Zahl richtig gemessen wurde. Es
 prüft Übereinstimmung, nicht Wahrheit. Die Wahrheit steht in `EVALS.md` und
@@ -74,6 +78,108 @@ JETZT = ["README.md", "README.en.md", "SHOWCASE.md", "GETTING-STARTED.md",
 #: Der Vorbehalt aus dem Post und das Messdatum, an dem er hängt.
 VORBEHALT = "not yet on Nemotron"
 NEMOTRON_PLAN = "plan_probe-*nemotron*.json"
+
+# --------------------------------------------------------------------------
+# 7. Fremde Rezepte (WB-604)
+
+#: Der Bildserver von Chefkoch — zusammengesetzt, damit dieses Gate sich
+#: nicht selbst meldet (dieselbe Vorsichtsmassnahme wie bei `VERBOTEN`).
+#: Er steht in JEDER echten Antwort der API, in den Vorschaubild-Vorlagen
+#: der Treffer wie der Zutaten: ein Fund ist ein sicherer Fund.
+CDN_HOST = "chefkoch-cdn" + ".de"
+
+#: Die drei echten Rezept-IDs, die bis WB-604 in diesem Repo standen. Auch
+#: sie zerlegt, aus demselben Grund — und damit ein `git log -S` mit der
+#: vollen ID im gefilterten Klon wirklich leer ist.
+ECHTE_IDS = ["35959915" + "40759513", "32289814" + "80357511",
+             "41750716" + "68773984"]
+
+#: Der Zahlenblock, aus dem die ERFUNDENEN Rezept-IDs kommen. Chefkoch
+#: vergibt zeitnahe Zahlen (3…, 4…); `9999…` liegt weit ausserhalb und ist
+#: deshalb als erfunden erkennbar, ohne dass jemand eine Liste pflegen muss.
+ERFUNDEN_ID = "9999"
+
+#: Eine Rezept-ID im Link. Vier Ziffern und weniger sind die erfundenen
+#: Kurz-IDs der übrigen Tests (`/rezepte/42/`) und kein Chefkoch-Schlüssel.
+ID_IM_LINK = re.compile(r"chefkoch\.de/rezepte/(\d{8,})")
+
+#: Eine nackte ID. Nur in Dateien gesucht, die ohnehin von Chefkoch handeln —
+#: sonst wäre jede lange Nachkommastelle in `evals/` ein Fehlalarm. Führende
+#: Null heisst „keine Rezept-ID": Chefkochs Zahlen sind zeitnah vergeben, und
+#: `0000000000000000` ist die Null-Span-ID aus `OBSERVABILITY.md`.
+ID_ROH = re.compile(r"(?<!\d)([1-9]\d{15})(?!\d)")
+
+
+def chefkoch_funde(namen, lies) -> list[str]:
+    """Jede Stelle, an der ein ECHTES Chefkoch-Rezept durchscheint.
+
+    Eigene Funktion, damit ein Test sie erreicht — ein Gate, das nie rot war,
+    ist nicht geprüft.
+
+    Gesucht wird dreierlei: der Bildserver (er steht in jeder echten
+    Antwort), die drei IDs, die einmal hier lagen, und jede Rezept-ID, die
+    nicht aus dem erfundenen Block stammt. Die dritte Regel ist die
+    eigentliche: sie greift auch bei einer Antwort, die es heute noch gar
+    nicht gibt — wer die Fixtures neu aufzeichnet und einincheckt, bekommt
+    sie rot.
+    """
+    funde: list[str] = []
+    for name in namen:
+        text = lies(name)
+        if not text:
+            continue
+        if CDN_HOST in text:
+            funde.append(f"{name}: {CDN_HOST}")
+        for echt in ECHTE_IDS:
+            if echt in text:
+                funde.append(f"{name}: echte Rezept-ID {echt}")
+        ids = set(ID_IM_LINK.findall(text))
+        if "chefkoch" in text.lower():
+            ids |= set(ID_ROH.findall(text))
+        fremd = sorted(i for i in ids if not i.startswith(ERFUNDEN_ID))
+        if fremd:
+            funde.append(f"{name}: Rezept-ID {', '.join(fremd[:3])} — "
+                         f"erfundene IDs beginnen mit {ERFUNDEN_ID}")
+    return funde
+
+
+def checks_fremde_rezepte(b: Bericht) -> None:
+    """Der Fund, der einmal passiert ist, bekommt ein Gate (WB-604).
+
+    Zwei vollständige Chefkoch-Antworten lagen unter `tests/fixtures/` und
+    waren über `raw.githubusercontent.com` abrufbar: zwölf Rezepte mit
+    Titeln, Bewertungen und den Klarnamen ihrer Einsteller, dazu ein
+    vollständiges Rezept mit 23 Zutaten samt Mengen und Zubereitung. Die
+    Nutzungsbedingungen von chefkoch.de untersagen das Auslesen (§5.1), die
+    Nutzung der Kennzeichen (§6.9) und kommerzielles Text und Data Mining
+    (§6.10); über die Abwägung zum privaten Abruf mag man streiten, über die
+    Weitergabe nicht.
+
+    Geprüft wird beides — Arbeitsbaum UND Historie. Eine Datei, die heute
+    sauber ist, war es in der Fassung von vorgestern womöglich nicht, und
+    veröffentlicht wird jede Fassung.
+    """
+    b.abschnitt("Fremde Rezepte — was dieses Repo weitergibt")
+    dateien = getrackt()
+
+    def pruefen():
+        funde = chefkoch_funde(dateien, text_von)
+        if funde:
+            raise AssertionError("; ".join(funde[:5]))
+        spuren = []
+        for wort in [CDN_HOST, *ECHTE_IDS]:
+            treffer = [z for z in git("log", "--oneline", "-S", wort, "--all")
+                       .splitlines() if z]
+            if treffer:
+                spuren.append(f"{wort} in {len(treffer)} Commits")
+        if spuren:
+            raise AssertionError(
+                "; ".join(spuren) + " — vor dem Push einen gefilterten Klon "
+                "bauen (der Blob-Filter nimmt die alten Fassungen)")
+        return f"{len(dateien)} Dateien, {len(ECHTE_IDS) + 1} Spuren gesucht"
+
+    b.pruefe("keine echte Chefkoch-Antwort im Baum und in der Historie",
+             pruefen)
 
 
 def git(*args: str) -> str:
@@ -264,6 +370,7 @@ def main() -> int:
     checks_verweise(b)
     checks_platzhalter(b)
     checks_modellbehauptung(b)
+    checks_fremde_rezepte(b)
     return b.ende()
 
 

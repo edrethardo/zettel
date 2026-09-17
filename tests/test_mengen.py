@@ -338,8 +338,10 @@ def test_die_einheit_wird_geschrieben_wie_im_kochbuch():
     assert mengen.einheit_text("el") == "EL"
     assert mengen.einheit_text("tl") == "TL"
     assert mengen.einheit_text("pck") == "Pck."
-    # „Pkt." ist die Form, die wirklich aus den Rezepten kommt
-    # (`chefkoch_pho_rezept.json`), „Pck." dagegen keine, die dort je stand.
+    # „Pkt." ist die Form, die wirklich aus den Rezepten kommt — gemessen an
+    # der echten Antwort und deshalb in die erfundene Fixture übernommen
+    # (`chefkoch_zwirbel_rezept.json`, WB-604). „Pck." dagegen ist keine, die
+    # dort je stand.
     # Ohne eigenen Eintrag stünde im Feld „Pkt" ohne Punkt — die Rückfaltung
     # unten fiele darauf nicht herein, sie kürzt den Punkt ohnehin weg.
     assert mengen.einheit_text("pkt") == "Pkt."

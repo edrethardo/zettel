@@ -42,8 +42,8 @@ from zettel import db
 from zettel.assistant import vorschlaege as vorschlagsliste
 from zettel.obs import labels
 
-from test_alternativrezepte import (HTMX, PHO_BO, PHO_GA, _antworten,
-                                    _eine_zeile, _pho_geholt, _shop,
+from test_alternativrezepte import (HTMX, ZWIRBEL, ZWIRBEL_HUHN, _antworten,
+                                    _eine_zeile, _zwirbel_geholt, _shop,
                                     _wechsel, _zug_id)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 
@@ -74,10 +74,10 @@ def _posten(pfad) -> list[tuple]:
 
 def _ein_zug(pfad, tmp_path, *, wechsel: int = 0):
     """Ein Chefkoch-Zug und `wechsel` Wechsel darauf — zurück der Client."""
-    _pho_geholt(pfad)
+    _zwirbel_geholt(pfad)
     client, _, _ = _shop(pfad, tmp_path,
                          antworten=_antworten(pfad, 1 + wechsel))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     return client
 
 
@@ -92,7 +92,7 @@ def test_drei_wechsel_hinterlassen_einen_zug(datei, tmp_path):
     brachte sie alle wieder.
     """
     client = _ein_zug(datei, tmp_path, wechsel=3)
-    ziele = [PHO_GA, PHO_BO, PHO_GA]
+    ziele = [ZWIRBEL_HUHN, ZWIRBEL, ZWIRBEL_HUHN]
     seiten = []
     for ziel in ziele:
         _wechsel(client, _zug_id(datei), ziel)
@@ -102,7 +102,7 @@ def test_drei_wechsel_hinterlassen_einen_zug(datei, tmp_path):
         # Zwei Kästen: die Frage und die Antwort darauf. Nicht mehr.
         assert _zuege_im_dokument(seite) == 2, f"nach Wechsel {i + 1}"
     # Und die Seite ist nach dem dritten Wechsel so gross wie nach dem
-    # ersten — beide zeigen Pho Ga, also denselben Zug.
+    # ersten — beide zeigen Zwirbeltopf mit Huhn, also denselben Zug.
     assert abs(len(seiten[2]) - len(seiten[0])) < 200, \
         (len(seiten[0]), len(seiten[2]))
 
@@ -115,7 +115,7 @@ def test_die_datenbank_zieht_mit(datei, tmp_path):
     Nachfolgerin, und `verlauf()` zeigt von einer Kette das letzte Glied.
     """
     client = _ein_zug(datei, tmp_path, wechsel=3)
-    for ziel in (PHO_GA, PHO_BO, PHO_GA):
+    for ziel in (ZWIRBEL_HUHN, ZWIRBEL, ZWIRBEL_HUHN):
         _wechsel(client, _zug_id(datei), ziel)
 
     con = db.connect(datei)
@@ -141,17 +141,18 @@ def test_ein_neuladen_zeigt_dasselbe_wie_das_bruchstueck(datei, tmp_path):
     """
     client = _ein_zug(datei, tmp_path, wechsel=1)
     mid = _zug_id(datei)
-    _erste, zweite = _wechsel(client, mid, PHO_GA)
+    _erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
     neu = _zug_id(datei)
 
     seite = client.get("/chat").text
     assert f'id="zug-{neu}"' in zweite.text and f'id="zug-{neu}"' in seite
     assert f'id="zug-{mid}"' not in seite, "der alte Zug ist wieder da"
-    # Genau EINE Rezeptkarte, und sie zeigt das gewählte Rezept. („Pho Bo"
-    # steht weiter auf der Seite — als eine der sechs Alternativen.)
+    # Genau EINE Rezeptkarte, und sie zeigt das gewählte Rezept. (Die
+    # Rinderbrühe steht weiter auf der Seite — als eine der sechs
+    # Alternativen.)
     assert seite.count('<section class="zugrezept">') == 1
-    assert "<h3>Pho Ga</h3>" in seite
-    assert "<h3>Pho Bo - Vietnamesische" not in seite
+    assert "<h3>Zwirbeltopf mit Huhn</h3>" in seite
+    assert "<h3>Zwirbeltopf mit Rinderbrühe - Vietnamesische" not in seite
 
 
 # --------------------------------------------------------------------------
@@ -175,7 +176,7 @@ def test_eine_entschiedene_zeile_ueberlebt_den_wechsel(datei, tmp_path):
     korb = _posten(datei)
     assert korb, "nichts im Korb — der Test prüft dann nichts"
 
-    _erste, zweite = _wechsel(client, mid, PHO_GA)
+    _erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
 
     # 1. Die Zeilen stehen unverändert in der Datenbank.
     assert _zeilen(datei, mid) == [(zeilen[0][0], "kept"),
@@ -208,7 +209,7 @@ def test_von_einem_ersetzten_zug_bleibt_nur_das_entschiedene(datei, tmp_path):
     offen = [z for z in _zeilen(datei, mid) if z[1] == "offen"]
     assert offen, "kein offener Vorschlag — der Test prüft dann nichts"
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
     seite = client.get("/chat").text
 
     for sid, _ in offen:
@@ -217,7 +218,7 @@ def test_von_einem_ersetzten_zug_bleibt_nur_das_entschiedene(datei, tmp_path):
     assert len(_zeilen(datei, mid)) == len(zeilen)
     # Und die Karte des abgewählten Rezepts steht nicht mehr da.
     assert seite.count('<section class="zugrezept">') == 1
-    assert "<h3>Pho Bo - Vietnamesische" not in seite
+    assert "<h3>Zwirbeltopf mit Rinderbrühe - Vietnamesische" not in seite
 
 
 def test_eine_zurueckgenommene_zeile_bleibt_auch_stehen(datei, tmp_path):
@@ -242,7 +243,7 @@ def test_eine_zurueckgenommene_zeile_bleibt_auch_stehen(datei, tmp_path):
                     headers=HTMX)
     assert _posten(datei), "der Korbposten sollte liegen bleiben (WB-361)"
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
     seite = client.get("/chat").text
 
     assert f'id="vorschlag-{ja}"' in seite, "die Zeile zum Korbposten fehlt"
@@ -266,7 +267,7 @@ def test_das_band_wird_nach_dem_ersten_tipp_nicht_falsch(datei, tmp_path):
     ja = _zeilen(datei, mid)[0][0]
     client.post(f"/chat/vorschlag/{ja}/entscheiden?decision=kept",
                 headers=HTMX)
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     # Frisch gewechselt ist alles in der Quittung entschieden — der Satz
     # steht ganz.
@@ -323,7 +324,7 @@ def test_die_karte_des_alten_rezepts_ist_weg_der_rest_bleibt(datei, tmp_path):
     zeilen = _zeilen(datei, mid)
     client.post(f"/chat/vorschlag/{zeilen[0][0]}/entscheiden?decision=kept",
                 headers=HTMX)
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     seite = client.get("/chat").text
     rest = seite.split('<div class="zug ersetzt" id="zug-%d">' % mid, 1)[1]
@@ -357,7 +358,7 @@ def test_ein_wechsel_ohne_entscheidung_ruehrt_die_quote_nicht_an(datei,
     finally:
         con.close()
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     con = db.connect(datei)
     try:
@@ -395,7 +396,7 @@ def test_die_entscheidungen_des_alten_zugs_bleiben_im_label(datei, tmp_path):
     finally:
         con.close()
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     con = db.connect(datei)
     try:
@@ -415,16 +416,16 @@ def test_ein_gewechselter_zug_bleibt_an_seiner_stelle(datei, tmp_path):
     nicht nur die Marke, sondern auch die Sortiergrösse
     (`ORDER BY coalesce(ersetzt, id), id`).
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 3))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     erster = _zug_id(datei)
-    client.post("/chat", data={"satz": "alles für Pho, und Klopapier"},
+    client.post("/chat", data={"satz": "alles für Zwirbel, und Klopapier"},
                 headers=HTMX)
     zweiter = _zug_id(datei)
     assert zweiter > erster
 
-    _wechsel(client, erster, PHO_GA)
+    _wechsel(client, erster, ZWIRBEL_HUHN)
 
     con = db.connect(datei)
     try:
@@ -433,7 +434,7 @@ def test_ein_gewechselter_zug_bleibt_an_seiner_stelle(datei, tmp_path):
     finally:
         con.close()
     saetze = [z["content"] for z in gezeigt if z["role"] == "user"]
-    assert saetze == ["alles für Pho", "alles für Pho, und Klopapier"]
+    assert saetze == ["alles für Zwirbel", "alles für Zwirbel, und Klopapier"]
     # Der neue Zug hat die höchste id und steht trotzdem vorne.
     assert gezeigt[1]["id"] > gezeigt[3]["id"]
 
@@ -446,7 +447,7 @@ def test_der_verlaufsschnitt_zaehlt_nur_sichtbare_zuege(datei, tmp_path):
     Tipp auf eine Alternative.
     """
     client = _ein_zug(datei, tmp_path, wechsel=2)
-    for ziel in (PHO_GA, PHO_BO):
+    for ziel in (ZWIRBEL_HUHN, ZWIRBEL):
         _wechsel(client, _zug_id(datei), ziel)
 
     con = db.connect(datei)

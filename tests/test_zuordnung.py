@@ -32,9 +32,9 @@ from zettel import db
 from zettel.assistant import zuordnung
 from zettel.gerichte import speicher
 
-from test_alternativrezepte import (HTMX, PHO_BO, PHO_GA, _antworten,
-                                    _pho_geholt, _rezept_des_gerichts, _shop,
-                                    _wechsel, _zug_id)
+from test_alternativrezepte import (HTMX, ZWIRBEL, ZWIRBEL_HUHN, _antworten,
+                                    _zwirbel_geholt, _rezept_des_gerichts,
+                                    _shop, _wechsel, _zug_id)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 from test_wechselabbruch import Wackelbox
 
@@ -79,14 +79,14 @@ def test_der_zweite_zug_zum_selben_rezept_fragt_kein_modell(datei, tmp_path):
     als Antworten") — der Test misst also nicht eine Zahl, sondern eine
     Grenze.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 1))
 
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     assert len(client.llm.aufrufe) == 2, "Der erste Zug kostet beide Stufen."
     erster = _zug_id(datei)
 
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     assert len(client.llm.aufrufe) == 2, "Der zweite Zug hat gefragt."
 
     assert _zeilen(datei, _zug_id(datei)) == _zeilen(datei, erster), (
@@ -95,14 +95,14 @@ def test_der_zweite_zug_zum_selben_rezept_fragt_kein_modell(datei, tmp_path):
 
 def test_die_zuordnung_steht_am_rezept(datei, tmp_path):
     """Was gemerkt wird, ist die Antwort des Modells — und nur sie."""
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 1))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
 
-    gemerkt = _gemerkt(datei, _rezept_id(datei, PHO_BO))
+    gemerkt = _gemerkt(datei, _rezept_id(datei, ZWIRBEL))
     assert gemerkt, "Für das Rezept wurde nichts gemerkt."
-    assert [g["suchbegriffe"] for g in gemerkt] == [["Ingwer"],
-                                                    ["Mie Nudeln", "Nudeln"]]
+    assert [g["suchbegriffe"] for g in gemerkt] == [["Pastinake"],
+                                                    ["Speckwürfel", "Speck"]]
     assert all(g["gewaehlt"] for g in gemerkt)
     assert all(g["product_id"] for g in gemerkt)
 
@@ -117,23 +117,23 @@ def test_der_rueckwechsel_kostet_kein_modell(datei, tmp_path):
     Bolognese -> Lasagne. Der dritte Schritt war ein zweiter voller
     Modelllauf für ein Ergebnis, das schon einmal dastand.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
     # **Drei und nicht vier** (WB-411): der Wechsel kostet nur noch Stufe 1.
-    # Stufe 3 entfällt, weil „Ingwer" und „Mie Nudeln" seit dem ersten Zug im
+    # Stufe 3 entfällt, weil „Pastinake" und „Speckwürfel" seit dem Zug im
     # Gedächtnis stehen — dieselben Begriffe, dieselben Kandidaten.
     assert len(client.llm.aufrufe) == 3, "Der Wechsel kostet nur Stufe 1."
     zweiter = _zug_id(datei)
 
-    _wechsel(client, zweiter, PHO_BO)
+    _wechsel(client, zweiter, ZWIRBEL)
     assert len(client.llm.aufrufe) == 3, (
         "Der Rückwechsel hat das Modell gefragt, obwohl das Rezept bekannt "
         "ist.")
-    assert _rezept_des_gerichts(datei) == PHO_BO
+    assert _rezept_des_gerichts(datei) == ZWIRBEL
 
 
 def test_der_wechsel_zu_einem_bekannten_rezept_geht_bei_schlafender_box(
@@ -145,20 +145,20 @@ def test_der_wechsel_zu_einem_bekannten_rezept_geht_bei_schlafender_box(
     darf er an einer schlafenden Box nicht mehr scheitern.
     """
     box = Wackelbox()
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2),
                          box=box)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
     zweiter = _zug_id(datei)
 
     box.bedient = False
-    _, zweite = _wechsel(client, zweiter, PHO_BO)
+    _, zweite = _wechsel(client, zweiter, ZWIRBEL)
 
     assert zweite.status_code == 200
     assert "liess sich nicht wählen" not in zweite.text, zweite.text[:300]
-    assert _rezept_des_gerichts(datei) == PHO_BO
+    assert _rezept_des_gerichts(datei) == ZWIRBEL
     assert _zug_id(datei) != zweiter, "Es ist kein neuer Zug entstanden."
 
 
@@ -167,16 +167,17 @@ def test_der_wechsel_zu_einem_bekannten_rezept_geht_bei_schlafender_box(
 
 def test_ein_neu_geholtes_rezept_vergisst_seine_zuordnung(datei, tmp_path):
     """Andere Zutaten, andere Begriffe — die alte Zuordnung sähe gültig aus."""
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 1))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
-    rid = _rezept_id(datei, PHO_BO)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
+    rid = _rezept_id(datei, ZWIRBEL)
     assert _gemerkt(datei, rid)
 
     con = db.connect(datei)
     try:
-        speicher.merken(con, "Pho", {
-            "rezept_id": PHO_BO, "titel": "Pho Bo", "servings": 4,
+        speicher.merken(con, "Zwirbel", {
+            "rezept_id": ZWIRBEL, "titel": "Zwirbeltopf mit Rinderbrühe",
+            "servings": 4,
             "zutaten": [{"raw_name": "Reis", "name": "Reis", "amount": 1,
                          "unit": "kg"}]})
     finally:
@@ -196,14 +197,14 @@ def test_ein_verschwundenes_produkt_oeffnet_seinen_begriff_wieder():
     wäre jedes Mal dieselbe.
     """
     gemerkt = [
-        {"suchbegriffe": ["Ingwer"], "menge": 1, "product_id": 7,
+        {"suchbegriffe": ["Pastinake"], "menge": 1, "product_id": 7,
          "wahl_menge": 1, "gewaehlt": True},
-        {"suchbegriffe": ["Sternanis"], "menge": 1, "product_id": None,
+        {"suchbegriffe": ["Liebstöckel"], "menge": 1, "product_id": None,
          "wahl_menge": None, "gewaehlt": False},
         {"suchbegriffe": ["Reisnudeln"], "menge": 1, "product_id": None,
          "wahl_menge": None, "gewaehlt": True},
     ]
-    aufgaben = [{"begriff": "Ingwer"}, {"begriff": "Sternanis"},
+    aufgaben = [{"begriff": "Pastinake"}, {"begriff": "Liebstöckel"},
                 {"begriff": "Reisnudeln"}, {"begriff": "Klopapier"}]
 
     offen = [a["begriff"] for a in zuordnung.offen(gemerkt, aufgaben)]
@@ -217,10 +218,10 @@ def test_ohne_kandidaten_wird_freitext_und_nicht_gefragt(datei, tmp_path):
     gefragt, denn eine Wahl ohne Kandidaten gibt es nicht (`plan.choose`).
     Vor allem aber wird die Zutatenliste NICHT noch einmal zerlegt.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 1))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
-    rid = _rezept_id(datei, PHO_BO)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
+    rid = _rezept_id(datei, ZWIRBEL)
 
     con = db.connect(datei)
     try:
@@ -239,7 +240,7 @@ def test_ohne_kandidaten_wird_freitext_und_nicht_gefragt(datei, tmp_path):
         con.close()
 
     vorher = len(client.llm.aufrufe)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     assert len(client.llm.aufrufe) == vorher, (
         "Es wurde gefragt, obwohl es nichts zu wählen gibt.")
     freitexte = [ft for _, ft, _ in _zeilen(datei, _zug_id(datei)) if ft]
@@ -252,13 +253,13 @@ def test_ein_notbehelf_wird_nicht_gemerkt(datei, tmp_path):
     Sonst hielte ein einziger Ausfall von Stufe 1 das Rezept für immer auf
     der schlechteren Begriffskette fest — gemessen 10 von 14 statt 12 von 12.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     # Stufe 1 antwortet Unsinn, Stufe 3 ganz normal.
     client, _, _ = _shop(datei, tmp_path,
                          antworten=["kein JSON", json.dumps({"auswahl": []})])
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
 
-    assert _gemerkt(datei, _rezept_id(datei, PHO_BO)) is None, (
+    assert _gemerkt(datei, _rezept_id(datei, ZWIRBEL)) is None, (
         "Der Notbehelf steht als gemerkte Zuordnung da.")
 
 
@@ -272,21 +273,21 @@ def test_vorwaermen_rechnet_ohne_zug_und_ohne_umzuhaengen(datei, tmp_path):
     also darf danach weder ein Zug im Verlauf stehen noch das Gericht auf ein
     anderes Rezept zeigen (WB-406).
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
     assert len(client.llm.aufrufe) == 2
 
-    antwort = client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={PHO_GA}",
-                          headers=HTMX)
+    antwort = client.post(
+        f"/chat/{mid}/rezept/vorwaermen?rezept={ZWIRBEL_HUHN}", headers=HTMX)
     assert antwort.status_code == 204
     # Eine Frage und nicht zwei (WB-411): Stufe 1 muss die Zutatenliste des
     # neuen Rezepts zerlegen, Stufe 3 findet beide Begriffe im Gedächtnis.
     assert len(client.llm.aufrufe) == 3, "Vorwärmen hat nicht gerechnet."
-    assert _rezept_des_gerichts(datei) == PHO_BO, "Das Gericht wurde umgehängt."
+    assert _rezept_des_gerichts(datei) == ZWIRBEL, "Gericht wurde umgehängt."
     assert _zug_id(datei) == mid, "Es ist ein Zug entstanden."
-    assert _gemerkt(datei, _rezept_id(datei, PHO_GA)), "Nichts gemerkt."
+    assert _gemerkt(datei, _rezept_id(datei, ZWIRBEL_HUHN)), "Nichts gemerkt."
 
 
 def test_vorgewaermt_kostet_der_wechsel_kein_modell(datei, tmp_path):
@@ -296,18 +297,19 @@ def test_vorgewaermt_kostet_der_wechsel_kein_modell(datei, tmp_path):
     sofort funktionieren." Ist vorgewärmt, fragt der Wechsel das Modell kein
     einziges Mal — er ist eine Suche im Katalog und ein paar Zeilen.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
-    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={PHO_GA}", headers=HTMX)
+    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={ZWIRBEL_HUHN}",
+                headers=HTMX)
     vorher = len(client.llm.aufrufe)
 
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     assert len(client.llm.aufrufe) == vorher, (
         "Der Wechsel hat gefragt, obwohl vorgewärmt war.")
-    assert _rezept_des_gerichts(datei) == PHO_GA
+    assert _rezept_des_gerichts(datei) == ZWIRBEL_HUHN
     assert _zug_id(datei) != mid, "Es ist kein neuer Zug entstanden."
 
 
@@ -317,14 +319,16 @@ def test_vorwaermen_ist_zweimal_umsonst(datei, tmp_path):
     Der Trigger steht bei jedem Blick in den Chat auf der Karte. Ohne diese
     Sperre kostete das Ansehen einer Seite bei jedem Mal drei Modellläufe.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
-    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={PHO_GA}", headers=HTMX)
+    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={ZWIRBEL_HUHN}",
+                headers=HTMX)
     vorher = len(client.llm.aufrufe)
 
-    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={PHO_GA}", headers=HTMX)
+    client.post(f"/chat/{mid}/rezept/vorwaermen?rezept={ZWIRBEL_HUHN}",
+                headers=HTMX)
     assert len(client.llm.aufrufe) == vorher
 
 
@@ -334,9 +338,9 @@ def test_die_karte_waermt_nur_am_juengsten_zug_vor(datei, tmp_path):
     Für jede Karte im Verlauf zu rechnen hiesse, bei jedem Blick in den Chat
     die halbe Rezeptliste durch das Modell zu schicken.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, _, _ = _shop(datei, tmp_path, antworten=_antworten(datei, 2))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
     seite = client.get("/chat").text
@@ -344,4 +348,4 @@ def test_die_karte_waermt_nur_am_juengsten_zug_vor(datei, tmp_path):
         "Es sind nicht genau drei Vorwärm-Trigger auf der Seite.")
     assert f'hx-post="/chat/{mid}/rezept/vorwaermen' in seite
     # Das vorgeschlagene Rezept selbst wird nicht vorgewärmt — es ist schon da.
-    assert f"rezept={PHO_BO}" not in seite.split("vorwaermen", 1)[1][:400]
+    assert f"rezept={ZWIRBEL}" not in seite.split("vorwaermen", 1)[1][:400]

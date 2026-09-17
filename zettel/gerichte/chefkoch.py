@@ -32,10 +32,33 @@ Sekunde. Der Katalog bleibt davon unberührt: der wird nie live abgefragt.
 
 **robots.txt erlaubt genau diese zwei Endpunkte** (gesperrt sind nur
 `/v2/search/suggestions/` und die Kommentare zweier einzelner Rezepte). Das
-ist nicht dasselbe wie die Nutzungsbedingungen — die sind NICHT gelesen. Der
-Vorbehalt steht im README; hier steht die Höflichkeit: `PAUSE_S` zwischen
-zwei Anfragen, ein ehrlicher User-Agent, zwei Anfragen je Gericht und
-danach nie wieder (Zwischenspeicher).
+ist nicht dasselbe wie die Nutzungsbedingungen — und die sind seit WB-604
+gelesen. Sie sagen etwas anderes als die robots.txt:
+
+* **§5.1** untersagt „das automatische Auslesen der auf unserer Seite
+  befindlichen Daten sowie den Aufbau eigener Suchsysteme, Dienste und
+  Verzeichnisse unter Zuhilfenahme der auf chefkoch.de abrufbaren Inhalte".
+  Dieses Modul tut beides. Zwei Anfragen je Gericht, gecached, ein ehrlicher
+  User-Agent — das ändert die Wahrscheinlichkeit, entdeckt zu werden, nicht
+  den Wortlaut.
+* **§6.9** erlaubt Marken und Kennzeichen nur mit vorheriger schriftlicher
+  Zustimmung. Eine Quellenangabe ist redlich, aber keine Zustimmung.
+* **§6.10** untersagt kommerzielles Text und Data Mining nach § 44b UrhG —
+  ein maschinenlesbarer Nutzungsvorbehalt nach § 44b Abs. 3.
+
+**Was daraus folgt.** Der Live-Abruf bleibt vorerst, wie er ist: privat, auf
+einer Maschine, für zwei Haushalte, nichts davon wird weitergegeben. Was
+NICHT bleibt, ist die Weiterverbreitung: unter `tests/fixtures/` lagen bis
+WB-604 zwei vollständige Chefkoch-Antworten, öffentlich abrufbar. Sie sind
+durch ERFUNDENE ersetzt — ein Gericht, das es nicht gibt, mit erfundenen
+Zutaten und erfundenen IDs, in der gemessenen Struktur. Wer das Format gegen
+die Wirklichkeit prüfen will, zeichnet sich die echten Antworten selbst auf
+(`scripts/record_chefkoch.py`); sie landen in einem gitignorierten Pfad und
+gehen nie ins Repo.
+
+Die Höflichkeit steht weiterhin hier: `PAUSE_S` zwischen zwei Anfragen, ein
+ehrlicher User-Agent, zwei Anfragen je Gericht und danach nie wieder
+(Zwischenspeicher).
 """
 from __future__ import annotations
 

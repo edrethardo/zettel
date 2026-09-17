@@ -44,9 +44,10 @@ from __future__ import annotations
 from zettel import db
 from zettel.llm import wake
 
-from test_alternativrezepte import (HTMX, PHO_BO, PHO_GA, _antworten, _karte,
-                                    _pho_geholt, _rezept_des_gerichts, _shop,
-                                    _wechsel, _zug_id)
+from test_alternativrezepte import (HTMX, ZWIRBEL, ZWIRBEL_HUHN, _antworten,
+                                    _karte, _zwirbel_geholt,
+                                    _rezept_des_gerichts, _shop, _wechsel,
+                                    _zug_id)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 
 
@@ -80,9 +81,9 @@ def _zuege(pfad) -> int:
 
 def _erster_zug(datei, tmp_path, box=None):
     """Ein gewöhnlicher Chefkoch-Zug — der Stand vor jedem Wechsel."""
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, http, waehler = _shop(datei, tmp_path, box=box)
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     return client, http, waehler, _zug_id(datei)
 
 
@@ -98,16 +99,16 @@ def test_ohne_zweite_haelfte_bleibt_das_gericht_beim_alten_rezept(datei,
     entstanden wäre — und der Chat zeigt weiter das alte Rezept.
     """
     client, _, _, mid = _erster_zug(datei, tmp_path)
-    assert _rezept_des_gerichts(datei) == PHO_BO
+    assert _rezept_des_gerichts(datei) == ZWIRBEL
 
-    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": PHO_GA},
+    antwort = client.post(f"/chat/{mid}/rezept", data={"rezept": ZWIRBEL_HUHN},
                           headers=HTMX)
     assert antwort.status_code == 200
     # Die Vorschau zeigt das gewählte Rezept — darum geht WB-402, und das
     # bleibt so.
-    assert "Pho Ga" in antwort.text
+    assert "Zwirbeltopf mit Huhn" in antwort.text
 
-    assert _rezept_des_gerichts(datei) == PHO_BO, (
+    assert _rezept_des_gerichts(datei) == ZWIRBEL, (
         "Die Vorschau hat das Gericht umgehängt, obwohl kein Zug entstanden "
         "ist.")
 
@@ -122,11 +123,11 @@ def test_gescheiterter_zug_laesst_das_gericht_stehen(datei, tmp_path):
     vorher = _zuege(datei)
 
     box.bedient = False
-    erste, zweite = _wechsel(client, mid, PHO_GA)
+    erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
     assert erste.status_code == 200 and zweite.status_code == 200
     assert _zuege(datei) == vorher, "Es ist doch ein Zug entstanden."
 
-    assert _rezept_des_gerichts(datei) == PHO_BO, (
+    assert _rezept_des_gerichts(datei) == ZWIRBEL, (
         "Das Gericht zeigt auf das gewählte Rezept, obwohl der Zug dazu nie "
         "gelaufen ist.")
 
@@ -134,13 +135,13 @@ def test_gescheiterter_zug_laesst_das_gericht_stehen(datei, tmp_path):
 def test_die_meldung_behauptet_keinen_wechsel(datei, tmp_path):
     """Was die Meldung sagt, muss danach in der Datenbank stehen.
 
-    Sie sagte „„Pho Ga" ist jetzt das Rezept zu „Pho"" — und genau das darf
-    nach einem gescheiterten Zug nicht mehr gelten.
+    Sie sagte „„Zwirbeltopf mit Huhn" ist jetzt das Rezept zu „Zwirbel"" —
+    und genau das darf nach einem gescheiterten Zug nicht mehr gelten.
     """
     box = Wackelbox()
     client, _, _, mid = _erster_zug(datei, tmp_path, box=box)
     box.bedient = False
-    _, zweite = _wechsel(client, mid, PHO_GA)
+    _, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
 
     assert "ist jetzt das Rezept" not in zweite.text, zweite.text[:400]
 
@@ -156,7 +157,7 @@ def test_der_chat_zeigt_danach_dasselbe_rezept_wie_das_gericht(datei,
     box = Wackelbox()
     client, _, _, mid = _erster_zug(datei, tmp_path, box=box)
     box.bedient = False
-    _wechsel(client, mid, PHO_GA)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
 
     karte = _karte(client.get("/chat").text)
     con = db.connect(datei)
@@ -179,11 +180,11 @@ def test_der_chat_zeigt_danach_dasselbe_rezept_wie_das_gericht(datei,
 def test_der_geglueckte_wechsel_haengt_das_gericht_um(datei, tmp_path):
     """Die Gegenprobe: geht der Zug durch, gilt die Wahl."""
     client, _, _, mid = _erster_zug(datei, tmp_path)
-    erste, zweite = _wechsel(client, mid, PHO_GA)
+    erste, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
 
     assert erste.status_code == 200 and zweite.status_code == 200
-    assert _rezept_des_gerichts(datei) == PHO_GA
-    assert "Pho Ga" in zweite.text
+    assert _rezept_des_gerichts(datei) == ZWIRBEL_HUHN
+    assert "Zwirbeltopf mit Huhn" in zweite.text
 
 
 # --------------------------------------------------------------------------
@@ -196,22 +197,22 @@ def test_hin_und_zurueck_landet_wieder_beim_ersten_rezept(datei, tmp_path):
     Rezept, und seine Liste stellt das alte wieder zur Wahl. Ein Rückwechsel
     kostet keine Anfrage mehr (WB-387), er ist eine Zeile in `dish`.
     """
-    _pho_geholt(datei)
+    _zwirbel_geholt(datei)
     client, http, waehler = _shop(datei, tmp_path,
                                   antworten=_antworten(datei, 3))
-    client.post("/chat", data={"satz": "alles für Pho"}, headers=HTMX)
+    client.post("/chat", data={"satz": "alles für Zwirbel"}, headers=HTMX)
     mid = _zug_id(datei)
 
-    _wechsel(client, mid, PHO_GA)
-    assert _rezept_des_gerichts(datei) == PHO_GA
+    _wechsel(client, mid, ZWIRBEL_HUHN)
+    assert _rezept_des_gerichts(datei) == ZWIRBEL_HUHN
     zweiter = _zug_id(datei)
     assert zweiter != mid, "Der Wechsel hat keinen neuen Zug erzeugt."
 
-    _wechsel(client, zweiter, PHO_BO)
-    assert _rezept_des_gerichts(datei) == PHO_BO
+    _wechsel(client, zweiter, ZWIRBEL)
+    assert _rezept_des_gerichts(datei) == ZWIRBEL
     # Nur EIN Detail wurde je geholt: das der Alternative. Der Rückweg zum
     # ersten Rezept fasst die Quelle nicht an.
-    assert waehler.gewaehlt == [PHO_GA], waehler.gewaehlt
+    assert waehler.gewaehlt == [ZWIRBEL_HUHN], waehler.gewaehlt
 
     # Und im Verlauf steht von der Kette nur ihr letztes Glied (WB-403).
     seite = client.get("/chat").text
@@ -230,13 +231,13 @@ def test_nach_dem_fehlschlag_geht_der_wechsel_wieder(datei, tmp_path):
     client, _, _, mid = _erster_zug(datei, tmp_path, box=box)
 
     box.bedient = False
-    _wechsel(client, mid, PHO_GA)
-    _wechsel(client, mid, PHO_GA)
-    assert _rezept_des_gerichts(datei) == PHO_BO
+    _wechsel(client, mid, ZWIRBEL_HUHN)
+    _wechsel(client, mid, ZWIRBEL_HUHN)
+    assert _rezept_des_gerichts(datei) == ZWIRBEL
     assert _zuege(datei) == 1
 
     box.bedient = True
-    _, zweite = _wechsel(client, mid, PHO_GA)
-    assert _rezept_des_gerichts(datei) == PHO_GA
+    _, zweite = _wechsel(client, mid, ZWIRBEL_HUHN)
+    assert _rezept_des_gerichts(datei) == ZWIRBEL_HUHN
     assert _zuege(datei) == 2
-    assert "Pho Ga" in zweite.text
+    assert "Zwirbeltopf mit Huhn" in zweite.text

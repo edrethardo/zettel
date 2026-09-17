@@ -27,14 +27,14 @@ from test_alternativrezepte import (HTMX, _choose, _extract, _pid, _shop,
                                     _zug_id)
 from test_alternativrezepte import datei  # noqa: F401  (Fixture)
 
-SATZ = "Ingwer und Mie Nudeln"
+SATZ = "Pastinake und Speckwürfel"
 
 
 def _paar(pfad):
     """Ein Zug: Stufe 1 und Stufe 3, für genau diesen Satz."""
-    return [_extract((("Ingwer",), 1), (("Mie Nudeln", "Nudeln"), 1)),
-            _choose(("Ingwer", _pid(pfad, "Ingwer"), 1),
-                    ("Mie Nudeln", _pid(pfad, "Mie Nudeln"), 1))]
+    return [_extract((("Pastinake",), 1), (("Speckwürfel", "Speck"), 1)),
+            _choose(("Pastinake", _pid(pfad, "Pastinake"), 1),
+                    ("Speckwürfel", _pid(pfad, "Speckwürfel"), 1))]
 
 
 def _zeilen(pfad, mid):
@@ -90,7 +90,7 @@ def test_der_zweite_satz_fragt_stufe_drei_nicht_noch_einmal(datei, tmp_path):
 
 
 def test_die_wahl_steht_unter_der_ganzen_kette(datei, tmp_path):
-    """Nicht unter „Mie Nudeln", sondern unter „Mie Nudeln|Nudeln".
+    """Nicht unter „Speckwürfel", sondern unter „Speckwürfel|Speck".
 
     „Möhren" und „Karotten" führen zu verschiedenen Produkten (WB-340); wer
     nur den genauesten Begriff merkte, gäbe die Wahl einer Kette für die
@@ -100,7 +100,7 @@ def test_die_wahl_steht_unter_der_ganzen_kette(datei, tmp_path):
     client.post("/chat", data={"satz": SATZ}, headers=HTMX)
 
     wahlen = _wahlen(datei)
-    assert set(wahlen) == {"ingwer", "mie nudeln|nudeln"}, sorted(wahlen)
+    assert set(wahlen) == {"pastinake", "speckwuerfel|speck"}, sorted(wahlen)
     assert all(w["gewaehlt"] for w in wahlen.values())
 
 
@@ -132,24 +132,25 @@ def test_neu_suchen_fragt_wieder_und_ueberschreibt(datei, tmp_path):
     Ohne diesen Weg wäre eine einmal danebengegriffene Wahl für immer
     festgeschrieben, und das Gedächtnis wäre ein Käfig statt einer Abkürzung.
     """
-    # Beim zweiten Mal nimmt das Modell zu „Ingwer" NICHTS. Das ist der
+    # Beim zweiten Mal nimmt das Modell zu „Pastinake" NICHTS. Das ist der
     # sichtbarste Unterschied, den ein Doppelgänger überhaupt liefern kann:
     # eine andere ID zu nennen ginge nicht, weil `plan.choose` nur zulässt,
-    # was vorgelegt wurde — und der Katalog dieser Fixture hat genau einen
-    # Ingwer.
-    anders = _choose(("Mie Nudeln", _pid(datei, "Mie Nudeln"), 1))
+    # was vorgelegt wurde — und der Katalog dieser Fixture hat genau eine
+    # Pastinake.
+    anders = _choose(("Speckwürfel", _pid(datei, "Speckwürfel"), 1))
     client, _, _ = _shop(datei, tmp_path,
                          antworten=[*_paar(datei),
                                     _paar(datei)[0], anders])
     client.post("/chat", data={"satz": SATZ}, headers=HTMX)
     mid = _zug_id(datei)
-    assert _wahlen(datei)["ingwer"]["product_id"] == _pid(datei, "Ingwer")
+    assert (_wahlen(datei)["pastinake"]["product_id"]
+            == _pid(datei, "Pastinake"))
 
     antwort = client.post(f"/chat/{mid}/neusuche", headers=HTMX)
     assert antwort.status_code == 200
     assert len(client.llm.aufrufe) == 4, "Neu suchen hat nicht gefragt."
 
-    nachher = _wahlen(datei)["ingwer"]
+    nachher = _wahlen(datei)["pastinake"]
     assert not nachher["gewaehlt"], "Die neue Wahl hat die alte nicht abgelöst."
     assert nachher["product_id"] is None
     assert _zug_id(datei) != mid, "Der Zug wurde nicht ersetzt."
@@ -181,12 +182,12 @@ def test_eine_erinnerung_gilt_nur_bei_vorgelegtem_produkt():
     Gewählt werden darf nur, was die Suche HEUTE vorlegt. Steht das gemerkte
     Produkt nicht mehr darunter, ist der Begriff wieder offen.
     """
-    gemerkt = {"ingwer": {"begriff": "ingwer", "product_id": 7,
+    gemerkt = {"pastinake": {"begriff": "pastinake", "product_id": 7,
                           "gewaehlt": 1, "quelle": ged.MODELL}}
-    dabei = {"begriff": "Ingwer", "suchbegriffe": ["Ingwer"],
-             "aufgehoben": [{"id": 7, "name": "Ingwer frisch"}]}
-    weg = {"begriff": "Ingwer", "suchbegriffe": ["Ingwer"],
-           "aufgehoben": [{"id": 9, "name": "Ingwerpulver"}]}
+    dabei = {"begriff": "Pastinake", "suchbegriffe": ["Pastinake"],
+             "aufgehoben": [{"id": 7, "name": "Pastinaken 500 g"}]}
+    weg = {"begriff": "Pastinake", "suchbegriffe": ["Pastinake"],
+           "aufgehoben": [{"id": 9, "name": "Pastinakenpulver"}]}
 
     bekannt, offen = ged.teilen([dabei], gemerkt)
     assert len(bekannt) == 1 and not offen

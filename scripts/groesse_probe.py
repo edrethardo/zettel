@@ -22,13 +22,14 @@ Gemessen werden drei Dinge GETRENNT, weil verschiedene Hebel daran hängen:
 `--grenze alle` schaltet die Kürzung ab und lässt nur das Tauschziel wirken;
 so ist zu sehen, welcher Hebel wie viel bringt.
 
-`--rezept` hängt einen echten Chefkoch-Zug hinten an (WB-383): Pho Bo, 23
-Zutaten, 90 + 480 Minuten, 3.924 Zeichen Zubereitung. Er kostet die
-Rezeptkarte — samt der Auswahl aus sechs Rezepten, die seit WB-387 darin
-steht —, und genau die soll messbar sein. **Ohne die Schalter misst die
+`--rezept` hängt einen Chefkoch-Zug hinten an (WB-383): Zwirbeltopf mit
+Rinderbrühe, 23 Zutaten, 90 + 480 Minuten, 1.831 Zeichen Zubereitung. Er
+kostet die Rezeptkarte — samt der Auswahl aus sechs Rezepten, die seit
+WB-387 darin steht —, und genau die soll messbar sein. **Ohne die Schalter misst die
 Probe unverändert das, was WB-372 gemessen hat** — sonst wären die Zahlen von
-damals nicht mehr vergleichbar. Das Rezept kommt aus derselben aufgezeichneten
-Antwort wie in der Testsuite; auch diese Probe geht nicht ins Netz.
+damals nicht mehr vergleichbar. Das Rezept kommt aus derselben Fixture wie in
+der Testsuite — seit WB-604 einer ERFUNDENEN (der Zwirbeltopf existiert
+nicht); auch diese Probe geht nicht ins Netz.
 
 **Die Zeile „Seite" von WB-372 ist seit WB-382 zwei Zeilen.** Damals trug eine
 Seite beides; die Zahl 45 KB von damals ist mit der CHATSEITE zu vergleichen,
@@ -101,15 +102,16 @@ class _Antwort:
 
 
 class ChefkochVorlage:
-    """Die aufgezeichnete Chefkoch-Antwort — dieselbe wie in der Testsuite."""
+    """Die erfundene Chefkoch-Antwort — dieselbe wie in der Testsuite."""
 
-    #: Das Rezept, das die Gewichtung aus der aufgezeichneten Suche wählt.
-    PHO_BO = "9999000000000001"
+    #: Das Rezept, das die Gewichtung aus der erfundenen Suche wählt.
+    ZWIRBEL = "9999000000000001"
 
     def __init__(self):
         self.seiten = {
-            "/v2/recipes?": _fixture("chefkoch_pho_suche.json"),
-            f"/v2/recipes/{self.PHO_BO}": _fixture("chefkoch_pho_rezept.json"),
+            "/v2/recipes?": _fixture("chefkoch_zwirbel_suche.json"),
+            f"/v2/recipes/{self.ZWIRBEL}":
+                _fixture("chefkoch_zwirbel_rezept.json"),
         }
 
     def get(self, url):
@@ -131,7 +133,7 @@ def rezeptzug(pfad: Path) -> None:
     Was zählt, ist die Verknüpfung `chat_rezept` — an ihr hängt die Karte.
     """
     con = db.connect(pfad)
-    lauf.hole_eines(con, ChefkochVorlage(), "Pho", pause_s=0,
+    lauf.hole_eines(con, ChefkochVorlage(), "Zwirbel", pause_s=0,
                     schreib=lambda _: None)
     recipe_id = con.execute(
         "SELECT id FROM recipe ORDER BY id DESC LIMIT 1").fetchone()["id"]
@@ -144,10 +146,10 @@ def rezeptzug(pfad: Path) -> None:
     produkte = [r["id"] for r in
                 con.execute("SELECT id FROM product ORDER BY id").fetchall()]
     vorschlagsliste.nachricht(con, korb, vorschlagsliste.ROLLE_NUTZERIN,
-                              "alles für Pho")
+                              "alles für Zwirbel")
     mid = vorschlagsliste.nachricht(
         con, korb, vorschlagsliste.ROLLE_AGENT,
-        "„Pho Bo“ von Chefkoch — 23 Zutaten im Rezept.")
+        "„Zwirbeltopf mit Rinderbrühe“ von Chefkoch — 23 Zutaten im Rezept.")
     for i in range(JE_ZUG):
         vorschlagsliste.vorschlag(con, mid, product_id=produkte[i],
                                   qty=1, search_term=f"Zutat {i}",
